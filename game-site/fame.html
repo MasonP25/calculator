@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hall of Fame — Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 0 1rem 3rem;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem 0;
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .back-link {
+    position: absolute;
+    left: 0;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #7b2ff7; }
+  .top-bar h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Name input area */
+  .name-section {
+    max-width: 1100px;
+    margin: 0.8rem auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+  .name-section label {
+    font-size: 0.95rem;
+    color: #aaa;
+  }
+  .name-section input {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 0.45rem 0.8rem;
+    width: 180px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-section input:focus { border-color: #7b2ff7; }
+
+  /* Overall stats */
+  .stats-bar {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    text-align: center;
+    min-width: 160px;
+  }
+  .stat-box .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-box .stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.2rem;
+  }
+
+  /* Tabs */
+  .tabs {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .tab {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.78rem;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .tab:hover { border-color: #7b2ff7; color: #e0e0e0; }
+  .tab.active {
+    background: #7b2ff7;
+    border-color: #7b2ff7;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Game cards grid */
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+  }
+  .game-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1.2rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .game-card:hover {
+    border-color: #7b2ff7;
+    box-shadow: 0 4px 20px rgba(123, 47, 247, 0.2);
+  }
+  .game-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .game-card-header .game-emoji { font-size: 1.6rem; }
+  .game-card-header .game-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .game-card-header .score-type {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: #0f0f1a;
+    padding: 0.2rem 0.6rem;
+    border-radius: 8px;
+  }
+
+  /* Score table */
+  .score-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .score-table th {
+    font-size: 0.65rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 0.3rem 0.4rem;
+    border-bottom: 1px solid #2a2a4a;
+  }
+  .score-table th:last-child { text-align: right; }
+  .score-table td {
+    padding: 0.4rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #1f1f35;
+  }
+  .score-table td:last-child {
+    text-align: right;
+    font-size: 0.75rem;
+    color: #666;
+  }
+  .score-table tr.rank-1 td { color: #ffd700; }
+  .score-table tr.rank-2 td { color: #c0c0c0; }
+  .score-table tr.rank-3 td { color: #cd7f32; }
+  .score-table tr.rank-1 .rank-badge,
+  .score-table tr.rank-2 .rank-badge,
+  .score-table tr.rank-3 .rank-badge {
+    font-weight: 700;
+  }
+  .rank-badge {
+    display: inline-block;
+    width: 1.4rem;
+    text-align: center;
+  }
+  .score-val {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .empty-msg {
+    color: #555;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1.2rem 0;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="index.html">&#8592; Back</a>
+  <h1>&#127942; Hall of Fame</h1>
+</div>
+
+<div class="name-section" id="nameSection">
+  <label>Signed in as:</label>
+  <span id="currentUserDisplay" style="color:#00d4ff;font-weight:600;font-size:1rem"></span>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="grid" id="grid"></div>
+
+<script src="fame.js"></script>
+<script>
+(function() {
+  // Game definitions: id, name, emoji, score unit, lower-is-better
+  var GAMES = [
+    { id: 'snake',       name: 'Snake',          emoji: '\uD83D\uDC0D', unit: 'points',      lower: false },
+    { id: 'pong',        name: 'Pong',           emoji: '\uD83C\uDFD3', unit: 'wins',        lower: false },
+    { id: 'tron',        name: 'Tron',           emoji: '\u26A1',       unit: 'wins',        lower: false },
+    { id: 'tanks',       name: 'Tank Battle',    emoji: '\uD83D\uDCA3', unit: 'wins',        lower: false },
+    { id: 'racer',       name: 'Space Race',     emoji: '\uD83D\uDE80', unit: 'wins',        lower: false },
+    { id: 'connect4',    name: 'Connect Four',   emoji: '\uD83D\uDD34', unit: 'wins',        lower: false },
+    { id: 'reaction',    name: 'Reaction Time',  emoji: '\u23F1',       unit: 'ms',          lower: true  },
+    { id: 'tetris',      name: 'Tetris',         emoji: '\uD83E\uDDE9', unit: 'score',       lower: false },
+    { id: 'breakout',    name: 'Breakout',       emoji: '\uD83C\uDF77', unit: 'score',       lower: false },
+    { id: '2048',        name: '2048',           emoji: '\uD83D\uDD22', unit: 'score',       lower: false },
+    { id: 'minesweeper', name: 'Minesweeper',    emoji: '\uD83D\uDCA5', unit: 'seconds',     lower: true  },
+    { id: 'flappy',      name: 'Flappy Bird',    emoji: '\uD83D\uDC26', unit: 'score',       lower: false },
+    { id: 'asteroids',   name: 'Asteroids',      emoji: '\u2604',       unit: 'score',       lower: false },
+    { id: 'memory',      name: 'Memory Match',   emoji: '\uD83E\uDDE0', unit: 'seconds',     lower: true  },
+    { id: 'wordle',      name: 'Wordle',         emoji: '\uD83D\uDCDD', unit: 'streak',      lower: false },
+    { id: 'doodle',      name: 'Doodle Jump',    emoji: '\uD83D\uDC3B', unit: 'height',      lower: false },
+    { id: 'typing',      name: 'Typing Test',    emoji: '\u2328',       unit: 'WPM',         lower: false },
+    { id: 'sudoku',      name: 'Sudoku',         emoji: '\uD83D\uDD22', unit: 'seconds',     lower: true  },
+    { id: 'connections', name: 'Connections',    emoji: '\uD83D\uDD17', unit: 'wins',        lower: false },
+    { id: 'hangman',     name: 'Hangman',        emoji: '\uD83D\uDC64', unit: 'streak',      lower: false },
+    { id: 'simon',       name: 'Simon Says',     emoji: '\uD83C\uDFA8', unit: 'rounds',      lower: false },
+    { id: 'gravity',     name: 'Gravity Run',    emoji: '\u2699',       unit: 'distance m',  lower: false },
+    { id: 'chess',       name: 'Chess',          emoji: '\u265A',       unit: 'wins',        lower: false },
+    { id: 'checkers',    name: 'Checkers',       emoji: '\u26AA',       unit: 'wins',        lower: false },
+    { id: 'platformer',  name: 'Platformer',     emoji: '\uD83C\uDFC3', unit: 'score',       lower: false },
+    { id: 'tiles',       name: 'Piano Tiles',    emoji: '\uD83C\uDFB9', unit: 'score',       lower: false },
+    { id: 'crossy',      name: 'Crossy Road',    emoji: '\uD83D\uDC14', unit: 'score',       lower: false },
+    { id: 'invaders',    name: 'Space Invaders', emoji: '\uD83D\uDC7E', unit: 'score',       lower: false },
+    { id: 'aim_classic', name: 'Aim (Classic)',   emoji: '\uD83C\uDFAF', unit: 'ms',          lower: true  },
+    { id: 'aim_speed',   name: 'Aim (Speed)',     emoji: '\uD83C\uDFAF', unit: 'hits',        lower: false },
+    { id: 'aim_precision', name: 'Aim (Precision)', emoji: '\uD83C\uDFAF', unit: 'points',   lower: false },
+    { id: 'battleship', name: 'Battleship',      emoji: '\u26F5',       unit: 'wins',        lower: false },
+    { id: 'whack',      name: 'Whack-a-Mole',    emoji: '\uD83D\uDC39', unit: 'score',       lower: false },
+    { id: 'sliding',    name: 'Sliding Puzzle',   emoji: '\uD83E\uDDE9', unit: 'seconds',     lower: true  },
+{ id: 'stack',       name: 'Stack Tower',      emoji: '\uD83C\uDFD7', unit: 'score',       lower: false },
+    { id: 'wordsearch',  name: 'Word Search',      emoji: '\uD83D\uDD0E', unit: 'seconds',     lower: true  },
+    { id: 'geodash',     name: 'Geometry Dash',    emoji: '\u25A0',       unit: 'progress %',  lower: false },
+    { id: 'rps',         name: 'Rock Paper Scissors', emoji: '\u270A',    unit: 'wins',        lower: false }
+  ];
+
+  var currentFilter = 'all';
+
+  // --- Player name (from auth) ---
+  var userDisplay = document.getElementById('currentUserDisplay');
+  function updateNameDisplay() {
+    var name = window.HallOfFame.getPlayerName();
+    userDisplay.textContent = name;
+    if (name === 'Guest') {
+      userDisplay.style.color = '#888';
+    } else {
+      userDisplay.style.color = '#00d4ff';
+    }
+  }
+  updateNameDisplay();
+  // Re-check periodically in case user signs in/out
+  setInterval(updateNameDisplay, 1000);
+
+  // --- Build tabs ---
+  function buildTabs() {
+    var tabs = document.getElementById('tabs');
+    tabs.innerHTML = '';
+    var allBtn = document.createElement('button');
+    allBtn.className = 'tab' + (currentFilter === 'all' ? ' active' : '');
+    allBtn.textContent = 'All Games';
+    allBtn.addEventListener('click', function() { currentFilter = 'all'; render(); });
+    tabs.appendChild(allBtn);
+
+    GAMES.forEach(function(g) {
+      var btn = document.createElement('button');
+      btn.className = 'tab' + (currentFilter === g.id ? ' active' : '');
+      btn.textContent = g.emoji + ' ' + g.name;
+      btn.addEventListener('click', function() { currentFilter = g.id; render(); });
+      tabs.appendChild(btn);
+    });
+  }
+
+  // --- Rank medal ---
+  function rankDisplay(i) {
+    if (i === 0) return '\uD83E\uDD47';
+    if (i === 1) return '\uD83E\uDD48';
+    if (i === 2) return '\uD83E\uDD49';
+    return '#' + (i + 1);
+  }
+
+  // --- Build a game card ---
+  function buildCard(game) {
+    var scores = window.HallOfFame.getScores(game.id);
+    var top5 = scores.slice(0, 5);
+
+    var card = document.createElement('div');
+    card.className = 'game-card';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'game-card-header';
+    var emojiSpan = document.createElement('span');
+    emojiSpan.className = 'game-emoji';
+    emojiSpan.textContent = game.emoji;
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'game-name';
+    nameSpan.textContent = game.name;
+    var unitSpan = document.createElement('span');
+    unitSpan.className = 'score-type';
+    unitSpan.textContent = game.unit;
+    header.appendChild(emojiSpan);
+    header.appendChild(nameSpan);
+    header.appendChild(unitSpan);
+    card.appendChild(header);
+
+    if (top5.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-msg';
+      empty.textContent = 'No scores yet';
+      card.appendChild(empty);
+    } else {
+      var table = document.createElement('table');
+      table.className = 'score-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Rank', 'Name', 'Score', 'Date'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      top5.forEach(function(entry, i) {
+        var tr = document.createElement('tr');
+        if (i === 0) tr.className = 'rank-1';
+        else if (i === 1) tr.className = 'rank-2';
+        else if (i === 2) tr.className = 'rank-3';
+
+        var tdRank = document.createElement('td');
+        var badge = document.createElement('span');
+        badge.className = 'rank-badge';
+        badge.textContent = rankDisplay(i);
+        tdRank.appendChild(badge);
+        tr.appendChild(tdRank);
+
+        var tdName = document.createElement('td');
+        tdName.textContent = entry.name;
+        tr.appendChild(tdName);
+
+        var tdScore = document.createElement('td');
+        tdScore.className = 'score-val';
+        tdScore.textContent = entry.score + ' ' + game.unit;
+        tr.appendChild(tdScore);
+
+        var tdDate = document.createElement('td');
+        tdDate.textContent = entry.date || '';
+        tr.appendChild(tdDate);
+
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      card.appendChild(table);
+    }
+
+    return card;
+  }
+
+  // --- Overall stats ---
+  function buildStats() {
+    var bar = document.getElementById('statsBar');
+    bar.innerHTML = '';
+
+    var totalGames = 0;
+    var totalEntries = 0;
+    var firstPlaceCounts = {};
+
+    GAMES.forEach(function(g) {
+      var scores = window.HallOfFame.getScores(g.id);
+      if (scores.length > 0) {
+        totalGames++;
+        totalEntries += scores.length;
+        var topName = scores[0].name;
+        firstPlaceCounts[topName] = (firstPlaceCounts[topName] || 0) + 1;
+      }
+    });
+
+    var champion = '—';
+    var maxFirst = 0;
+    for (var name in firstPlaceCounts) {
+      if (firstPlaceCounts[name] > maxFirst) {
+        maxFirst = firstPlaceCounts[name];
+        champion = name;
+      }
+    }
+
+    var stats = [
+      { value: totalGames, label: 'Games with Scores' },
+      { value: totalEntries, label: 'Total Entries' },
+      { value: (maxFirst > 0 ? champion : '—'), label: 'Champion (' + maxFirst + ' #1s)' }
+    ];
+
+    stats.forEach(function(s) {
+      var box = document.createElement('div');
+      box.className = 'stat-box';
+      var val = document.createElement('div');
+      val.className = 'stat-value';
+      val.textContent = s.value;
+      var lbl = document.createElement('div');
+      lbl.className = 'stat-label';
+      lbl.textContent = s.label;
+      box.appendChild(val);
+      box.appendChild(lbl);
+      bar.appendChild(box);
+    });
+  }
+
+  // --- Main render ---
+  function render() {
+    buildTabs();
+    buildStats();
+
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+
+    var list = currentFilter === 'all' ? GAMES : GAMES.filter(function(g) { return g.id === currentFilter; });
+    list.forEach(function(g) {
+      grid.appendChild(buildCard(g));
+    });
+  }
+
+  render();
+})();
+</script>
+<script src="sound.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

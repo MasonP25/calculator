@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hangman</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    user-select: none;
+  }
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+  }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; background: linear-gradient(135deg, #00d4ff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1rem; text-align: center; }
+
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 650px;
+  }
+
+  /* Scores row */
+  .scores {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 0.3rem;
+  }
+  .scores .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+  }
+  .scores .label { color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .scores .val { color: #00d4ff; font-size: 1.4rem; font-weight: 700; }
+
+  /* Difficulty toggle */
+  .difficulty {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .diff-btn {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    color: #888;
+    padding: 0.3rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .diff-btn.active, .diff-btn:hover {
+    border-color: #7b2ff7;
+    color: #7b2ff7;
+  }
+
+  /* Category hint */
+  .category-hint {
+    font-size: 0.9rem;
+    color: #00d4ff;
+    letter-spacing: 0.05em;
+    min-height: 1.4rem;
+  }
+
+  /* Hangman canvas */
+  .hangman-canvas {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+  }
+
+  /* Word display */
+  .word-display {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0.5rem 0;
+    min-height: 3.5rem;
+    align-items: center;
+  }
+  .letter-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .letter-char {
+    font-size: 2rem;
+    font-weight: 700;
+    min-width: 1.6rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+    transition: all 0.3s;
+  }
+  .letter-dash {
+    width: 1.6rem;
+    height: 3px;
+    background: #5a5a7a;
+    border-radius: 2px;
+  }
+  .letter-char.revealed { color: #e0e0e0; animation: popIn 0.3s ease; }
+  .letter-char.win { color: #35d073; animation: pulse 1s ease infinite; }
+  .letter-char.lose { color: #ff4757; }
+
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /* Message overlay */
+  .message-area {
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .message {
+    padding: 0.4rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .message.show { opacity: 1; }
+  .message.win { background: #35d073; color: #0f0f1a; }
+  .message.lose { background: #ff4757; color: #fff; }
+
+  /* On-screen keyboard */
+  .keyboard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    max-width: 520px;
+  }
+  .key-btn {
+    width: 38px;
+    height: 42px;
+    border: 2px solid #2a2a4a;
+    border-radius: 6px;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .key-btn:hover:not(.used) { border-color: #7b2ff7; color: #7b2ff7; transform: scale(1.05); }
+  .key-btn.correct { background: #35d073; border-color: #35d073; color: #0f0f1a; cursor: default; }
+  .key-btn.wrong { background: #3a3a5a; border-color: #3a3a5a; color: #555; cursor: default; }
+
+  /* New word button */
+  .new-word-btn {
+    background: linear-gradient(135deg, #7b2ff7, #2a2a4a);
+    border: none;
+    color: #e0e0e0;
+    padding: 0.6rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.3rem;
+  }
+  .new-word-btn:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(123,47,247,0.3); }
+
+  /* Length hint */
+  .length-hint {
+    font-size: 0.8rem;
+    color: #888;
+    min-height: 1.2rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Hangman</h1>
+</div>
+
+<p class="subtitle">Guess the word before the hangman is complete</p>
+
+<div class="game-container">
+  <div class="scores">
+    <div class="stat"><span class="label">Streak</span><span class="val" id="streak">0</span></div>
+    <div class="stat"><span class="label">Best</span><span class="val" id="best">0</span></div>
+    <div class="stat"><span class="label">Wrong</span><span class="val" id="wrong-count">0 / 6</span></div>
+  </div>
+
+  <div class="difficulty">
+    <button class="diff-btn active" data-diff="easy">Easy</button>
+    <button class="diff-btn" data-diff="hard">Hard</button>
+  </div>
+
+  <div class="category-hint" id="category-hint"></div>
+  <div class="length-hint" id="length-hint"></div>
+
+  <canvas class="hangman-canvas" id="hangman-canvas" width="220" height="220"></canvas>
+
+  <div class="word-display" id="word-display"></div>
+
+  <div class="message-area">
+    <div class="message" id="message"></div>
+  </div>
+
+  <div class="keyboard" id="keyboard"></div>
+
+  <button class="new-word-btn" id="new-word-btn">New Word</button>
+</div>
+
+<script>
+(function() {
+  // ─── WORD LIST (200+ words across 6 categories) ───
+  const WORDS = {
+    Animals: [
+      'ELEPHANT','GIRAFFE','PENGUIN','DOLPHIN','KANGAROO','CHEETAH','BUFFALO','LEOPARD',
+      'HAMSTER','OCTOPUS','PANTHER','SPARROW','LOBSTER','GORILLA','GAZELLE','PELICAN',
+      'RACCOON','SALAMANDER','FLAMINGO','PORCUPINE','ALLIGATOR','CHAMELEON','ARMADILLO',
+      'HEDGEHOG','PLATYPUS','TORTOISE','MONGOOSE','MACKEREL','CARDINAL','SEAHORSE',
+      'SCORPION','ANTELOPE','STARFISH','MANATEE','NARWHAL','VULTURE'
+    ],
+    Countries: [
+      'BRAZIL','CANADA','FRANCE','GERMANY','ICELAND','JAMAICA','MOROCCO','NIGERIA',
+      'PORTUGAL','THAILAND','ARGENTINA','AUSTRALIA','COLOMBIA','ETHIOPIA','HONDURAS',
+      'INDONESIA','MALAYSIA','PAKISTAN','ROMANIA','SINGAPORE','TANZANIA','VIETNAM',
+      'CAMBODIA','PORTUGAL','ZIMBABWE','MONGOLIA','BULGARIA','PARAGUAY','GREENLAND',
+      'SCOTLAND','PHILIPPINES','MOZAMBIQUE','NICARAGUA','VENEZUELA','GUATEMALA','BERMUDA'
+    ],
+    Foods: [
+      'SPAGHETTI','HAMBURGER','AVOCADO','BROCCOLI','CHOCOLATE','CINNAMON','DUMPLING',
+      'PANCAKES','SANDWICH','BLUEBERRY','CROISSANT','GUACAMOLE','PINEAPPLE','ASPARAGUS',
+      'CHEESECAKE','PEPPERONI','SOURDOUGH','ARTICHOKE','MUSHROOM','TIRAMISU','MEATBALL',
+      'MARINARA','COUSCOUS','MACARONI','FETTUCCINE','CORIANDER','PISTACHIO','HONEYDEW',
+      'JALAPENO','ZUCCHINI','RATATOUILLE','BRUSCHETTA','MILKSHAKE','NECTARINE','MANDARIN'
+    ],
+    Movies: [
+      'INCEPTION','GLADIATOR','FROZEN','TITANIC','AVATAR','BRAVEHEART','CASABLANCA',
+      'GODFATHER','JAWS','MATRIX','PREDATOR','SCARFACE','SPIRITED','TERMINATOR',
+      'RATATOUILLE','INTERSTELLAR','WHIPLASH','PARASITE','DUNKIRK','GRAVITY',
+      'SPOTLIGHT','ARRIVAL','ZOOTOPIA','SKYFALL','ONWARD','CLUELESS','ALADDIN',
+      'BAMBI','MULAN','SHREK','PSYCHO','VERTIGO','NOTORIOUS','MEMENTO','TENET',
+      'ENCANTO'
+    ],
+    Sports: [
+      'BASEBALL','FOOTBALL','SWIMMING','ARCHERY','BADMINTON','BASKETBALL','CLIMBING',
+      'CRICKET','CYCLING','FENCING','GYMNASTICS','HANDBALL','LACROSSE','MARATHON',
+      'ROWING','SAILING','SKIING','SOFTBALL','SPRINTING','SURFING','TENNIS',
+      'TRIATHLON','VOLLEYBALL','WRESTLING','SNOWBOARD','BOXING','JAVELIN','CANOEING',
+      'BOBSLED','SKELETON','DRESSAGE','BIATHLON','CURLING','KAYAKING','PENTATHLON'
+    ],
+    Science: [
+      'MOLECULE','ELECTRON','GRAVITY','NUCLEUS','QUANTUM','NEUTRON','BACTERIA',
+      'CATALYST','CHROMOSOME','ECOSYSTEM','FRICTION','HYDROGEN','ISOTOPE','MOMENTUM',
+      'ORGANISM','PHOTON','RIBOSOME','SPECTRUM','THERMOMETER','VELOCITY','ASTEROID',
+      'COMPOUND','DIFFUSION','ELECTRODE','PHOSPHORUS','MAGNETISM','NEUTRINO','OXIDATION',
+      'CYTOPLASM','EVOLUTION','FIBONACCI','GRAPHENE','HOLOGRAM','INFRARED','KINETICS',
+      'LITHIUM','METAMORPHIC','NITROGEN'
+    ]
+  };
+
+  const CATEGORIES = Object.keys(WORDS);
+  const MAX_WRONG = 6;
+
+  let difficulty = 'easy';
+  let currentWord = '';
+  let currentCategory = '';
+  let guessedLetters = new Set();
+  let wrongGuesses = 0;
+  let gameOver = false;
+  let streak = parseInt(localStorage.getItem('hangman_streak') || '0');
+  let bestStreak = parseInt(localStorage.getItem('hangman_best') || '0');
+
+  const streakEl = document.getElementById('streak');
+  const bestEl = document.getElementById('best');
+  const wrongCountEl = document.getElementById('wrong-count');
+  const categoryHintEl = document.getElementById('category-hint');
+  const lengthHintEl = document.getElementById('length-hint');
+  const wordDisplayEl = document.getElementById('word-display');
+  const messageEl = document.getElementById('message');
+  const keyboardEl = document.getElementById('keyboard');
+  const canvas = document.getElementById('hangman-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function saveStats() {
+    localStorage.setItem('hangman_streak', streak);
+    localStorage.setItem('hangman_best', bestStreak);
+  }
+
+  function pickWord() {
+    if (difficulty === 'hard') {
+      // Hard: longer words only (7+ letters)
+      const allLong = [];
+      CATEGORIES.forEach(cat => {
+        WORDS[cat].forEach(w => {
+          if (w.length >= 7) allLong.push({ word: w, category: cat });
+        });
+      });
+      const pick = allLong[Math.floor(Math.random() * allLong.length)];
+      return pick;
+    } else {
+      const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+      const words = WORDS[cat];
+      return { word: words[Math.floor(Math.random() * words.length)], category: cat };
+    }
+  }
+
+  function drawGallows() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#5a5a7a';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+
+    // Base
+    ctx.beginPath();
+    ctx.moveTo(20, 200);
+    ctx.lineTo(100, 200);
+    ctx.stroke();
+
+    // Pole
+    ctx.beginPath();
+    ctx.moveTo(60, 200);
+    ctx.lineTo(60, 30);
+    ctx.stroke();
+
+    // Top beam
+    ctx.beginPath();
+    ctx.moveTo(60, 30);
+    ctx.lineTo(150, 30);
+    ctx.stroke();
+
+    // Rope
+    ctx.beginPath();
+    ctx.moveTo(150, 30);
+    ctx.lineTo(150, 50);
+    ctx.stroke();
+
+    // Support brace
+    ctx.beginPath();
+    ctx.moveTo(60, 60);
+    ctx.lineTo(90, 30);
+    ctx.stroke();
+  }
+
+  function drawHangman(step) {
+    ctx.strokeStyle = '#ff4757';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+
+    switch(step) {
+      case 1: // Head
+        ctx.beginPath();
+        ctx.arc(150, 65, 15, 0, Math.PI * 2);
+        ctx.stroke();
+        // Eyes
+        ctx.fillStyle = '#ff4757';
+        ctx.beginPath(); ctx.arc(145, 62, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(155, 62, 2, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 2: // Body
+        ctx.beginPath();
+        ctx.moveTo(150, 80);
+        ctx.lineTo(150, 130);
+        ctx.stroke();
+        break;
+      case 3: // Left arm
+        ctx.beginPath();
+        ctx.moveTo(150, 95);
+        ctx.lineTo(125, 115);
+        ctx.stroke();
+        break;
+      case 4: // Right arm
+        ctx.beginPath();
+        ctx.moveTo(150, 95);
+        ctx.lineTo(175, 115);
+        ctx.stroke();
+        break;
+      case 5: // Left leg
+        ctx.beginPath();
+        ctx.moveTo(150, 130);
+        ctx.lineTo(125, 165);
+        ctx.stroke();
+        break;
+      case 6: // Right leg
+        ctx.beginPath();
+        ctx.moveTo(150, 130);
+        ctx.lineTo(175, 165);
+        ctx.stroke();
+        // Sad mouth on death
+        ctx.beginPath();
+        ctx.arc(150, 72, 6, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.stroke();
+        break;
+    }
+  }
+
+  function renderWord() {
+    wordDisplayEl.innerHTML = '';
+    const won = !gameOver && currentWord.split('').every(l => guessedLetters.has(l));
+    const lost = wrongGuesses >= MAX_WRONG;
+
+    currentWord.split('').forEach((letter, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'letter-slot';
+
+      const ch = document.createElement('span');
+      ch.className = 'letter-char';
+
+      if (guessedLetters.has(letter)) {
+        ch.textContent = letter;
+        ch.classList.add('revealed');
+        if (won) ch.classList.add('win');
+      } else if (lost) {
+        ch.textContent = letter;
+        ch.classList.add('lose');
+      } else {
+        ch.textContent = '\u00A0';
+      }
+
+      const dash = document.createElement('div');
+      dash.className = 'letter-dash';
+
+      slot.appendChild(ch);
+      slot.appendChild(dash);
+      wordDisplayEl.appendChild(slot);
+    });
+  }
+
+  function buildKeyboard() {
+    keyboardEl.innerHTML = '';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => {
+      const btn = document.createElement('button');
+      btn.className = 'key-btn';
+      btn.textContent = letter;
+      btn.dataset.letter = letter;
+      btn.addEventListener('click', () => guessLetter(letter));
+      keyboardEl.appendChild(btn);
+    });
+  }
+
+  function updateKeyboard() {
+    document.querySelectorAll('.key-btn').forEach(btn => {
+      const letter = btn.dataset.letter;
+      if (guessedLetters.has(letter)) {
+        btn.classList.add('used');
+        if (currentWord.includes(letter)) {
+          btn.classList.add('correct');
+        } else {
+          btn.classList.add('wrong');
+        }
+      }
+    });
+  }
+
+  function showMessage(text, type) {
+    messageEl.textContent = text;
+    messageEl.className = 'message show ' + type;
+  }
+
+  function clearMessage() {
+    messageEl.className = 'message';
+  }
+
+  function guessLetter(letter) {
+    if (gameOver || guessedLetters.has(letter)) return;
+
+    guessedLetters.add(letter);
+
+    if (!currentWord.includes(letter)) {
+      wrongGuesses++;
+      drawHangman(wrongGuesses);
+      window.SFX?.wrong();
+    } else {
+      window.SFX?.correct();
+    }
+
+    wrongCountEl.textContent = wrongGuesses + ' / ' + MAX_WRONG;
+    updateKeyboard();
+    renderWord();
+
+    // Check win
+    const won = currentWord.split('').every(l => guessedLetters.has(l));
+    if (won) {
+      gameOver = true;
+      window.SFX?.win();
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      saveStats();
+      updateScores();
+      showMessage('You Win! Streak: ' + streak, 'win');
+      return;
+    }
+
+    // Check lose
+    if (wrongGuesses >= MAX_WRONG) {
+      gameOver = true;
+      window.SFX?.death();
+      streak = 0;
+      saveStats();
+      updateScores();
+      showMessage('Game Over! The word was: ' + currentWord, 'lose');
+      renderWord();
+      return;
+    }
+  }
+
+  function updateScores() {
+    streakEl.textContent = streak;
+    bestEl.textContent = bestStreak;
+  }
+
+  function newGame() {
+    guessedLetters.clear();
+    wrongGuesses = 0;
+    gameOver = false;
+
+    const pick = pickWord();
+    currentWord = pick.word;
+    currentCategory = pick.category;
+
+    // Update UI
+    wrongCountEl.textContent = '0 / ' + MAX_WRONG;
+    clearMessage();
+    updateScores();
+
+    if (difficulty === 'easy') {
+      categoryHintEl.textContent = 'Category: ' + currentCategory;
+      lengthHintEl.textContent = currentWord.length + ' letters';
+    } else {
+      categoryHintEl.textContent = '';
+      lengthHintEl.textContent = '';
+    }
+
+    drawGallows();
+    renderWord();
+    buildKeyboard();
+  }
+
+  // ─── Event listeners ───
+  document.getElementById('new-word-btn').addEventListener('click', newGame);
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      difficulty = btn.dataset.diff;
+      newGame();
+    });
+  });
+
+  // Physical keyboard support
+  document.addEventListener('keydown', e => {
+    const key = e.key.toUpperCase();
+    if (/^[A-Z]$/.test(key)) {
+      guessLetter(key);
+    }
+  });
+
+  // Theme change listener - redraw canvas
+  window.addEventListener('themechange', () => {
+    const t = window.THEME;
+    if (t) {
+      canvas.style.background = t.bg2;
+      canvas.style.borderColor = t.border;
+      // Redraw everything
+      drawGallows();
+      for (let i = 1; i <= wrongGuesses; i++) drawHangman(i);
+    }
+  });
+
+  // Init
+  newGame();
+})();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

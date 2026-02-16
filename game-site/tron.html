@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tron</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; }
+  .scores { display: flex; gap: 3rem; margin-bottom: 0.5rem; font-size: 1.1rem; }
+  .p1 { color: #00d4ff; } .p2 { color: #ff4757; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; text-align: center; }
+  .mode-select {
+    display: flex; gap: 1rem; margin-bottom: 1rem;
+  }
+  .mode-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .mode-select button:hover, .mode-select button.active {
+    border-color: #7b2ff7;
+  }
+  .controls { color: #555; font-size: 0.8rem; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Tron</h1>
+</div>
+<div class="mode-select">
+  <button id="mode2p" class="active">2 Players</button>
+  <button id="modeBot">vs Bot</button>
+</div>
+<div class="scores">
+  <div><span class="p1">P1 (WASD): </span><span class="p1" id="s1">0</span></div>
+  <div><span class="p2">P2 (Arrows): </span><span class="p2" id="s2">0</span></div>
+</div>
+<canvas id="c" width="600" height="400"></canvas>
+<div class="msg" id="msg">Press SPACE to start</div>
+<div class="controls">P1: WASD &nbsp; | &nbsp; P2: Arrow Keys</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const s1El = document.getElementById('s1');
+const s2El = document.getElementById('s2');
+
+const CELL = 5;
+const COLS = canvas.width / CELL;
+const ROWS = canvas.height / CELL;
+const SPEED = 50;
+
+let grid, p1, p2, score1, score2, running, gameOver, botMode, interval;
+score1 = 0; score2 = 0; botMode = false;
+
+document.getElementById('mode2p').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('modeBot').classList.remove('active');
+  botMode = false;
+  document.querySelector('.scores .p2').parentElement.innerHTML =
+    '<span class="p2">P2 (Arrows): </span><span class="p2" id="s2">' + score2 + '</span>';
+  init();
+});
+document.getElementById('modeBot').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('mode2p').classList.remove('active');
+  botMode = true;
+  document.querySelector('.scores .p2').parentElement.innerHTML =
+    '<span class="p2">Bot: </span><span class="p2" id="s2">' + score2 + '</span>';
+  init();
+});
+
+function init() {
+  grid = Array.from({length: ROWS}, () => new Uint8Array(COLS));
+  p1 = { x: Math.floor(COLS * 0.25), y: Math.floor(ROWS / 2), dx: 1, dy: 0, alive: true };
+  p2 = { x: Math.floor(COLS * 0.75), y: Math.floor(ROWS / 2), dx: -1, dy: 0, alive: true };
+  grid[p1.y][p1.x] = 1;
+  grid[p2.y][p2.x] = 2;
+  running = false;
+  gameOver = false;
+  if (interval) clearInterval(interval);
+  draw();
+  msgEl.textContent = 'Press SPACE to start';
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a15';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Draw grid lines
+  ctx.strokeStyle = '#111125';
+  ctx.lineWidth = 0.3;
+  for (let x = 0; x < canvas.width; x += CELL * 10) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += CELL * 10) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+  // Draw trails
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] === 1) {
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+      } else if (grid[r][c] === 2) {
+        ctx.fillStyle = '#ff4757';
+        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+      }
+    }
+  }
+  // Bright heads
+  if (p1.alive) {
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 10;
+    ctx.fillRect(p1.x * CELL, p1.y * CELL, CELL, CELL);
+    ctx.shadowBlur = 0;
+  }
+  if (p2.alive) {
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#ff4757'; ctx.shadowBlur = 10;
+    ctx.fillRect(p2.x * CELL, p2.y * CELL, CELL, CELL);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function isBlocked(x, y) {
+  return x < 0 || x >= COLS || y < 0 || y >= ROWS || grid[y][x] !== 0;
+}
+
+function botAI() {
+  // Look ahead and avoid walls/trails
+  const dirs = [{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}];
+  // Can't reverse
+  const valid = dirs.filter(d => !(d.dx === -p2.dx && d.dy === -p2.dy));
+  // Score each direction by how far we can go
+  let best = null, bestScore = -1;
+  for (const d of valid) {
+    let nx = p2.x + d.dx, ny = p2.y + d.dy;
+    if (isBlocked(nx, ny)) continue;
+    // Count open spaces ahead
+    let score = 0;
+    let cx = nx, cy = ny;
+    for (let i = 0; i < 30; i++) {
+      cx += d.dx; cy += d.dy;
+      if (isBlocked(cx, cy)) break;
+      score++;
+    }
+    // Also count open spaces to the sides
+    for (const sd of dirs) {
+      if (sd.dx === d.dx && sd.dy === d.dy) continue;
+      let sx = nx + sd.dx, sy = ny + sd.dy;
+      for (let i = 0; i < 10; i++) {
+        if (isBlocked(sx, sy)) break;
+        score++;
+        sx += sd.dx; sy += sd.dy;
+      }
+    }
+    if (score > bestScore || (score === bestScore && Math.random() > 0.5)) {
+      bestScore = score;
+      best = d;
+    }
+  }
+  if (best) { p2.dx = best.dx; p2.dy = best.dy; }
+}
+
+function update() {
+  if (botMode) botAI();
+
+  const nx1 = p1.x + p1.dx, ny1 = p1.y + p1.dy;
+  const nx2 = p2.x + p2.dx, ny2 = p2.y + p2.dy;
+
+  const p1Dead = isBlocked(nx1, ny1);
+  const p2Dead = isBlocked(nx2, ny2);
+  // Head-on collision
+  const headOn = (nx1 === nx2 && ny1 === ny2);
+
+  if (headOn || (p1Dead && p2Dead)) {
+    p1.alive = false; p2.alive = false;
+    endRound('Draw!');
+  } else if (p1Dead) {
+    p1.alive = false;
+    score2++; s2El.textContent = score2;
+    endRound(botMode ? 'Bot wins!' : 'P2 wins!');
+  } else if (p2Dead) {
+    p2.alive = false;
+    score1++; s1El.textContent = score1;
+    endRound('P1 wins!');
+  } else {
+    p1.x = nx1; p1.y = ny1; grid[ny1][nx1] = 1;
+    p2.x = nx2; p2.y = ny2; grid[ny2][nx2] = 2;
+  }
+  draw();
+}
+
+function endRound(msg) {
+  gameOver = true;
+  clearInterval(interval);
+  msgEl.textContent = msg + ' Press SPACE for next round';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (gameOver) { init(); return; }
+    if (!running) {
+      running = true;
+      msgEl.textContent = '';
+      interval = setInterval(update, SPEED);
+    }
+    return;
+  }
+  // P1 WASD
+  if (e.key === 'w' || e.key === 'W') { if (p1.dy !== 1) { p1.dx=0; p1.dy=-1; } }
+  if (e.key === 's' || e.key === 'S') { if (p1.dy !== -1) { p1.dx=0; p1.dy=1; } }
+  if (e.key === 'a' || e.key === 'A') { if (p1.dx !== 1) { p1.dx=-1; p1.dy=0; } }
+  if (e.key === 'd' || e.key === 'D') { if (p1.dx !== -1) { p1.dx=1; p1.dy=0; } }
+  // P2 Arrows (only in 2P mode)
+  if (!botMode) {
+    if (e.key === 'ArrowUp') { e.preventDefault(); if (p2.dy !== 1) { p2.dx=0; p2.dy=-1; } }
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (p2.dy !== -1) { p2.dx=0; p2.dy=1; } }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (p2.dx !== 1) { p2.dx=-1; p2.dy=0; } }
+    if (e.key === 'ArrowRight') { e.preventDefault(); if (p2.dx !== -1) { p2.dx=1; p2.dy=0; } }
+  }
+});
+
+init();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

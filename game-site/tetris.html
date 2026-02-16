@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .game-area { display: flex; gap: 1.5rem; align-items: flex-start; margin-top: 0.5rem; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; }
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .panel {
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+    padding: 1rem; min-width: 120px; text-align: center;
+  }
+  .panel h3 { color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .panel .val { color: #00d4ff; font-size: 1.4rem; font-weight: bold; }
+  .next-canvas { display: block; margin: 0 auto; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; }
+  .controls { color: #555; font-size: 0.75rem; margin-top: 0.3rem; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Tetris</h1>
+</div>
+<div class="game-area">
+  <canvas id="c" width="250" height="500"></canvas>
+  <div class="sidebar">
+    <div class="panel">
+      <h3>Score</h3>
+      <div class="val" id="score">0</div>
+    </div>
+    <div class="panel">
+      <h3>Level</h3>
+      <div class="val" id="level">1</div>
+    </div>
+    <div class="panel">
+      <h3>Lines</h3>
+      <div class="val" id="lines">0</div>
+    </div>
+    <div class="panel">
+      <h3>Next</h3>
+      <canvas class="next-canvas" id="next" width="100" height="100"></canvas>
+    </div>
+  </div>
+</div>
+<div class="msg" id="msg">Press any key to start</div>
+<div class="controls">Left/Right: Move &nbsp;|&nbsp; Up: Rotate &nbsp;|&nbsp; Down: Soft Drop &nbsp;|&nbsp; Space: Hard Drop</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const nextCanvas = document.getElementById('next');
+const nctx = nextCanvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+
+const COLS = 10, ROWS = 20, CELL = 25;
+const COLORS = ['', '#00d4ff', '#feca57', '#7b2ff7', '#ff9f43', '#00d4ff', '#35855a', '#ff4757'];
+
+// Tetrominoes: [rotations][cells]
+const PIECES = [
+  [[0,0],[1,0],[2,0],[3,0]],  // I
+  [[0,0],[1,0],[0,1],[1,1]],  // O
+  [[0,0],[1,0],[2,0],[1,1]],  // T
+  [[0,0],[1,0],[2,0],[2,1]],  // L
+  [[0,0],[1,0],[2,0],[0,1]],  // J
+  [[1,0],[2,0],[0,1],[1,1]],  // S
+  [[0,0],[1,0],[1,1],[2,1]],  // Z
+];
+
+let grid, piece, pieceType, pieceX, pieceY, pieceRot, nextType;
+let score, level, lines, dropTimer, dropInterval, playing, gameOver;
+
+function init() {
+  grid = Array.from({length: ROWS}, () => new Array(COLS).fill(0));
+  score = 0; level = 1; lines = 0;
+  dropInterval = 500;
+  playing = false; gameOver = false;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('level').textContent = '1';
+  document.getElementById('lines').textContent = '0';
+  nextType = Math.floor(Math.random() * 7);
+  spawnPiece();
+  drawNext();
+  draw();
+  msgEl.textContent = 'Press any key to start';
+}
+
+function rotateCells(cells, times) {
+  let c = cells.map(([x,y]) => [x,y]);
+  for (let t = 0; t < times; t++) {
+    c = c.map(([x,y]) => [-y, x]);
+    // Normalize to positive coords
+    const minX = Math.min(...c.map(([x]) => x));
+    const minY = Math.min(...c.map(([,y]) => y));
+    c = c.map(([x,y]) => [x - minX, y - minY]);
+  }
+  return c;
+}
+
+function getCells() {
+  return rotateCells(PIECES[pieceType], pieceRot);
+}
+
+function fits(cells, px, py) {
+  return cells.every(([cx, cy]) => {
+    const x = px + cx, y = py + cy;
+    return x >= 0 && x < COLS && y < ROWS && (y < 0 || grid[y][x] === 0);
+  });
+}
+
+function spawnPiece() {
+  pieceType = nextType;
+  nextType = Math.floor(Math.random() * 7);
+  pieceRot = 0;
+  pieceX = Math.floor(COLS / 2) - 1;
+  pieceY = -1;
+  if (!fits(getCells(), pieceX, pieceY)) {
+    gameOver = true;
+    if (window.SFX) window.SFX.death();
+    if (window.HallOfFame) window.HallOfFame.submit('tetris', score);
+    msgEl.textContent = 'Game Over! Press SPACE to restart';
+  }
+  drawNext();
+}
+
+function lockPiece() {
+  const cells = getCells();
+  for (const [cx, cy] of cells) {
+    const x = pieceX + cx, y = pieceY + cy;
+    if (y >= 0 && y < ROWS) grid[y][x] = pieceType + 1;
+  }
+  if (window.SFX) window.SFX.lock();
+  // Clear lines
+  let cleared = 0;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (grid[r].every(c => c !== 0)) {
+      grid.splice(r, 1);
+      grid.unshift(new Array(COLS).fill(0));
+      cleared++;
+      r++; // recheck same row
+    }
+  }
+  if (cleared > 0) {
+    const points = [0, 100, 300, 500, 800];
+    score += points[cleared] * level;
+    lines += cleared;
+    level = Math.floor(lines / 10) + 1;
+    dropInterval = Math.max(50, 500 - (level - 1) * 40);
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = level;
+    document.getElementById('lines').textContent = lines;
+    if (window.SFX) window.SFX.clear();
+  }
+  spawnPiece();
+}
+
+function drop() {
+  if (fits(getCells(), pieceX, pieceY + 1)) {
+    pieceY++;
+  } else {
+    lockPiece();
+  }
+}
+
+function hardDrop() {
+  while (fits(getCells(), pieceX, pieceY + 1)) {
+    pieceY++;
+    score += 2;
+  }
+  document.getElementById('score').textContent = score;
+  lockPiece();
+}
+
+function move(dx) {
+  if (fits(getCells(), pieceX + dx, pieceY)) { pieceX += dx; if (window.SFX) window.SFX.move(); }
+}
+
+function rotate() {
+  const newRot = (pieceRot + 1) % 4;
+  const newCells = rotateCells(PIECES[pieceType], newRot);
+  // Try normal, then wall kicks
+  for (const kick of [0, -1, 1, -2, 2]) {
+    if (fits(newCells, pieceX + kick, pieceY)) {
+      pieceRot = newRot;
+      pieceX += kick;
+      if (window.SFX) window.SFX.flip();
+      return;
+    }
+  }
+}
+
+function ghostY() {
+  let gy = pieceY;
+  while (fits(getCells(), pieceX, gy + 1)) gy++;
+  return gy;
+}
+
+function draw() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid lines
+  ctx.strokeStyle = '#1f1f35';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x*CELL, 0); ctx.lineTo(x*CELL, ROWS*CELL); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y*CELL); ctx.lineTo(COLS*CELL, y*CELL); ctx.stroke();
+  }
+
+  // Placed blocks
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[r][c] !== 0) {
+        ctx.fillStyle = COLORS[grid[r][c]];
+        ctx.shadowColor = COLORS[grid[r][c]];
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.roundRect(c*CELL+1, r*CELL+1, CELL-2, CELL-2, 3);
+        ctx.fill();
+      }
+    }
+  }
+  ctx.shadowBlur = 0;
+
+  if (!gameOver) {
+    const cells = getCells();
+    // Ghost piece
+    const gy = ghostY();
+    ctx.fillStyle = COLORS[pieceType + 1] + '30';
+    ctx.strokeStyle = COLORS[pieceType + 1] + '60';
+    ctx.lineWidth = 1;
+    for (const [cx, cy] of cells) {
+      const x = pieceX + cx, y = gy + cy;
+      if (y >= 0) {
+        ctx.beginPath();
+        ctx.roundRect(x*CELL+1, y*CELL+1, CELL-2, CELL-2, 3);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    // Active piece
+    ctx.fillStyle = COLORS[pieceType + 1];
+    ctx.shadowColor = COLORS[pieceType + 1];
+    ctx.shadowBlur = 6;
+    for (const [cx, cy] of cells) {
+      const x = pieceX + cx, y = pieceY + cy;
+      if (y >= 0) {
+        ctx.beginPath();
+        ctx.roundRect(x*CELL+1, y*CELL+1, CELL-2, CELL-2, 3);
+        ctx.fill();
+      }
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(15,15,26,0.75)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff4757';
+    ctx.font = 'bold 30px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 10);
+    ctx.fillStyle = '#888';
+    ctx.font = '16px Segoe UI';
+    ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 20);
+  }
+}
+
+function drawNext() {
+  nctx.fillStyle = '#1a1a2e';
+  nctx.fillRect(0, 0, 100, 100);
+  const cells = PIECES[nextType];
+  const color = COLORS[nextType + 1];
+  const maxX = Math.max(...cells.map(([x]) => x));
+  const maxY = Math.max(...cells.map(([,y]) => y));
+  const offX = (100 - (maxX + 1) * 22) / 2;
+  const offY = (100 - (maxY + 1) * 22) / 2;
+  nctx.fillStyle = color;
+  nctx.shadowColor = color;
+  nctx.shadowBlur = 4;
+  for (const [cx, cy] of cells) {
+    nctx.beginPath();
+    nctx.roundRect(offX + cx*22+1, offY + cy*22+1, 20, 20, 3);
+    nctx.fill();
+  }
+  nctx.shadowBlur = 0;
+}
+
+let lastDrop = 0;
+function loop(time) {
+  if (playing && !gameOver) {
+    if (time - lastDrop > dropInterval) {
+      drop();
+      lastDrop = time;
+    }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown', e => {
+  if (gameOver && e.key === ' ') { init(); return; }
+  if (!playing) {
+    playing = true;
+    msgEl.textContent = '';
+    lastDrop = performance.now();
+  }
+  if (gameOver) return;
+  switch(e.key) {
+    case 'ArrowLeft': e.preventDefault(); move(-1); break;
+    case 'ArrowRight': e.preventDefault(); move(1); break;
+    case 'ArrowDown': e.preventDefault(); drop(); score++; document.getElementById('score').textContent=score; lastDrop = performance.now(); break;
+    case 'ArrowUp': e.preventDefault(); rotate(); break;
+    case ' ': e.preventDefault(); hardDrop(); lastDrop = performance.now(); break;
+  }
+});
+
+init();
+requestAnimationFrame(loop);
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

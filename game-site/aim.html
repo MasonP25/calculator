@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aim Trainer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 0.8rem;
+  }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; }
+
+  .mode-select { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+  .mode-btn {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.4rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+  .mode-btn:hover { border-color: #7b2ff7; }
+  .mode-btn.active { border-color: #7b2ff7; color: #7b2ff7; font-weight: 600; }
+
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat-box {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 0.5rem 1.2rem;
+    text-align: center;
+    min-width: 90px;
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-bottom: 0.15rem;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #00d4ff;
+  }
+  .stat-value.hits { color: #00d4ff; }
+  .stat-value.misses { color: #ff4757; }
+  .stat-value.accuracy { color: #feca57; }
+  .stat-value.time { color: #7b2ff7; }
+  .stat-value.points { color: #feca57; }
+
+  .game-container {
+    position: relative;
+    width: 600px;
+    max-width: 95vw;
+  }
+  canvas {
+    display: block;
+    width: 600px;
+    height: 400px;
+    max-width: 95vw;
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    cursor: crosshair;
+  }
+
+  .overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 15, 26, 0.92);
+    border-radius: 16px;
+    z-index: 10;
+    gap: 0.8rem;
+    padding: 1.5rem;
+  }
+  .overlay.hidden { display: none; }
+  .overlay h2 { font-size: 1.8rem; color: #7b2ff7; }
+  .overlay .sub { color: #888; font-size: 0.9rem; text-align: center; line-height: 1.6; }
+
+  .start-btn {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: #fff;
+    border: none;
+    padding: 0.7rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .start-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(123, 47, 247, 0.4);
+  }
+
+  .results-panel {
+    text-align: center;
+  }
+  .results-panel h2 { margin-bottom: 0.5rem; }
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin: 0.8rem 0;
+    text-align: left;
+  }
+  .result-item {
+    background: #0f0f1a;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #2a2a4a;
+  }
+  .result-item .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+  .result-item .value { font-size: 1.3rem; font-weight: 700; }
+  .result-item .value.cyan { color: #00d4ff; }
+  .result-item .value.yellow { color: #feca57; }
+  .result-item .value.purple { color: #7b2ff7; }
+  .result-item .value.red { color: #ff4757; }
+  .result-item .value.green { color: #2ed573; }
+
+  .high-score-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #feca57, #ff9f43);
+    color: #1a1a2e;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-top: 0.3rem;
+  }
+
+  .mode-desc {
+    color: #888;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Aim Trainer</h1>
+</div>
+
+<div class="mode-select">
+  <button class="mode-btn active" data-mode="classic" onclick="selectMode('classic')">Classic</button>
+  <button class="mode-btn" data-mode="speed" onclick="selectMode('speed')">Speed</button>
+  <button class="mode-btn" data-mode="precision" onclick="selectMode('precision')">Precision</button>
+</div>
+
+<div class="mode-desc" id="modeDesc">Hit 30 targets as fast as you can</div>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-box"><div class="stat-label">Hits</div><div class="stat-value hits" id="statHits">0</div></div>
+  <div class="stat-box"><div class="stat-label">Misses</div><div class="stat-value misses" id="statMisses">0</div></div>
+  <div class="stat-box"><div class="stat-label">Accuracy</div><div class="stat-value accuracy" id="statAccuracy">100%</div></div>
+  <div class="stat-box"><div class="stat-label">Time</div><div class="stat-value time" id="statTime">0.0s</div></div>
+</div>
+
+<div class="game-container">
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
+  <div class="overlay" id="startOverlay">
+    <h2>Aim Trainer</h2>
+    <div class="sub" id="overlayDesc">Click targets as fast as possible.<br>30 targets, one at a time. Go!</div>
+    <button class="start-btn" id="startBtn" onclick="startGame()">Start</button>
+  </div>
+  <div class="overlay hidden" id="resultsOverlay">
+    <div class="results-panel" id="resultsPanel"></div>
+    <button class="start-btn" onclick="startGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startOverlay = document.getElementById('startOverlay');
+const resultsOverlay = document.getElementById('resultsOverlay');
+const resultsPanel = document.getElementById('resultsPanel');
+
+// Game state
+let mode = 'classic';
+let gameActive = false;
+let hits = 0;
+let misses = 0;
+let totalClicks = 0;
+let startTime = 0;
+let elapsedTime = 0;
+let targetCount = 0;
+let reactionTimes = [];
+let lastTargetTime = 0;
+let points = 0;
+
+// Speed mode
+let speedTimer = 15;
+let speedInterval = null;
+
+// Precision mode
+let precisionPoints = 0;
+
+// Target
+let currentTarget = null;
+let targetSpawnTime = 0;
+let targetShrinkStart = 0;
+
+// Particles
+let particles = [];
+let missFlashes = [];
+
+// High scores per mode
+let highScores = {};
+try {
+  highScores = JSON.parse(_gb('aimTrainerHighScores', '{}'));
+} catch(e) { highScores = {}; }
+
+function saveHighScores() {
+  try { _sb('aimTrainerHighScores', JSON.stringify(highScores)); } catch(e) {}
+}
+
+const PRECISION_TARGETS = 30;
+
+const modeDescriptions = {
+  classic: 'Hit 30 targets as fast as you can',
+  speed: 'Hit as many targets as you can in 15 seconds',
+  precision: '30 targets that shrink. Smaller = more points. Misses = -50 penalty'
+};
+
+const overlayDescriptions = {
+  classic: 'Click targets as fast as possible.<br>30 targets, one at a time. Go!',
+  speed: 'Click as many targets as you can<br>in 15 seconds!',
+  precision: '30 shrinking targets. Smaller hits = more points.<br>Missing a click costs -50 points.'
+};
+
+function selectMode(m) {
+  if (gameActive) return;
+  window.SFX?.click();
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === m);
+  });
+  document.getElementById('modeDesc').textContent = modeDescriptions[m];
+  document.getElementById('overlayDesc').innerHTML = overlayDescriptions[m];
+
+  // Update stat bar for mode
+  updateStatLabels();
+  resetStats();
+  showStartOverlay();
+}
+
+function updateStatLabels() {
+  const timeBox = document.getElementById('statTime').parentElement;
+  const timeLabel = timeBox.querySelector('.stat-label');
+  if (mode === 'speed') {
+    timeLabel.textContent = 'Time Left';
+  } else {
+    timeLabel.textContent = 'Time';
+  }
+
+  // Show/hide points stat
+  let pointsBox = document.getElementById('statPoints');
+  if (mode === 'precision') {
+    if (!pointsBox) {
+      const sb = document.getElementById('statsBar');
+      const div = document.createElement('div');
+      div.className = 'stat-box';
+      div.id = 'statPointsBox';
+      div.innerHTML = '<div class="stat-label">Points</div><div class="stat-value points" id="statPoints">0</div>';
+      sb.appendChild(div);
+    }
+  } else {
+    const pb = document.getElementById('statPointsBox');
+    if (pb) pb.remove();
+  }
+}
+
+function resetStats() {
+  hits = 0;
+  misses = 0;
+  totalClicks = 0;
+  elapsedTime = 0;
+  targetCount = 0;
+  reactionTimes = [];
+  points = 0;
+  precisionPoints = 0;
+  updateStatsDisplay();
+}
+
+function updateStatsDisplay() {
+  document.getElementById('statHits').textContent = hits;
+  document.getElementById('statMisses').textContent = misses;
+  const acc = totalClicks > 0 ? Math.round((hits / totalClicks) * 100) : 100;
+  document.getElementById('statAccuracy').textContent = acc + '%';
+
+  if (mode === 'speed') {
+    document.getElementById('statTime').textContent = speedTimer.toFixed(1) + 's';
+  } else {
+    document.getElementById('statTime').textContent = (elapsedTime / 1000).toFixed(1) + 's';
+  }
+
+  const pp = document.getElementById('statPoints');
+  if (pp) pp.textContent = precisionPoints;
+}
+
+function showStartOverlay() {
+  startOverlay.classList.remove('hidden');
+  resultsOverlay.classList.add('hidden');
+}
+
+function startGame() {
+  window.SFX?.click();
+  startOverlay.classList.add('hidden');
+  resultsOverlay.classList.add('hidden');
+  resetStats();
+  currentTarget = null;
+  particles = [];
+  missFlashes = [];
+  gameActive = true;
+  startTime = performance.now();
+  lastTargetTime = performance.now();
+
+  if (mode === 'speed') {
+    speedTimer = 15;
+    speedInterval = setInterval(() => {
+      speedTimer -= 0.1;
+      if (speedTimer <= 0) {
+        speedTimer = 0;
+        endGame();
+      }
+      updateStatsDisplay();
+    }, 100);
+  }
+
+  spawnTarget();
+  requestAnimationFrame(gameLoop);
+}
+
+function spawnTarget() {
+  const padding = 40;
+  const minSize = 30;
+  const maxSize = 60;
+  const radius = (minSize + Math.random() * (maxSize - minSize)) / 2;
+  const x = padding + radius + Math.random() * (canvas.width - 2 * padding - 2 * radius);
+  const y = padding + radius + Math.random() * (canvas.height - 2 * padding - 2 * radius);
+
+  currentTarget = {
+    x, y,
+    radius,
+    originalRadius: radius,
+    spawnTime: performance.now(),
+    opacity: 0,
+    scale: 0.3
+  };
+  targetSpawnTime = performance.now();
+  window.SFX?.pop();
+}
+
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+canvas.addEventListener('click', function(e) {
+  if (!gameActive) return;
+
+  const { x, y } = getCanvasCoords(e);
+  totalClicks++;
+
+  if (currentTarget) {
+    const dx = x - currentTarget.x;
+    const dy = y - currentTarget.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist <= currentTarget.radius) {
+      // Hit!
+      hits++;
+      const reactionTime = performance.now() - targetSpawnTime;
+      reactionTimes.push(reactionTime);
+
+      // Points for precision mode
+      if (mode === 'precision') {
+        const sizeRatio = currentTarget.radius / currentTarget.originalRadius;
+        const basePoints = 100;
+        const bonus = Math.round(basePoints * (1 + (1 - sizeRatio) * 3));
+        precisionPoints += bonus;
+      }
+
+      // Particle burst
+      createHitParticles(currentTarget.x, currentTarget.y, currentTarget.radius);
+      window.SFX?.hit();
+
+      currentTarget = null;
+      targetCount++;
+
+      // Check end conditions
+      if (mode === 'classic' && targetCount >= 30) {
+        elapsedTime = performance.now() - startTime;
+        endGame();
+        return;
+      }
+      if (mode === 'precision' && targetCount >= PRECISION_TARGETS) {
+        elapsedTime = performance.now() - startTime;
+        endGame();
+        return;
+      }
+
+      // Spawn next target
+      setTimeout(() => {
+        if (gameActive) {
+          spawnTarget();
+        }
+      }, 200);
+    } else {
+      // Miss
+      misses++;
+      if (mode === 'precision') {
+        precisionPoints -= 50;
+      }
+      createMissFlash(x, y);
+      window.SFX?.wrong();
+    }
+  } else {
+    // No target on screen, still a miss
+    misses++;
+    if (mode === 'precision') {
+      precisionPoints -= 50;
+    }
+    createMissFlash(x, y);
+    window.SFX?.wrong();
+  }
+
+  elapsedTime = performance.now() - startTime;
+  updateStatsDisplay();
+});
+
+function createHitParticles(x, y, radius) {
+  const count = 12 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const speed = 2 + Math.random() * 4;
+    const size = 2 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.02,
+      color: Math.random() > 0.5 ? '#7b2ff7' : '#00d4ff'
+    });
+  }
+  // Inner ring particles
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 2;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 1.5 + Math.random() * 2,
+      life: 1,
+      decay: 0.03 + Math.random() * 0.02,
+      color: '#ffffff'
+    });
+  }
+}
+
+function createMissFlash(x, y) {
+  missFlashes.push({
+    x, y,
+    life: 1,
+    decay: 0.06
+  });
+}
+
+function endGame() {
+  gameActive = false;
+  currentTarget = null;
+  if (speedInterval) {
+    clearInterval(speedInterval);
+    speedInterval = null;
+  }
+
+  elapsedTime = performance.now() - startTime;
+  window.SFX?.ding();
+
+  // Calculate stats
+  const acc = totalClicks > 0 ? Math.round((hits / totalClicks) * 100) : 0;
+  const avgReaction = reactionTimes.length > 0
+    ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)
+    : 0;
+  const bestReaction = reactionTimes.length > 0
+    ? Math.round(Math.min(...reactionTimes))
+    : 0;
+
+  // Determine score for this mode
+  let score, scoreLabel, scoreValue;
+  if (mode === 'classic') {
+    score = Math.round(elapsedTime);
+    scoreLabel = 'Total Time';
+    scoreValue = (elapsedTime / 1000).toFixed(2) + 's';
+  } else if (mode === 'speed') {
+    score = hits;
+    scoreLabel = 'Total Hits';
+    scoreValue = hits.toString();
+  } else {
+    score = precisionPoints;
+    scoreLabel = 'Total Points';
+    scoreValue = precisionPoints.toString();
+  }
+
+  // Check high score
+  const hsKey = mode;
+  let isHighScore = false;
+  if (mode === 'classic') {
+    // Lower is better
+    if (!highScores[hsKey] || score < highScores[hsKey]) {
+      highScores[hsKey] = score;
+      isHighScore = true;
+    }
+  } else {
+    // Higher is better
+    if (!highScores[hsKey] || score > highScores[hsKey]) {
+      highScores[hsKey] = score;
+      isHighScore = true;
+    }
+  }
+  saveHighScores();
+
+  if (isHighScore) {
+    window.SFX?.win();
+  }
+
+  // Hall of Fame submit
+  window.HallOfFame?.submit('aim_' + mode, score);
+
+  // Show best score
+  let bestDisplay = '';
+  if (highScores[hsKey] !== undefined) {
+    if (mode === 'classic') {
+      bestDisplay = (highScores[hsKey] / 1000).toFixed(2) + 's';
+    } else {
+      bestDisplay = highScores[hsKey].toString();
+    }
+  }
+
+  // Build results
+  let html = `<h2>${isHighScore ? 'New High Score!' : 'Results'}</h2>`;
+  if (isHighScore) {
+    html += `<div class="high-score-badge">NEW BEST!</div>`;
+  }
+  html += `<div class="results-grid">`;
+  html += `<div class="result-item"><div class="label">${scoreLabel}</div><div class="value purple">${scoreValue}</div></div>`;
+  html += `<div class="result-item"><div class="label">Accuracy</div><div class="value yellow">${acc}%</div></div>`;
+  html += `<div class="result-item"><div class="label">Hits</div><div class="value cyan">${hits}</div></div>`;
+  html += `<div class="result-item"><div class="label">Misses</div><div class="value red">${misses}</div></div>`;
+  html += `<div class="result-item"><div class="label">Avg Reaction</div><div class="value cyan">${avgReaction}ms</div></div>`;
+  html += `<div class="result-item"><div class="label">Best Reaction</div><div class="value green">${bestReaction}ms</div></div>`;
+  if (bestDisplay) {
+    html += `<div class="result-item"><div class="label">Personal Best</div><div class="value purple">${bestDisplay}</div></div>`;
+    if (mode === 'precision') {
+      html += `<div class="result-item"><div class="label">Points</div><div class="value yellow">${precisionPoints}</div></div>`;
+    }
+  }
+  html += `</div>`;
+
+  resultsPanel.innerHTML = html;
+  resultsOverlay.classList.remove('hidden');
+  updateStatsDisplay();
+}
+
+// Game loop
+function gameLoop(timestamp) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw subtle grid
+  ctx.strokeStyle = 'rgba(42, 42, 74, 0.3)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 40) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // Update and draw target
+  if (currentTarget && gameActive) {
+    const t = currentTarget;
+    const age = timestamp - t.spawnTime;
+
+    // Animate in
+    if (t.scale < 1) {
+      t.scale = Math.min(1, t.scale + 0.08);
+    }
+    if (t.opacity < 1) {
+      t.opacity = Math.min(1, t.opacity + 0.08);
+    }
+
+    // Precision mode: shrink over time
+    if (mode === 'precision' && age > 500) {
+      const shrinkRate = 0.3; // pixels per frame
+      t.radius = Math.max(8, t.radius - shrinkRate * 0.15);
+      if (t.radius <= 8) {
+        // Target disappeared (missed), spawn new one
+        targetCount++;
+        misses++;
+        totalClicks++;
+        precisionPoints -= 50;
+        currentTarget = null;
+        updateStatsDisplay();
+        if (targetCount >= PRECISION_TARGETS) {
+          elapsedTime = performance.now() - startTime;
+          endGame();
+        } else {
+          setTimeout(() => {
+            if (gameActive) spawnTarget();
+          }, 100);
+        }
+      }
+    }
+
+    if (currentTarget) {
+      const drawRadius = t.radius * t.scale;
+      ctx.save();
+      ctx.globalAlpha = t.opacity;
+
+      // Outer glow
+      const glow = ctx.createRadialGradient(t.x, t.y, drawRadius * 0.5, t.x, t.y, drawRadius * 1.5);
+      glow.addColorStop(0, 'rgba(123, 47, 247, 0.2)');
+      glow.addColorStop(1, 'rgba(123, 47, 247, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, drawRadius * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main circle gradient
+      const grad = ctx.createRadialGradient(t.x - drawRadius * 0.3, t.y - drawRadius * 0.3, drawRadius * 0.1, t.x, t.y, drawRadius);
+      grad.addColorStop(0, '#7b2ff7');
+      grad.addColorStop(1, '#5b1fd7');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, drawRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Border ring
+      ctx.strokeStyle = 'rgba(123, 47, 247, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, drawRadius + 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // White center dot
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, Math.max(2, drawRadius * 0.15), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  // Update and draw particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+    p.vy += 0.05; // gravity
+    p.life -= p.decay;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Update and draw miss flashes
+  for (let i = missFlashes.length - 1; i >= 0; i--) {
+    const f = missFlashes[i];
+    f.life -= f.decay;
+
+    if (f.life <= 0) {
+      missFlashes.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = f.life * 0.6;
+
+    // Red X
+    const size = 12;
+    ctx.strokeStyle = '#ff4757';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(f.x - size, f.y - size);
+    ctx.lineTo(f.x + size, f.y + size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(f.x + size, f.y - size);
+    ctx.lineTo(f.x - size, f.y + size);
+    ctx.stroke();
+
+    // Red flash ring
+    const ringSize = (1 - f.life) * 30 + 10;
+    ctx.strokeStyle = 'rgba(255, 71, 87, ' + (f.life * 0.4) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, ringSize, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Continuously update elapsed time display
+  if (gameActive && mode !== 'speed') {
+    elapsedTime = performance.now() - startTime;
+    updateStatsDisplay();
+  }
+
+  // Draw target counter for classic/precision
+  if (gameActive && (mode === 'classic' || mode === 'precision')) {
+    const total = mode === 'classic' ? 30 : PRECISION_TARGETS;
+    const text = targetCount + ' / ' + total;
+    ctx.save();
+    ctx.font = '14px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'right';
+    ctx.fillText(text, canvas.width - 15, 22);
+    ctx.restore();
+  }
+
+  if (gameActive || particles.length > 0 || missFlashes.length > 0) {
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+// Initial draw
+function initialDraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(42, 42, 74, 0.3)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 40) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
+initialDraw();
+updateStatLabels();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

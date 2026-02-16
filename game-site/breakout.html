@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .info { display: flex; gap: 2rem; margin-bottom: 0.8rem; font-size: 1.1rem; }
+  .info span { color: #00d4ff; font-weight: bold; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; background: #1a1a2e; cursor: none; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Breakout</h1>
+</div>
+<div class="info">
+  Score: <span id="score">0</span>
+  Lives: <span id="lives">3</span>
+  Level: <span id="level">1</span>
+</div>
+<canvas id="c" width="500" height="500"></canvas>
+<div class="msg" id="msg">Click or press SPACE to launch</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const W = canvas.width, H = canvas.height;
+
+const PADDLE_W = 80, PADDLE_H = 12;
+const BALL_R = 6;
+const BRICK_ROWS = 6, BRICK_COLS = 10;
+const BRICK_W = (W - 20) / BRICK_COLS;
+const BRICK_H = 20;
+const BRICK_TOP = 50;
+const BRICK_PAD = 2;
+
+const ROW_COLORS = ['#ff4757','#ff6b81','#ff9f43','#feca57','#00d4ff','#7b2ff7'];
+
+let paddle, ball, bricks, score, lives, level, launched, gameOver;
+
+function createBricks() {
+  const b = [];
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    for (let c = 0; c < BRICK_COLS; c++) {
+      b.push({
+        x: 10 + c * BRICK_W + BRICK_PAD,
+        y: BRICK_TOP + r * BRICK_H + BRICK_PAD,
+        w: BRICK_W - BRICK_PAD * 2,
+        h: BRICK_H - BRICK_PAD * 2,
+        color: ROW_COLORS[r],
+        alive: true,
+        points: (BRICK_ROWS - r) * 10
+      });
+    }
+  }
+  return b;
+}
+
+function init() {
+  paddle = { x: W/2 - PADDLE_W/2 };
+  ball = { x: W/2, y: H - 40, vx: 0, vy: 0 };
+  bricks = createBricks();
+  score = 0; lives = 3; level = 1;
+  launched = false; gameOver = false;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('lives').textContent = '3';
+  document.getElementById('level').textContent = '1';
+  msgEl.textContent = 'Click or press SPACE to launch';
+}
+
+function launch() {
+  if (launched || gameOver) return;
+  launched = true;
+  const angle = -Math.PI/2 + (Math.random() - 0.5) * 0.6;
+  const speed = 4 + level * 0.5;
+  ball.vx = Math.cos(angle) * speed;
+  ball.vy = Math.sin(angle) * speed;
+  msgEl.textContent = '';
+}
+
+function resetBall() {
+  ball.x = paddle.x + PADDLE_W/2;
+  ball.y = H - 40;
+  ball.vx = 0; ball.vy = 0;
+  launched = false;
+  msgEl.textContent = 'Click or press SPACE to launch';
+}
+
+function nextLevel() {
+  level++;
+  document.getElementById('level').textContent = level;
+  bricks = createBricks();
+  resetBall();
+  if (window.SFX) window.SFX.levelup();
+  msgEl.textContent = 'Level ' + level + '! Click or SPACE to launch';
+}
+
+function update() {
+  if (!launched || gameOver) return;
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // Wall bounce
+  if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); if (window.SFX) window.SFX.tick(); }
+  if (ball.x + BALL_R >= W) { ball.x = W - BALL_R; ball.vx = -Math.abs(ball.vx); if (window.SFX) window.SFX.tick(); }
+  if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); if (window.SFX) window.SFX.tick(); }
+
+  // Bottom - lose life
+  if (ball.y + BALL_R >= H) {
+    lives--;
+    document.getElementById('lives').textContent = lives;
+    if (lives <= 0) {
+      gameOver = true;
+      if (window.SFX) window.SFX.death();
+      if (window.HallOfFame) window.HallOfFame.submit('breakout', score);
+      msgEl.textContent = 'Game Over! Score: ' + score + '. Press SPACE to restart.';
+    } else {
+      if (window.SFX) window.SFX.hit();
+      resetBall();
+    }
+    return;
+  }
+
+  // Paddle collision
+  if (ball.vy > 0 &&
+      ball.y + BALL_R >= H - 30 &&
+      ball.y + BALL_R <= H - 30 + PADDLE_H + 4 &&
+      ball.x >= paddle.x - BALL_R &&
+      ball.x <= paddle.x + PADDLE_W + BALL_R) {
+    const hit = (ball.x - (paddle.x + PADDLE_W/2)) / (PADDLE_W/2);
+    const angle = hit * Math.PI / 2.8 - Math.PI/2;
+    const speed = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+    ball.vx = Math.cos(angle) * speed;
+    ball.vy = Math.sin(angle) * speed;
+    ball.y = H - 30 - BALL_R;
+    if (window.SFX) window.SFX.bounce();
+  }
+
+  // Brick collision
+  let allDead = true;
+  for (const b of bricks) {
+    if (!b.alive) continue;
+    allDead = false;
+    if (ball.x + BALL_R > b.x && ball.x - BALL_R < b.x + b.w &&
+        ball.y + BALL_R > b.y && ball.y - BALL_R < b.y + b.h) {
+      b.alive = false;
+      score += b.points;
+      document.getElementById('score').textContent = score;
+      if (window.SFX) window.SFX.pop();
+      // Determine bounce direction
+      const overlapLeft = ball.x + BALL_R - b.x;
+      const overlapRight = b.x + b.w - (ball.x - BALL_R);
+      const overlapTop = ball.y + BALL_R - b.y;
+      const overlapBottom = b.y + b.h - (ball.y - BALL_R);
+      const minOverlapH = Math.min(overlapLeft, overlapRight);
+      const minOverlapV = Math.min(overlapTop, overlapBottom);
+      if (minOverlapH < minOverlapV) ball.vx = -ball.vx;
+      else ball.vy = -ball.vy;
+      break;
+    }
+  }
+  if (allDead) nextLevel();
+}
+
+function draw() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Bricks
+  for (const b of bricks) {
+    if (!b.alive) continue;
+    ctx.fillStyle = b.color;
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.roundRect(b.x, b.y, b.w, b.h, 4);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  // Paddle
+  ctx.fillStyle = '#00d4ff';
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, H - 30, PADDLE_W, PADDLE_H, 6);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Ball
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Unlaunched ball follows paddle
+  if (!launched && !gameOver) {
+    ball.x = paddle.x + PADDLE_W / 2;
+  }
+
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ff4757';
+    ctx.font = 'bold 36px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', W/2, H/2 - 10);
+    ctx.fillStyle = '#888';
+    ctx.font = '18px Segoe UI';
+    ctx.fillText('Score: ' + score, W/2, H/2 + 25);
+  }
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  paddle.x = (e.clientX - rect.left) * (W / rect.width) - PADDLE_W / 2;
+  paddle.x = Math.max(0, Math.min(W - PADDLE_W, paddle.x));
+});
+
+canvas.addEventListener('click', () => {
+  if (gameOver) { init(); return; }
+  launch();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (gameOver) { init(); return; }
+    launch();
+  }
+});
+
+// Also allow arrow keys
+let keysDown = {};
+document.addEventListener('keydown', e => { keysDown[e.key] = true; });
+document.addEventListener('keyup', e => { keysDown[e.key] = false; });
+
+function loop() {
+  if (keysDown['ArrowLeft']) paddle.x = Math.max(0, paddle.x - 7);
+  if (keysDown['ArrowRight']) paddle.x = Math.min(W - PADDLE_W, paddle.x + 7);
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+init();
+loop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

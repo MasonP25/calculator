@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometry Dash</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin: 0.7rem 0 0.4rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; background: linear-gradient(135deg, #00d4ff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display: block; }
+
+  /* ── Level Select Overlay ── */
+  #levelSelect {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(15,15,26,0.97); z-index: 10;
+  }
+  #levelSelect.hidden { display: none; }
+  #levelSelect h2 {
+    font-size: 2.2rem; margin-bottom: 0.3rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .ls-subtitle { color: #666; font-size: 0.85rem; margin-bottom: 1.8rem; }
+  .ls-levels { display: flex; gap: 1.2rem; margin-bottom: 1.8rem; flex-wrap: wrap; justify-content: center; }
+  .ls-card {
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 14px;
+    padding: 1.4rem 1.6rem; width: 180px; text-align: center; cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .ls-card:hover {
+    transform: translateY(-5px); border-color: #7b2ff7;
+    box-shadow: 0 6px 25px rgba(123,47,247,0.3);
+  }
+  .ls-card h3 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+  .ls-card .diff { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.6rem; }
+  .ls-card .diff.easy { color: #4ecdc4; }
+  .ls-card .diff.medium { color: #ffa502; }
+  .ls-card .diff.hard { color: #ff4757; }
+  .ls-card .best-lbl { font-size: 0.7rem; color: #666; margin-bottom: 0.2rem; }
+  .ls-card .best-val { font-size: 1.3rem; font-weight: bold; color: #00d4ff; }
+  .ls-card .stars { font-size: 1.1rem; margin-top: 0.4rem; color: #555; }
+  .ls-card .stars .lit { color: #ffd166; }
+
+  /* ── Options Row ── */
+  .opts-row { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .opt-group { display: flex; align-items: center; gap: 0.5rem; }
+  .opt-group label { font-size: 0.8rem; color: #888; }
+  .color-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid #333;
+    cursor: pointer; transition: border-color 0.2s, transform 0.15s;
+  }
+  .color-btn:hover, .color-btn.active { border-color: #fff; transform: scale(1.15); }
+  .toggle-btn {
+    background: #1a1a2e; border: 1px solid #2a2a4a; color: #888;
+    padding: 0.3rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .toggle-btn.active { border-color: #7b2ff7; color: #e0e0e0; }
+
+  /* ── HUD ── */
+  .hud { display: flex; gap: 1.5rem; margin-bottom: 0.3rem; font-size: 0.85rem; min-height: 1.3rem; }
+  .hud span { color: #00d4ff; font-weight: bold; }
+  .hud .attempt-lbl { color: #888; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Geometry Dash</h1>
+</div>
+<div class="hud" id="hud">
+  <div class="attempt-lbl">Attempt <span id="attemptNum">1</span></div>
+  <div>Deaths: <span id="deathCount">0</span></div>
+</div>
+<div style="position:relative; display:inline-block;">
+  <canvas id="c" width="800" height="450"></canvas>
+  <div id="levelSelect">
+    <h2>Geometry Dash</h2>
+    <div class="ls-subtitle">Select a level to play</div>
+    <div class="ls-levels" id="levelCards"></div>
+    <div class="opts-row">
+      <div class="opt-group">
+        <label>Color:</label>
+        <div id="colorPicker" style="display:flex;gap:4px;"></div>
+      </div>
+      <div class="opt-group">
+        <button class="toggle-btn" id="practiceBtn">Practice Mode</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ─── Per-user high scores ───
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+
+// ─── Canvas Setup ───
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ─── Constants ───
+const GROUND_Y = H - 60;
+const BLOCK = 40;          // grid unit size
+const GRAVITY = 0.9;
+const JUMP_FORCE = -12.5;
+const PLAYER_SIZE = 34;
+
+// ─── Player Colors ───
+const PLAYER_COLORS = ['#7b2ff7','#00d4ff','#ff4757','#ffa502','#2ed573','#ff6b81'];
+let selectedColor = parseInt(_gb('gd_color','0'));
+let practiceMode = false;
+
+// ─── Mode Constants ───
+const MODE_CUBE = 0, MODE_SHIP = 1, MODE_WAVE = 2;
+
+// ─── Game State ───
+let state = 'menu'; // menu, playing, dead, complete
+let currentLevel = 0;
+let attempt = 1;
+let deaths = 0;
+let player, camera, levelData, levelLength, particles, bgParticles;
+let shakeTimer = 0, shakeIntensity = 0;
+let trailPoints = [];
+let checkpoints = [];
+let lastCheckpoint = 0;
+let holdingInput = false;
+let pulsePhase = 0;
+let bgStars = [];
+let deathParticles = [];
+let portalFlash = 0;
+let portalFlashColor = '';
+
+// ─── Init background stars ───
+for (let i = 0; i < 80; i++) {
+  bgStars.push({ x: Math.random() * W * 4, y: Math.random() * (GROUND_Y - 20), s: Math.random() * 2 + 0.5, b: Math.random() });
+}
+
+// ─── Background Particles ───
+function initBgParticles() {
+  bgParticles = [];
+  for (let i = 0; i < 30; i++) {
+    bgParticles.push({
+      x: Math.random() * W, y: Math.random() * GROUND_Y,
+      vx: -(Math.random() * 0.5 + 0.2), vy: Math.random() * 0.4 - 0.2,
+      size: Math.random() * 8 + 3, alpha: Math.random() * 0.15 + 0.05,
+      rot: Math.random() * Math.PI * 2
+    });
+  }
+}
+initBgParticles();
+
+// ══════════════════════════════════════════════════════
+//  LEVEL DEFINITIONS
+// ══════════════════════════════════════════════════════
+// Object types:
+//   spike     - triangle on ground, kills on contact
+//   spikeTop  - triangle on ceiling, kills on contact
+//   platform  - elevated block to land on (x, y, w)
+//   orb       - collectible (bonus)
+//   portal    - mode switch (mode: MODE_CUBE/MODE_SHIP/MODE_WAVE)
+//
+// All x positions are in pixels from level start.
+// y positions: ground is GROUND_Y, lower y = higher on screen.
+
+function makeSpike(x, y) { return { type:'spike', x, y: y !== undefined ? y : GROUND_Y }; }
+function makeSpikeTop(x) { return { type:'spikeTop', x, y: 40 }; }
+function makePlatform(x, y, w, h) { return { type:'platform', x, y, w: w||BLOCK*2, h: h||BLOCK }; }
+function makeOrb(x, y) { return { type:'orb', x, y, collected: false }; }
+function makePortal(x, mode) {
+  const colors = { [MODE_CUBE]:'#2ed573', [MODE_SHIP]:'#1e90ff', [MODE_WAVE]:'#9b59b6' };
+  return { type:'portal', x, mode, color: colors[mode] };
+}
+
+function buildLevel1() {
+  // Easy - mostly cube mode, simple jumps, brief ship section
+  const obs = [];
+  const u = BLOCK;
+  let x = 600;
+
+  // Section 1: Simple cube jumps
+  obs.push(makeSpike(x)); x += u*3;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x + u)); x += u*4;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*3)); x += u*5;
+  obs.push(makeSpike(x)); x += u*2;
+  obs.push(makeSpike(x)); x += u*3;
+  obs.push(makeOrb(x, GROUND_Y - u*3)); x += u*2;
+
+  // Section 2: Platforms with spikes between
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*3));
+  obs.push(makeSpike(x + u*4));
+  x += u*6;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*3));
+  obs.push(makeOrb(x + u, GROUND_Y - u*5));
+  x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x + u)); obs.push(makeSpike(x + u*2));
+  x += u*5;
+
+  // Section 3: Ship mode intro
+  obs.push(makePortal(x, MODE_SHIP)); x += u*3;
+  // Open flying section with a few ceiling spikes
+  obs.push(makeSpikeTop(x + u*3));
+  obs.push(makeSpikeTop(x + u*6));
+  obs.push(makeOrb(x + u*4, GROUND_Y/2));
+  obs.push(makeSpike(x + u*5));
+  x += u*10;
+
+  // Back to cube
+  obs.push(makePortal(x, MODE_CUBE)); x += u*3;
+  obs.push(makeSpike(x)); x += u*3;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*3));
+  x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x + u));
+  x += u*4;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*4;
+
+  return { obstacles: obs, length: x + 400, speed: 5.5, name: 'Stereo Madness', diff: 'easy' };
+}
+
+function buildLevel2() {
+  // Medium - mixed modes, tighter timing
+  const obs = [];
+  const u = BLOCK;
+  let x = 600;
+
+  // Cube intro - fast jumps
+  obs.push(makeSpike(x)); x += u*2;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*3;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*3)); x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*4;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makePlatform(x + u*3, GROUND_Y - u*2, u*2));
+  obs.push(makeOrb(x + u, GROUND_Y - u*5));
+  x += u*6;
+
+  // Ship section
+  obs.push(makePortal(x, MODE_SHIP)); x += u*3;
+  obs.push(makeSpike(x + u*2));
+  obs.push(makeSpikeTop(x + u*4));
+  obs.push(makeSpike(x + u*6));
+  obs.push(makeSpikeTop(x + u*8));
+  obs.push(makeOrb(x + u*5, GROUND_Y/2));
+  obs.push(makeSpike(x + u*10));
+  obs.push(makeSpikeTop(x + u*10));
+  x += u*14;
+
+  // Wave section
+  obs.push(makePortal(x, MODE_WAVE)); x += u*3;
+  obs.push(makeSpike(x + u*2));
+  obs.push(makeSpikeTop(x + u*2));
+  obs.push(makeSpike(x + u*5));
+  obs.push(makeOrb(x + u*4, GROUND_Y/2));
+  obs.push(makeSpikeTop(x + u*7));
+  obs.push(makeSpike(x + u*9));
+  obs.push(makeSpikeTop(x + u*9));
+  x += u*12;
+
+  // Back to cube finale
+  obs.push(makePortal(x, MODE_CUBE)); x += u*3;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*3;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*3));
+  obs.push(makeSpike(x + u*4));
+  obs.push(makeSpike(x + u*5));
+  x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*4;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*5;
+
+  return { obstacles: obs, length: x + 400, speed: 6, name: 'Back On Track', diff: 'medium' };
+}
+
+function buildLevel3() {
+  // Hard - fast transitions, precise timing, long wave
+  const obs = [];
+  const u = BLOCK;
+  let x = 500;
+
+  // Fast cube section
+  obs.push(makeSpike(x)); x += u*2;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*2.5;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*1.5));
+  obs.push(makeSpike(x + u*2)); x += u*3.5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*3.5;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*1.5));
+  obs.push(makeSpike(x + u*2)); obs.push(makeSpike(x + u*3));
+  obs.push(makeOrb(x + u*0.5, GROUND_Y - u*5));
+  x += u*5;
+
+  // Quick ship section
+  obs.push(makePortal(x, MODE_SHIP)); x += u*2;
+  obs.push(makeSpike(x + u)); obs.push(makeSpikeTop(x + u*2));
+  obs.push(makeSpike(x + u*3)); obs.push(makeSpikeTop(x + u*4));
+  obs.push(makeSpike(x + u*5)); obs.push(makeSpikeTop(x + u*6));
+  obs.push(makeOrb(x + u*3.5, GROUND_Y/2));
+  x += u*9;
+
+  // Wave section - long and tight
+  obs.push(makePortal(x, MODE_WAVE)); x += u*2;
+  for (let i = 0; i < 8; i++) {
+    if (i % 2 === 0) obs.push(makeSpike(x + u * i * 1.8));
+    else obs.push(makeSpikeTop(x + u * i * 1.8));
+  }
+  obs.push(makeOrb(x + u*6, GROUND_Y/2));
+  x += u*16;
+
+  // Ship again
+  obs.push(makePortal(x, MODE_SHIP)); x += u*2;
+  obs.push(makeSpikeTop(x + u*2)); obs.push(makeSpike(x + u*2));
+  obs.push(makeSpikeTop(x + u*5)); obs.push(makeSpike(x + u*5));
+  obs.push(makeOrb(x + u*3.5, GROUND_Y * 0.4));
+  x += u*8;
+
+  // Final cube section - intense
+  obs.push(makePortal(x, MODE_CUBE)); x += u*2;
+  obs.push(makeSpike(x)); x += u*2;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*2.5;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*1.5));
+  obs.push(makeSpike(x + u*2));
+  x += u*3.5;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*1.5));
+  obs.push(makePlatform(x + u*2.5, GROUND_Y - u*2, u*1.5));
+  x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2)); obs.push(makeSpike(x+u*3));
+  x += u*5;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*5;
+
+  return { obstacles: obs, length: x + 400, speed: 7, name: 'Polargeist', diff: 'hard' };
+}
+
+const LEVELS = [ buildLevel1(), buildLevel2(), buildLevel3() ];
+
+// ══════════════════════════════════════════════════════
+//  LEVEL SELECT UI
+// ══════════════════════════════════════════════════════
+const levelSelectEl = document.getElementById('levelSelect');
+const levelCardsEl = document.getElementById('levelCards');
+const colorPickerEl = document.getElementById('colorPicker');
+const practiceBtn = document.getElementById('practiceBtn');
+
+function renderLevelSelect() {
+  levelCardsEl.innerHTML = '';
+  LEVELS.forEach((lvl, i) => {
+    const best = parseInt(_gb(`gd_best_${i}`, '0'));
+    const stars = best >= 100 ? 3 : best >= 50 ? 2 : best >= 20 ? 1 : 0;
+    const card = document.createElement('div');
+    card.className = 'ls-card';
+    card.innerHTML = `
+      <h3>${lvl.name}</h3>
+      <div class="diff ${lvl.diff}">${lvl.diff}</div>
+      <div class="best-lbl">Best Progress</div>
+      <div class="best-val">${best}%</div>
+      <div class="stars">${'&#9733;'.repeat(3).split('').map((s,j) => j < stars ? `<span class="lit">${s}</span>` : s).join('')}</div>
+    `;
+    card.onclick = () => { window.SFX?.select(); startLevel(i); };
+    levelCardsEl.appendChild(card);
+  });
+
+  // Color picker
+  colorPickerEl.innerHTML = '';
+  PLAYER_COLORS.forEach((c, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'color-btn' + (i === selectedColor ? ' active' : '');
+    btn.style.background = c;
+    btn.onclick = () => {
+      selectedColor = i;
+      _sb('gd_color', i.toString());
+      window.SFX?.click();
+      renderLevelSelect();
+    };
+    colorPickerEl.appendChild(btn);
+  });
+}
+
+practiceBtn.onclick = () => {
+  practiceMode = !practiceMode;
+  practiceBtn.classList.toggle('active', practiceMode);
+  window.SFX?.select();
+};
+
+// ══════════════════════════════════════════════════════
+//  GAME INIT
+// ══════════════════════════════════════════════════════
+function startLevel(idx) {
+  currentLevel = idx;
+  levelData = LEVELS[idx];
+  levelLength = levelData.length;
+  attempt = 1;
+  deaths = 0;
+  lastCheckpoint = 0;
+  resetPlayer(0);
+  state = 'playing';
+  levelSelectEl.classList.add('hidden');
+  updateHUD();
+}
+
+function resetPlayer(fromX) {
+  const startX = fromX || 0;
+
+  // Determine correct mode at checkpoint position
+  let startMode = MODE_CUBE;
+  if (levelData && startX > 0) {
+    // Find the last portal before the checkpoint
+    const portalsBefore = levelData.obstacles
+      .filter(o => o.type === 'portal' && o.x < startX + 200)
+      .sort((a, b) => b.x - a.x);
+    if (portalsBefore.length > 0) startMode = portalsBefore[0].mode;
+  }
+
+  player = {
+    x: 200,                // screen X (fixed)
+    vy: 0,
+    y: GROUND_Y - PLAYER_SIZE,
+    mode: startMode,
+    rotation: 0,
+    onGround: true,
+    alive: true
+  };
+  camera = { x: startX };
+  trailPoints = [];
+  deathParticles = [];
+  shakeTimer = 0;
+  portalFlash = 0;
+  holdingInput = false;
+
+  // Restore orbs collected after checkpoint in practice
+  if (levelData) {
+    levelData.obstacles.forEach(o => {
+      if (o.type === 'orb' && o.x > startX + 200) o.collected = false;
+    });
+  }
+}
+
+function die() {
+  if (!player.alive) return;
+  player.alive = false;
+  state = 'dead';
+  deaths++;
+  shakeTimer = 15;
+  shakeIntensity = 8;
+  window.SFX?.death();
+
+  // Spawn death particles
+  deathParticles = [];
+  const cx = player.x, cy = player.y + PLAYER_SIZE/2;
+  for (let i = 0; i < 25; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 6 + 2;
+    deathParticles.push({
+      x: cx + PLAYER_SIZE/2, y: cy,
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 2,
+      size: Math.random() * 8 + 3,
+      alpha: 1,
+      color: PLAYER_COLORS[selectedColor],
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.3
+    });
+  }
+
+  setTimeout(() => {
+    if (state !== 'dead') return;
+    attempt++;
+    if (practiceMode && lastCheckpoint > 0) {
+      resetPlayer(lastCheckpoint);
+    } else {
+      lastCheckpoint = 0;
+      resetPlayer(0);
+      // Reset all orbs
+      levelData.obstacles.forEach(o => { if (o.type === 'orb') o.collected = false; });
+    }
+    state = 'playing';
+    updateHUD();
+  }, 800);
+}
+
+function completeLevel() {
+  state = 'complete';
+  window.SFX?.win();
+  const prev = parseInt(_gb(`gd_best_${currentLevel}`, '0'));
+  if (100 > prev) _sb(`gd_best_${currentLevel}`, '100');
+
+  setTimeout(() => {
+    state = 'menu';
+    levelSelectEl.classList.remove('hidden');
+    renderLevelSelect();
+  }, 2500);
+}
+
+function updateHUD() {
+  document.getElementById('attemptNum').textContent = attempt;
+  document.getElementById('deathCount').textContent = deaths;
+}
+
+// ══════════════════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════════════════
+function inputDown() {
+  if (state === 'menu') return;
+  if (state === 'dead') return;
+  if (state === 'complete') return;
+  holdingInput = true;
+
+  if (player.mode === MODE_CUBE) {
+    if (player.onGround) {
+      player.vy = JUMP_FORCE;
+      player.onGround = false;
+      window.SFX?.click();
+    }
+  }
+}
+
+function inputUp() {
+  holdingInput = false;
+}
+
+canvas.addEventListener('mousedown', (e) => { e.preventDefault(); inputDown(); });
+canvas.addEventListener('mouseup', () => inputUp());
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); inputDown(); });
+canvas.addEventListener('touchend', () => inputUp());
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    e.preventDefault();
+    if (e.repeat) return; // Prevent key repeat from rapid-firing jumps
+    if (state === 'menu') return;
+    inputDown();
+  }
+  if (e.key === 'Escape') {
+    if (state === 'playing' || state === 'dead') {
+      state = 'menu';
+      levelSelectEl.classList.remove('hidden');
+      renderLevelSelect();
+    }
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    inputUp();
+  }
+});
+
+// ══════════════════════════════════════════════════════
+//  COLLISION HELPERS
+// ══════════════════════════════════════════════════════
+function playerRect() {
+  const wx = camera.x + player.x;
+  // Slightly smaller hitbox for fairness
+  const margin = 5;
+  return { x: wx + margin, y: player.y + margin, w: PLAYER_SIZE - margin*2, h: PLAYER_SIZE - margin*2 };
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function spikeHitbox(s) {
+  // Spike is a triangle, approximate with a smaller rect
+  const sw = BLOCK * 0.6, sh = BLOCK * 0.7;
+  if (s.type === 'spikeTop') {
+    return { x: s.x + (BLOCK - sw)/2, y: s.y, w: sw, h: sh };
+  }
+  return { x: s.x + (BLOCK - sw)/2, y: s.y - sh, w: sw, h: sh };
+}
+
+// ══════════════════════════════════════════════════════
+//  UPDATE
+// ══════════════════════════════════════════════════════
+function update() {
+  if (state !== 'playing') return;
+
+  const speed = levelData.speed;
+  camera.x += speed;
+  pulsePhase += 0.05;
+
+  // Progress & checkpoints
+  const progress = Math.min(100, Math.floor((camera.x / (levelLength - 400)) * 100));
+
+  // Practice mode checkpoints every 10%
+  if (practiceMode) {
+    const cpThreshold = Math.floor(progress / 10) * 10;
+    if (cpThreshold > 0 && cpThreshold > lastCheckpoint) {
+      lastCheckpoint = Math.floor((cpThreshold / 100) * (levelLength - 400));
+    }
+  }
+
+  // Save best progress
+  const prev = parseInt(_gb(`gd_best_${currentLevel}`, '0'));
+  if (progress > prev) _sb(`gd_best_${currentLevel}`, progress.toString());
+
+  // Level complete
+  if (camera.x >= levelLength - 400) {
+    completeLevel();
+    return;
+  }
+
+  // ── Mode-specific physics ──
+  const worldPlayerX = camera.x + player.x;
+
+  if (player.mode === MODE_CUBE) {
+    // Gravity
+    player.vy += GRAVITY;
+    player.y += player.vy;
+
+    // Ground collision
+    if (player.y >= GROUND_Y - PLAYER_SIZE) {
+      player.y = GROUND_Y - PLAYER_SIZE;
+      player.vy = 0;
+      player.onGround = true;
+    }
+
+    // Ceiling
+    if (player.y < 0) {
+      player.y = 0;
+      player.vy = 0;
+    }
+
+    // Rotation while airborne
+    if (!player.onGround) {
+      player.rotation += 5 * (Math.PI / 180);
+    } else {
+      // Snap rotation to nearest 90 deg
+      player.rotation = Math.round(player.rotation / (Math.PI/2)) * (Math.PI/2);
+    }
+
+    // Platform landing
+    const pr = playerRect();
+    levelData.obstacles.forEach(o => {
+      if (o.type === 'platform') {
+        const platRect = { x: o.x, y: o.y, w: o.w, h: o.h || BLOCK };
+        // Landing on top
+        if (pr.x + pr.w > platRect.x && pr.x < platRect.x + platRect.w) {
+          if (player.vy >= 0 && pr.y + pr.h >= platRect.y && pr.y + pr.h <= platRect.y + 15) {
+            player.y = platRect.y - PLAYER_SIZE;
+            player.vy = 0;
+            player.onGround = true;
+          }
+          // Hitting bottom
+          else if (player.vy < 0 && pr.y <= platRect.y + platRect.h && pr.y >= platRect.y + platRect.h - 10) {
+            player.y = platRect.y + platRect.h;
+            player.vy = 0;
+          }
+          // Side collision
+          else if (pr.y + pr.h > platRect.y + 5 && pr.y < platRect.y + platRect.h - 5) {
+            if (pr.x + pr.w > platRect.x && pr.x < platRect.x) {
+              die();
+              return;
+            }
+          }
+        }
+      }
+    });
+  }
+
+  else if (player.mode === MODE_SHIP) {
+    // Ship: hold to go up, release to go down
+    if (holdingInput) {
+      player.vy -= 0.7;
+    } else {
+      player.vy += 0.5;
+    }
+    // Clamp vertical speed
+    player.vy = Math.max(-7, Math.min(7, player.vy));
+    player.y += player.vy;
+
+    // Bounds
+    if (player.y >= GROUND_Y - PLAYER_SIZE) {
+      player.y = GROUND_Y - PLAYER_SIZE;
+      player.vy = 0;
+    }
+    if (player.y < 10) {
+      player.y = 10;
+      player.vy = 0;
+    }
+
+    // Ship tilts based on velocity
+    player.rotation = player.vy * 3 * (Math.PI / 180);
+  }
+
+  else if (player.mode === MODE_WAVE) {
+    // Wave: 45 deg up or down
+    const waveSpeed = 5;
+    if (holdingInput) {
+      player.y -= waveSpeed;
+    } else {
+      player.y += waveSpeed;
+    }
+    player.vy = 0;
+
+    // Bounds
+    if (player.y >= GROUND_Y - PLAYER_SIZE) {
+      player.y = GROUND_Y - PLAYER_SIZE;
+    }
+    if (player.y < 10) {
+      player.y = 10;
+    }
+
+    player.rotation = holdingInput ? -45 * (Math.PI/180) : 45 * (Math.PI/180);
+  }
+
+  // ── Trail ──
+  trailPoints.push({ x: worldPlayerX + PLAYER_SIZE/2, y: player.y + PLAYER_SIZE/2, age: 0 });
+  if (trailPoints.length > 40) trailPoints.shift();
+  trailPoints.forEach(t => t.age++);
+
+  // ── Collision checks ──
+  const pr = playerRect();
+  for (const o of levelData.obstacles) {
+    // Skip off-screen objects
+    if (o.x < camera.x - BLOCK*2 || o.x > camera.x + W + BLOCK*2) continue;
+
+    if (o.type === 'spike' || o.type === 'spikeTop') {
+      if (rectsOverlap(pr, spikeHitbox(o))) {
+        die();
+        return;
+      }
+    }
+
+    if (o.type === 'orb' && !o.collected) {
+      const orbRect = { x: o.x - 12, y: o.y - 12, w: 24, h: 24 };
+      if (rectsOverlap(pr, orbRect)) {
+        o.collected = true;
+        window.SFX?.coin();
+      }
+    }
+
+    if (o.type === 'portal') {
+      const portalRect = { x: o.x - 10, y: 20, w: 20, h: GROUND_Y - 20 };
+      if (rectsOverlap(pr, portalRect)) {
+        if (player.mode !== o.mode) {
+          player.mode = o.mode;
+          portalFlash = 15;
+          portalFlashColor = o.color;
+          window.SFX?.coin();
+        }
+      }
+    }
+  }
+
+  // Shake decay
+  if (shakeTimer > 0) shakeTimer--;
+
+  // Portal flash decay
+  if (portalFlash > 0) portalFlash--;
+
+  // BG particles
+  bgParticles.forEach(p => {
+    p.x += p.vx - speed * 0.3;
+    p.y += p.vy;
+    p.rot += 0.01;
+    if (p.x < -20) { p.x = W + 20; p.y = Math.random() * GROUND_Y; }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW
+// ══════════════════════════════════════════════════════
+function draw() {
+  ctx.save();
+
+  // Screen shake
+  if (shakeTimer > 0) {
+    const sx = (Math.random() - 0.5) * shakeIntensity * (shakeTimer / 15);
+    const sy = (Math.random() - 0.5) * shakeIntensity * (shakeTimer / 15);
+    ctx.translate(sx, sy);
+  }
+
+  // ── Background ──
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Scrolling geometric background pattern
+  if (state === 'playing' || state === 'dead' || state === 'complete') {
+    const camX = camera ? camera.x : 0;
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(123,47,247,0.06)';
+    ctx.lineWidth = 1;
+    const gridSize = 80;
+    const offsetX = -(camX * 0.3) % gridSize;
+    for (let gx = offsetX; gx < W; gx += gridSize) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, GROUND_Y); ctx.stroke();
+    }
+    for (let gy = 0; gy < GROUND_Y; gy += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    // Background scrolling diamonds
+    ctx.save();
+    ctx.globalAlpha = 0.04;
+    const diamSize = 120;
+    const dOffX = -(camX * 0.15) % (diamSize * 2);
+    for (let dx = dOffX - diamSize; dx < W + diamSize; dx += diamSize * 2) {
+      for (let dy = 40; dy < GROUND_Y; dy += diamSize * 1.5) {
+        ctx.save();
+        ctx.translate(dx, dy);
+        ctx.rotate(Math.PI / 4);
+        ctx.strokeStyle = '#7b2ff7';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-diamSize/4, -diamSize/4, diamSize/2, diamSize/2);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+
+    // BG floating particles
+    bgParticles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = '#7b2ff7';
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      ctx.restore();
+    });
+
+    // Pulsing background flash synced to scroll rhythm
+    const pulse = Math.sin(pulsePhase) * 0.5 + 0.5;
+    ctx.fillStyle = `rgba(123,47,247,${pulse * 0.03})`;
+    ctx.fillRect(0, 0, W, GROUND_Y);
+
+    // Portal flash effect
+    if (portalFlash > 0) {
+      ctx.fillStyle = portalFlashColor;
+      ctx.globalAlpha = portalFlash / 15 * 0.15;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Ground ──
+    const grd = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+    grd.addColorStop(0, '#2a2a5a');
+    grd.addColorStop(1, '#1a1a3e');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+    // Ground glowing edge
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Ground grid pattern
+    ctx.strokeStyle = 'rgba(0,212,255,0.08)';
+    ctx.lineWidth = 1;
+    const gGridOff = -(camX * 0.5) % BLOCK;
+    for (let gx = gGridOff; gx < W; gx += BLOCK) {
+      ctx.beginPath(); ctx.moveTo(gx, GROUND_Y); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (let gy = GROUND_Y + BLOCK; gy < H; gy += BLOCK) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    // ── Draw obstacles ──
+    for (const o of levelData.obstacles) {
+      const sx = o.x - camX;
+      if (sx < -BLOCK * 3 || sx > W + BLOCK * 3) continue;
+
+      if (o.type === 'spike') {
+        drawSpike(sx, o.y, false);
+      } else if (o.type === 'spikeTop') {
+        drawSpike(sx, o.y, true);
+      } else if (o.type === 'platform') {
+        drawPlatform(sx, o.y, o.w, o.h || BLOCK);
+      } else if (o.type === 'orb' && !o.collected) {
+        drawOrb(sx, o.y);
+      } else if (o.type === 'portal') {
+        drawPortal(sx, o.color);
+      }
+    }
+
+    // ── Trail ──
+    if (player.alive) {
+      ctx.lineCap = 'round';
+      for (let i = 1; i < trailPoints.length; i++) {
+        const t = trailPoints[i];
+        const alpha = Math.max(0, 1 - t.age / 40) * 0.6;
+        const tx = t.x - camX;
+        const ty = t.y;
+        ctx.beginPath();
+        ctx.arc(tx, ty, Math.max(1, (1 - t.age/40) * 6), 0, Math.PI * 2);
+        ctx.fillStyle = PLAYER_COLORS[selectedColor];
+        ctx.globalAlpha = alpha;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Player ──
+    if (player.alive) {
+      drawPlayer();
+    }
+
+    // ── Death particles ──
+    deathParticles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15;
+      p.alpha -= 0.015;
+      p.rot += p.rotV;
+      if (p.alpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+        ctx.restore();
+      }
+    });
+    ctx.globalAlpha = 1;
+
+    // ── Progress bar ──
+    const progress = Math.min(100, Math.floor((camX / (levelLength - 400)) * 100));
+    drawProgressBar(progress);
+
+    // ── Attempt / practice labels ──
+    if (practiceMode) {
+      ctx.fillStyle = '#2ed573';
+      ctx.font = '12px Segoe UI';
+      ctx.textAlign = 'right';
+      ctx.fillText('PRACTICE MODE', W - 12, H - 10);
+      ctx.textAlign = 'left';
+    }
+
+    // ── Level complete screen ──
+    if (state === 'complete') {
+      ctx.fillStyle = 'rgba(15,15,26,0.7)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#2ed573';
+      ctx.font = 'bold 36px Segoe UI';
+      ctx.fillText('LEVEL COMPLETE!', W/2, H/2 - 30);
+      ctx.fillStyle = '#e0e0e0';
+      ctx.font = '18px Segoe UI';
+      ctx.fillText(`${levelData.name}`, W/2, H/2 + 10);
+      ctx.fillText(`Attempts: ${attempt}`, W/2, H/2 + 40);
+      ctx.textAlign = 'left';
+    }
+
+  } else {
+    // Menu state - just background
+    drawMenuBackground();
+  }
+
+  ctx.restore();
+}
+
+function drawSpike(sx, sy, isTop) {
+  const size = BLOCK;
+  const pulseFactor = 1 + Math.sin(pulsePhase * 2) * 0.05;
+  ctx.save();
+  ctx.translate(sx + size/2, isTop ? sy : sy);
+  ctx.scale(pulseFactor, pulseFactor);
+
+  ctx.beginPath();
+  if (isTop) {
+    ctx.moveTo(-size/2, 0);
+    ctx.lineTo(0, size * 0.85);
+    ctx.lineTo(size/2, 0);
+  } else {
+    ctx.moveTo(-size/2, 0);
+    ctx.lineTo(0, -size * 0.85);
+    ctx.lineTo(size/2, 0);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#ff4757';
+  ctx.fill();
+
+  // Glow
+  ctx.shadowColor = '#ff4757';
+  ctx.shadowBlur = 8;
+  ctx.strokeStyle = '#ff6b81';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+function drawPlatform(sx, sy, w, h) {
+  ctx.fillStyle = '#2a2a5a';
+  ctx.fillRect(sx, sy, w, h);
+
+  // Edge glow
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 8;
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(sx, sy, w, h);
+  ctx.shadowBlur = 0;
+
+  // Grid lines on platform
+  ctx.strokeStyle = 'rgba(0,212,255,0.12)';
+  ctx.lineWidth = 0.5;
+  for (let px = sx + BLOCK; px < sx + w; px += BLOCK) {
+    ctx.beginPath(); ctx.moveTo(px, sy); ctx.lineTo(px, sy + h); ctx.stroke();
+  }
+}
+
+function drawOrb(sx, sy) {
+  const t = Date.now() / 500;
+  const glow = Math.sin(t) * 0.3 + 0.7;
+  ctx.save();
+  ctx.shadowColor = '#ffd166';
+  ctx.shadowBlur = 12 * glow;
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath();
+  ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Inner shine
+  ctx.fillStyle = '#fff4cc';
+  ctx.beginPath();
+  ctx.arc(sx - 2, sy - 2, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPortal(sx, color) {
+  const t = Date.now() / 300;
+  const glow = Math.sin(t) * 0.3 + 0.7;
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20 * glow;
+
+  // Outer rect
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.5 + glow * 0.3;
+  ctx.strokeRect(sx - 12, 30, 24, GROUND_Y - 40);
+
+  // Inner fill
+  ctx.globalAlpha = 0.08 + glow * 0.06;
+  ctx.fillStyle = color;
+  ctx.fillRect(sx - 12, 30, 24, GROUND_Y - 40);
+
+  // Center line
+  ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(sx, 35);
+  ctx.lineTo(sx, GROUND_Y - 15);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const color = PLAYER_COLORS[selectedColor];
+  const cx = player.x + PLAYER_SIZE / 2;
+  const cy = player.y + PLAYER_SIZE / 2;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(player.rotation);
+
+  // Player glow
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 15;
+
+  if (player.mode === MODE_CUBE) {
+    // Square
+    ctx.fillStyle = color;
+    ctx.fillRect(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE);
+
+    // Eye/icon
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(2, -6, 10, 10);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(5, -4, 5, 5);
+  }
+  else if (player.mode === MODE_SHIP) {
+    // Ship shape (diamond/rocket)
+    ctx.beginPath();
+    ctx.moveTo(PLAYER_SIZE/2, 0);
+    ctx.lineTo(0, -PLAYER_SIZE/2);
+    ctx.lineTo(-PLAYER_SIZE/2, 0);
+    ctx.lineTo(0, PLAYER_SIZE/2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Trail flame effect when holding
+    if (holdingInput) {
+      ctx.fillStyle = '#ffa502';
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(-PLAYER_SIZE/2, 0);
+      ctx.lineTo(-PLAYER_SIZE/2 - 12, -6);
+      ctx.lineTo(-PLAYER_SIZE/2 - 8, 0);
+      ctx.lineTo(-PLAYER_SIZE/2 - 12, 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Eye
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(2, -5, 8, 8);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(4, -3, 4, 4);
+  }
+  else if (player.mode === MODE_WAVE) {
+    // Wave shape (small diamond)
+    const s = PLAYER_SIZE * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(s/2, 0);
+    ctx.lineTo(0, -s/2);
+    ctx.lineTo(-s/2, 0);
+    ctx.lineTo(0, s/2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Intense trail for wave mode
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-s/2, 0);
+    ctx.lineTo(-s/2 - 15, holdingInput ? 15 : -15);
+    ctx.stroke();
+  }
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawProgressBar(progress) {
+  const barW = W - 100;
+  const barH = 6;
+  const barX = 50;
+  const barY = 14;
+
+  // Background
+  ctx.fillStyle = 'rgba(42,42,90,0.5)';
+  ctx.fillRect(barX, barY, barW, barH);
+
+  // Fill
+  const fillW = barW * (progress / 100);
+  const barGrd = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+  barGrd.addColorStop(0, '#00d4ff');
+  barGrd.addColorStop(1, '#7b2ff7');
+  ctx.fillStyle = barGrd;
+  ctx.fillRect(barX, barY, fillW, barH);
+
+  // Border
+  ctx.strokeStyle = 'rgba(0,212,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barY, barW, barH);
+
+  // Percent text
+  ctx.fillStyle = '#e0e0e0';
+  ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${progress}%`, barX + barW + 22, barY + barH);
+  ctx.textAlign = 'left';
+
+  // Mode indicator
+  if (player) {
+    const modeNames = ['CUBE','SHIP','WAVE'];
+    const modeColors = ['#2ed573','#1e90ff','#9b59b6'];
+    ctx.fillStyle = modeColors[player.mode];
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.fillText(modeNames[player.mode], 8, barY + barH);
+  }
+}
+
+function drawMenuBackground() {
+  // Just animated background for menu state
+  const t = Date.now() / 1000;
+  ctx.strokeStyle = 'rgba(123,47,247,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 10; i++) {
+    const y = (t * 20 + i * 50) % H;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  bgParticles.forEach(p => {
+    p.x += p.vx;
+    p.rot += 0.01;
+    if (p.x < -20) { p.x = W + 20; }
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = '#7b2ff7';
+    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+    ctx.restore();
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════════════
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ── Start ──
+renderLevelSelect();
+updateHUD();
+gameLoop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

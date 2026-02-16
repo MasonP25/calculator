@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crossy Road</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .info { display: flex; gap: 2rem; margin-bottom: 0.5rem; font-size: 1.1rem; }
+  .info span { color: #00d4ff; font-weight: bold; }
+  .mode-select { display: flex; gap: 0.8rem; margin-bottom: 0.5rem; }
+  .mode-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.4rem 1.2rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif; transition: border-color 0.2s;
+  }
+  .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; color: #7b2ff7; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Crossy Road</h1>
+</div>
+<div class="info">
+  Score: <span id="score">0</span>
+  High Score: <span id="best">0</span>
+</div>
+<div class="mode-select">
+  <button id="btnEasy">Easy</button>
+  <button id="btnNormal" class="active">Normal</button>
+  <button id="btnHard">Hard</button>
+</div>
+<canvas id="c" width="400" height="500"></canvas>
+<div class="msg" id="msg">Arrow keys or WASD to hop. Go forward!</div>
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const W = canvas.width, H = canvas.height;
+
+const TILE = 40;
+const COLS = Math.floor(W / TILE); // 10
+const ROWS = Math.ceil(H / TILE) + 2; // enough rows to fill screen + buffer
+const PLAYER_SIZE = 28;
+
+// Difficulty settings
+const DIFF = {
+  easy:   { speedMult: 0.6, gapMult: 1.5, trainFreq: 0.06, label: 'Easy' },
+  normal: { speedMult: 1.0, gapMult: 1.0, trainFreq: 0.10, label: 'Normal' },
+  hard:   { speedMult: 1.5, gapMult: 0.7, trainFreq: 0.15, label: 'Hard' }
+};
+let difficulty = 'normal';
+
+let bestScore = parseInt(_gb('crossyBest', '0'));
+bestEl.textContent = bestScore;
+
+// Difficulty buttons
+document.getElementById('btnEasy').addEventListener('click', function() {
+  setDifficulty('easy', this);
+});
+document.getElementById('btnNormal').addEventListener('click', function() {
+  setDifficulty('normal', this);
+});
+document.getElementById('btnHard').addEventListener('click', function() {
+  setDifficulty('hard', this);
+});
+function setDifficulty(d, btn) {
+  difficulty = d;
+  document.querySelectorAll('.mode-select button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (!playing) init();
+}
+
+// ─── LANE TYPES ───
+// 'grass', 'road', 'water', 'train'
+function generateLaneType(row) {
+  if (row <= 2) return 'grass'; // starting safe zone
+  const r = Math.random();
+  if (r < 0.30) return 'grass';
+  if (r < 0.62) return 'road';
+  if (r < 0.88) return 'water';
+  return 'train';
+}
+
+function generateLane(row) {
+  const type = generateLaneType(row);
+  const diff = DIFF[difficulty];
+  const lane = {
+    row: row,
+    type: type,
+    obstacles: [],
+    direction: Math.random() < 0.5 ? 1 : -1,
+    speed: 0
+  };
+
+  if (type === 'road') {
+    // Cars/trucks moving horizontally
+    lane.speed = (0.5 + Math.random() * 1.5) * diff.speedMult;
+    const numCars = Math.floor(2 + Math.random() * 2);
+    const spacing = (W + 200) / numCars;
+    for (let i = 0; i < numCars; i++) {
+      const isLong = Math.random() < 0.35;
+      const w = isLong ? TILE * 2.5 : TILE * 1.4;
+      const gap = spacing * diff.gapMult;
+      lane.obstacles.push({
+        x: i * gap + Math.random() * 40,
+        w: w,
+        h: TILE * 0.7,
+        color: isLong ? ['#ff4757','#7b2ff7','#ff9f43'][Math.floor(Math.random()*3)] : ['#00d4ff','#feca57','#35855a','#ff6b81'][Math.floor(Math.random()*4)],
+        isLong: isLong
+      });
+    }
+  } else if (type === 'water') {
+    // Logs floating on water
+    lane.speed = (0.3 + Math.random() * 1.2) * diff.speedMult;
+    const numLogs = Math.floor(2 + Math.random() * 2);
+    const spacing = (W + 150) / numLogs;
+    for (let i = 0; i < numLogs; i++) {
+      const w = TILE * (1.5 + Math.random() * 1.5) * diff.gapMult;
+      lane.obstacles.push({
+        x: i * spacing * diff.gapMult + Math.random() * 30,
+        w: w,
+        h: TILE * 0.75
+      });
+    }
+  } else if (type === 'train') {
+    lane.speed = 4.0 * diff.speedMult;
+    lane.trainActive = false;
+    lane.trainWarning = 0;
+    lane.trainX = 0;
+    lane.trainTimer = 120 + Math.floor(Math.random() * 240);
+    lane.trainCooldown = lane.trainTimer;
+  }
+
+  return lane;
+}
+
+// ─── GAME STATE ───
+let player, lanes, cameraY, score, playing, gameOver, frame, hopAnim, deathAnim;
+let keys = {};
+let hopCooldown = 0;
+let highestRow = 0;
+
+function init() {
+  player = {
+    col: Math.floor(COLS / 2),
+    row: 0,
+    x: Math.floor(COLS / 2) * TILE + TILE / 2,
+    y: 0,
+    targetX: 0,
+    targetY: 0,
+    hopping: false,
+    hopProgress: 0,
+    startX: 0,
+    startY: 0,
+    onLog: null,
+    alive: true
+  };
+  player.targetX = player.x;
+  player.targetY = player.row * TILE;
+  lanes = {};
+  score = 0;
+  highestRow = 0;
+  cameraY = 0;
+  frame = 0;
+  hopAnim = 0;
+  deathAnim = 0;
+  playing = false;
+  gameOver = false;
+  hopCooldown = 0;
+
+  // Pre-generate visible lanes plus buffer
+  for (let r = -3; r < ROWS + 5; r++) {
+    lanes[r] = generateLane(r);
+  }
+
+  scoreEl.textContent = '0';
+  msgEl.textContent = 'Arrow keys or WASD to hop. Go forward!';
+  draw();
+}
+
+function ensureLanes() {
+  const minRow = highestRow - 5;
+  const maxRow = highestRow + ROWS + 5;
+  for (let r = minRow; r <= maxRow; r++) {
+    if (!lanes[r]) {
+      lanes[r] = generateLane(r);
+    }
+  }
+  // Clean up far-away lanes
+  for (const key in lanes) {
+    const r = parseInt(key);
+    if (r < highestRow - 15 || r > highestRow + ROWS + 15) {
+      delete lanes[r];
+    }
+  }
+}
+
+// ─── PLAYER MOVEMENT ───
+function hop(dr, dc) {
+  if (!player.alive || player.hopping || gameOver) return;
+
+  const newRow = player.row + dr;
+  const newCol = player.col + dc;
+
+  // Boundary check (left/right)
+  if (newCol < 0 || newCol >= COLS) return;
+
+  player.hopping = true;
+  player.hopProgress = 0;
+  player.startX = player.x;
+  player.startY = player.row * TILE;
+  player.row = newRow;
+  player.col = newCol;
+  player.targetX = newCol * TILE + TILE / 2;
+  player.targetY = newRow * TILE;
+  player.onLog = null;
+
+  window.SFX?.jump();
+
+  if (!playing) {
+    playing = true;
+    msgEl.textContent = '';
+  }
+}
+
+function tryHop() {
+  if (hopCooldown > 0) return;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) { hop(1, 0); hopCooldown = 14; }
+  else if (keys['ArrowDown'] || keys['s'] || keys['S']) { hop(-1, 0); hopCooldown = 14; }
+  else if (keys['ArrowLeft'] || keys['a'] || keys['A']) { hop(0, -1); hopCooldown = 14; }
+  else if (keys['ArrowRight'] || keys['d'] || keys['D']) { hop(0, 1); hopCooldown = 14; }
+}
+
+// ─── UPDATE ───
+function update() {
+  if (!playing || gameOver) return;
+  frame++;
+  if (hopCooldown > 0) hopCooldown--;
+
+  // Update hop animation
+  if (player.hopping) {
+    player.hopProgress += 0.15;
+    if (player.hopProgress >= 1) {
+      player.hopProgress = 1;
+      player.hopping = false;
+      player.x = player.targetX;
+    } else {
+      // Smooth lerp
+      const t = player.hopProgress;
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      player.x = player.startX + (player.targetX - player.startX) * ease;
+    }
+  }
+
+  // Update score based on highest row reached
+  if (player.row > highestRow) {
+    highestRow = player.row;
+    score = highestRow;
+    scoreEl.textContent = score;
+  }
+
+  ensureLanes();
+
+  // Camera follows player upward (forward = increasing row = up on screen)
+  const targetCamY = highestRow * TILE - H * 0.6;
+  cameraY += (targetCamY - cameraY) * 0.08;
+
+  // Update lane obstacles
+  const diff = DIFF[difficulty];
+  for (const key in lanes) {
+    const lane = lanes[key];
+
+    if (lane.type === 'road') {
+      for (const obs of lane.obstacles) {
+        obs.x += lane.speed * lane.direction;
+        // Wrap around
+        if (lane.direction > 0 && obs.x > W + obs.w) {
+          obs.x = -obs.w - Math.random() * 60;
+        }
+        if (lane.direction < 0 && obs.x + obs.w < -obs.w) {
+          obs.x = W + Math.random() * 60;
+        }
+      }
+    } else if (lane.type === 'water') {
+      for (const obs of lane.obstacles) {
+        obs.x += lane.speed * lane.direction;
+        if (lane.direction > 0 && obs.x > W + obs.w) {
+          obs.x = -obs.w - Math.random() * 40;
+        }
+        if (lane.direction < 0 && obs.x + obs.w < -obs.w) {
+          obs.x = W + Math.random() * 40;
+        }
+      }
+    } else if (lane.type === 'train') {
+      if (!lane.trainActive) {
+        lane.trainCooldown--;
+        if (lane.trainCooldown <= 0) {
+          // Start warning
+          lane.trainWarning = 90;
+          lane.trainActive = true;
+          lane.trainX = lane.direction > 0 ? -W * 1.5 : W * 2.5;
+        }
+      } else {
+        if (lane.trainWarning > 0) {
+          lane.trainWarning--;
+        } else {
+          lane.trainX += lane.speed * lane.direction * 2;
+          // Train passed
+          if ((lane.direction > 0 && lane.trainX > W * 2) ||
+              (lane.direction < 0 && lane.trainX < -W * 1.5)) {
+            lane.trainActive = false;
+            lane.trainCooldown = 180 + Math.floor(Math.random() * 300);
+            lane.direction = Math.random() < 0.5 ? 1 : -1;
+          }
+        }
+      }
+    }
+  }
+
+  // Player on log (water) logic - only when not hopping
+  if (!player.hopping) {
+    const currentLane = lanes[player.row];
+    if (currentLane && currentLane.type === 'water') {
+      let onAnyLog = false;
+      for (const log of currentLane.obstacles) {
+        const px = player.x;
+        if (px > log.x && px < log.x + log.w) {
+          onAnyLog = true;
+          player.onLog = log;
+          // Ride the log
+          player.x += currentLane.speed * currentLane.direction;
+          player.col = Math.floor(player.x / TILE);
+          player.targetX = player.x;
+          break;
+        }
+      }
+      if (!onAnyLog) {
+        // Fell in water!
+        die('Splashed into the water!');
+        return;
+      }
+      // Check if carried off screen
+      if (player.x < -TILE / 2 || player.x > W + TILE / 2) {
+        die('Carried off screen!');
+        return;
+      }
+    } else {
+      player.onLog = null;
+    }
+
+    // Check car collision
+    if (currentLane && currentLane.type === 'road') {
+      for (const car of currentLane.obstacles) {
+        const px = player.x;
+        const halfP = PLAYER_SIZE / 2;
+        if (px + halfP > car.x && px - halfP < car.x + car.w) {
+          window.SFX?.hit();
+          die('Hit by a vehicle!');
+          return;
+        }
+      }
+    }
+
+    // Check train collision
+    if (currentLane && currentLane.type === 'train') {
+      if (currentLane.trainActive && currentLane.trainWarning <= 0) {
+        const trainW = W * 1.5;
+        const px = player.x;
+        if (px > currentLane.trainX && px < currentLane.trainX + trainW) {
+          window.SFX?.hit();
+          die('Hit by a train!');
+          return;
+        }
+      }
+    }
+  }
+
+  // Die if player falls too far behind (off screen bottom)
+  const playerScreenY = player.row * TILE - cameraY;
+  if (playerScreenY < -TILE * 2) {
+    die('Too slow! Left behind.');
+    return;
+  }
+
+}
+
+function die(reason) {
+  if (!player.alive) return;
+  player.alive = false;
+  gameOver = true;
+  deathAnim = 30;
+  window.SFX?.death();
+
+  if (score > bestScore) {
+    bestScore = score;
+    _sb('crossyBest', bestScore.toString());
+    bestEl.textContent = bestScore;
+    window.SFX?.win();
+  }
+
+  window.HallOfFame?.submit('crossy', score);
+  msgEl.textContent = (reason || 'Game over!') + ' Score: ' + score + '. Press any key to retry.';
+}
+
+// ─── DRAWING ───
+function screenY(row) {
+  // Convert row to screen Y (higher rows = further forward = drawn higher)
+  return H - (row * TILE - cameraY) - TILE;
+}
+
+function drawLane(lane) {
+  const sy = screenY(lane.row);
+  if (sy > H + TILE || sy < -TILE * 4) return;
+
+  const laneY = sy;
+
+  // Draw lane background
+  if (lane.type === 'grass') {
+    // Alternating grass shades
+    ctx.fillStyle = lane.row % 2 === 0 ? '#1a3a1a' : '#1e3e1e';
+    ctx.fillRect(0, laneY, W, TILE);
+    // Grass details
+    ctx.fillStyle = '#2a5a2a';
+    for (let i = 0; i < 6; i++) {
+      const gx = ((lane.row * 73 + i * 67) % W);
+      ctx.fillRect(gx, laneY + TILE - 8, 2, 6);
+      ctx.fillRect(gx + 4, laneY + TILE - 6, 2, 4);
+    }
+  } else if (lane.type === 'road') {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, laneY, W, TILE);
+    // Road markings
+    ctx.strokeStyle = '#2a2a4a';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 12]);
+    ctx.beginPath();
+    ctx.moveTo(0, laneY + TILE / 2);
+    ctx.lineTo(W, laneY + TILE / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw cars/trucks
+    for (const car of lane.obstacles) {
+      const carY = laneY + (TILE - car.h) / 2;
+      // Car body
+      ctx.fillStyle = car.color;
+      ctx.shadowColor = car.color;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.roundRect(car.x, carY, car.w, car.h, 4);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Windshield
+      if (car.isLong) {
+        // Truck: cab + cargo
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        const cabX = lane.direction > 0 ? car.x + car.w - 25 : car.x;
+        ctx.fillRect(cabX + 3, carY + 3, 19, car.h - 6);
+      } else {
+        // Car: windows
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        const winX = lane.direction > 0 ? car.x + car.w * 0.55 : car.x + car.w * 0.15;
+        ctx.fillRect(winX, carY + 3, car.w * 0.3, car.h - 6);
+      }
+      // Headlights
+      ctx.fillStyle = '#feca57';
+      const hlX = lane.direction > 0 ? car.x + car.w - 3 : car.x;
+      ctx.fillRect(hlX, carY + 4, 3, 4);
+      ctx.fillRect(hlX, carY + car.h - 8, 3, 4);
+      // Taillights
+      ctx.fillStyle = '#ff4757';
+      const tlX = lane.direction > 0 ? car.x : car.x + car.w - 3;
+      ctx.fillRect(tlX, carY + 4, 3, 4);
+      ctx.fillRect(tlX, carY + car.h - 8, 3, 4);
+    }
+  } else if (lane.type === 'water') {
+    // Water background
+    ctx.fillStyle = '#0a1a3a';
+    ctx.fillRect(0, laneY, W, TILE);
+    // Animated water ripples
+    ctx.strokeStyle = '#1a3a6a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      const rx = ((i * 55 + frame * 0.5 * lane.direction + lane.row * 30) % (W + 40)) - 20;
+      ctx.beginPath();
+      ctx.moveTo(rx, laneY + 15 + Math.sin(frame * 0.05 + i) * 3);
+      ctx.quadraticCurveTo(rx + 10, laneY + 10 + Math.sin(frame * 0.05 + i) * 3,
+                           rx + 20, laneY + 15 + Math.sin(frame * 0.05 + i) * 3);
+      ctx.stroke();
+    }
+    // Draw logs
+    for (const log of lane.obstacles) {
+      const logY = laneY + (TILE - log.h) / 2;
+      // Log body
+      ctx.fillStyle = '#5a3a1a';
+      ctx.shadowColor = '#3a2a0a';
+      ctx.shadowBlur = 3;
+      ctx.beginPath();
+      ctx.roundRect(log.x, logY, log.w, log.h, 6);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Wood grain
+      ctx.strokeStyle = '#4a2a0a';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < Math.floor(log.w / 18); i++) {
+        const gx = log.x + 10 + i * 18;
+        ctx.beginPath();
+        ctx.moveTo(gx, logY + 4);
+        ctx.lineTo(gx, logY + log.h - 4);
+        ctx.stroke();
+      }
+      // End circles (tree rings)
+      ctx.strokeStyle = '#4a2a0a';
+      ctx.beginPath();
+      ctx.arc(log.x + 6, logY + log.h / 2, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(log.x + log.w - 6, logY + log.h / 2, 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else if (lane.type === 'train') {
+    // Train tracks
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, laneY, W, TILE);
+    // Rails
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(0, laneY + 8, W, 3);
+    ctx.fillRect(0, laneY + TILE - 11, W, 3);
+    // Sleepers/ties
+    ctx.fillStyle = '#3a2a1a';
+    for (let i = 0; i < COLS + 1; i++) {
+      ctx.fillRect(i * TILE + 5, laneY + 4, 8, TILE - 8);
+    }
+
+    // Warning flash
+    if (lane.trainActive && lane.trainWarning > 0) {
+      const flash = Math.sin(lane.trainWarning * 0.5) > 0;
+      if (flash) {
+        ctx.fillStyle = 'rgba(255, 71, 87, 0.25)';
+        ctx.fillRect(0, laneY, W, TILE);
+      }
+      // Warning lights on sides
+      ctx.fillStyle = flash ? '#ff4757' : '#4a1a1a';
+      ctx.beginPath();
+      ctx.arc(15, laneY + TILE / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(W - 15, laneY + TILE / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw train
+    if (lane.trainActive && lane.trainWarning <= 0) {
+      const trainW = W * 1.5;
+      const trainY = laneY + 2;
+      const trainH = TILE - 4;
+      // Train body
+      ctx.fillStyle = '#555';
+      ctx.shadowColor = '#ff4757';
+      ctx.shadowBlur = 6;
+      ctx.fillRect(lane.trainX, trainY, trainW, trainH);
+      ctx.shadowBlur = 0;
+      // Engine (front)
+      const frontX = lane.direction > 0 ? lane.trainX + trainW - 50 : lane.trainX;
+      ctx.fillStyle = '#ff4757';
+      ctx.fillRect(frontX, trainY, 50, trainH);
+      // Headlight
+      ctx.fillStyle = '#feca57';
+      const hlFront = lane.direction > 0 ? lane.trainX + trainW - 5 : lane.trainX;
+      ctx.fillRect(hlFront, trainY + 8, 5, 8);
+      ctx.fillRect(hlFront, trainY + trainH - 16, 5, 8);
+      // Windows
+      ctx.fillStyle = '#feca57';
+      for (let i = 0; i < Math.floor(trainW / 30); i++) {
+        ctx.fillRect(lane.trainX + 15 + i * 30, trainY + 5, 12, 8);
+      }
+      // Wheels
+      ctx.fillStyle = '#333';
+      for (let i = 0; i < Math.floor(trainW / 40); i++) {
+        ctx.beginPath();
+        ctx.arc(lane.trainX + 20 + i * 40, trainY + trainH, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function drawPlayer() {
+  if (!player.alive && deathAnim <= 0) return;
+
+  const px = player.x;
+  const pRow = player.hopping
+    ? player.startY / TILE + (player.row - player.startY / TILE) * (player.hopProgress < 0.5 ? 2*player.hopProgress*player.hopProgress : -1+(4-2*player.hopProgress)*player.hopProgress)
+    : player.row;
+
+  const sy = screenY(pRow);
+
+  // Hop bounce effect
+  let bounce = 0;
+  if (player.hopping) {
+    bounce = Math.sin(player.hopProgress * Math.PI) * 10;
+  }
+
+  const drawY = sy + (TILE - PLAYER_SIZE) / 2 - bounce;
+  const drawX = px - PLAYER_SIZE / 2;
+
+  if (!player.alive) {
+    // Death animation
+    ctx.globalAlpha = deathAnim / 30;
+    ctx.fillStyle = '#ff4757';
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + (30 - deathAnim) * 0.3;
+      const r = (30 - deathAnim) * 3;
+      ctx.beginPath();
+      ctx.arc(px + Math.cos(a) * r, drawY + PLAYER_SIZE / 2 + Math.sin(a) * r, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(px, sy + TILE - 4, PLAYER_SIZE / 2.2, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#7b2ff7';
+  ctx.shadowColor = '#7b2ff7';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.roundRect(drawX, drawY, PLAYER_SIZE, PLAYER_SIZE, 5);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Eyes
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(drawX + 8, drawY + 10, 4, 0, Math.PI * 2);
+  ctx.arc(drawX + PLAYER_SIZE - 8, drawY + 10, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pupils
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(drawX + 9, drawY + 10, 2, 0, Math.PI * 2);
+  ctx.arc(drawX + PLAYER_SIZE - 7, drawY + 10, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Feet (hop animation)
+  if (player.hopping) {
+    ctx.fillStyle = '#5b1fd7';
+    const legPhase = player.hopProgress * Math.PI;
+    ctx.fillRect(drawX + 5, drawY + PLAYER_SIZE, 5, 3 + Math.sin(legPhase) * 3);
+    ctx.fillRect(drawX + PLAYER_SIZE - 10, drawY + PLAYER_SIZE, 5, 3 + Math.sin(legPhase + Math.PI) * 3);
+  } else {
+    ctx.fillStyle = '#5b1fd7';
+    ctx.fillRect(drawX + 5, drawY + PLAYER_SIZE, 5, 3);
+    ctx.fillRect(drawX + PLAYER_SIZE - 10, drawY + PLAYER_SIZE, 5, 3);
+  }
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#0a0a15';
+  ctx.fillRect(0, 0, W, H);
+
+  // Determine visible row range
+  const bottomRow = Math.floor(cameraY / TILE) - 2;
+  const topRow = bottomRow + ROWS + 4;
+
+  // Draw lanes back to front (lowest row first)
+  for (let r = bottomRow; r <= topRow; r++) {
+    if (lanes[r]) {
+      drawLane(lanes[r]);
+    }
+  }
+
+  // Draw player
+  drawPlayer();
+
+  // Death animation countdown
+  if (!player.alive && deathAnim > 0) {
+    deathAnim--;
+  }
+
+  // HUD overlay
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 32px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = '#000';
+  ctx.shadowBlur = 6;
+  ctx.fillText(score, W / 2, 40);
+  ctx.shadowBlur = 0;
+
+  // Game over overlay
+  if (gameOver && deathAnim <= 0) {
+    ctx.fillStyle = 'rgba(15, 15, 26, 0.7)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ff4757';
+    ctx.font = 'bold 36px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
+    ctx.fillStyle = '#ccc';
+    ctx.font = '18px Segoe UI';
+    ctx.fillText('Score: ' + score, W / 2, H / 2 + 15);
+    if (score >= bestScore && score > 0) {
+      ctx.fillStyle = '#feca57';
+      ctx.fillText('New High Score!', W / 2, H / 2 + 45);
+    }
+  }
+
+  // Start screen hint
+  if (!playing && !gameOver) {
+    ctx.fillStyle = '#fff';
+    ctx.font = '18px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press UP or W to start', W / 2, H / 2 + 80);
+  }
+}
+
+// ─── GAME LOOP ───
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ─── INPUT ───
+document.addEventListener('keydown', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  keys[e.key] = true;
+
+  if (gameOver) {
+    init();
+    return;
+  }
+
+  // Immediate hop on keydown for responsive feel
+  if (!player.hopping && player.alive) {
+    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { hop(1, 0); }
+    else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { hop(-1, 0); }
+    else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { hop(0, -1); }
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { hop(0, 1); }
+  }
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// Touch/click support - tap top half to go forward, bottom to go back, left/right sides for left/right
+canvas.addEventListener('click', e => {
+  if (gameOver) { init(); return; }
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) / rect.width * W;
+  const cy = (e.clientY - rect.top) / rect.height * H;
+
+  if (cy < H * 0.33) { hop(1, 0); }
+  else if (cy > H * 0.66) { hop(-1, 0); }
+  else if (cx < W * 0.33) { hop(0, -1); }
+  else if (cx > W * 0.66) { hop(0, 1); }
+  else { hop(1, 0); } // center = forward
+});
+
+init();
+loop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

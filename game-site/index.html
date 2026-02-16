@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 0.3rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
+  .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
+  .section-title {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #555;
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+  }
+  .games {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1050px;
+    margin-bottom: 1rem;
+  }
+  .card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1.3rem;
+    width: 185px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    border-color: #7b2ff7;
+    box-shadow: 0 8px 30px rgba(123, 47, 247, 0.3);
+  }
+  .card.featured {
+    width: 390px;
+    border-color: #7b2ff733;
+    background: linear-gradient(135deg, #1a1a2e, #1f1a3e);
+  }
+  .card.featured:hover { border-color: #7b2ff7; }
+  .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .card.featured .icon { font-size: 3rem; }
+  .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+  .card.featured h2 { font-size: 1.4rem; }
+  .card p { color: #888; font-size: 0.75rem; line-height: 1.4; }
+  .card.featured p { font-size: 0.85rem; }
+  .badge {
+    display: inline-block;
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-top: 0.4rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .badge.mp {
+    background: rgba(123, 47, 247, 0.2);
+    color: #a66fff;
+    border: 1px solid #7b2ff744;
+  }
+  .badge.solo {
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff88;
+    border: 1px solid #00d4ff33;
+  }
+  .badge.new {
+    background: rgba(254, 202, 87, 0.15);
+    color: #feca57;
+    border: 1px solid #feca5744;
+    margin-left: 0.3rem;
+  }
+</style>
+</head>
+<body>
+  <h1>ARCADE</h1>
+  <p class="subtitle">Pick a game to play</p>
+  <p class="count">40 games</p>
+
+  <div class="section-title">Featured</div>
+  <div class="games">
+    <a class="card featured" href="gravity.html">
+      <div class="icon">&#9881;</div>
+      <h2>Gravity Run</h2>
+      <p>G-Switch style gravity runner! Flip gravity to dodge obstacles. Supports up to 8 players with custom key bindings, multiple rounds, and a leaderboard. Solo endless mode too!</p>
+      <span class="badge mp">1-8 Players</span>
+      <span class="badge new">New</span>
+    </a>
+  </div>
+
+  <div class="section-title">Multiplayer / vs Bot</div>
+  <div class="games">
+    <a class="card" href="pong.html">
+      <div class="icon">&#127955;</div>
+      <h2>Pong</h2>
+      <p>Classic paddle battle. 2P or vs CPU!</p>
+      <span class="badge mp">W/S vs Arrows</span>
+    </a>
+    <a class="card" href="tron.html">
+      <div class="icon">&#9889;</div>
+      <h2>Tron</h2>
+      <p>Light cycles! Leave trails and trap your opponent.</p>
+      <span class="badge mp">WASD vs Arrows</span>
+    </a>
+    <a class="card" href="tanks.html">
+      <div class="icon">&#128163;</div>
+      <h2>Tank Battle</h2>
+      <p>Arena combat with bouncing bullets. First to 5!</p>
+      <span class="badge mp">WASD+Q vs Arrows+/</span>
+    </a>
+    <a class="card" href="racer.html">
+      <div class="icon">&#128640;</div>
+      <h2>Space Race</h2>
+      <p>Dodge asteroids and race to the top!</p>
+      <span class="badge mp">WASD vs Arrows</span>
+    </a>
+    <a class="card" href="connect4.html">
+      <div class="icon">&#128308;</div>
+      <h2>Connect Four</h2>
+      <p>Drop pieces, get four in a row.</p>
+      <span class="badge mp">2P or vs Bot</span>
+    </a>
+    <a class="card" href="reaction.html">
+      <div class="icon">&#9201;</div>
+      <h2>Reaction Time</h2>
+      <p>Test your reflexes! Solo or 1v1 duel.</p>
+      <span class="badge mp">Solo or 2P</span>
+    </a>
+    <a class="card" href="chess.html">
+      <div class="icon">&#9818;</div>
+      <h2>Chess</h2>
+      <p>Full chess with all rules! 3 AI difficulties.</p>
+      <span class="badge mp">2P or vs AI</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="checkers.html">
+      <div class="icon">&#9898;</div>
+      <h2>Checkers</h2>
+      <p>Classic draughts with mandatory jumps!</p>
+      <span class="badge mp">2P or vs AI</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="tictactoe.html">
+      <div class="icon">&#10060;</div>
+      <h2>Tic Tac Toe</h2>
+      <p>Classic X vs O! 3 AI difficulties including unbeatable.</p>
+      <span class="badge mp">2P or vs AI</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="battleship.html">
+      <div class="icon">&#128674;</div>
+      <h2>Battleship</h2>
+      <p>Sink the fleet! Place ships and fire at the enemy grid.</p>
+      <span class="badge mp">2P or vs AI</span>
+      <span class="badge new">New</span>
+    </a>
+  </div>
+
+  <div class="section-title">Solo Games</div>
+  <div class="games">
+    <a class="card" href="tetris.html">
+      <div class="icon">&#129513;</div>
+      <h2>Tetris</h2>
+      <p>The classic block-stacking game!</p>
+      <span class="badge solo">Arrows + Space</span>
+    </a>
+    <a class="card" href="snake.html">
+      <div class="icon">&#127013;</div>
+      <h2>Snake</h2>
+      <p>Eat food, grow longer, don't crash!</p>
+      <span class="badge solo">Arrow Keys</span>
+    </a>
+    <a class="card" href="breakout.html">
+      <div class="icon">&#127863;</div>
+      <h2>Breakout</h2>
+      <p>Smash bricks with a bouncing ball!</p>
+      <span class="badge solo">Mouse / Arrows</span>
+    </a>
+    <a class="card" href="2048.html">
+      <div class="icon">&#128290;</div>
+      <h2>2048</h2>
+      <p>Slide and merge tiles to reach 2048!</p>
+      <span class="badge solo">Arrows / WASD</span>
+    </a>
+    <a class="card" href="minesweeper.html">
+      <div class="icon">&#128165;</div>
+      <h2>Minesweeper</h2>
+      <p>Find mines without blowing up! 3 difficulties.</p>
+      <span class="badge solo">Click</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="flappy.html">
+      <div class="icon">&#128038;</div>
+      <h2>Flappy Bird</h2>
+      <p>Tap to flap through pipes.</p>
+      <span class="badge solo">Click / Space</span>
+    </a>
+    <a class="card" href="asteroids.html">
+      <div class="icon">&#9732;</div>
+      <h2>Asteroids</h2>
+      <p>Blast space rocks! They split apart!</p>
+      <span class="badge solo">Arrows + Space</span>
+    </a>
+    <a class="card" href="memory.html">
+      <div class="icon">&#129504;</div>
+      <h2>Memory Match</h2>
+      <p>Flip cards and find matching pairs.</p>
+      <span class="badge solo">Click</span>
+    </a>
+    <a class="card" href="wordle.html">
+      <div class="icon">&#128221;</div>
+      <h2>Wordle</h2>
+      <p>Guess the word in 6 tries! 4, 5, or 6 letter modes.</p>
+      <span class="badge solo">Keyboard</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="sudoku.html">
+      <div class="icon">&#128290;</div>
+      <h2>Sudoku</h2>
+      <p>Fill the 9x9 grid! Notes, undo, 4 difficulties.</p>
+      <span class="badge solo">Click / Keys</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="connections.html">
+      <div class="icon">&#128279;</div>
+      <h2>Connections</h2>
+      <p>Group 16 words into 4 categories. NYT-style!</p>
+      <span class="badge solo">Click</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="hangman.html">
+      <div class="icon">&#128100;</div>
+      <h2>Hangman</h2>
+      <p>Guess the word letter by letter. Don't get hanged!</p>
+      <span class="badge solo">Keyboard</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="simon.html">
+      <div class="icon">&#127912;</div>
+      <h2>Simon Says</h2>
+      <p>Remember the color sequence! How far can you go?</p>
+      <span class="badge solo">Click / Keys</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="doodle.html">
+      <div class="icon">&#128059;</div>
+      <h2>Doodle Jump</h2>
+      <p>Bounce higher and higher on platforms!</p>
+      <span class="badge solo">Arrows / A,D</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="typing.html">
+      <div class="icon">&#9000;</div>
+      <h2>Typing Test</h2>
+      <p>Test your typing speed! 15s, 30s, or 60s.</p>
+      <span class="badge solo">Keyboard</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="platformer.html">
+      <div class="icon">&#127939;</div>
+      <h2>Platformer</h2>
+      <p>Jump across platforms, stomp enemies, grab coins!</p>
+      <span class="badge solo">WASD / Arrows</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="tiles.html">
+      <div class="icon">&#127929;</div>
+      <h2>Piano Tiles</h2>
+      <p>Tap the black tiles! Don't miss or hit white!</p>
+      <span class="badge solo">1/2/3/4 or Click</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="crossy.html">
+      <div class="icon">&#128020;</div>
+      <h2>Crossy Road</h2>
+      <p>Hop through traffic, rivers, and trains! Don't get hit!</p>
+      <span class="badge solo">Arrows / WASD</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="invaders.html">
+      <div class="icon">&#128126;</div>
+      <h2>Space Invaders</h2>
+      <p>Blast waves of aliens! Classic arcade shooter.</p>
+      <span class="badge solo">Arrows + Space</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="aim.html">
+      <div class="icon">&#127919;</div>
+      <h2>Aim Trainer</h2>
+      <p>Test your aim! Classic, Speed, and Precision modes.</p>
+      <span class="badge solo">Mouse</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="whack.html">
+      <div class="icon">&#128056;</div>
+      <h2>Whack-a-Mole</h2>
+      <p>Bonk the moles! Watch out for bombs on hard mode.</p>
+      <span class="badge solo">Click</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="sliding.html">
+      <div class="icon">&#129513;</div>
+      <h2>Sliding Puzzle</h2>
+      <p>Slide tiles into order! 3x3, 4x4, or 5x5 grids.</p>
+      <span class="badge solo">Click / Arrows</span>
+      <span class="badge new">New</span>
+    </a>
+<a class="card" href="stack.html">
+      <div class="icon">&#127959;</div>
+      <h2>Stack Tower</h2>
+      <p>Stack blocks perfectly! How high can you build?</p>
+      <span class="badge solo">Click / Space</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="wordsearch.html">
+      <div class="icon">&#128270;</div>
+      <h2>Word Search</h2>
+      <p>Find hidden words in the grid! 3 grid sizes.</p>
+      <span class="badge solo">Click / Drag</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="wordscapes.html">
+      <div class="icon">&#127793;</div>
+      <h2>Wordscapes</h2>
+      <p>Swipe letters to form words and fill the crossword!</p>
+      <span class="badge solo">Click / Drag</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="geodash.html">
+      <div class="icon">&#9632;</div>
+      <h2>Geometry Dash</h2>
+      <p>Jump, fly, and flip through obstacles! 3 levels.</p>
+      <span class="badge solo">Click / Space</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="rps.html">
+      <div class="icon">&#9994;</div>
+      <h2>Rock Paper Scissors</h2>
+      <p>Classic RPS! Best of 5 against the computer.</p>
+      <span class="badge solo">Click</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="pacman.html">
+      <div class="icon">&#128058;</div>
+      <h2>Pac-Man</h2>
+      <p>Eat dots, avoid ghosts, grab power pellets!</p>
+      <span class="badge solo">Arrows / WASD</span>
+      <span class="badge new">New</span>
+    </a>
+    <a class="card" href="solitaire.html">
+      <div class="icon">&#127183;</div>
+      <h2>Solitaire</h2>
+      <p>Classic Klondike! Stack cards, clear the tableau.</p>
+      <span class="badge solo">Click / Drag</span>
+      <span class="badge new">New</span>
+    </a>
+  </div>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

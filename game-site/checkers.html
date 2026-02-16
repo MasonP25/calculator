@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkers</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin: 1rem 0 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+       -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .setup { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .btn-row button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.4rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-row button:hover { border-color: #7b2ff7; color: #fff; }
+  .btn-row button.active { border-color: #7b2ff7; color: #7b2ff7; background: #1a1a3e; }
+  .sub-label { font-size: 0.75rem; color: #888; }
+
+  .game-area {
+    display: flex; gap: 1.2rem; align-items: flex-start; flex-wrap: wrap; justify-content: center;
+  }
+
+  /* Captured panels */
+  .captured-panel {
+    width: 100px; min-height: 360px; background: #1a1a2e; border: 2px solid #2a2a4a;
+    border-radius: 12px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem;
+  }
+  .captured-panel h3 { font-size: 0.7rem; color: #888; text-align: center; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 0.3rem; }
+  .cap-count { text-align: center; font-size: 1.8rem; font-weight: bold; }
+  .cap-count.red { color: #e74c3c; }
+  .cap-count.black { color: #ccc; }
+  .cap-pieces { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; padding: 0.3rem; }
+  .cap-piece {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.3);
+  }
+  .cap-piece.red { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
+  .cap-piece.black { background: radial-gradient(circle at 35% 35%, #666, #222); }
+  .cap-piece.king::after {
+    content: '\u265A'; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; height: 100%; color: gold;
+  }
+
+  /* Board */
+  .board-wrap { display: flex; flex-direction: column; align-items: center; }
+  .board {
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    border: 3px solid #2a2a4a; border-radius: 4px; overflow: hidden;
+    box-shadow: 0 0 30px rgba(123, 47, 247, 0.15);
+  }
+  .square {
+    width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; transition: background 0.15s;
+  }
+  .square.light { background: #f0d9b5; }
+  .square.dark { background: #b58863; }
+  .square.last-move.dark { background: #a89040 !important; }
+  .square.highlight { background: rgba(123, 47, 247, 0.5) !important; }
+  .square.forced { box-shadow: inset 0 0 0 3px #ff6b35; }
+  .square.move-target::after {
+    content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0, 200, 0, 0.5); pointer-events: none; z-index: 2;
+  }
+  .square.capture-target {
+    box-shadow: inset 0 0 0 4px rgba(255, 80, 80, 0.6);
+  }
+
+  /* Pieces */
+  .piece {
+    width: 44px; height: 44px; border-radius: 50%; position: absolute;
+    z-index: 3; pointer-events: none;
+    transition: transform 0.25s ease, left 0.25s ease, top 0.25s ease;
+  }
+  .piece.red {
+    background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b);
+    border: 3px solid #a93226;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .piece.black-piece {
+    background: radial-gradient(circle at 35% 35%, #666, #1a1a1a);
+    border: 3px solid #333;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .piece.selected {
+    box-shadow: 0 0 15px rgba(123, 47, 247, 0.8), 0 0 30px rgba(123, 47, 247, 0.4);
+    transform: scale(1.1);
+  }
+  .piece.king::after {
+    content: '\u265A'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); font-size: 20px; color: gold;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
+
+  /* Coordinate labels */
+  .file-labels { display: flex; flex-direction: row; justify-content: space-around; width: 480px; }
+  .file-labels span { width: 60px; text-align: center; font-size: 0.7rem; color: #888; }
+  .rank-labels {
+    position: absolute; left: -18px; top: 0; height: 480px;
+    display: flex; flex-direction: column; justify-content: space-around;
+  }
+  .rank-labels span { height: 60px; display: flex; align-items: center; font-size: 0.7rem; color: #888; }
+  .board-container { position: relative; }
+
+  /* Status / turn */
+  .status-bar {
+    margin: 0.6rem 0; font-size: 1rem; min-height: 1.5rem; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  }
+  .turn-indicator {
+    font-size: 0.9rem; color: #ccc; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .turn-dot {
+    width: 16px; height: 16px; border-radius: 50%; display: inline-block;
+    border: 2px solid rgba(0,0,0,0.3);
+  }
+  .turn-dot.red { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
+  .turn-dot.black { background: radial-gradient(circle at 35% 35%, #666, #222); }
+
+  .game-over-msg {
+    font-size: 1.1rem; font-weight: bold; padding: 0.5rem 1rem; border-radius: 8px;
+    background: rgba(123, 47, 247, 0.15); border: 1px solid #7b2ff7;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 0.3rem; }
+  .action-btn {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.4rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .action-btn:hover { border-color: #7b2ff7; color: #fff; }
+  .action-btn.primary {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7); color: #fff; border: none;
+  }
+  .action-btn.primary:hover { opacity: 0.85; }
+
+  /* Right panel */
+  .side-panel {
+    width: 200px; background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+    padding: 0.7rem; display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .side-panel h3 { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .move-log {
+    max-height: 340px; overflow-y: auto; font-size: 0.8rem;
+    font-family: 'Consolas', 'Courier New', monospace; line-height: 1.6; color: #ccc;
+  }
+  .move-log::-webkit-scrollbar { width: 5px; }
+  .move-log::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
+  .move-entry { padding: 1px 4px; border-radius: 3px; }
+  .move-entry:last-child { background: rgba(123, 47, 247, 0.1); }
+
+  @media (max-width: 900px) {
+    .captured-panel { min-height: auto; width: 80px; }
+    .side-panel { display: none; }
+    .square { width: 48px; height: 48px; }
+    .piece { width: 36px; height: 36px; }
+    .piece.king::after { font-size: 16px; }
+    .file-labels { width: 384px; }
+    .file-labels span { width: 48px; }
+    .rank-labels { height: 384px; }
+    .rank-labels span { height: 48px; }
+  }
+  @media (max-width: 500px) {
+    .captured-panel { display: none; }
+    .square { width: 40px; height: 40px; }
+    .piece { width: 32px; height: 32px; }
+    .piece.king::after { font-size: 13px; }
+    .file-labels { width: 320px; }
+    .file-labels span { width: 40px; }
+    .rank-labels { height: 320px; }
+    .rank-labels span { height: 40px; }
+    .game-area { gap: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Checkers</h1>
+</div>
+
+<div class="setup">
+  <div class="btn-row">
+    <button id="modePlayer" class="active">vs Player</button>
+    <button id="modeComputer">vs Computer</button>
+  </div>
+  <div class="btn-row" id="diffRow" style="display:none">
+    <span class="sub-label">AI:</span>
+    <button class="diff-btn" data-diff="easy">Easy</button>
+    <button class="diff-btn active" data-diff="medium">Medium</button>
+    <button class="diff-btn" data-diff="hard">Hard</button>
+  </div>
+</div>
+
+<div class="game-area">
+  <div class="captured-panel" id="capBlack">
+    <h3>Black Captured</h3>
+    <div class="cap-count red" id="capBlackCount">0</div>
+    <div class="cap-pieces" id="capBlackPieces"></div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board-container">
+      <div class="rank-labels" id="rankLabels"></div>
+      <div class="board" id="board"></div>
+    </div>
+    <div class="file-labels" id="fileLabels"></div>
+
+    <div class="status-bar">
+      <div class="turn-indicator" id="turnIndicator">
+        <span class="turn-dot red"></span> <span>Red's turn</span>
+      </div>
+      <div id="gameMsg"></div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn primary" id="newGameBtn">New Game</button>
+    </div>
+  </div>
+
+  <div class="captured-panel" id="capRed">
+    <h3>Red Captured</h3>
+    <div class="cap-count black" id="capRedCount">0</div>
+    <div class="cap-pieces" id="capRedPieces"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CHECKERS (American Draughts) - Complete Implementation
+// ═══════════════════════════════════════════════════════════════
+
+const EMPTY = 0, RED = 1, BLACK = 2, RED_KING = 3, BLACK_KING = 4;
+const BOARD_SIZE = 8;
+
+// Game state
+let board = [];
+let currentPlayer = RED; // Red moves first
+let selectedPiece = null;
+let gameOver = false;
+let vsComputer = false;
+let aiDifficulty = 'medium';
+let capturedRed = [];
+let capturedBlack = [];
+let lastMove = null;
+let moveLog = [];
+let aiThinking = false;
+
+// DOM elements
+const boardEl = document.getElementById('board');
+const turnIndicator = document.getElementById('turnIndicator');
+const gameMsg = document.getElementById('gameMsg');
+const capBlackCount = document.getElementById('capBlackCount');
+const capRedCount = document.getElementById('capRedCount');
+const capBlackPieces = document.getElementById('capBlackPieces');
+const capRedPieces = document.getElementById('capRedPieces');
+
+// ─── Setup UI ───
+document.getElementById('modePlayer').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('modeComputer').classList.remove('active');
+  document.getElementById('diffRow').style.display = 'none';
+  vsComputer = false;
+  initGame();
+});
+document.getElementById('modeComputer').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('modePlayer').classList.remove('active');
+  document.getElementById('diffRow').style.display = 'flex';
+  vsComputer = true;
+  initGame();
+});
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    aiDifficulty = this.dataset.diff;
+    initGame();
+  });
+});
+document.getElementById('newGameBtn').addEventListener('click', initGame);
+
+// ─── Board labels ───
+function createLabels() {
+  const fileLabels = document.getElementById('fileLabels');
+  const rankLabels = document.getElementById('rankLabels');
+  fileLabels.innerHTML = '';
+  rankLabels.innerHTML = '';
+  const files = 'abcdefgh';
+  for (let i = 0; i < 8; i++) {
+    const fs = document.createElement('span');
+    fs.textContent = files[i];
+    fileLabels.appendChild(fs);
+    const rs = document.createElement('span');
+    rs.textContent = 8 - i;
+    rankLabels.appendChild(rs);
+  }
+}
+
+// ─── Game init ───
+function initGame() {
+  board = Array.from({ length: 8 }, () => new Array(8).fill(EMPTY));
+  // Standard checkers setup: black on top (rows 0-2), red on bottom (rows 5-7)
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 8; c++) {
+      if ((r + c) % 2 === 1) board[r][c] = BLACK;
+    }
+  }
+  for (let r = 5; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if ((r + c) % 2 === 1) board[r][c] = RED;
+    }
+  }
+  currentPlayer = RED;
+  selectedPiece = null;
+  gameOver = false;
+  capturedRed = [];
+  capturedBlack = [];
+  lastMove = null;
+  moveLog = [];
+  aiThinking = false;
+  gameMsg.innerHTML = '';
+  render();
+}
+
+// ─── Helpers ───
+function isRed(p) { return p === RED || p === RED_KING; }
+function isBlack(p) { return p === BLACK || p === BLACK_KING; }
+function isKing(p) { return p === RED_KING || p === BLACK_KING; }
+function belongs(p, player) {
+  if (player === RED) return isRed(p);
+  return isBlack(p);
+}
+function opponent(player) { return player === RED ? BLACK : RED; }
+
+function cloneBoard(b) {
+  return b.map(row => row.slice());
+}
+
+function coordToNotation(r, c) {
+  return 'abcdefgh'[c] + (8 - r);
+}
+
+// ─── Move Generation ───
+function getMovesForPiece(b, r, c) {
+  const piece = b[r][c];
+  if (piece === EMPTY) return { moves: [], jumps: [] };
+  const player = isRed(piece) ? RED : BLACK;
+  const king = isKing(piece);
+
+  // Direction: red moves up (decreasing row), black moves down (increasing row)
+  let dirs;
+  if (king) {
+    dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  } else if (player === RED) {
+    dirs = [[-1, -1], [-1, 1]];
+  } else {
+    dirs = [[1, -1], [1, 1]];
+  }
+
+  const moves = [];
+  const jumps = [];
+
+  for (const [dr, dc] of dirs) {
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+      if (b[nr][nc] === EMPTY) {
+        moves.push({ from: [r, c], to: [nr, nc], captures: [] });
+      } else if (!belongs(b[nr][nc], player)) {
+        // Check jump
+        const jr = nr + dr, jc = nc + dc;
+        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && b[jr][jc] === EMPTY) {
+          jumps.push({ from: [r, c], to: [jr, jc], captures: [[nr, nc]], mid: [nr, nc] });
+        }
+      }
+    }
+  }
+
+  return { moves, jumps };
+}
+
+// Get all multi-jump sequences from a position (recursive)
+function getJumpSequences(b, r, c, piece, captures) {
+  const player = isRed(piece) ? RED : BLACK;
+  const king = isKing(piece);
+
+  // Check if piece would be promoted at current position
+  let effectivePiece = piece;
+  if (!king) {
+    if (player === RED && r === 0) effectivePiece = RED_KING;
+    if (player === BLACK && r === 7) effectivePiece = BLACK_KING;
+  }
+  // In American checkers, if a piece gets kinged during a multi-jump,
+  // the turn ends (the piece stops jumping)
+  if (effectivePiece !== piece && captures.length > 0) {
+    return [{ from: [captures[0][2], captures[0][3]], to: [r, c], captures: captures.slice(), promoted: true }];
+  }
+
+  let dirs;
+  if (isKing(effectivePiece)) {
+    dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  } else if (player === RED) {
+    dirs = [[-1, -1], [-1, 1]];
+  } else {
+    dirs = [[1, -1], [1, 1]];
+  }
+
+  const sequences = [];
+  let foundJump = false;
+
+  for (const [dr, dc] of dirs) {
+    const mr = r + dr, mc = c + dc;
+    if (mr >= 0 && mr < 8 && mc >= 0 && mc < 8) {
+      const target = b[mr][mc];
+      if (target !== EMPTY && !belongs(target, player)) {
+        // Check not already captured in this chain
+        if (captures.some(cap => cap[0] === mr && cap[1] === mc)) continue;
+        const jr = mr + dr, jc = mc + dc;
+        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && (b[jr][jc] === EMPTY || (jr === r && jc === c))) {
+          foundJump = true;
+          const newCaptures = [...captures, [mr, mc, r, c]];
+          const nb = cloneBoard(b);
+          nb[r][c] = EMPTY;
+          nb[mr][mc] = EMPTY;
+          nb[jr][jc] = effectivePiece;
+          const subSeqs = getJumpSequences(nb, jr, jc, effectivePiece, newCaptures);
+          sequences.push(...subSeqs);
+        }
+      }
+    }
+  }
+
+  if (!foundJump && captures.length > 0) {
+    sequences.push({
+      from: [captures[0][2], captures[0][3]],
+      to: [r, c],
+      captures: captures.slice(),
+      promoted: false
+    });
+  }
+
+  return sequences;
+}
+
+function getAllJumpSequences(b, r, c) {
+  const piece = b[r][c];
+  if (piece === EMPTY) return [];
+  return getJumpSequences(b, r, c, piece, []);
+}
+
+// Get all legal moves for a player (mandatory capture enforced)
+function getLegalMoves(b, player) {
+  let allJumps = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (!belongs(b[r][c], player)) continue;
+      const jumpSeqs = getAllJumpSequences(b, r, c);
+      allJumps.push(...jumpSeqs);
+    }
+  }
+  if (allJumps.length > 0) return allJumps;
+
+  let allMoves = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (!belongs(b[r][c], player)) continue;
+      const { moves } = getMovesForPiece(b, r, c);
+      allMoves.push(...moves);
+    }
+  }
+  return allMoves;
+}
+
+// Pieces with forced jumps
+function getForcedPieces(b, player) {
+  const forced = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (!belongs(b[r][c], player)) continue;
+      if (getAllJumpSequences(b, r, c).length > 0) {
+        forced.push([r, c]);
+      }
+    }
+  }
+  return forced;
+}
+
+// ─── Execute Move ───
+function executeMove(b, move) {
+  const nb = cloneBoard(b);
+  const piece = nb[move.from[0]][move.from[1]];
+  nb[move.from[0]][move.from[1]] = EMPTY;
+
+  // Remove captured pieces
+  const captured = [];
+  if (move.captures) {
+    for (const cap of move.captures) {
+      captured.push({ r: cap[0], c: cap[1], piece: nb[cap[0]][cap[1]] });
+      nb[cap[0]][cap[1]] = EMPTY;
+    }
+  }
+
+  // Place piece and check promotion
+  let finalPiece = piece;
+  const player = isRed(piece) ? RED : BLACK;
+  if (!isKing(piece)) {
+    if (player === RED && move.to[0] === 0) finalPiece = RED_KING;
+    if (player === BLACK && move.to[0] === 7) finalPiece = BLACK_KING;
+  }
+  nb[move.to[0]][move.to[1]] = finalPiece;
+
+  return { board: nb, captured, promoted: finalPiece !== piece };
+}
+
+// ─── Win Check ───
+function checkWin(b) {
+  let redCount = 0, blackCount = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (isRed(b[r][c])) redCount++;
+      if (isBlack(b[r][c])) blackCount++;
+    }
+  }
+  if (redCount === 0) return BLACK;
+  if (blackCount === 0) return RED;
+
+  // Check if current player has moves
+  if (getLegalMoves(b, currentPlayer).length === 0) {
+    return opponent(currentPlayer);
+  }
+  return null;
+}
+
+// ─── Render ───
+function render() {
+  boardEl.innerHTML = '';
+  const legalMoves = gameOver ? [] : getLegalMoves(board, currentPlayer);
+  const forcedPieces = gameOver ? [] : getForcedPieces(board, currentPlayer);
+  const isJumpRequired = forcedPieces.length > 0;
+
+  // Selected piece moves
+  let selectedMoves = [];
+  if (selectedPiece) {
+    selectedMoves = legalMoves.filter(m =>
+      m.from[0] === selectedPiece[0] && m.from[1] === selectedPiece[1]
+    );
+  }
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = document.createElement('div');
+      sq.className = 'square ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+      sq.dataset.r = r;
+      sq.dataset.c = c;
+
+      // Last move highlight
+      if (lastMove) {
+        if ((r === lastMove.from[0] && c === lastMove.from[1]) ||
+            (r === lastMove.to[0] && c === lastMove.to[1])) {
+          if ((r + c) % 2 === 1) sq.classList.add('last-move');
+        }
+      }
+
+      // Forced pieces highlight
+      if (!gameOver && isJumpRequired && belongs(board[r][c], currentPlayer) &&
+          forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
+        if (!(selectedPiece && selectedPiece[0] === r && selectedPiece[1] === c)) {
+          sq.classList.add('forced');
+        }
+      }
+
+      // Selected piece highlight
+      if (selectedPiece && selectedPiece[0] === r && selectedPiece[1] === c) {
+        sq.classList.add('highlight');
+      }
+
+      // Valid move targets
+      if (selectedMoves.length > 0) {
+        for (const m of selectedMoves) {
+          if (m.to[0] === r && m.to[1] === c) {
+            if (m.captures && m.captures.length > 0) {
+              sq.classList.add('capture-target');
+            } else {
+              sq.classList.add('move-target');
+            }
+          }
+        }
+      }
+
+      // Draw piece
+      if (board[r][c] !== EMPTY) {
+        const piece = document.createElement('div');
+        piece.className = 'piece';
+        if (isRed(board[r][c])) piece.classList.add('red');
+        else piece.classList.add('black-piece');
+        if (isKing(board[r][c])) piece.classList.add('king');
+        if (selectedPiece && selectedPiece[0] === r && selectedPiece[1] === c) {
+          piece.classList.add('selected');
+        }
+        sq.appendChild(piece);
+      }
+
+      sq.addEventListener('click', () => handleSquareClick(r, c));
+      boardEl.appendChild(sq);
+    }
+  }
+
+  // Update turn indicator
+  if (!gameOver) {
+    const dot = currentPlayer === RED ? 'red' : 'black';
+    const name = currentPlayer === RED ? 'Red' : 'Black';
+    let label = name + "'s turn";
+    if (vsComputer && currentPlayer === BLACK) label = "Computer thinking...";
+    turnIndicator.innerHTML = `<span class="turn-dot ${dot}"></span> <span>${label}</span>`;
+  }
+
+  // Update captured counts
+  capBlackCount.textContent = capturedBlack.length;
+  capRedCount.textContent = capturedRed.length;
+
+  capBlackPieces.innerHTML = '';
+  capturedBlack.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'cap-piece red';
+    if (p === RED_KING) el.classList.add('king');
+    capBlackPieces.appendChild(el);
+  });
+
+  capRedPieces.innerHTML = '';
+  capturedRed.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'cap-piece black';
+    if (p === BLACK_KING) el.classList.add('king');
+    capRedPieces.appendChild(el);
+  });
+}
+
+// ─── Click Handler ───
+function handleSquareClick(r, c) {
+  if (gameOver || aiThinking) return;
+  if (vsComputer && currentPlayer === BLACK) return;
+
+  const piece = board[r][c];
+
+  // If a piece is selected, check if clicking a valid move target
+  if (selectedPiece) {
+    const legalMoves = getLegalMoves(board, currentPlayer);
+    const selectedMoves = legalMoves.filter(m =>
+      m.from[0] === selectedPiece[0] && m.from[1] === selectedPiece[1]
+    );
+
+    const targetMove = selectedMoves.find(m => m.to[0] === r && m.to[1] === c);
+    if (targetMove) {
+      makeMove(targetMove);
+      return;
+    }
+
+    // Click on own piece to switch selection
+    if (belongs(piece, currentPlayer)) {
+      const forcedPieces = getForcedPieces(board, currentPlayer);
+      if (forcedPieces.length > 0 && !forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
+        // Cannot select a non-forced piece
+        return;
+      }
+      selectedPiece = [r, c];
+      window.SFX?.click();
+      render();
+      return;
+    }
+
+    // Click on empty or opponent -> deselect
+    selectedPiece = null;
+    render();
+    return;
+  }
+
+  // No piece selected - try to select one
+  if (belongs(piece, currentPlayer)) {
+    const forcedPieces = getForcedPieces(board, currentPlayer);
+    if (forcedPieces.length > 0 && !forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
+      return;
+    }
+    selectedPiece = [r, c];
+    window.SFX?.click();
+    render();
+  }
+}
+
+// ─── Make Move ───
+function makeMove(move) {
+  const result = executeMove(board, move);
+  board = result.board;
+
+  // Track captured pieces
+  for (const cap of result.captured) {
+    if (isRed(cap.piece)) {
+      capturedRed.push(cap.piece);
+    } else {
+      capturedBlack.push(cap.piece);
+    }
+  }
+
+  // Log the move
+  const fromNote = coordToNotation(move.from[0], move.from[1]);
+  const toNote = coordToNotation(move.to[0], move.to[1]);
+  const sep = move.captures && move.captures.length > 0 ? 'x' : '-';
+  let moveStr = fromNote + sep + toNote;
+  if (result.promoted) moveStr += 'K';
+  moveLog.push({ player: currentPlayer, text: moveStr });
+
+  // SFX: capture, promotion, or normal move
+  if (result.captured.length > 0) {
+    window.SFX?.hit();
+  } else {
+    window.SFX?.place();
+  }
+  if (result.promoted) {
+    window.SFX?.powerup();
+  }
+
+  lastMove = { from: move.from, to: move.to };
+  selectedPiece = null;
+
+  // Check win
+  const nextPlayer = opponent(currentPlayer);
+  currentPlayer = nextPlayer;
+
+  const winner = checkWin(board);
+  if (winner) {
+    gameOver = true;
+    const winnerName = winner === RED ? 'Red' : 'Black';
+    const dot = winner === RED ? 'red' : 'black';
+    turnIndicator.innerHTML = '';
+    let streakHtml = '';
+    if (vsComputer) {
+      const sk = (winner === RED) ? window.HallOfFame?.winStreak('checkers') : window.HallOfFame?.loseStreak('checkers');
+      if (sk) streakHtml = ' <span style="font-size:0.85rem;font-weight:normal;">Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span></span>';
+    }
+    gameMsg.innerHTML = `<div class="game-over-msg"><span class="turn-dot ${dot}" style="vertical-align:middle;margin-right:6px"></span>${winnerName} wins!${streakHtml}</div>`;
+    window.SFX?.win();
+    render();
+    return;
+  }
+
+  render();
+
+  // AI turn
+  if (vsComputer && currentPlayer === BLACK && !gameOver) {
+    aiThinking = true;
+    render();
+    setTimeout(() => {
+      aiMove();
+      aiThinking = false;
+    }, 400);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI
+// ═══════════════════════════════════════════════════════════════
+
+function aiMove() {
+  if (gameOver) return;
+  const moves = getLegalMoves(board, BLACK);
+  if (moves.length === 0) return;
+
+  let chosen;
+  switch (aiDifficulty) {
+    case 'easy': chosen = aiEasy(moves); break;
+    case 'medium': chosen = aiMedium(moves); break;
+    case 'hard': chosen = aiHard(moves); break;
+    default: chosen = aiMedium(moves);
+  }
+  if (chosen) makeMove(chosen);
+}
+
+// Easy: random move
+function aiEasy(moves) {
+  return moves[Math.floor(Math.random() * moves.length)];
+}
+
+// Medium: heuristic scoring
+function aiMedium(moves) {
+  let best = [];
+  let bestScore = -Infinity;
+
+  for (const move of moves) {
+    let score = 0;
+    const result = executeMove(board, move);
+
+    // Prefer captures
+    if (move.captures && move.captures.length > 0) {
+      score += move.captures.length * 10;
+      // Bonus for capturing kings
+      for (const cap of move.captures) {
+        if (isKing(board[cap[0]][cap[1]])) score += 5;
+      }
+    }
+
+    // Prefer promotions
+    if (result.promoted) score += 8;
+
+    // Prefer advancing toward promotion
+    if (!isKing(board[move.from[0]][move.from[1]])) {
+      score += move.to[0] * 0.5; // black moves down, higher row = closer to promotion
+    }
+
+    // Prefer center positions
+    const centerDist = Math.abs(move.to[1] - 3.5) + Math.abs(move.to[0] - 3.5);
+    score -= centerDist * 0.3;
+
+    // Avoid edges slightly
+    if (move.to[1] === 0 || move.to[1] === 7) score -= 0.5;
+
+    // Add small randomness
+    score += Math.random() * 2;
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = [move];
+    } else if (score === bestScore) {
+      best.push(move);
+    }
+  }
+
+  return best[Math.floor(Math.random() * best.length)];
+}
+
+// Hard: Minimax with Alpha-Beta Pruning
+function aiHard(moves) {
+  let bestMove = moves[0];
+  let bestScore = -Infinity;
+  const depth = 6;
+
+  for (const move of moves) {
+    const result = executeMove(board, move);
+    const score = minimax(result.board, depth - 1, -Infinity, Infinity, false);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = move;
+    }
+  }
+  return bestMove;
+}
+
+function minimax(b, depth, alpha, beta, maximizing) {
+  const player = maximizing ? BLACK : RED;
+
+  // Terminal checks
+  let redCount = 0, blackCount = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (isRed(b[r][c])) redCount++;
+      if (isBlack(b[r][c])) blackCount++;
+    }
+  }
+  if (blackCount === 0) return -1000 - depth;
+  if (redCount === 0) return 1000 + depth;
+
+  const moves = getLegalMoves(b, player);
+  if (moves.length === 0) {
+    return maximizing ? (-1000 - depth) : (1000 + depth);
+  }
+
+  if (depth === 0) return evaluateBoard(b);
+
+  if (maximizing) {
+    let maxEval = -Infinity;
+    for (const move of moves) {
+      const result = executeMove(b, move);
+      const ev = minimax(result.board, depth - 1, alpha, beta, false);
+      maxEval = Math.max(maxEval, ev);
+      alpha = Math.max(alpha, ev);
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (const move of moves) {
+      const result = executeMove(b, move);
+      const ev = minimax(result.board, depth - 1, alpha, beta, true);
+      minEval = Math.min(minEval, ev);
+      beta = Math.min(beta, ev);
+      if (beta <= alpha) break;
+    }
+    return minEval;
+  }
+}
+
+function evaluateBoard(b) {
+  let score = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = b[r][c];
+      if (p === EMPTY) continue;
+
+      let val = 0;
+      let posBonus = 0;
+
+      if (p === RED) {
+        val = -10;
+        // Advancement bonus for red (moves up, row 0 = promotion)
+        posBonus = -(7 - r) * 0.5;
+      } else if (p === RED_KING) {
+        val = -15;
+        posBonus = -1;
+      } else if (p === BLACK) {
+        val = 10;
+        // Advancement bonus for black (moves down, row 7 = promotion)
+        posBonus = r * 0.5;
+      } else if (p === BLACK_KING) {
+        val = 15;
+        posBonus = 1;
+      }
+
+      // Center control bonus
+      const centerC = Math.abs(c - 3.5);
+      const centerR = Math.abs(r - 3.5);
+      const centerBonus = (3.5 - centerC) * 0.2 + (3.5 - centerR) * 0.1;
+      if (isBlack(p)) {
+        posBonus += centerBonus;
+      } else {
+        posBonus -= centerBonus;
+      }
+
+      // Back row defense bonus (keeping back row protected)
+      if (p === RED && r === 7) posBonus -= 0.3;
+      if (p === BLACK && r === 0) posBonus += 0.3;
+
+      score += val + posBonus;
+    }
+  }
+  return score;
+}
+
+// ─── Init ───
+createLabels();
+initGame();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

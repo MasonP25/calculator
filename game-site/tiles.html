@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piano Tiles</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .info { display: flex; gap: 2rem; margin-bottom: 0.8rem; font-size: 1.1rem; }
+  .info span { color: #00d4ff; font-weight: bold; }
+  .game-area {
+    position: relative;
+    width: 320px;
+    height: 480px;
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a2e;
+  }
+  .mode-select {
+    display: flex; gap: 0.5rem; margin-bottom: 1rem;
+  }
+  .mode-select button {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .mode-select button:hover { border-color: #7b2ff7; color: #7b2ff7; }
+  .mode-select button.active { border-color: #7b2ff7; color: #7b2ff7; }
+  canvas { display: block; width: 320px; height: 480px; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; }
+  .controls { margin-top: 0.4rem; color: #888; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Piano Tiles</h1>
+</div>
+<div class="info">
+  Score: <span id="score">0</span>
+  High: <span id="high">0</span>
+  Speed: <span id="spd">1.0</span>x
+</div>
+<div class="mode-select">
+  <button class="mode-btn active" data-mode="easy">Easy</button>
+  <button class="mode-btn" data-mode="normal">Normal</button>
+  <button class="mode-btn" data-mode="fast">Fast</button>
+</div>
+<div class="game-area">
+  <canvas id="c" width="320" height="480"></canvas>
+</div>
+<div class="msg" id="msg">Press SPACE or click a black tile to start</div>
+<div class="controls">1 &bull; 2 &bull; 3 &bull; 4 for columns</div>
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const W = canvas.width, H = canvas.height;
+const COLS = 4;
+const COL_W = W / COLS;
+const ROW_H = 120; // height of each tile row
+
+// ─── Theme colors ───
+let COL = {
+  bg: '#1a1a2e',
+  tileBg: '#2a2a4a',
+  tileBlack: '#0f0f1a',
+  tileBlackHit: '#7b2ff7',
+  tileWhite: '#1a1a2e',
+  line: '#2a2a4a',
+  text: '#e0e0e0',
+  accent: '#7b2ff7',
+  accent2: '#00d4ff',
+  miss: '#ff4757',
+  dim: '#888',
+};
+
+function updateColors() {
+  const t = window.THEME;
+  if (!t) return;
+  COL.bg = t.canvasBg || COL.bg;
+  COL.tileBg = t.bg3 || COL.tileBg;
+  COL.tileBlack = t.canvasBg2 || COL.tileBlack;
+  COL.tileBlackHit = t.accent || COL.tileBlackHit;
+  COL.tileWhite = t.canvasBg || COL.tileWhite;
+  COL.line = t.border || COL.line;
+  COL.text = t.text || COL.text;
+  COL.accent = t.accent || COL.accent;
+  COL.accent2 = t.accent2 || COL.accent2;
+  COL.dim = t.dim || COL.dim;
+}
+window.addEventListener('themechange', updateColors);
+
+// ─── Difficulty ───
+const MODES = {
+  easy:   { baseSpeed: 2.0, speedInc: 0.08, label: 'Easy' },
+  normal: { baseSpeed: 3.2, speedInc: 0.12, label: 'Normal' },
+  fast:   { baseSpeed: 4.8, speedInc: 0.18, label: 'Fast' },
+};
+let currentMode = 'easy';
+
+// ─── State ───
+let rows = [];     // { col: 0-3, y: number, hit: boolean, missed: boolean }
+let score, highScore, speed, playing, gameOver, started;
+let flashCol = -1, flashTimer = 0; // flash feedback
+let failFlash = 0;
+let failCol = -1;
+
+function loadHigh() {
+  highScore = parseInt(_gb('pianoTilesHigh_' + currentMode, '0'));
+  document.getElementById('high').textContent = highScore;
+}
+
+function saveHigh() {
+  if (score > highScore) {
+    highScore = score;
+    _sb('pianoTilesHigh_' + currentMode, highScore);
+    document.getElementById('high').textContent = highScore;
+  }
+}
+
+function init() {
+  rows = [];
+  score = 0;
+  speed = MODES[currentMode].baseSpeed;
+  playing = false;
+  gameOver = false;
+  started = false;
+  flashCol = -1;
+  flashTimer = 0;
+  failFlash = 0;
+  failCol = -1;
+
+  loadHigh();
+  updateUI();
+  updateColors();
+
+  // Pre-fill rows
+  let y = H - ROW_H; // start at the bottom of the visible area and stack upward
+  // We need enough rows to fill the screen plus buffer above
+  for (let i = 0; i < Math.ceil(H / ROW_H) + 3; i++) {
+    rows.push(createRow(y - i * ROW_H));
+  }
+
+  msgEl.textContent = 'Press SPACE or click a black tile to start';
+}
+
+function createRow(y) {
+  // Pick a random column for the black tile
+  const col = Math.floor(Math.random() * COLS);
+  return { col, y, hit: false, missed: false };
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  const speedMult = speed / MODES[currentMode].baseSpeed;
+  document.getElementById('spd').textContent = speedMult.toFixed(1);
+}
+
+// ─── Mode selection ───
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (playing && !gameOver) return; // don't switch mid-game
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    init();
+  });
+});
+
+// ─── Input ───
+function tapColumn(col) {
+  if (gameOver) {
+    init();
+    return;
+  }
+
+  if (!started) {
+    started = true;
+    playing = true;
+    msgEl.textContent = '';
+  }
+
+  if (!playing) return;
+
+  // Find the lowest (highest y) unhit row that is visible or close
+  let targetRow = null;
+  let targetIdx = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.hit || r.missed) continue;
+    // Row must be at least partially visible (bottom edge on screen)
+    if (r.y + ROW_H < 0) continue;
+    if (r.y > H + ROW_H) continue;
+    // Pick the one with the highest y (lowest on screen = need to tap first)
+    if (!targetRow || r.y > targetRow.y) {
+      targetRow = r;
+      targetIdx = i;
+    }
+  }
+
+  if (!targetRow) return;
+
+  if (targetRow.col === col) {
+    // Correct hit
+    window.SFX?.click();
+    targetRow.hit = true;
+    score++;
+    speed = MODES[currentMode].baseSpeed + score * MODES[currentMode].speedInc;
+    flashCol = col;
+    flashTimer = 8;
+    updateUI();
+    saveHigh();
+  } else {
+    // Wrong column - tapped white space
+    endGame(col);
+  }
+}
+
+// Click/tap on canvas
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const x = (e.clientX - rect.left) * scaleX;
+  const col = Math.floor(x / COL_W);
+  if (col >= 0 && col < COLS) tapColumn(col);
+});
+
+// Keyboard
+const KEY_MAP = { '1': 0, '2': 1, '3': 2, '4': 3 };
+document.addEventListener('keydown', e => {
+  const k = e.key;
+  if (k in KEY_MAP) {
+    tapColumn(KEY_MAP[k]);
+    e.preventDefault();
+  }
+  if (k === ' ' && !started && !gameOver) {
+    started = true;
+    playing = true;
+    msgEl.textContent = '';
+    e.preventDefault();
+    return;
+  }
+  if (gameOver && (k === 'Enter' || k === ' ')) {
+    init();
+    e.preventDefault();
+  }
+});
+
+function endGame(col) {
+  window.SFX?.wrong();
+  gameOver = true;
+  playing = false;
+  failCol = col;
+  failFlash = 30;
+  saveHigh();
+  msgEl.textContent = '';
+}
+
+// ─── Update ───
+function update() {
+  if (!playing || gameOver) {
+    if (failFlash > 0) failFlash--;
+    return;
+  }
+
+  // Move all rows down
+  for (const row of rows) {
+    row.y += speed;
+  }
+
+  // Check if any black tile has passed the bottom without being hit
+  for (const row of rows) {
+    if (!row.hit && !row.missed && row.y > H) {
+      row.missed = true;
+      endGame(-1);
+      return;
+    }
+  }
+
+  // Remove rows that have gone way off screen below
+  rows = rows.filter(r => r.y < H + ROW_H * 2);
+
+  // Add new rows at the top when needed
+  while (true) {
+    // Find the highest (smallest y) row
+    let minY = Infinity;
+    for (const r of rows) {
+      if (r.y < minY) minY = r.y;
+    }
+    if (minY > -ROW_H) {
+      rows.push(createRow(minY - ROW_H));
+    } else {
+      break;
+    }
+  }
+
+  // Flash timer
+  if (flashTimer > 0) flashTimer--;
+}
+
+// ─── Draw ───
+function draw() {
+  // Background
+  ctx.fillStyle = COL.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw column separators
+  ctx.strokeStyle = COL.line;
+  ctx.lineWidth = 1;
+  for (let i = 1; i < COLS; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * COL_W, 0);
+    ctx.lineTo(i * COL_W, H);
+    ctx.stroke();
+  }
+
+  // Draw rows
+  for (const row of rows) {
+    if (row.y + ROW_H < 0 || row.y > H + ROW_H) continue;
+
+    for (let c = 0; c < COLS; c++) {
+      const x = c * COL_W;
+      const y = row.y;
+
+      if (c === row.col) {
+        // Black tile
+        if (row.hit) {
+          ctx.fillStyle = COL.tileBlackHit;
+          ctx.globalAlpha = 0.4;
+        } else if (row.missed) {
+          ctx.fillStyle = COL.miss;
+          ctx.globalAlpha = 0.7;
+        } else {
+          ctx.fillStyle = COL.tileBlack;
+          ctx.globalAlpha = 1;
+        }
+        ctx.fillRect(x + 1, y + 1, COL_W - 2, ROW_H - 2);
+        ctx.globalAlpha = 1;
+
+        // Add subtle shine to unhit black tiles
+        if (!row.hit && !row.missed) {
+          const tg = ctx.createLinearGradient(x, y, x, y + ROW_H);
+          tg.addColorStop(0, 'rgba(255,255,255,0.06)');
+          tg.addColorStop(0.5, 'rgba(255,255,255,0)');
+          tg.addColorStop(1, 'rgba(255,255,255,0.03)');
+          ctx.fillStyle = tg;
+          ctx.fillRect(x + 1, y + 1, COL_W - 2, ROW_H - 2);
+        }
+      }
+    }
+
+    // Row separator
+    ctx.strokeStyle = COL.line + '60';
+    ctx.beginPath();
+    ctx.moveTo(0, row.y);
+    ctx.lineTo(W, row.y);
+    ctx.stroke();
+  }
+
+  // Flash feedback on correct tap
+  if (flashTimer > 0 && flashCol >= 0) {
+    ctx.fillStyle = COL.accent2;
+    ctx.globalAlpha = flashTimer / 12;
+    ctx.fillRect(flashCol * COL_W, 0, COL_W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Fail flash on wrong tap
+  if (failFlash > 0 && failCol >= 0) {
+    ctx.fillStyle = COL.miss;
+    ctx.globalAlpha = (failFlash / 30) * 0.5;
+    ctx.fillRect(failCol * COL_W, 0, COL_W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Column labels at bottom
+  const labels = ['1', '2', '3', '4'];
+  ctx.fillStyle = COL.dim;
+  ctx.font = '13px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < COLS; i++) {
+    ctx.fillText(labels[i], i * COL_W + COL_W / 2, H - 8);
+  }
+  ctx.textAlign = 'left';
+
+  // Game over overlay
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = COL.miss || '#ff4757';
+    ctx.font = 'bold 36px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', W/2, H/2 - 50);
+
+    ctx.fillStyle = COL.accent2;
+    ctx.font = '22px "Segoe UI", sans-serif';
+    ctx.fillText('Score: ' + score, W/2, H/2 - 5);
+
+    ctx.fillStyle = COL.text;
+    ctx.font = '18px "Segoe UI", sans-serif';
+    ctx.fillText('High Score: ' + highScore, W/2, H/2 + 30);
+
+    ctx.fillStyle = COL.dim;
+    ctx.font = '15px "Segoe UI", sans-serif';
+    ctx.fillText('Click or press ENTER to restart', W/2, H/2 + 68);
+    ctx.textAlign = 'left';
+  }
+
+  // Pre-game: highlight the columns
+  if (!started && !gameOver) {
+    ctx.fillStyle = COL.accent;
+    ctx.globalAlpha = 0.06 + 0.03 * Math.sin(Date.now() * 0.003);
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ─── Main Loop ───
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+init();
+loop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

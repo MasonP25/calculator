@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Paper Scissors</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.8rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+
+  .scoreboard {
+    display: flex; gap: 2rem; margin-bottom: 1rem; font-size: 1.1rem;
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+    padding: 0.8rem 2rem;
+  }
+  .scoreboard .label { color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+  .scoreboard .val { font-size: 1.5rem; font-weight: bold; text-align: center; }
+  .scoreboard .you .val { color: #00d4ff; }
+  .scoreboard .cpu .val { color: #ff4757; }
+  .scoreboard .round .val { color: #feca57; }
+
+  .round-select { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .round-btn {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.35rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+  }
+  .round-btn:hover, .round-btn.active { border-color: #7b2ff7; color: #7b2ff7; }
+
+  .arena {
+    display: flex; gap: 3rem; align-items: center; margin-bottom: 1.5rem;
+    min-height: 180px;
+  }
+  .hand {
+    width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;
+    font-size: 4.5rem; background: #1a1a2e; border: 3px solid #2a2a4a;
+    border-radius: 50%; transition: transform 0.3s, border-color 0.3s;
+    position: relative;
+  }
+  .hand.you { border-color: #00d4ff33; }
+  .hand.cpu { border-color: #ff475733; }
+  .hand.win { border-color: #35855a; box-shadow: 0 0 20px rgba(53, 133, 90, 0.4); transform: scale(1.1); }
+  .hand.lose { border-color: #ff4757; opacity: 0.5; transform: scale(0.9); }
+  .hand.draw { border-color: #feca57; }
+  .hand-label { position: absolute; bottom: -24px; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .vs { font-size: 1.5rem; color: #555; font-weight: bold; }
+
+  .hand.shaking {
+    animation: shake 0.4s ease-in-out infinite;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-12px); }
+    75% { transform: translateY(12px); }
+  }
+
+  .result-text {
+    font-size: 1.4rem; font-weight: bold; min-height: 2rem;
+    margin-bottom: 1rem; text-align: center;
+  }
+  .result-text.win { color: #35855a; }
+  .result-text.lose { color: #ff4757; }
+  .result-text.draw { color: #feca57; }
+
+  .choices {
+    display: flex; gap: 1.2rem; margin-bottom: 1.5rem;
+  }
+  .choice-btn {
+    width: 100px; height: 100px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.3rem;
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 16px;
+    cursor: pointer; font-size: 2.8rem;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .choice-btn:hover {
+    transform: translateY(-5px);
+    border-color: #7b2ff7;
+    box-shadow: 0 6px 20px rgba(123, 47, 247, 0.3);
+  }
+  .choice-btn:active { transform: translateY(-2px); }
+  .choice-btn .name { font-size: 0.7rem; color: #888; }
+  .choice-btn.disabled { pointer-events: none; opacity: 0.4; }
+
+  .match-result {
+    display: none; text-align: center;
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 16px;
+    padding: 1.5rem 2.5rem;
+  }
+  .match-result.show { display: block; }
+  .match-result h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .match-result h2.win { color: #35855a; }
+  .match-result h2.lose { color: #ff4757; }
+  .match-result .detail { color: #888; margin-bottom: 1rem; }
+  .match-result .streak { color: #feca57; font-size: 0.9rem; margin-bottom: 0.8rem; }
+  .play-again {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: #fff; border: none; padding: 0.6rem 2rem; border-radius: 8px;
+    font-size: 1rem; cursor: pointer;
+  }
+  .play-again:hover { opacity: 0.9; }
+
+  .stats-bar {
+    display: flex; gap: 1.5rem; color: #555; font-size: 0.8rem;
+    margin-top: 0.5rem;
+  }
+  .stats-bar span { color: #888; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Rock Paper Scissors</h1>
+</div>
+
+<div class="round-select" id="roundSelect">
+  <button class="round-btn" data-r="3">Best of 3</button>
+  <button class="round-btn active" data-r="5">Best of 5</button>
+  <button class="round-btn" data-r="7">Best of 7</button>
+</div>
+
+<div class="scoreboard">
+  <div class="you"><div class="label">You</div><div class="val" id="scoreYou">0</div></div>
+  <div class="round"><div class="label">Round</div><div class="val" id="roundNum">0</div></div>
+  <div class="cpu"><div class="label">CPU</div><div class="val" id="scoreCpu">0</div></div>
+</div>
+
+<div class="arena">
+  <div class="hand you" id="handYou">
+    <span id="emojiYou">❔</span>
+    <span class="hand-label">You</span>
+  </div>
+  <div class="vs">VS</div>
+  <div class="hand cpu" id="handCpu">
+    <span id="emojiCpu">❔</span>
+    <span class="hand-label">CPU</span>
+  </div>
+</div>
+
+<div class="result-text" id="resultText"></div>
+
+<div class="choices" id="choices">
+  <button class="choice-btn" data-choice="rock"><span>✊</span><span class="name">Rock</span></button>
+  <button class="choice-btn" data-choice="paper"><span>✋</span><span class="name">Paper</span></button>
+  <button class="choice-btn" data-choice="scissors"><span>✌️</span><span class="name">Scissors</span></button>
+</div>
+
+<div class="match-result" id="matchResult">
+  <h2 id="matchTitle">You Win!</h2>
+  <div class="detail" id="matchDetail">3 - 1</div>
+  <div class="streak" id="matchStreak"></div>
+  <button class="play-again" onclick="resetMatch()">Play Again</button>
+</div>
+
+<div class="stats-bar">
+  Total wins: <span id="totalWins">0</span> &bull;
+  Win streak: <span id="winStreak">0</span> &bull;
+  Best streak: <span id="bestStreak">0</span>
+</div>
+
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+
+const EMOJIS = { rock: '✊', paper: '✋', scissors: '✌️' };
+const CHOICES = ['rock', 'paper', 'scissors'];
+const BEATS = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+
+let bestOf = 5;
+let scoreYou = 0, scoreCpu = 0, roundNum = 0;
+let locked = false;
+let totalWins = parseInt(_gb('rps_wins', '0'));
+let streak = parseInt(_gb('rps_streak', '0'));
+let bestStreakVal = parseInt(_gb('rps_best_streak', '0'));
+
+document.getElementById('totalWins').textContent = totalWins;
+document.getElementById('winStreak').textContent = streak;
+document.getElementById('bestStreak').textContent = bestStreakVal;
+
+// Round select
+document.querySelectorAll('.round-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    bestOf = parseInt(btn.dataset.r);
+    resetMatch();
+  });
+});
+
+// Choice buttons
+document.querySelectorAll('.choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (locked) return;
+    playRound(btn.dataset.choice);
+  });
+});
+
+function playRound(playerChoice) {
+  locked = true;
+  const handYou = document.getElementById('handYou');
+  const handCpu = document.getElementById('handCpu');
+  const emojiYou = document.getElementById('emojiYou');
+  const emojiCpu = document.getElementById('emojiCpu');
+  const resultText = document.getElementById('resultText');
+
+  // Reset classes
+  handYou.className = 'hand you shaking';
+  handCpu.className = 'hand cpu shaking';
+  emojiYou.textContent = '❔';
+  emojiCpu.textContent = '❔';
+  resultText.textContent = '';
+  resultText.className = 'result-text';
+  document.querySelectorAll('.choice-btn').forEach(b => b.classList.add('disabled'));
+
+  window.SFX?.click();
+
+  // Shake for a moment then reveal
+  setTimeout(() => {
+    const cpuChoice = CHOICES[Math.floor(Math.random() * 3)];
+
+    handYou.classList.remove('shaking');
+    handCpu.classList.remove('shaking');
+    emojiYou.textContent = EMOJIS[playerChoice];
+    emojiCpu.textContent = EMOJIS[cpuChoice];
+
+    roundNum++;
+    document.getElementById('roundNum').textContent = roundNum;
+
+    let result;
+    if (playerChoice === cpuChoice) {
+      result = 'draw';
+      resultText.textContent = "It's a draw!";
+      resultText.className = 'result-text draw';
+      handYou.classList.add('draw');
+      handCpu.classList.add('draw');
+      window.SFX?.select();
+    } else if (BEATS[playerChoice] === cpuChoice) {
+      result = 'win';
+      scoreYou++;
+      resultText.textContent = `${capitalize(playerChoice)} beats ${cpuChoice}! You win!`;
+      resultText.className = 'result-text win';
+      handYou.classList.add('win');
+      handCpu.classList.add('lose');
+      window.SFX?.coin();
+    } else {
+      result = 'lose';
+      scoreCpu++;
+      resultText.textContent = `${capitalize(cpuChoice)} beats ${playerChoice}! CPU wins!`;
+      resultText.className = 'result-text lose';
+      handYou.classList.add('lose');
+      handCpu.classList.add('win');
+      window.SFX?.wrong();
+    }
+
+    document.getElementById('scoreYou').textContent = scoreYou;
+    document.getElementById('scoreCpu').textContent = scoreCpu;
+
+    const winsNeeded = Math.ceil(bestOf / 2);
+
+    if (scoreYou >= winsNeeded || scoreCpu >= winsNeeded) {
+      // Match over
+      setTimeout(() => showMatchResult(), 800);
+    } else {
+      setTimeout(() => {
+        locked = false;
+        document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('disabled'));
+      }, 600);
+    }
+  }, 700);
+}
+
+function showMatchResult() {
+  const matchResult = document.getElementById('matchResult');
+  const matchTitle = document.getElementById('matchTitle');
+  const matchDetail = document.getElementById('matchDetail');
+  const matchStreak = document.getElementById('matchStreak');
+  const choices = document.getElementById('choices');
+
+  choices.style.display = 'none';
+  matchResult.classList.add('show');
+
+  const won = scoreYou > scoreCpu;
+  matchDetail.textContent = `${scoreYou} - ${scoreCpu}`;
+
+  if (won) {
+    matchTitle.textContent = 'You Win the Match!';
+    matchTitle.className = 'win';
+    totalWins++;
+    streak++;
+    if (streak > bestStreakVal) bestStreakVal = streak;
+    _sb('rps_wins', totalWins.toString());
+    _sb('rps_streak', streak.toString());
+    _sb('rps_best_streak', bestStreakVal.toString());
+    window.HallOfFame?.submit('rps', totalWins);
+    window.SFX?.win();
+    matchStreak.textContent = streak > 1 ? `Win streak: ${streak}!` : '';
+  } else {
+    matchTitle.textContent = 'CPU Wins the Match!';
+    matchTitle.className = 'lose';
+    streak = 0;
+    _sb('rps_streak', '0');
+    window.SFX?.fail();
+    matchStreak.textContent = '';
+  }
+
+  document.getElementById('totalWins').textContent = totalWins;
+  document.getElementById('winStreak').textContent = streak;
+  document.getElementById('bestStreak').textContent = bestStreakVal;
+}
+
+function resetMatch() {
+  scoreYou = 0;
+  scoreCpu = 0;
+  roundNum = 0;
+  locked = false;
+
+  document.getElementById('scoreYou').textContent = '0';
+  document.getElementById('scoreCpu').textContent = '0';
+  document.getElementById('roundNum').textContent = '0';
+  document.getElementById('resultText').textContent = '';
+  document.getElementById('resultText').className = 'result-text';
+  document.getElementById('emojiYou').textContent = '❔';
+  document.getElementById('emojiCpu').textContent = '❔';
+  document.getElementById('handYou').className = 'hand you';
+  document.getElementById('handCpu').className = 'hand cpu';
+  document.getElementById('matchResult').classList.remove('show');
+  document.getElementById('choices').style.display = 'flex';
+  document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('disabled'));
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

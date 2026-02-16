@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tank Battle</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .mode-select { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
+  .mode-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+  }
+  .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
+  .scores { display: flex; gap: 3rem; margin-bottom: 0.5rem; font-size: 1.1rem; }
+  .p1c { color: #00d4ff; } .p2c { color: #ff4757; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; background: #1a1a2e; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; }
+  .controls { color: #555; font-size: 0.8rem; margin-top: 0.3rem; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Tank Battle</h1>
+</div>
+<div class="mode-select">
+  <button id="mode2p" class="active">2 Players</button>
+  <button id="modeBot">vs Bot</button>
+</div>
+<div class="scores">
+  <div><span class="p1c">P1: </span><span class="p1c" id="s1">0</span></div>
+  <div><span class="p2c">P2: </span><span class="p2c" id="s2">0</span></div>
+</div>
+<canvas id="c" width="600" height="400"></canvas>
+<div class="msg" id="msg">Press SPACE to start</div>
+<div class="controls">P1: WASD + Q to shoot &nbsp;|&nbsp; P2: Arrows + / to shoot<br>First to 5 wins!</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const W = canvas.width, H = canvas.height;
+const TANK_SIZE = 16;
+const BULLET_SPEED = 6;
+const TANK_SPEED = 2.5;
+const TURN_SPEED = 0.06;
+
+let p1, p2, bullets, walls, score1, score2, running, gameOver, botMode, keys;
+score1 = 0; score2 = 0; botMode = false; keys = {};
+
+const wallDefs = [
+  {x:200,y:80,w:20,h:120},{x:380,y:200,w:20,h:120},
+  {x:140,y:250,w:100,h:20},{x:360,y:130,w:100,h:20},
+  {x:280,y:170,w:40,h:60}
+];
+
+document.getElementById('mode2p').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('modeBot').classList.remove('active');
+  botMode = false; score1=0; score2=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  init();
+});
+document.getElementById('modeBot').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('mode2p').classList.remove('active');
+  botMode = true; score1=0; score2=0;
+  document.getElementById('s1').textContent='0';
+  document.getElementById('s2').textContent='0';
+  init();
+});
+
+function init() {
+  p1 = {x:80, y:H/2, angle:0, alive:true, cooldown:0};
+  p2 = {x:W-80, y:H/2, angle:Math.PI, alive:true, cooldown:0};
+  bullets = [];
+  walls = wallDefs.map(w => ({...w}));
+  running = false; gameOver = false;
+  draw();
+  msgEl.textContent = 'Press SPACE to start';
+}
+
+function shoot(tank, owner) {
+  if (tank.cooldown > 0) return;
+  bullets.push({
+    x: tank.x + Math.cos(tank.angle) * TANK_SIZE,
+    y: tank.y + Math.sin(tank.angle) * TANK_SIZE,
+    vx: Math.cos(tank.angle) * BULLET_SPEED,
+    vy: Math.sin(tank.angle) * BULLET_SPEED,
+    owner, life: 120
+  });
+  tank.cooldown = 25;
+}
+
+function rectCollide(x, y, r, rect) {
+  const cx = Math.max(rect.x, Math.min(x, rect.x + rect.w));
+  const cy = Math.max(rect.y, Math.min(y, rect.y + rect.h));
+  const dx = x - cx, dy = y - cy;
+  return dx*dx + dy*dy < r*r;
+}
+
+function moveTank(tank, forward, turn) {
+  tank.angle += turn * TURN_SPEED;
+  const nx = tank.x + Math.cos(tank.angle) * forward * TANK_SPEED;
+  const ny = tank.y + Math.sin(tank.angle) * forward * TANK_SPEED;
+  // Wall collision
+  let blocked = nx < TANK_SIZE || nx > W-TANK_SIZE || ny < TANK_SIZE || ny > H-TANK_SIZE;
+  if (!blocked) {
+    for (const w of walls) {
+      if (rectCollide(nx, ny, TANK_SIZE - 2, w)) { blocked = true; break; }
+    }
+  }
+  if (!blocked) { tank.x = nx; tank.y = ny; }
+}
+
+function botAI() {
+  if (!p2.alive || !p1.alive) return;
+  // Turn toward player
+  const dx = p1.x - p2.x, dy = p1.y - p2.y;
+  let targetAngle = Math.atan2(dy, dx);
+  let diff = targetAngle - p2.angle;
+  while (diff > Math.PI) diff -= 2*Math.PI;
+  while (diff < -Math.PI) diff += 2*Math.PI;
+
+  if (diff > 0.1) moveTank(p2, 0, 1);
+  else if (diff < -0.1) moveTank(p2, 0, -1);
+
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  if (dist > 120) moveTank(p2, 1, 0);
+  else if (dist < 80) moveTank(p2, -1, 0);
+
+  if (Math.abs(diff) < 0.3 && Math.random() < 0.08) shoot(p2, 2);
+}
+
+function update() {
+  // P1 controls
+  let p1fwd = 0, p1turn = 0;
+  if (keys['w'] || keys['W']) p1fwd = 1;
+  if (keys['s'] || keys['S']) p1fwd = -1;
+  if (keys['a'] || keys['A']) p1turn = -1;
+  if (keys['d'] || keys['D']) p1turn = 1;
+  if (p1.alive) moveTank(p1, p1fwd, p1turn);
+
+  // P2 controls
+  if (!botMode) {
+    let p2fwd = 0, p2turn = 0;
+    if (keys['ArrowUp']) p2fwd = 1;
+    if (keys['ArrowDown']) p2fwd = -1;
+    if (keys['ArrowLeft']) p2turn = -1;
+    if (keys['ArrowRight']) p2turn = 1;
+    if (p2.alive) moveTank(p2, p2fwd, p2turn);
+  } else {
+    botAI();
+  }
+
+  // Cooldowns
+  if (p1.cooldown > 0) p1.cooldown--;
+  if (p2.cooldown > 0) p2.cooldown--;
+
+  // Update bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx; b.y += b.vy; b.life--;
+
+    // Wall bounce
+    let hitWall = false;
+    if (b.x < 0 || b.x > W) { b.vx = -b.vx; b.x += b.vx * 2; hitWall = true; }
+    if (b.y < 0 || b.y > H) { b.vy = -b.vy; b.y += b.vy * 2; hitWall = true; }
+    for (const w of walls) {
+      if (b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h) {
+        // Simple bounce
+        const fromLeft = b.x - w.x, fromRight = w.x+w.w - b.x;
+        const fromTop = b.y - w.y, fromBot = w.y+w.h - b.y;
+        const minH = Math.min(fromLeft, fromRight), minV = Math.min(fromTop, fromBot);
+        if (minH < minV) b.vx = -b.vx; else b.vy = -b.vy;
+        b.x += b.vx; b.y += b.vy;
+        hitWall = true;
+      }
+    }
+
+    // Hit tanks
+    if (b.owner !== 1 && p1.alive) {
+      const dx = b.x-p1.x, dy = b.y-p1.y;
+      if (dx*dx+dy*dy < TANK_SIZE*TANK_SIZE) {
+        p1.alive = false;
+        score2++; document.getElementById('s2').textContent = score2;
+        bullets.splice(i, 1);
+        endRound(botMode ? 'Bot wins the round!' : 'P2 wins the round!');
+        continue;
+      }
+    }
+    if (b.owner !== 2 && p2.alive) {
+      const dx = b.x-p2.x, dy = b.y-p2.y;
+      if (dx*dx+dy*dy < TANK_SIZE*TANK_SIZE) {
+        p2.alive = false;
+        score1++; document.getElementById('s1').textContent = score1;
+        bullets.splice(i, 1);
+        endRound('P1 wins the round!');
+        continue;
+      }
+    }
+    if (b.life <= 0) bullets.splice(i, 1);
+  }
+
+  draw();
+}
+
+function drawTank(tank, color, glowColor) {
+  if (!tank.alive) return;
+  ctx.save();
+  ctx.translate(tank.x, tank.y);
+  ctx.rotate(tank.angle);
+  // Body
+  ctx.fillStyle = color;
+  ctx.shadowColor = glowColor; ctx.shadowBlur = 8;
+  ctx.fillRect(-TANK_SIZE, -TANK_SIZE*0.6, TANK_SIZE*2, TANK_SIZE*1.2);
+  // Barrel
+  ctx.fillStyle = '#ddd';
+  ctx.shadowBlur = 0;
+  ctx.fillRect(TANK_SIZE*0.5, -3, TANK_SIZE, 6);
+  ctx.restore();
+}
+
+function draw() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Walls
+  ctx.fillStyle = '#2a2a4a';
+  for (const w of walls) {
+    ctx.beginPath();
+    ctx.roundRect(w.x, w.y, w.w, w.h, 4);
+    ctx.fill();
+  }
+
+  // Tanks
+  drawTank(p1, '#00d4ff', '#00d4ff');
+  drawTank(p2, '#ff4757', '#ff4757');
+
+  // Bullets
+  for (const b of bullets) {
+    ctx.fillStyle = b.owner === 1 ? '#00d4ff' : '#ff4757';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(15,15,26,0.6)';
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+function endRound(msg) {
+  gameOver = true;
+  if (score1 >= 5 || score2 >= 5) {
+    const winner = score1 >= 5 ? 'P1' : (botMode ? 'Bot' : 'P2');
+    msgEl.textContent = winner + ' wins the match! SPACE to restart';
+    score1 = 0; score2 = 0;
+    document.getElementById('s1').textContent = '0';
+    document.getElementById('s2').textContent = '0';
+  } else {
+    msgEl.textContent = msg + ' SPACE for next round';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (gameOver) { init(); return; }
+    if (!running) { running = true; msgEl.textContent = ''; }
+  }
+  if (running && !gameOver) {
+    if ((e.key === 'q' || e.key === 'Q') && p1.alive) shoot(p1, 1);
+    if (e.key === '/' && !botMode && p2.alive) { e.preventDefault(); shoot(p2, 2); }
+  }
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+init();
+setInterval(() => { if (running && !gameOver) update(); }, 1000/60);
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

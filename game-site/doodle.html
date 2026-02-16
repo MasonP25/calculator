@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doodle Jump</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  h1 { font-size: 2rem; }
+  .info { display: flex; gap: 2rem; margin-bottom: 0.8rem; font-size: 1.1rem; }
+  .info span { color: #00d4ff; font-weight: bold; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Doodle Jump</h1>
+</div>
+<div class="info">
+  Score: <span id="score">0</span>
+  Best: <span id="best">0</span>
+</div>
+<canvas id="c" width="400" height="600"></canvas>
+<div class="msg" id="msg">Press any key or click to start</div>
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const W = canvas.width, H = canvas.height;
+
+// ─── THEME-AWARE COLORS ───
+let COL = {
+  bg: '#1a1a2e',
+  bgGrad: '#0a0a15',
+  accent: '#7b2ff7',
+  accent2: '#00d4ff',
+  text: '#e0e0e0',
+  dim: '#888',
+  border: '#2a2a4a',
+  platformNormal: '#35a855',
+  platformMoving: '#00d4ff',
+  platformFragile: '#d4803a',
+  platformSpring: '#ff4466',
+  player: '#7b2ff7',
+  playerFace: '#e0e0e0',
+  spring: '#ffcc00',
+};
+
+function updateColors() {
+  const t = window.THEME;
+  if (!t) return;
+  COL.bg = t.canvasBg || '#1a1a2e';
+  COL.bgGrad = t.canvasBg2 || '#0a0a15';
+  COL.accent = t.accent || '#7b2ff7';
+  COL.accent2 = t.accent2 || '#00d4ff';
+  COL.text = t.text || '#e0e0e0';
+  COL.dim = t.dim || '#888';
+  COL.border = t.border || '#2a2a4a';
+  COL.player = t.accent || '#7b2ff7';
+  COL.platformMoving = t.accent2 || '#00d4ff';
+}
+window.addEventListener('themechange', updateColors);
+
+// ─── CONSTANTS ───
+const GRAVITY = 0.35;
+const JUMP_VEL = -10;
+const SPRING_VEL = -16;
+const PLAYER_W = 32;
+const PLAYER_H = 36;
+const PLAT_W = 68;
+const PLAT_H = 12;
+const MOVE_SPEED = 5.5;
+const PLAT_COUNT_INIT = 8;
+const SPRING_H = 10;
+const SPRING_W = 16;
+
+// ─── STATE ───
+let player, platforms, particles, score, highScore, camera;
+let playing, gameOver, waitingStart;
+let keys = {};
+let difficulty; // 0-1 ramps up over height
+
+highScore = parseInt(_gb('doodleBest', '0'));
+bestEl.textContent = highScore;
+
+// ─── PARTICLES ───
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 1.5) * 4,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.03,
+      size: 2 + Math.random() * 3,
+      color,
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - camera, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ─── PLATFORM GENERATION ───
+function makePlatform(x, y, type) {
+  const plat = {
+    x, y, w: PLAT_W, h: PLAT_H,
+    type, // 'normal','moving','fragile','spring'
+    broken: false,
+    crumbleTime: 0,
+    moveDir: Math.random() < 0.5 ? 1 : -1,
+    moveSpeed: 1 + Math.random() * 1.5,
+    hasSpring: type === 'spring',
+  };
+  return plat;
+}
+
+function choosePlatformType(height) {
+  // difficulty ramps from 0 to ~1 over the first 10000 height units
+  const d = Math.min(1, height / 10000);
+  const r = Math.random();
+
+  // spring chance: ~5%
+  if (r < 0.05) return 'spring';
+  // fragile grows: 5% -> 30%
+  if (r < 0.05 + d * 0.25) return 'fragile';
+  // moving grows: 10% -> 35%
+  if (r < 0.15 + d * 0.25) return 'moving';
+  return 'normal';
+}
+
+function generateInitialPlatforms() {
+  platforms = [];
+  // Ground platform
+  platforms.push(makePlatform(W / 2 - PLAT_W / 2, H - 40, 'normal'));
+
+  // Spread platforms evenly
+  for (let i = 1; i < PLAT_COUNT_INIT; i++) {
+    const y = H - 40 - i * (H / PLAT_COUNT_INIT);
+    const x = Math.random() * (W - PLAT_W);
+    platforms.push(makePlatform(x, y, 'normal'));
+  }
+}
+
+function generatePlatformsAbove() {
+  // Keep generating platforms above the camera view
+  const topBound = camera - 200; // generate a bit above camera
+  let highest = Infinity;
+  for (const p of platforms) {
+    if (p.y < highest) highest = p.y;
+  }
+
+  while (highest > topBound) {
+    const d = Math.min(1, Math.abs(highest) / 10000);
+    // vertical gap between platforms increases with difficulty
+    const minGap = 50;
+    const maxGap = 70 + d * 50;
+    const gap = minGap + Math.random() * (maxGap - minGap);
+
+    highest -= gap;
+    const x = Math.random() * (W - PLAT_W);
+    const type = choosePlatformType(Math.abs(highest));
+    platforms.push(makePlatform(x, highest, type));
+  }
+}
+
+function removeOldPlatforms() {
+  const bottomBound = camera + H + 100;
+  for (let i = platforms.length - 1; i >= 0; i--) {
+    if (platforms[i].y > bottomBound) {
+      platforms.splice(i, 1);
+    }
+  }
+}
+
+// ─── INIT ───
+function init() {
+  player = {
+    x: W / 2 - PLAYER_W / 2,
+    y: H - 80,
+    vx: 0,
+    vy: 0,
+    w: PLAYER_W,
+    h: PLAYER_H,
+    facingRight: true,
+  };
+  camera = 0;
+  score = 0;
+  difficulty = 0;
+  particles = [];
+  playing = false;
+  gameOver = false;
+  waitingStart = true;
+  scoreEl.textContent = '0';
+  msgEl.textContent = 'Press any key or click to start';
+  generateInitialPlatforms();
+}
+
+// ─── UPDATE ───
+function update() {
+  if (!playing || gameOver) return;
+
+  // Horizontal movement
+  if (keys['ArrowLeft'] || keys['KeyA'] || keys['a'] || keys['arrowleft']) {
+    player.vx = -MOVE_SPEED;
+    player.facingRight = false;
+  } else if (keys['ArrowRight'] || keys['KeyD'] || keys['d'] || keys['arrowright']) {
+    player.vx = MOVE_SPEED;
+    player.facingRight = true;
+  } else {
+    player.vx *= 0.85; // friction
+  }
+
+  player.x += player.vx;
+
+  // Screen wrapping
+  if (player.x + player.w < 0) {
+    player.x = W;
+  } else if (player.x > W) {
+    player.x = -player.w;
+  }
+
+  // Gravity
+  player.vy += GRAVITY;
+  player.y += player.vy;
+
+  // Camera follows player upward only
+  const cameraTarget = player.y - H * 0.4;
+  if (cameraTarget < camera) {
+    camera = cameraTarget;
+  }
+
+  // Score is highest point reached
+  const heightScore = Math.floor(Math.max(0, -camera));
+  if (heightScore > score) {
+    score = heightScore;
+    scoreEl.textContent = score;
+  }
+  difficulty = Math.min(1, score / 10000);
+
+  // Update moving platforms
+  for (const p of platforms) {
+    if (p.type === 'moving' && !p.broken) {
+      p.x += p.moveDir * p.moveSpeed;
+      if (p.x <= 0) { p.x = 0; p.moveDir = 1; }
+      if (p.x + p.w >= W) { p.x = W - p.w; p.moveDir = -1; }
+    }
+    // crumble animation
+    if (p.broken && p.crumbleTime < 1) {
+      p.crumbleTime += 0.05;
+    }
+  }
+
+  // Collision with platforms (only when falling)
+  if (player.vy > 0) {
+    const playerBottom = player.y + player.h;
+    const playerCenterX = player.x + player.w / 2;
+
+    for (const p of platforms) {
+      if (p.broken && p.crumbleTime >= 0.3) continue;
+
+      // Check if player feet are at platform level
+      const prevBottom = playerBottom - player.vy;
+      if (playerBottom >= p.y && prevBottom <= p.y + p.h + 2) {
+        // Check horizontal overlap
+        if (playerCenterX > p.x - 5 && playerCenterX < p.x + p.w + 5) {
+          // Spring bounce
+          if (p.hasSpring) {
+            player.vy = SPRING_VEL;
+            player.y = p.y - player.h;
+            spawnParticles(playerCenterX, p.y, COL.spring, 15);
+            spawnParticles(playerCenterX, p.y, COL.platformSpring, 8);
+            window.SFX?.powerup();
+          } else {
+            player.vy = JUMP_VEL;
+            player.y = p.y - player.h;
+            spawnParticles(playerCenterX, p.y, COL.accent2, 8);
+            window.SFX?.jump();
+          }
+
+          // Handle fragile platforms
+          if (p.type === 'fragile') {
+            p.broken = true;
+            spawnParticles(p.x + p.w / 2, p.y, COL.platformFragile, 12);
+            window.SFX?.hit();
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // Generate and cull platforms
+  generatePlatformsAbove();
+  removeOldPlatforms();
+
+  // Update particles
+  updateParticles();
+
+  // Game over: fell below screen
+  if (player.y > camera + H + 50) {
+    gameOver = true;
+    window.SFX?.death();
+    if (score > highScore) {
+      highScore = score;
+      _sb('doodleBest', highScore);
+      bestEl.textContent = highScore;
+    }
+  }
+}
+
+// ─── DRAW ───
+function drawBackground() {
+  // Gradient background
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, COL.bgGrad);
+  grad.addColorStop(1, COL.bg);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid lines
+  ctx.strokeStyle = COL.border + '30';
+  ctx.lineWidth = 0.5;
+  const gridSize = 40;
+  const offsetY = (camera * 0.3) % gridSize;
+  for (let y = -gridSize + offsetY; y < H + gridSize; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  for (let x = 0; x < W; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+}
+
+function drawPlatform(p) {
+  const sy = p.y - camera;
+  if (sy < -20 || sy > H + 20) return;
+
+  if (p.broken) {
+    // Crumble animation: split into pieces falling
+    ctx.globalAlpha = 1 - p.crumbleTime;
+    const pieces = 4;
+    const pw = p.w / pieces;
+    for (let i = 0; i < pieces; i++) {
+      const offY = p.crumbleTime * 60 * (0.5 + Math.random());
+      const offX = (i - pieces / 2) * p.crumbleTime * 15;
+      const rot = p.crumbleTime * (i % 2 === 0 ? 1 : -1) * 0.5;
+      ctx.save();
+      ctx.translate(p.x + i * pw + pw / 2 + offX, sy + p.h / 2 + offY);
+      ctx.rotate(rot);
+      ctx.fillStyle = COL.platformFragile;
+      ctx.beginPath();
+      ctx.roundRect(-pw / 2, -p.h / 2, pw - 2, p.h, 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  let color;
+  switch (p.type) {
+    case 'normal': color = COL.platformNormal; break;
+    case 'moving': color = COL.platformMoving; break;
+    case 'fragile': color = COL.platformFragile; break;
+    case 'spring': color = COL.platformNormal; break;
+  }
+
+  // Platform body with rounded corners
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(p.x, sy, p.w, p.h, 4);
+  ctx.fill();
+
+  // Top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath();
+  ctx.roundRect(p.x + 2, sy, p.w - 4, 3, 2);
+  ctx.fill();
+
+  // Moving platform arrows
+  if (p.type === 'moving') {
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.moveDir > 0 ? '\u25B6' : '\u25C0', p.x + p.w / 2, sy + p.h - 2);
+  }
+
+  // Fragile platform cracks
+  if (p.type === 'fragile') {
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x + p.w * 0.3, sy + 2);
+    ctx.lineTo(p.x + p.w * 0.4, sy + p.h - 2);
+    ctx.moveTo(p.x + p.w * 0.6, sy + 3);
+    ctx.lineTo(p.x + p.w * 0.7, sy + p.h - 1);
+    ctx.stroke();
+  }
+
+  // Draw spring
+  if (p.hasSpring) {
+    const sx = p.x + p.w / 2 - SPRING_W / 2;
+    const springY = sy - SPRING_H;
+    // Spring coil
+    ctx.fillStyle = COL.spring;
+    ctx.beginPath();
+    ctx.roundRect(sx, springY, SPRING_W, SPRING_H, 2);
+    ctx.fill();
+    // Coil lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+      const ly = springY + 2 + i * 3;
+      ctx.beginPath();
+      ctx.moveTo(sx + 2, ly);
+      ctx.lineTo(sx + SPRING_W - 2, ly);
+      ctx.stroke();
+    }
+    // Top cap
+    ctx.fillStyle = COL.platformSpring;
+    ctx.beginPath();
+    ctx.roundRect(sx - 2, springY - 3, SPRING_W + 4, 4, 2);
+    ctx.fill();
+  }
+}
+
+function drawPlayer() {
+  const sx = player.x;
+  const sy = player.y - camera;
+
+  ctx.save();
+
+  // Body
+  const bodyColor = COL.player;
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.roundRect(sx + 4, sy + 8, PLAYER_W - 8, PLAYER_H - 8, 6);
+  ctx.fill();
+
+  // Head
+  const headR = 11;
+  const headX = sx + PLAYER_W / 2;
+  const headY = sy + 8;
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes
+  const eyeOffX = player.facingRight ? 3 : -3;
+  ctx.fillStyle = COL.playerFace;
+  ctx.beginPath();
+  ctx.arc(headX + eyeOffX - 3, headY - 2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headX + eyeOffX + 3, headY - 2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pupils
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(headX + eyeOffX - 3 + (player.facingRight ? 0.8 : -0.8), headY - 2, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headX + eyeOffX + 3 + (player.facingRight ? 0.8 : -0.8), headY - 2, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Mouth
+  if (player.vy < -2) {
+    // happy when jumping up
+    ctx.strokeStyle = COL.playerFace;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(headX + eyeOffX, headY + 3, 3, 0, Math.PI);
+    ctx.stroke();
+  } else {
+    // neutral/worried when falling
+    ctx.fillStyle = COL.playerFace;
+    ctx.beginPath();
+    ctx.arc(headX + eyeOffX, headY + 4, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Legs (small rectangles at the bottom)
+  ctx.fillStyle = bodyColor;
+  const legSpread = player.vy > 0 ? 2 : 0;
+  ctx.fillRect(sx + 8 - legSpread, sy + PLAYER_H - 4, 6, 5);
+  ctx.fillRect(sx + PLAYER_W - 14 + legSpread, sy + PLAYER_H - 4, 6, 5);
+
+  // Nose / beak
+  ctx.fillStyle = COL.accent2;
+  const noseDir = player.facingRight ? 1 : -1;
+  ctx.beginPath();
+  ctx.moveTo(headX + noseDir * 10, headY);
+  ctx.lineTo(headX + noseDir * 15, headY + 2);
+  ctx.lineTo(headX + noseDir * 10, headY + 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawScoreOverlay() {
+  // Score in upper-left of canvas during gameplay
+  ctx.fillStyle = COL.text;
+  ctx.font = 'bold 18px Segoe UI, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Score: ' + score, 12, 28);
+
+  // Height indicator lines
+  const heightMarker = Math.floor(score / 500) * 500;
+  if (heightMarker > 0) {
+    const markerY = -heightMarker - camera;
+    if (markerY > 0 && markerY < H) {
+      ctx.strokeStyle = COL.dim + '40';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, markerY);
+      ctx.lineTo(W, markerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = COL.dim + '60';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(heightMarker + 'm', W - 6, markerY - 4);
+    }
+  }
+}
+
+function drawGameOver() {
+  // Dark overlay
+  ctx.fillStyle = 'rgba(10, 10, 20, 0.85)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Game Over text
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COL.accent;
+  ctx.font = 'bold 40px Segoe UI, sans-serif';
+  ctx.fillText('Game Over', W / 2, H / 2 - 80);
+
+  // Score
+  ctx.fillStyle = COL.text;
+  ctx.font = '22px Segoe UI, sans-serif';
+  ctx.fillText('Score: ' + score, W / 2, H / 2 - 30);
+
+  // High score
+  ctx.fillStyle = COL.accent2;
+  ctx.font = '18px Segoe UI, sans-serif';
+  ctx.fillText('Best: ' + highScore, W / 2, H / 2 + 5);
+
+  // New high score notification
+  if (score >= highScore && score > 0) {
+    ctx.fillStyle = COL.spring;
+    ctx.font = 'bold 16px Segoe UI, sans-serif';
+    ctx.fillText('New High Score!', W / 2, H / 2 + 35);
+  }
+
+  // Restart button
+  const btnW = 180, btnH = 44;
+  const btnX = W / 2 - btnW / 2;
+  const btnY = H / 2 + 60;
+
+  ctx.fillStyle = COL.accent;
+  ctx.beginPath();
+  ctx.roundRect(btnX, btnY, btnW, btnH, 8);
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 18px Segoe UI, sans-serif';
+  ctx.fillText('Play Again', W / 2, btnY + 29);
+
+  // Store button bounds for click detection
+  drawGameOver._btnBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
+}
+
+function drawStartScreen() {
+  drawBackground();
+
+  // Draw some idle platforms
+  for (const p of platforms) {
+    drawPlatform(p);
+  }
+  drawPlayer();
+
+  // Overlay
+  ctx.fillStyle = 'rgba(10, 10, 20, 0.7)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COL.accent;
+  ctx.font = 'bold 36px Segoe UI, sans-serif';
+  ctx.fillText('Doodle Jump', W / 2, H / 2 - 60);
+
+  ctx.fillStyle = COL.text;
+  ctx.font = '16px Segoe UI, sans-serif';
+  ctx.fillText('Arrow Keys or A/D to move', W / 2, H / 2 - 15);
+  ctx.fillText('Bounce higher and higher!', W / 2, H / 2 + 15);
+
+  ctx.fillStyle = COL.accent2;
+  ctx.font = '14px Segoe UI, sans-serif';
+  ctx.fillText('Click or press any key to start', W / 2, H / 2 + 55);
+
+  // Platform legend
+  const legendY = H / 2 + 90;
+  const legendX = W / 2 - 100;
+  const items = [
+    { color: COL.platformNormal, label: 'Normal' },
+    { color: COL.platformMoving, label: 'Moving' },
+    { color: COL.platformFragile, label: 'Fragile' },
+    { color: COL.spring, label: 'Spring' },
+  ];
+  ctx.font = '12px Segoe UI, sans-serif';
+  ctx.textAlign = 'left';
+  for (let i = 0; i < items.length; i++) {
+    const ix = legendX + (i % 2) * 110;
+    const iy = legendY + Math.floor(i / 2) * 22;
+    ctx.fillStyle = items[i].color;
+    ctx.beginPath();
+    ctx.roundRect(ix, iy - 5, 20, 8, 2);
+    ctx.fill();
+    ctx.fillStyle = COL.dim;
+    ctx.fillText(items[i].label, ix + 26, iy + 2);
+  }
+}
+
+// ─── GAME LOOP ───
+function loop() {
+  if (waitingStart) {
+    drawStartScreen();
+  } else {
+    update();
+    drawBackground();
+    for (const p of platforms) {
+      drawPlatform(p);
+    }
+    drawPlayer();
+    drawParticles();
+    drawScoreOverlay();
+
+    if (gameOver) {
+      drawGameOver();
+    }
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ─── INPUT ───
+function startGame() {
+  if (waitingStart) {
+    waitingStart = false;
+    playing = true;
+    player.vy = JUMP_VEL;
+    msgEl.textContent = 'Arrow Keys / A-D to move';
+    return true;
+  }
+  return false;
+}
+
+function restartGame() {
+  init();
+  waitingStart = false;
+  playing = true;
+  player.vy = JUMP_VEL;
+  msgEl.textContent = 'Arrow Keys / A-D to move';
+}
+
+document.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
+  keys[e.key.toLowerCase()] = true;
+  keys[e.code] = true;
+
+  if (waitingStart) {
+    startGame();
+    return;
+  }
+  if (gameOver) {
+    restartGame();
+    return;
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  keys[e.key] = false;
+  keys[e.key.toLowerCase()] = false;
+  keys[e.code] = false;
+});
+
+canvas.addEventListener('click', (e) => {
+  if (waitingStart) {
+    startGame();
+    return;
+  }
+  if (gameOver && drawGameOver._btnBounds) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W / rect.width);
+    const my = (e.clientY - rect.top) * (H / rect.height);
+    const b = drawGameOver._btnBounds;
+    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+      restartGame();
+    }
+    return;
+  }
+});
+
+// Mobile touch support: tilt-like left/right by touch position
+let touchX = null;
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (waitingStart) { startGame(); return; }
+  if (gameOver) { restartGame(); return; }
+  touchX = e.touches[0].clientX;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length > 0) {
+    touchX = e.touches[0].clientX;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  touchX = null;
+}, { passive: false });
+
+// Use touch position to steer
+function handleTouch() {
+  if (touchX === null || !playing || gameOver) return;
+  const rect = canvas.getBoundingClientRect();
+  const relX = touchX - rect.left;
+  const canvasMiddle = rect.width / 2;
+  if (relX < canvasMiddle - 30) {
+    keys['ArrowLeft'] = true;
+    keys['ArrowRight'] = false;
+  } else if (relX > canvasMiddle + 30) {
+    keys['ArrowRight'] = true;
+    keys['ArrowLeft'] = false;
+  } else {
+    keys['ArrowLeft'] = false;
+    keys['ArrowRight'] = false;
+  }
+}
+
+// Wrap touch handling into the update cycle
+const origUpdate = update;
+update = function() {
+  handleTouch();
+  origUpdate();
+};
+
+// ─── START ───
+init();
+updateColors();
+loop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

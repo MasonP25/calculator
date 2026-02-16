@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connections</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    user-select: none;
+  }
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1.2rem;
+  }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; }
+
+  /* Solved groups area */
+  .solved-area {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .solved-group {
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    animation: groupReveal 0.5s ease;
+  }
+  .solved-group .cat-name {
+    font-weight: 800;
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: #1a1a2e;
+    letter-spacing: 0.04em;
+  }
+  .solved-group .cat-words {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-top: 2px;
+  }
+
+  @keyframes groupReveal {
+    0% { transform: scaleY(0); opacity: 0; }
+    100% { transform: scaleY(1); opacity: 1; }
+  }
+
+  /* Grid */
+  .grid-area {
+    width: 100%;
+    max-width: 520px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .tile {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 16px 6px;
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+  .tile:hover {
+    border-color: #3a3a6a;
+    transform: scale(1.03);
+  }
+  .tile.selected {
+    background: #2a1a4e;
+    border-color: #7b2ff7;
+    box-shadow: 0 0 14px rgba(123, 47, 247, 0.4);
+    transform: scale(1.04);
+  }
+  .tile.shake {
+    animation: shake 0.5s ease;
+  }
+  .tile.pop-out {
+    animation: popOut 0.4s ease forwards;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px); }
+    30% { transform: translateX(8px); }
+    45% { transform: translateX(-6px); }
+    60% { transform: translateX(6px); }
+    75% { transform: translateX(-3px); }
+    90% { transform: translateX(3px); }
+  }
+  @keyframes popOut {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  /* Message bar */
+  .message-bar {
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .message {
+    background: #e0e0e0;
+    color: #0f0f1a;
+    padding: 0.3rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .message.show { opacity: 1; }
+
+  /* Mistakes */
+  .mistakes-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    justify-content: center;
+  }
+  .mistakes-label {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 600;
+  }
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #3a3a5a;
+    transition: background 0.3s;
+  }
+  .dot.filled {
+    background: #7b2ff7;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .btn {
+    padding: 10px 22px;
+    border-radius: 24px;
+    border: 2px solid #2a2a4a;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: #7b2ff7;
+    color: #7b2ff7;
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .btn.submit-btn {
+    background: linear-gradient(135deg, #7b2ff7, #2a2a4a);
+    border-color: #7b2ff7;
+    color: #fff;
+  }
+  .btn.submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #8f4ff9, #3a3a5a);
+    color: #fff;
+  }
+  .btn.submit-btn:disabled {
+    background: #1a1a2e;
+    border-color: #2a2a4a;
+    color: #e0e0e0;
+  }
+  .btn.new-game-btn {
+    background: linear-gradient(135deg, #7b2ff7, #2a2a4a);
+    border-color: #7b2ff7;
+    color: #fff;
+    font-size: 1rem;
+    padding: 12px 32px;
+    margin-top: 10px;
+  }
+  .btn.new-game-btn:hover {
+    background: linear-gradient(135deg, #8f4ff9, #3a3a5a);
+  }
+
+  /* End screen */
+  .end-overlay {
+    display: none;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .end-overlay.show { display: block; }
+  .end-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .end-sub {
+    font-size: 0.95rem;
+    color: #888;
+    margin-bottom: 14px;
+  }
+  .win-title {
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lose-title { color: #ff4466; }
+
+  /* Responsive */
+  @media (max-width: 560px) {
+    body { padding: 1rem 0.5rem; }
+    .grid { gap: 6px; }
+    .tile { padding: 12px 4px; font-size: 0.78rem; min-height: 54px; }
+    .btn { padding: 8px 16px; font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Connections</h1>
+</div>
+
+<div class="solved-area" id="solvedArea"></div>
+<div class="grid-area" id="gridArea">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="message-bar"><div class="message" id="msg"></div></div>
+
+<div class="mistakes-area" id="mistakesArea">
+  <span class="mistakes-label">Mistakes remaining:</span>
+  <div class="dots" id="dots"></div>
+</div>
+
+<div class="btn-row" id="btnRow">
+  <button class="btn" id="shuffleBtn">Shuffle</button>
+  <button class="btn" id="deselectBtn">Deselect All</button>
+  <button class="btn submit-btn" id="submitBtn" disabled>Submit</button>
+</div>
+
+<div class="end-overlay" id="endOverlay">
+  <div class="end-title" id="endTitle"></div>
+  <div class="end-sub" id="endSub"></div>
+  <button class="btn new-game-btn" id="newGameBtn">New Puzzle</button>
+</div>
+
+<script>
+// ============ PUZZLE DATA ============
+const PUZZLES = [
+  {
+    groups: [
+      { category: "Fruits", color: "yellow", words: ["APPLE", "BANANA", "CHERRY", "GRAPE"] },
+      { category: "Car Brands", color: "green", words: ["FORD", "HONDA", "TESLA", "DODGE"] },
+      { category: "Planets", color: "blue", words: ["MARS", "VENUS", "SATURN", "NEPTUNE"] },
+      { category: "Things That Are Also Colors", color: "purple", words: ["ROSE", "OLIVE", "VIOLET", "AMBER"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Types of Dance", color: "yellow", words: ["SALSA", "TANGO", "WALTZ", "SWING"] },
+      { category: "Things in a Wallet", color: "green", words: ["CASH", "CARD", "LICENSE", "RECEIPT"] },
+      { category: "Coffee Drinks", color: "blue", words: ["LATTE", "MOCHA", "ESPRESSO", "CAPPUCCINO"] },
+      { category: "___ Break", color: "purple", words: ["LUNCH", "PRISON", "HEART", "DAY"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Dog Breeds", color: "yellow", words: ["POODLE", "BEAGLE", "BOXER", "COLLIE"] },
+      { category: "Units of Measurement", color: "green", words: ["POUND", "METER", "GALLON", "ACRE"] },
+      { category: "Poker Terms", color: "blue", words: ["FOLD", "BLUFF", "FLUSH", "RAISE"] },
+      { category: "Words Before 'Board'", color: "purple", words: ["SKATE", "CARD", "KEY", "DART"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Breakfast Foods", color: "yellow", words: ["WAFFLE", "PANCAKE", "OMELET", "CEREAL"] },
+      { category: "Music Genres", color: "green", words: ["JAZZ", "BLUES", "PUNK", "SOUL"] },
+      { category: "Olympic Sports", color: "blue", words: ["FENCING", "ROWING", "ARCHERY", "DIVING"] },
+      { category: "Words That Mean 'Leave'", color: "purple", words: ["SPLIT", "BOUNCE", "BAIL", "JET"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Vegetables", color: "yellow", words: ["CARROT", "CELERY", "SPINACH", "BROCCOLI"] },
+      { category: "Board Games", color: "green", words: ["RISK", "CLUE", "LIFE", "SORRY"] },
+      { category: "Types of Clouds", color: "blue", words: ["CIRRUS", "CUMULUS", "STRATUS", "NIMBUS"] },
+      { category: "Silent Letters", color: "purple", words: ["KNIGHT", "GNOME", "PSALM", "WRECK"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Footwear", color: "yellow", words: ["BOOT", "SANDAL", "SNEAKER", "LOAFER"] },
+      { category: "Card Games", color: "green", words: ["POKER", "BRIDGE", "HEARTS", "SPADES"] },
+      { category: "Greek Gods", color: "blue", words: ["APOLLO", "HERMES", "ATHENA", "ARES"] },
+      { category: "Words Meaning 'Great'", color: "purple", words: ["STELLAR", "EPIC", "PRIME", "ACE"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Pizza Toppings", color: "yellow", words: ["PEPPERONI", "MUSHROOM", "OLIVE", "SAUSAGE"] },
+      { category: "Currencies", color: "green", words: ["DOLLAR", "EURO", "POUND", "YEN"] },
+      { category: "Shakespeare Plays", color: "blue", words: ["HAMLET", "OTHELLO", "MACBETH", "TEMPEST"] },
+      { category: "Double Letters", color: "purple", words: ["BALLOON", "COFFEE", "HAMMER", "RABBIT"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Things at the Beach", color: "yellow", words: ["SAND", "WAVES", "SHELL", "TOWEL"] },
+      { category: "Instruments", color: "green", words: ["PIANO", "GUITAR", "DRUMS", "VIOLIN"] },
+      { category: "US States", color: "blue", words: ["ALASKA", "TEXAS", "OHIO", "MAINE"] },
+      { category: "Anagram of a Number", color: "purple", words: ["VISE", "ROUFE", "ENIN", "OWT"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Camping Gear", color: "yellow", words: ["TENT", "LANTERN", "COMPASS", "COOLER"] },
+      { category: "Movie Genres", color: "green", words: ["HORROR", "COMEDY", "DRAMA", "ACTION"] },
+      { category: "Parts of a Ship", color: "blue", words: ["STERN", "BOW", "HULL", "MAST"] },
+      { category: "Words After 'Fire'", color: "purple", words: ["TRUCK", "FLY", "PLACE", "WORK"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Ice Cream Flavors", color: "yellow", words: ["VANILLA", "ROCKY ROAD", "MINT", "CARAMEL"] },
+      { category: "Dances", color: "green", words: ["RUMBA", "FOXTROT", "POLKA", "MAMBO"] },
+      { category: "Zodiac Signs", color: "blue", words: ["ARIES", "GEMINI", "SCORPIO", "PISCES"] },
+      { category: "___ King", color: "purple", words: ["LION", "BURGER", "STEPHEN", "MARTIN LUTHER"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Kitchen Utensils", color: "yellow", words: ["SPATULA", "WHISK", "LADLE", "TONGS"] },
+      { category: "Fabrics", color: "green", words: ["SILK", "DENIM", "COTTON", "LINEN"] },
+      { category: "Famous Scientists", color: "blue", words: ["NEWTON", "DARWIN", "CURIE", "TESLA"] },
+      { category: "Words Before 'Light'", color: "purple", words: ["FLASH", "MOON", "SPOT", "HIGH"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Pasta Shapes", color: "yellow", words: ["PENNE", "RIGATONI", "FUSILLI", "FARFALLE"] },
+      { category: "Emotions", color: "green", words: ["ANGER", "JOY", "FEAR", "DISGUST"] },
+      { category: "River Names", color: "blue", words: ["THAMES", "DANUBE", "NILE", "AMAZON"] },
+      { category: "NBA Teams (No City)", color: "purple", words: ["LAKERS", "CELTICS", "HEAT", "THUNDER"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Things That Are Round", color: "yellow", words: ["GLOBE", "WHEEL", "COIN", "MOON"] },
+      { category: "Woodworking Tools", color: "green", words: ["CHISEL", "PLANE", "CLAMP", "LATHE"] },
+      { category: "Famous Paintings", color: "blue", words: ["MONA LISA", "STARRY NIGHT", "THE SCREAM", "GUERNICA"] },
+      { category: "Homophones of Numbers", color: "purple", words: ["WON", "ATE", "FORE", "SEW"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Herbs", color: "yellow", words: ["BASIL", "THYME", "SAGE", "DILL"] },
+      { category: "Hat Types", color: "green", words: ["FEDORA", "BERET", "BEANIE", "TURBAN"] },
+      { category: "Horror Movie Villains", color: "blue", words: ["FREDDY", "JASON", "CHUCKY", "JIGSAW"] },
+      { category: "Also a First Name", color: "purple", words: ["PENNY", "GINGER", "CLIFF", "MARK"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Weather Phenomena", color: "yellow", words: ["TORNADO", "BLIZZARD", "DROUGHT", "MONSOON"] },
+      { category: "Things in Space", color: "green", words: ["COMET", "ASTEROID", "NEBULA", "QUASAR"] },
+      { category: "Martial Arts", color: "blue", words: ["KARATE", "JUDO", "AIKIDO", "BOXING"] },
+      { category: "Words Before 'Stone'", color: "purple", words: ["KEY", "LIME", "SAND", "MILE"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Sandwich Types", color: "yellow", words: ["CLUB", "BLT", "REUBEN", "PANINI"] },
+      { category: "Dances", color: "green", words: ["HUSTLE", "SAMBA", "MERENGUE", "CHARLESTON"] },
+      { category: "Languages", color: "blue", words: ["MANDARIN", "HINDI", "SWAHILI", "ARABIC"] },
+      { category: "Also a Card Game", color: "purple", words: ["WAR", "SNAP", "SPEED", "RUMMY"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Body Parts", color: "yellow", words: ["ELBOW", "ANKLE", "WRIST", "SHOULDER"] },
+      { category: "Cheese Types", color: "green", words: ["CHEDDAR", "BRIE", "GOUDA", "FETA"] },
+      { category: "Disney Princesses", color: "blue", words: ["ARIEL", "MULAN", "ELSA", "MOANA"] },
+      { category: "___ Ball", color: "purple", words: ["BASE", "SNOW", "FIRE", "BASKET"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Types of Trees", color: "yellow", words: ["MAPLE", "OAK", "PINE", "BIRCH"] },
+      { category: "Precious Stones", color: "green", words: ["RUBY", "EMERALD", "SAPPHIRE", "DIAMOND"] },
+      { category: "Country Music Artists", color: "blue", words: ["CASH", "PARTON", "BROOKS", "SWIFT"] },
+      { category: "Things That Have Rings", color: "purple", words: ["SATURN", "PHONE", "TREE", "CIRCUS"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Seafood", color: "yellow", words: ["SHRIMP", "LOBSTER", "SALMON", "CRAB"] },
+      { category: "Art Supplies", color: "green", words: ["CANVAS", "EASEL", "PALETTE", "BRUSH"] },
+      { category: "Famous Couples", color: "blue", words: ["ROMEO", "BONNIE", "MICKEY", "TARZAN"] },
+      { category: "Words After 'Sun'", color: "purple", words: ["BURN", "FLOWER", "RISE", "SCREEN"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Baked Goods", color: "yellow", words: ["CROISSANT", "MUFFIN", "SCONE", "PRETZEL"] },
+      { category: "Computer Parts", color: "green", words: ["MONITOR", "KEYBOARD", "MOUSE", "SPEAKER"] },
+      { category: "World Capitals", color: "blue", words: ["PARIS", "TOKYO", "CAIRO", "LIMA"] },
+      { category: "Words That Sound Like Letters", color: "purple", words: ["SEA", "GEE", "QUEUE", "ARE"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Garden Items", color: "yellow", words: ["HOSE", "RAKE", "SHOVEL", "TROWEL"] },
+      { category: "TV Show Genres", color: "green", words: ["SITCOM", "REALITY", "THRILLER", "DOCUMENTARY"] },
+      { category: "Famous Explorers", color: "blue", words: ["COLUMBUS", "MAGELLAN", "DRAKE", "COOK"] },
+      { category: "Words Before 'Man'", color: "purple", words: ["SPIDER", "BAT", "IRON", "SUPER"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Berries", color: "yellow", words: ["BLUEBERRY", "RASPBERRY", "BLACKBERRY", "STRAWBERRY"] },
+      { category: "Types of Bridges", color: "green", words: ["ARCH", "BEAM", "CABLE", "TRUSS"] },
+      { category: "Famous Painters", color: "blue", words: ["MONET", "PICASSO", "WARHOL", "REMBRANDT"] },
+      { category: "___ House", color: "purple", words: ["WHITE", "WARE", "COURT", "TREE"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Spices", color: "yellow", words: ["CUMIN", "PAPRIKA", "SAFFRON", "TURMERIC"] },
+      { category: "Olympic Venues", color: "green", words: ["ATHENS", "BEIJING", "LONDON", "SYDNEY"] },
+      { category: "Snake Types", color: "blue", words: ["COBRA", "PYTHON", "VIPER", "MAMBA"] },
+      { category: "Also a Programming Language", color: "purple", words: ["JAVA", "SWIFT", "RUST", "GO"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Nuts", color: "yellow", words: ["WALNUT", "ALMOND", "CASHEW", "PECAN"] },
+      { category: "Fairy Tale Characters", color: "green", words: ["RAPUNZEL", "CINDERELLA", "HANSEL", "GRETEL"] },
+      { category: "Gymnastics Events", color: "blue", words: ["VAULT", "BEAM", "BARS", "FLOOR"] },
+      { category: "Things That Have Keys", color: "purple", words: ["PIANO", "MAP", "LOCK", "LAPTOP"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Sushi Items", color: "yellow", words: ["TUNA", "SALMON", "EEL", "SQUID"] },
+      { category: "Furniture", color: "green", words: ["COUCH", "DRESSER", "OTTOMAN", "ARMOIRE"] },
+      { category: "Bond Villains", color: "blue", words: ["GOLDFINGER", "BLOFELD", "JAWS", "ODDJOB"] },
+      { category: "Silent 'B' Words", color: "purple", words: ["THUMB", "CLIMB", "BOMB", "LAMB"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Flowers", color: "yellow", words: ["TULIP", "DAISY", "ORCHID", "LILY"] },
+      { category: "Track Events", color: "green", words: ["SPRINT", "RELAY", "HURDLES", "MARATHON"] },
+      { category: "Beatles Songs", color: "blue", words: ["YESTERDAY", "HELP", "IMAGINE", "BLACKBIRD"] },
+      { category: "Things That Are Contagious", color: "purple", words: ["YAWN", "LAUGHTER", "MEASLES", "ENTHUSIASM"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Desserts", color: "yellow", words: ["TIRAMISU", "BROWNIE", "SUNDAE", "ECLAIR"] },
+      { category: "Cocktails", color: "green", words: ["MARTINI", "MOJITO", "NEGRONI", "DAIQUIRI"] },
+      { category: "National Parks", color: "blue", words: ["YOSEMITE", "ZION", "GLACIER", "ACADIA"] },
+      { category: "___ Down", color: "purple", words: ["TOUCH", "BREAK", "SHOW", "LOCK"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Baby Animals", color: "yellow", words: ["KITTEN", "PUPPY", "CALF", "FOAL"] },
+      { category: "Phobias", color: "green", words: ["HEIGHTS", "SPIDERS", "FLYING", "CLOWNS"] },
+      { category: "Famous Johns", color: "blue", words: ["LENNON", "KENNEDY", "WAYNE", "LEGEND"] },
+      { category: "Words After 'Black'", color: "purple", words: ["BERRY", "SMITH", "BIRD", "JACK"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Candy Bars", color: "yellow", words: ["SNICKERS", "TWIX", "KITKAT", "MILKY WAY"] },
+      { category: "Magical Creatures", color: "green", words: ["DRAGON", "PHOENIX", "UNICORN", "GRIFFIN"] },
+      { category: "Classic Rock Bands", color: "blue", words: ["QUEEN", "RUSH", "BOSTON", "CREAM"] },
+      { category: "Also a Body of Water", color: "purple", words: ["BROOK", "BAY", "LAKE", "FORD"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Winter Activities", color: "yellow", words: ["SKIING", "SKATING", "SLEDDING", "SNOWBALL"] },
+      { category: "Textures", color: "green", words: ["SMOOTH", "ROUGH", "BUMPY", "SILKY"] },
+      { category: "Famous Battles", color: "blue", words: ["WATERLOO", "GETTYSBURG", "MIDWAY", "MARATHON"] },
+      { category: "Words Before 'Out'", color: "purple", words: ["CHECK", "WORK", "FALL", "STAND"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Tropical Fruits", color: "yellow", words: ["MANGO", "PAPAYA", "GUAVA", "COCONUT"] },
+      { category: "Modes of Transport", color: "green", words: ["TRAIN", "FERRY", "CABLE CAR", "GONDOLA"] },
+      { category: "Famous Michaels", color: "blue", words: ["JORDAN", "JACKSON", "SCOTT", "DOUGLAS"] },
+      { category: "Things With Tails", color: "purple", words: ["KITE", "COMET", "COAT", "PIANO"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Condiments", color: "yellow", words: ["KETCHUP", "MUSTARD", "MAYO", "RELISH"] },
+      { category: "Denim Items", color: "green", words: ["JACKET", "JEANS", "SKIRT", "VEST"] },
+      { category: "Ancient Wonders", color: "blue", words: ["PYRAMID", "COLOSSUS", "LIGHTHOUSE", "GARDENS"] },
+      { category: "Words Before 'Line'", color: "purple", words: ["PUNCH", "DEAD", "SIDE", "BOTTOM"] }
+    ]
+  },
+  {
+    groups: [
+      { category: "Grains", color: "yellow", words: ["RICE", "WHEAT", "BARLEY", "OATS"] },
+      { category: "Percussion Instruments", color: "green", words: ["CYMBAL", "BONGO", "TRIANGLE", "GONG"] },
+      { category: "Pixar Movies", color: "blue", words: ["COCO", "BRAVE", "UP", "CARS"] },
+      { category: "Words That Mean Money", color: "purple", words: ["BREAD", "DOUGH", "CHEDDAR", "BACON"] }
+    ]
+  }
+];
+
+// ============ GROUP COLORS ============
+const GROUP_COLORS = {
+  yellow: { bg: "#f9df6d", text: "#1a1a2e" },
+  green:  { bg: "#a0c35a", text: "#1a1a2e" },
+  blue:   { bg: "#b0c4ef", text: "#1a1a2e" },
+  purple: { bg: "#ba81c5", text: "#1a1a2e" }
+};
+const DIFFICULTY_ORDER = ["yellow", "green", "blue", "purple"];
+
+// ============ GAME STATE ============
+let currentPuzzle = null;
+let tiles = []; // { word, groupIdx }
+let selected = [];
+let solvedGroups = [];
+let mistakesLeft = 4;
+let gameOver = false;
+let previousGuesses = [];
+let usedPuzzles = [];
+
+// ============ DOM ============
+const gridEl = document.getElementById("grid");
+const solvedAreaEl = document.getElementById("solvedArea");
+const msgEl = document.getElementById("msg");
+const dotsEl = document.getElementById("dots");
+const submitBtn = document.getElementById("submitBtn");
+const deselectBtn = document.getElementById("deselectBtn");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const newGameBtn = document.getElementById("newGameBtn");
+const endOverlay = document.getElementById("endOverlay");
+const endTitle = document.getElementById("endTitle");
+const endSub = document.getElementById("endSub");
+const btnRow = document.getElementById("btnRow");
+const mistakesArea = document.getElementById("mistakesArea");
+
+// ============ INIT ============
+function pickPuzzle() {
+  if (usedPuzzles.length >= PUZZLES.length) usedPuzzles = [];
+  let idx;
+  do {
+    idx = Math.floor(Math.random() * PUZZLES.length);
+  } while (usedPuzzles.includes(idx));
+  usedPuzzles.push(idx);
+  return JSON.parse(JSON.stringify(PUZZLES[idx]));
+}
+
+function startGame() {
+  currentPuzzle = pickPuzzle();
+  tiles = [];
+  selected = [];
+  solvedGroups = [];
+  mistakesLeft = 4;
+  gameOver = false;
+  previousGuesses = [];
+
+  currentPuzzle.groups.forEach((g, gi) => {
+    g.words.forEach(w => tiles.push({ word: w, groupIdx: gi }));
+  });
+  shuffle(tiles);
+
+  solvedAreaEl.innerHTML = "";
+  endOverlay.classList.remove("show");
+  btnRow.style.display = "flex";
+  mistakesArea.style.display = "flex";
+  document.getElementById("gridArea").style.display = "block";
+  hideMsg();
+  renderDots();
+  renderGrid();
+  updateButtons();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// ============ RENDER ============
+function renderGrid() {
+  gridEl.innerHTML = "";
+  tiles.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "tile" + (selected.includes(i) ? " selected" : "");
+    el.textContent = t.word;
+    el.addEventListener("click", () => onTileClick(i));
+    gridEl.appendChild(el);
+  });
+}
+
+function renderDots() {
+  dotsEl.innerHTML = "";
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement("div");
+    d.className = "dot" + (i < mistakesLeft ? " filled" : "");
+    dotsEl.appendChild(d);
+  }
+}
+
+function renderSolvedGroup(group) {
+  const div = document.createElement("div");
+  div.className = "solved-group";
+  const c = GROUP_COLORS[group.color];
+  div.style.background = c.bg;
+  div.style.color = c.text;
+  div.innerHTML = `
+    <div class="cat-name">${group.category}</div>
+    <div class="cat-words">${group.words.join(", ")}</div>
+  `;
+  // Insert in difficulty order
+  const order = DIFFICULTY_ORDER.indexOf(group.color);
+  const children = Array.from(solvedAreaEl.children);
+  let inserted = false;
+  for (let i = 0; i < children.length; i++) {
+    const childColor = children[i].dataset.color;
+    if (DIFFICULTY_ORDER.indexOf(childColor) > order) {
+      solvedAreaEl.insertBefore(div, children[i]);
+      inserted = true;
+      break;
+    }
+  }
+  if (!inserted) solvedAreaEl.appendChild(div);
+  div.dataset.color = group.color;
+}
+
+function updateButtons() {
+  submitBtn.disabled = selected.length !== 4 || gameOver;
+  deselectBtn.disabled = selected.length === 0 || gameOver;
+  shuffleBtn.disabled = gameOver;
+}
+
+// ============ MESSAGES ============
+let msgTimeout = null;
+function showMsg(text, duration) {
+  msgEl.textContent = text;
+  msgEl.classList.add("show");
+  if (msgTimeout) clearTimeout(msgTimeout);
+  if (duration) {
+    msgTimeout = setTimeout(hideMsg, duration);
+  }
+}
+function hideMsg() {
+  msgEl.classList.remove("show");
+}
+
+// ============ TILE CLICK ============
+function onTileClick(idx) {
+  if (gameOver) return;
+  const selIdx = selected.indexOf(idx);
+  if (selIdx >= 0) {
+    selected.splice(selIdx, 1);
+    window.SFX?.click();
+  } else {
+    if (selected.length >= 4) return;
+    selected.push(idx);
+    window.SFX?.click();
+  }
+  renderGrid();
+  updateButtons();
+}
+
+// ============ SUBMIT ============
+submitBtn.addEventListener("click", onSubmit);
+deselectBtn.addEventListener("click", () => {
+  selected = [];
+  renderGrid();
+  updateButtons();
+});
+shuffleBtn.addEventListener("click", () => {
+  window.SFX?.swoosh();
+  shuffle(tiles);
+  selected = [];
+  renderGrid();
+  updateButtons();
+});
+newGameBtn.addEventListener("click", startGame);
+
+function onSubmit() {
+  if (selected.length !== 4 || gameOver) return;
+
+  const selectedWords = selected.map(i => tiles[i].word).sort();
+  const guessKey = selectedWords.join(",");
+  if (previousGuesses.includes(guessKey)) {
+    showMsg("Already guessed!", 1500);
+    return;
+  }
+  previousGuesses.push(guessKey);
+
+  // Check which group these belong to
+  const groupCounts = {};
+  selected.forEach(i => {
+    const gi = tiles[i].groupIdx;
+    groupCounts[gi] = (groupCounts[gi] || 0) + 1;
+  });
+
+  // Find if any group has all 4
+  let correctGroupIdx = null;
+  for (const [gi, count] of Object.entries(groupCounts)) {
+    if (count === 4) {
+      correctGroupIdx = parseInt(gi);
+      break;
+    }
+  }
+
+  if (correctGroupIdx !== null) {
+    // Correct guess!
+    window.SFX?.correct();
+    handleCorrectGuess(correctGroupIdx);
+  } else {
+    // Wrong guess
+    // Check if 3 of 4 are from one group ("one away")
+    let oneAway = false;
+    for (const [gi, count] of Object.entries(groupCounts)) {
+      if (count === 3) { oneAway = true; break; }
+    }
+    window.SFX?.wrong();
+    handleWrongGuess(oneAway);
+  }
+}
+
+function handleCorrectGuess(groupIdx) {
+  const group = currentPuzzle.groups[groupIdx];
+  const tileEls = gridEl.querySelectorAll(".tile");
+
+  // Animate selected tiles
+  selected.forEach(i => {
+    tileEls[i].classList.add("pop-out");
+  });
+
+  setTimeout(() => {
+    // Remove tiles from array
+    const removedWords = selected.map(i => tiles[i].word);
+    tiles = tiles.filter(t => !removedWords.includes(t.word));
+    selected = [];
+    solvedGroups.push(groupIdx);
+
+    renderSolvedGroup(group);
+    renderGrid();
+    updateButtons();
+
+    // Check win
+    if (solvedGroups.length === 4) {
+      gameOver = true;
+      window.SFX?.win();
+      const ws = window.HallOfFame?.winStreak('connections');
+      setTimeout(() => {
+        btnRow.style.display = "none";
+        mistakesArea.style.display = "none";
+        endTitle.className = "end-title win-title";
+        endTitle.textContent = "Excellent!";
+        const base = mistakesLeft === 4
+          ? "Perfect - no mistakes!"
+          : `Solved with ${4 - mistakesLeft} mistake${4 - mistakesLeft > 1 ? "s" : ""}`;
+        endSub.innerHTML = base + (ws ? ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + ws.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + ws.best + '</span>' : '');
+        endOverlay.classList.add("show");
+      }, 300);
+    }
+  }, 450);
+}
+
+function handleWrongGuess(oneAway) {
+  const tileEls = gridEl.querySelectorAll(".tile");
+  selected.forEach(i => {
+    tileEls[i].classList.add("shake");
+  });
+
+  if (oneAway) {
+    showMsg("One away...", 2000);
+  } else {
+    showMsg("Incorrect", 1500);
+  }
+
+  mistakesLeft--;
+  renderDots();
+
+  setTimeout(() => {
+    selected.forEach(i => {
+      const el = gridEl.querySelectorAll(".tile")[i];
+      if (el) el.classList.remove("shake");
+    });
+    selected = [];
+    renderGrid();
+    updateButtons();
+
+    if (mistakesLeft <= 0) {
+      // Game over - reveal all
+      gameOver = true;
+      window.SFX?.fail();
+      revealAll();
+    }
+  }, 600);
+}
+
+function revealAll() {
+  // Reveal remaining groups in difficulty order
+  const remaining = [];
+  currentPuzzle.groups.forEach((g, gi) => {
+    if (!solvedGroups.includes(gi)) remaining.push(gi);
+  });
+  remaining.sort((a, b) => {
+    return DIFFICULTY_ORDER.indexOf(currentPuzzle.groups[a].color)
+         - DIFFICULTY_ORDER.indexOf(currentPuzzle.groups[b].color);
+  });
+
+  let delay = 0;
+  remaining.forEach(gi => {
+    setTimeout(() => {
+      const group = currentPuzzle.groups[gi];
+      tiles = tiles.filter(t => t.groupIdx !== gi);
+      renderSolvedGroup(group);
+      renderGrid();
+    }, delay);
+    delay += 500;
+  });
+
+  const ls = window.HallOfFame?.loseStreak('connections');
+  setTimeout(() => {
+    btnRow.style.display = "none";
+    mistakesArea.style.display = "none";
+    document.getElementById("gridArea").style.display = "none";
+    endTitle.className = "end-title lose-title";
+    endTitle.textContent = "Next Time!";
+    endSub.innerHTML = 'Better luck on the next puzzle.' + (ls ? ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + ls.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + ls.best + '</span>' : '');
+    endOverlay.classList.add("show");
+  }, delay + 200);
+}
+
+// ============ START ============
+startGame();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

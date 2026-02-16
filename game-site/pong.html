@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pong</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
+  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
+  .top-bar a:hover { text-decoration: underline; }
+  h1 { font-size: 2rem; }
+  .mode-select { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
+  .mode-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+  }
+  .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
+  .scores {
+    display: flex; gap: 3rem; margin-bottom: 0.5rem; font-size: 1.2rem;
+  }
+  .scores .label { color: #888; }
+  .scores .p1v { color: #00d4ff; font-weight: bold; }
+  .scores .p2v { color: #ff4757; font-weight: bold; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; background: #1a1a2e; cursor: none; }
+  .msg { margin-top: 0.8rem; color: #888; height: 1.5rem; }
+  .controls { color: #555; font-size: 0.8rem; margin-top: 0.3rem; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="index.html">&larr; Back</a>
+  <h1>Pong</h1>
+</div>
+<div class="mode-select">
+  <button id="mode2p">2 Players</button>
+  <button id="modeBot" class="active">vs Bot</button>
+</div>
+<div class="scores">
+  <div><span class="label" id="p1label">You: </span><span class="p1v" id="pScore">0</span></div>
+  <div><span class="label" id="p2label">CPU: </span><span class="p2v" id="cScore">0</span></div>
+</div>
+<canvas id="c" width="600" height="400"></canvas>
+<div class="msg" id="msg">Click or press SPACE to serve</div>
+<div class="controls" id="controlsText">Mouse or W/S to move. Click/SPACE to serve.</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const pScoreEl = document.getElementById('pScore');
+const cScoreEl = document.getElementById('cScore');
+
+const W = canvas.width, H = canvas.height;
+const PADDLE_W = 12, PADDLE_H = 80;
+const BALL_R = 8;
+
+let player = { y: H/2 - PADDLE_H/2 };
+let cpu = { y: H/2 - PADDLE_H/2 };
+let ball = { x: W/2, y: H/2, vx: 0, vy: 0 };
+let pScore = 0, cScore = 0;
+let playing = false;
+let botMode = true;
+let keys = {};
+
+document.getElementById('mode2p').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('modeBot').classList.remove('active');
+  botMode = false;
+  document.getElementById('p1label').textContent = 'P1 (W/S): ';
+  document.getElementById('p2label').textContent = 'P2 (Arrows): ';
+  document.getElementById('controlsText').textContent = 'P1: W/S  |  P2: Arrow Up/Down  |  SPACE to serve';
+  canvas.style.cursor = 'default';
+  pScore = 0; cScore = 0;
+  pScoreEl.textContent = '0'; cScoreEl.textContent = '0';
+  resetBall(Math.random() > 0.5);
+});
+document.getElementById('modeBot').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('mode2p').classList.remove('active');
+  botMode = true;
+  document.getElementById('p1label').textContent = 'You: ';
+  document.getElementById('p2label').textContent = 'CPU: ';
+  document.getElementById('controlsText').textContent = 'Mouse or W/S to move. Click/SPACE to serve.';
+  canvas.style.cursor = 'none';
+  pScore = 0; cScore = 0;
+  pScoreEl.textContent = '0'; cScoreEl.textContent = '0';
+  resetBall(Math.random() > 0.5);
+});
+
+function resetBall(serveRight) {
+  ball.x = W / 2;
+  ball.y = H / 2;
+  const angle = (Math.random() * 0.8 - 0.4);
+  const speed = 5;
+  ball.vx = serveRight ? speed * Math.cos(angle) : -speed * Math.cos(angle);
+  ball.vy = speed * Math.sin(angle);
+  playing = false;
+  msgEl.textContent = 'Click or press SPACE to serve';
+}
+
+function serve() {
+  if (!playing) {
+    playing = true;
+    msgEl.textContent = '';
+  }
+}
+
+function update() {
+  // Keyboard movement for P1 (left paddle)
+  const p1Speed = 6;
+  if (keys['w'] || keys['W']) player.y = Math.max(0, player.y - p1Speed);
+  if (keys['s'] || keys['S']) player.y = Math.min(H - PADDLE_H, player.y + p1Speed);
+
+  // P2 / Bot (right paddle)
+  if (botMode) {
+    // Bot AI
+    if (playing) {
+      const cpuTarget = ball.y - PADDLE_H / 2;
+      const cpuSpeed = 3.5;
+      if (cpu.y < cpuTarget - 5) cpu.y += cpuSpeed;
+      else if (cpu.y > cpuTarget + 5) cpu.y -= cpuSpeed;
+    }
+  } else {
+    // P2 arrow keys
+    const p2Speed = 6;
+    if (keys['ArrowUp']) cpu.y = Math.max(0, cpu.y - p2Speed);
+    if (keys['ArrowDown']) cpu.y = Math.min(H - PADDLE_H, cpu.y + p2Speed);
+  }
+  cpu.y = Math.max(0, Math.min(H - PADDLE_H, cpu.y));
+
+  if (!playing) return;
+
+  // Move ball
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // Top/bottom walls
+  if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); if (window.SFX) window.SFX.tick(); }
+  if (ball.y + BALL_R >= H) { ball.y = H - BALL_R; ball.vy = -Math.abs(ball.vy); if (window.SFX) window.SFX.tick(); }
+
+  // Player paddle collision (left side)
+  const px = 20;
+  if (ball.x - BALL_R <= px + PADDLE_W &&
+      ball.x + BALL_R >= px &&
+      ball.y >= player.y && ball.y <= player.y + PADDLE_H &&
+      ball.vx < 0) {
+    ball.x = px + PADDLE_W + BALL_R;
+    const hit = (ball.y - (player.y + PADDLE_H/2)) / (PADDLE_H/2);
+    const angle = hit * Math.PI / 3;
+    const speed = Math.min(Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy) + 0.3, 12);
+    ball.vx = speed * Math.cos(angle);
+    ball.vy = speed * Math.sin(angle);
+    if (window.SFX) window.SFX.bounce();
+  }
+
+  // Right paddle collision
+  const cx = W - 20 - PADDLE_W;
+  if (ball.x + BALL_R >= cx &&
+      ball.x - BALL_R <= cx + PADDLE_W &&
+      ball.y >= cpu.y && ball.y <= cpu.y + PADDLE_H &&
+      ball.vx > 0) {
+    ball.x = cx - BALL_R;
+    const hit = (ball.y - (cpu.y + PADDLE_H/2)) / (PADDLE_H/2);
+    const angle = hit * Math.PI / 3;
+    const speed = Math.min(Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy) + 0.3, 12);
+    ball.vx = -speed * Math.cos(angle);
+    ball.vy = speed * Math.sin(angle);
+    if (window.SFX) window.SFX.bounce();
+  }
+
+  // Score
+  if (ball.x < 0) {
+    cScore++;
+    cScoreEl.textContent = cScore;
+    if (window.SFX) window.SFX.correct();
+    if (cScore >= 11) { if (window.SFX) window.SFX.win(); if (window.HallOfFame) window.HallOfFame.submit('pong', pScore); msgEl.textContent = 'Game Over! Press SPACE to restart.'; playing = false; return; }
+    resetBall(true);
+  }
+  if (ball.x > W) {
+    pScore++;
+    pScoreEl.textContent = pScore;
+    if (window.SFX) window.SFX.correct();
+    if (pScore >= 11) { if (window.SFX) window.SFX.win(); if (window.HallOfFame) window.HallOfFame.submit('pong', pScore); msgEl.textContent = 'You win! Press SPACE to restart.'; playing = false; return; }
+    resetBall(false);
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Center line
+  ctx.setLineDash([8, 8]);
+  ctx.strokeStyle = '#2a2a4a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(W/2, 0);
+  ctx.lineTo(W/2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Player paddle (left)
+  ctx.fillStyle = '#00d4ff';
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.roundRect(20, player.y, PADDLE_W, PADDLE_H, 6);
+  ctx.fill();
+
+  // Right paddle
+  ctx.fillStyle = '#ff4757';
+  ctx.shadowColor = '#ff4757';
+  ctx.beginPath();
+  ctx.roundRect(W - 20 - PADDLE_W, cpu.y, PADDLE_W, PADDLE_H, 6);
+  ctx.fill();
+
+  // Ball
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Mouse control (for bot mode P1)
+canvas.addEventListener('mousemove', e => {
+  if (botMode) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseY = (e.clientY - rect.top) * (H / rect.height);
+    player.y = mouseY - PADDLE_H / 2;
+    player.y = Math.max(0, Math.min(H - PADDLE_H, player.y));
+  }
+});
+
+canvas.addEventListener('click', serve);
+
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === ' ') { e.preventDefault(); serve(); }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+resetBall(Math.random() > 0.5);
+loop();
+</script>
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>
