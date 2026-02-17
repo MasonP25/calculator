@@ -48,6 +48,7 @@
   .ls-card .diff.easy { color: #4ecdc4; }
   .ls-card .diff.medium { color: #ffa502; }
   .ls-card .diff.hard { color: #ff4757; }
+  .ls-card .diff.insane { color: #ff00aa; text-shadow: 0 0 8px rgba(255,0,170,0.4); }
   .ls-card .best-lbl { font-size: 0.7rem; color: #666; margin-bottom: 0.2rem; }
   .ls-card .best-val { font-size: 1.3rem; font-weight: bold; color: #00d4ff; }
   .ls-card .stars { font-size: 1.1rem; margin-top: 0.4rem; color: #555; }
@@ -525,7 +526,231 @@ function buildLevel7() {
   return { obstacles: obs, length: x + 400, speed: 4.0, name: 'Jumper', diff: 'hard' };
 }
 
-const LEVELS = [ buildLevel1(), buildLevel2(), buildLevel3(), buildLevel4(), buildLevel5(), buildLevel6(), buildLevel7() ];
+function buildLevel8() {
+  // Time Machine - faster with tighter patterns but fair
+  const obs = [];
+  const u = BLOCK;
+  let x = 750;
+
+  // Cube warmup - single spikes, comfortable
+  obs.push(makeSpike(x)); x += u*8;
+  obs.push(makeSpike(x)); x += u*8;
+  obs.push(makeOrb(x, GROUND_Y - u*3)); x += u*5;
+  // Ramp into doubles
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*8;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*5));
+  x += u*8;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makeOrb(x + u*0.5, GROUND_Y - u*5));
+  x += u*8;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*8;
+
+  // Ship - tighter alternating
+  obs.push(makePortal(x, MODE_SHIP)); x += u*5;
+  obs.push(makeSpike(x + u*4));
+  obs.push(makeSpikeTop(x + u*8));
+  obs.push(makeSpike(x + u*12));
+  obs.push(makeSpikeTop(x + u*16));
+  obs.push(makeSpike(x + u*20));
+  obs.push(makeOrb(x + u*10, GROUND_Y * 0.35));
+  x += u*25;
+
+  // Wave - moderate weave
+  obs.push(makePortal(x, MODE_WAVE)); x += u*5;
+  obs.push(makeSpike(x + u*3));
+  obs.push(makeSpikeTop(x + u*7));
+  obs.push(makeSpike(x + u*11));
+  obs.push(makeSpikeTop(x + u*15));
+  obs.push(makeOrb(x + u*9, GROUND_Y/2));
+  x += u*20;
+
+  // Cube - double spikes with platforms
+  obs.push(makePortal(x, MODE_CUBE)); x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*4)); obs.push(makeSpike(x + u*5));
+  x += u*8;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*8;
+
+  // Ship finale
+  obs.push(makePortal(x, MODE_SHIP)); x += u*5;
+  obs.push(makeSpikeTop(x + u*3));
+  obs.push(makeSpike(x + u*7));
+  obs.push(makeSpikeTop(x + u*11));
+  obs.push(makeSpike(x + u*15));
+  obs.push(makeSpikeTop(x + u*19));
+  x += u*23;
+
+  // Final cube burst
+  obs.push(makePortal(x, MODE_CUBE)); x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*8;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*5;
+
+  return { obstacles: obs, length: x + 400, speed: 4.3, name: 'Time Machine', diff: 'hard' };
+}
+
+function buildLevel9() {
+  // Cycles - rapid mode switches, challenging but readable
+  const obs = [];
+  const u = BLOCK;
+  let x = 750;
+
+  // Cube - doubles from the start (players should be experienced by now)
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*8;
+  obs.push(makeSpike(x)); x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*4)); obs.push(makeSpike(x + u*5));
+  obs.push(makeOrb(x + u*0.5, GROUND_Y - u*4));
+  x += u*8;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*8;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makeSpike(x + u*5));
+  x += u*8;
+
+  // Ship - alternating with less room
+  obs.push(makePortal(x, MODE_SHIP)); x += u*5;
+  obs.push(makeSpike(x + u*3));
+  obs.push(makeSpikeTop(x + u*7));
+  obs.push(makeSpike(x + u*11));
+  obs.push(makeSpikeTop(x + u*15));
+  obs.push(makeSpike(x + u*19));
+  obs.push(makeSpikeTop(x + u*23));
+  obs.push(makeOrb(x + u*13, GROUND_Y * 0.4));
+  x += u*27;
+
+  // Wave - tighter weave
+  obs.push(makePortal(x, MODE_WAVE)); x += u*5;
+  obs.push(makeSpike(x + u*3));
+  obs.push(makeSpikeTop(x + u*6));
+  obs.push(makeSpike(x + u*9));
+  obs.push(makeSpikeTop(x + u*12));
+  obs.push(makeSpike(x + u*15));
+  obs.push(makeOrb(x + u*8, GROUND_Y/2));
+  x += u*19;
+
+  // Cube mid - platform gauntlet
+  obs.push(makePortal(x, MODE_CUBE)); x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*4));
+  x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makeSpike(x + u*4)); obs.push(makeSpike(x + u*5));
+  obs.push(makeOrb(x + u, GROUND_Y - u*5));
+  x += u*8;
+
+  // Ship - faster ending
+  obs.push(makePortal(x, MODE_SHIP)); x += u*5;
+  obs.push(makeSpikeTop(x + u*3));
+  obs.push(makeSpike(x + u*6));
+  obs.push(makeSpikeTop(x + u*9));
+  obs.push(makeSpike(x + u*12));
+  obs.push(makeSpikeTop(x + u*15));
+  x += u*19;
+
+  // Final cube
+  obs.push(makePortal(x, MODE_CUBE)); x += u*5;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u));
+  x += u*7;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*5;
+
+  return { obstacles: obs, length: x + 400, speed: 4.5, name: 'Cycles', diff: 'insane' };
+}
+
+function buildLevel10() {
+  // xStep - the ultimate challenge, fast with dense but learnable patterns
+  const obs = [];
+  const u = BLOCK;
+  let x = 700;
+
+  // Cube - triples early, tight platforms
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeOrb(x + u*0.5, GROUND_Y - u*4));
+  obs.push(makeSpike(x + u*4)); obs.push(makeSpike(x + u*5));
+  x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makeSpike(x + u*4));
+  x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+
+  // Ship - dense alternating
+  obs.push(makePortal(x, MODE_SHIP)); x += u*4;
+  obs.push(makeSpike(x + u*3));
+  obs.push(makeSpikeTop(x + u*6));
+  obs.push(makeSpike(x + u*9));
+  obs.push(makeSpikeTop(x + u*12));
+  obs.push(makeSpike(x + u*15));
+  obs.push(makeSpikeTop(x + u*18));
+  obs.push(makeSpike(x + u*21));
+  obs.push(makeOrb(x + u*10, GROUND_Y * 0.35));
+  x += u*25;
+
+  // Wave - tight but readable
+  obs.push(makePortal(x, MODE_WAVE)); x += u*4;
+  obs.push(makeSpike(x + u*2));
+  obs.push(makeSpikeTop(x + u*5));
+  obs.push(makeSpike(x + u*8));
+  obs.push(makeSpikeTop(x + u*11));
+  obs.push(makeSpike(x + u*14));
+  obs.push(makeSpikeTop(x + u*17));
+  obs.push(makeOrb(x + u*9, GROUND_Y/2));
+  x += u*21;
+
+  // Cube - platform hell
+  obs.push(makePortal(x, MODE_CUBE)); x += u*4;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*2, u*2));
+  obs.push(makeSpike(x + u*3)); obs.push(makeSpike(x + u*4));
+  x += u*7;
+  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  obs.push(makeSpike(x + u*4)); obs.push(makeSpike(x + u*5));
+  obs.push(makeOrb(x + u, GROUND_Y - u*5));
+  x += u*8;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+
+  // Ship finale - the gauntlet
+  obs.push(makePortal(x, MODE_SHIP)); x += u*4;
+  obs.push(makeSpikeTop(x + u*2));
+  obs.push(makeSpike(x + u*5));
+  obs.push(makeSpikeTop(x + u*8));
+  obs.push(makeSpike(x + u*11));
+  obs.push(makeSpikeTop(x + u*14));
+  obs.push(makeSpike(x + u*17));
+  obs.push(makeSpikeTop(x + u*20));
+  x += u*24;
+
+  // Final cube sprint
+  obs.push(makePortal(x, MODE_CUBE)); x += u*4;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u));
+  x += u*6;
+  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); obs.push(makeSpike(x+u*2));
+  x += u*7;
+  obs.push(makeOrb(x, GROUND_Y - u*3));
+  x += u*5;
+
+  return { obstacles: obs, length: x + 400, speed: 4.8, name: 'xStep', diff: 'insane' };
+}
+
+const LEVELS = [ buildLevel1(), buildLevel2(), buildLevel3(), buildLevel4(), buildLevel5(), buildLevel6(), buildLevel7(), buildLevel8(), buildLevel9(), buildLevel10() ];
 
 // ══════════════════════════════════════════════════════
 //  LEVEL SELECT UI
