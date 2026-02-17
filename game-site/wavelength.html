@@ -1105,6 +1105,8 @@ h1 {
         var dy = cy - my;
         var angle = Math.atan2(dy, dx);
         var degrees = (angle * 180) / Math.PI;
+        // Invert so clicking right moves needle right (match dial drawing convention)
+        degrees = 180 - degrees;
         degrees = Math.max(2, Math.min(178, degrees));
         return degrees;
     }
