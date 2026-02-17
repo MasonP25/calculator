@@ -1029,11 +1029,11 @@
     var initialDmLoad = true;
     dmListeners[cid] = db.collection('direct_messages')
       .where('chatId', '==', cid)
-      .orderBy('timestamp', 'asc')
-      .limitToLast(80)
       .onSnapshot(function(snap) {
         var msgs = [];
         snap.forEach(function(doc) { msgs.push(doc.data()); });
+        msgs.sort(function(a, b) { return a.timestamp - b.timestamp; });
+        if (msgs.length > 80) msgs = msgs.slice(msgs.length - 80);
         dmCache[username] = msgs;
         if (!initialDmLoad) {
           snap.docChanges().forEach(function(ch) {
