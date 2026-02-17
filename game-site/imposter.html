@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imposter</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+a.back { position: fixed; top: 12px; left: 16px; color: #888; text-decoration: none; font-size: 0.85rem; z-index: 100; transition: color 0.2s; }
+a.back:hover { color: #e0e0e0; }
+
+h1 {
+    text-align: center;
+    padding: 20px 0 5px;
+    font-size: 2rem;
+    background: linear-gradient(135deg, #ff4757, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: 4px;
+}
+
+/* Screens */
+.screen { display: none; flex-direction: column; align-items: center; padding: 20px; }
+.screen.active { display: flex; }
+
+/* Menu */
+#menu-screen { justify-content: center; min-height: calc(100vh - 80px); gap: 20px; }
+#menu-screen h2 { font-size: 1.1rem; color: #888; margin-bottom: 10px; text-align: center; }
+
+.menu-btn {
+    background: #7b2ff7;
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.15s;
+    min-width: 240px;
+}
+.menu-btn:hover { background: #6a22e0; }
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn.secondary { background: #2a2a4a; }
+.menu-btn.secondary:hover { background: #3a3a5a; }
+
+/* Lobby */
+.lobby-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.online-panel {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+.online-panel h3 { margin-bottom: 15px; color: #e0e0e0; font-size: 1rem; }
+
+.room-code-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #feca57;
+    letter-spacing: 8px;
+    margin: 15px 0;
+    font-family: monospace;
+}
+
+.waiting-msg {
+    color: #888;
+    font-size: 0.9rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.join-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.join-input {
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    color: #feca57;
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 6px;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    width: 180px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.25s;
+}
+.join-input:focus { border-color: #7b2ff7; }
+.join-input::placeholder { color: #444; letter-spacing: 2px; font-size: 1rem; }
+
+.join-error { color: #ff4757; font-size: 0.85rem; min-height: 1.2em; }
+
+.online-btn {
+    background: #7b2ff7;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.15s;
+}
+.online-btn:hover { background: #6a22e0; }
+.online-btn:active { transform: scale(0.97); }
+.online-btn.secondary { background: #2a2a4a; }
+.online-btn.secondary:hover { background: #3a3a5a; }
+.online-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.leave-btn {
+    background: none;
+    border: 1px solid #ff475766;
+    color: #ff4757;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s;
+}
+.leave-btn:hover { background: #ff475722; }
+
+.player-list { width: 100%; margin: 10px 0; }
+.player-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #0f0f1a;
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+.player-list-item .host-badge { color: #feca57; font-size: 0.75rem; margin-left: 8px; }
+.player-list-item .you-badge { color: #7b2ff7; font-size: 0.75rem; margin-left: 8px; }
+
+.lobby-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+/* Game Area */
+#game-screen { padding: 10px 15px; min-height: calc(100vh - 80px); }
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 700px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.game-header .room-info {
+    font-family: monospace;
+    color: #feca57;
+    font-size: 0.9rem;
+}
+.game-header .round-info {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.game-main {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Timer */
+.timer-bar {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: #2a2a4a;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+.timer-bar .fill {
+    height: 100%;
+    background: #7b2ff7;
+    transition: width 0.3s linear;
+    border-radius: 3px;
+}
+.timer-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #feca57;
+    margin-bottom: 5px;
+}
+.timer-text.urgent { color: #ff4757; animation: pulse 0.5s ease-in-out infinite; }
+
+/* Word Card */
+.word-card {
+    background: #1a1a2e;
+    border: 3px solid #7b2ff7;
+    border-radius: 16px;
+    padding: 40px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.word-card h2 { font-size: 0.85rem; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+.word-card .word { font-size: 2.5rem; font-weight: 800; color: #e0e0e0; }
+.word-card.imposter {
+    border-color: #ff4757;
+    background: linear-gradient(135deg, #2a0a0a, #1a1a2e);
+    animation: imposterPulse 2s ease-in-out infinite;
+}
+.word-card.imposter .word { color: #ff4757; font-size: 1.6rem; }
+@keyframes imposterPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 71, 87, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(255, 71, 87, 0.6); }
+}
+
+.phase-label {
+    font-size: 1rem;
+    color: #7b2ff7;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+}
+
+/* Clue Phase */
+.clue-area { width: 100%; max-width: 500px; }
+.current-turn {
+    text-align: center;
+    padding: 12px;
+    background: #1a1a2e;
+    border: 2px solid #7b2ff7;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+.current-turn .turn-name { color: #feca57; font-weight: 700; }
+.current-turn.your-turn { border-color: #2ed573; background: #0a2a1a; }
+
+.clue-input-area {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+.clue-input {
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    color: #e0e0e0;
+    font-size: 1.1rem;
+    font-family: inherit;
+    padding: 10px 16px;
+    border-radius: 8px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.25s;
+}
+.clue-input:focus { border-color: #7b2ff7; }
+
+.clue-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.clue-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+.clue-item .clue-player { color: #888; }
+.clue-item .clue-word { color: #feca57; font-weight: 600; letter-spacing: 1px; }
+.clue-item.pending { opacity: 0.4; }
+
+/* Vote Phase */
+.vote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    width: 100%;
+    max-width: 500px;
+}
+.vote-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.vote-card:hover { border-color: #7b2ff7; background: #2a2a4a; transform: translateY(-2px); }
+.vote-card.selected { border-color: #ff4757; background: #2a0a0a; box-shadow: 0 0 15px rgba(255, 71, 87, 0.3); }
+.vote-card .vote-count { font-size: 0.75rem; color: #888; margin-top: 6px; }
+.vote-card.voted { opacity: 0.6; cursor: default; }
+
+/* Result Phase */
+.result-card {
+    background: #1a1a2e;
+    border: 3px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 30px 40px;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+}
+.result-card h2 { font-size: 1.4rem; margin-bottom: 15px; }
+.result-card.caught { border-color: #2ed573; }
+.result-card.caught h2 { color: #2ed573; }
+.result-card.escaped { border-color: #ff4757; }
+.result-card.escaped h2 { color: #ff4757; }
+
+.imposter-reveal {
+    font-size: 1.1rem;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: #ff475722;
+    border: 1px solid #ff475766;
+}
+.imposter-reveal .imposter-name { color: #ff4757; font-weight: 700; }
+.word-reveal { color: #feca57; font-weight: 700; font-size: 1.2rem; margin: 10px 0; }
+
+.vote-results {
+    width: 100%;
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.vote-result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #0f0f1a;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+.vote-result-item .voter { color: #888; }
+.vote-result-item .voted-for { color: #e0e0e0; }
+
+.guess-area {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.guess-area label { color: #feca57; font-size: 0.9rem; }
+.guess-input {
+    background: #0f0f1a;
+    border: 2px solid #ff4757;
+    color: #e0e0e0;
+    font-size: 1.1rem;
+    font-family: inherit;
+    padding: 10px 16px;
+    border-radius: 8px;
+    width: 200px;
+    outline: none;
+    text-align: center;
+}
+
+.guess-result {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 10px;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+.guess-result.correct { color: #ff4757; background: #ff475722; }
+.guess-result.wrong { color: #2ed573; background: #2ed57322; }
+
+/* Scoreboard */
+.scoreboard {
+    width: 100%;
+    max-width: 400px;
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 20px;
+}
+.scoreboard h3 { text-align: center; color: #feca57; margin-bottom: 12px; font-size: 1rem; }
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2a2a4a;
+    font-size: 0.9rem;
+}
+.score-item:last-child { border-bottom: none; }
+.score-item .score-name { color: #e0e0e0; }
+.score-item .score-pts { color: #7b2ff7; font-weight: 700; }
+.score-item.imposter-row .score-name { color: #ff4757; }
+
+/* Player bar */
+.player-bar {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #2a2a4a;
+}
+.player-chip {
+    padding: 4px 10px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: #888;
+}
+.player-chip.current { border-color: #7b2ff7; color: #7b2ff7; }
+.player-chip.is-imposter { border-color: #ff4757; color: #ff4757; }
+.player-chip .chip-score { color: #555; margin-left: 4px; }
+
+/* Dramatic reveal animation */
+@keyframes revealSlam {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.reveal-animate { animation: revealSlam 0.5s ease-out; }
+
+@keyframes glowRed {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); }
+    50% { box-shadow: 0 0 50px rgba(255, 71, 87, 0.8), 0 0 80px rgba(255, 71, 87, 0.3); }
+}
+.glow-red { animation: glowRed 1.5s ease-in-out infinite; }
+
+/* Responsive */
+@media (max-width: 500px) {
+    .word-card { padding: 25px 20px; }
+    .word-card .word { font-size: 1.8rem; }
+    .vote-grid { grid-template-columns: repeat(2, 1fr); }
+    .game-header { justify-content: center; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back" id="back-btn">&larr; Back</a>
+<h1>IMPOSTER</h1>
+
+<!-- Menu Screen -->
+<div id="menu-screen" class="screen active">
+    <h2>Find the Imposter among your friends!</h2>
+    <button class="menu-btn" id="create-game-btn">Create Game</button>
+    <button class="menu-btn secondary" onclick="showScreen('join-screen')">Join Game</button>
+</div>
+
+<!-- Create Screen -->
+<div id="create-screen" class="screen">
+    <div class="lobby-container">
+        <div class="online-panel">
+            <h3>Your Room Code</h3>
+            <div class="room-code-display" id="create-room-code">----</div>
+            <div class="waiting-msg" id="create-waiting">Creating room...</div>
+            <div class="player-list" id="create-player-list"></div>
+            <div class="lobby-btns">
+                <button class="online-btn" id="start-game-btn" onclick="startGame()" disabled>Start Game (3+ players)</button>
+                <button class="leave-btn" onclick="leaveRoom()">Leave Room</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Join Screen -->
+<div id="join-screen" class="screen">
+    <div class="lobby-container">
+        <div class="online-panel">
+            <h3>Enter Room Code</h3>
+            <div class="join-area">
+                <input type="text" class="join-input" id="join-code-input" maxlength="4" placeholder="CODE" autocomplete="off">
+                <div class="join-error" id="join-error"></div>
+                <div style="display:flex;gap:10px;">
+                    <button class="online-btn" onclick="joinRoom()">Join</button>
+                    <button class="online-btn secondary" onclick="showScreen('menu-screen')">Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Waiting in joined room -->
+<div id="joined-screen" class="screen">
+    <div class="lobby-container">
+        <div class="online-panel">
+            <h3>Room</h3>
+            <div class="room-code-display" id="joined-room-code">----</div>
+            <div class="waiting-msg">Waiting for host to start...</div>
+            <div class="player-list" id="joined-player-list"></div>
+            <div class="lobby-btns">
+                <button class="leave-btn" onclick="leaveRoom()">Leave Room</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen" class="screen">
+    <div class="game-header">
+        <span class="room-info">Room: <span id="game-room-code"></span></span>
+        <span class="round-info">Round <span id="game-round">1</span></span>
+    </div>
+    <div class="game-main" id="game-main">
+        <!-- Dynamic content injected here -->
+    </div>
+    <div class="player-bar" id="player-bar"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteField }
+    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+};
+
+var app = initializeApp(firebaseConfig, 'imposter-game');
+var db = getFirestore(app);
+
+// ---------- Word Lists ----------
+var WORDS = {
+    'Places': ['Beach','Airport','Hospital','Library','Restaurant','Zoo','Museum','Gym','Cinema','Supermarket'],
+    'Food': ['Pizza','Sushi','Chocolate','Burger','Pasta','Ice Cream','Tacos','Pancakes','Steak','Salad'],
+    'Animals': ['Elephant','Penguin','Dolphin','Eagle','Spider','Snake','Rabbit','Tiger','Whale','Monkey'],
+    'Activities': ['Swimming','Camping','Cooking','Dancing','Painting','Gaming','Reading','Surfing','Skiing','Fishing'],
+    'Objects': ['Umbrella','Guitar','Telescope','Skateboard','Candle','Backpack','Scissors','Microphone','Ladder','Trophy'],
+    'Occupations': ['Doctor','Astronaut','Chef','Firefighter','Pilot','Teacher','Detective','Magician','Farmer','DJ'],
+    'Nature': ['Volcano','Waterfall','Desert','Rainbow','Thunder','Glacier','Coral Reef','Aurora','Earthquake','Tornado'],
+    'Entertainment': ['Concert','Circus','Rollercoaster','Karaoke','Fireworks','Parade','Magic Show','Movie Theater','Comedy Club','Escape Room']
+};
+var ALL_WORDS = Object.values(WORDS).flat();
+
+// ---------- Game State ----------
+var G = {
+    username: '',
+    roomCode: null,
+    isHost: false,
+    unsubscribe: null,
+    data: null,
+    timerInterval: null,
+    hasVoted: false,
+    hasGuessed: false,
+    lastPhase: null
+};
+
+// ---------- Init ----------
+G.username = localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+if (G.username === 'Guest') {
+    G.username = 'Player' + Math.floor(Math.random() * 9000 + 1000);
+}
+
+// ---------- Screens ----------
+window.showScreen = function(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (window.SFX) window.SFX.click();
+};
+
+// ---------- Room Code Gen ----------
+function genCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code = '';
+    for (var i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+// ---------- Create Room ----------
+window.showScreen('menu-screen');
+
+// Create Game button
+document.getElementById('create-game-btn').addEventListener('click', async function() {
+    var code = genCode();
+    var roomRef = doc(db, 'imposter_rooms', code);
+    var existing = await getDoc(roomRef);
+    if (existing.exists()) { code = genCode(); roomRef = doc(db, 'imposter_rooms', code); }
+
+    await setDoc(roomRef, {
+        host: G.username,
+        players: [G.username],
+        status: 'waiting',
+        scores: { [G.username]: 0 },
+        round: 0,
+        phase: '',
+        secretWord: '',
+        imposter: '',
+        currentCluePlayer: 0,
+        clues: {},
+        votes: {},
+        imposterGuess: '',
+        phaseEndTime: 0,
+        roundResult: ''
+    });
+
+    G.roomCode = code;
+    G.isHost = true;
+    document.getElementById('create-room-code').textContent = code;
+    document.getElementById('create-waiting').textContent = 'Waiting for players to join...';
+    showScreen('create-screen');
+    subscribeRoom();
+});
+
+// ---------- Join Room ----------
+window.joinRoom = async function() {
+    var code = document.getElementById('join-code-input').value.trim().toUpperCase();
+    var errEl = document.getElementById('join-error');
+    errEl.textContent = '';
+
+    if (code.length !== 4) { errEl.textContent = 'Enter a 4-character code'; return; }
+
+    var roomRef = doc(db, 'imposter_rooms', code);
+    var snapshot = await getDoc(roomRef);
+
+    if (!snapshot.exists()) { errEl.textContent = 'Room not found'; return; }
+    var data = snapshot.data();
+    if (data.status !== 'waiting') { errEl.textContent = 'Game already in progress'; return; }
+    if (data.players.length >= 8) { errEl.textContent = 'Room is full (8 players max)'; return; }
+    if (data.players.includes(G.username)) { errEl.textContent = 'Name already taken in room'; return; }
+
+    var newPlayers = [...data.players, G.username];
+    var newScores = { ...data.scores, [G.username]: 0 };
+    await updateDoc(roomRef, { players: newPlayers, scores: newScores });
+
+    G.roomCode = code;
+    G.isHost = false;
+    document.getElementById('joined-room-code').textContent = code;
+    showScreen('joined-screen');
+    subscribeRoom();
+    if (window.SFX) window.SFX.coin();
+};
+
+// ---------- Leave Room ----------
+window.leaveRoom = async function() {
+    if (G.unsubscribe) { G.unsubscribe(); G.unsubscribe = null; }
+    if (G.roomCode) {
+        try {
+            var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+            var snapshot = await getDoc(roomRef);
+            if (snapshot.exists()) {
+                var data = snapshot.data();
+                var newPlayers = data.players.filter(p => p !== G.username);
+                if (newPlayers.length === 0) {
+                    // delete room by setting status done
+                    await updateDoc(roomRef, { status: 'done', players: [] });
+                } else {
+                    var updates = { players: newPlayers };
+                    if (data.host === G.username && newPlayers.length > 0) {
+                        updates.host = newPlayers[0];
+                    }
+                    var newScores = { ...data.scores };
+                    delete newScores[G.username];
+                    updates.scores = newScores;
+                    await updateDoc(roomRef, updates);
+                }
+            }
+        } catch(e) { /* ignore */ }
+    }
+    G.roomCode = null;
+    G.isHost = false;
+    G.data = null;
+    clearTimer();
+    showScreen('menu-screen');
+    if (window.SFX) window.SFX.back();
+};
+
+// ---------- Subscribe to Room ----------
+function subscribeRoom() {
+    if (G.unsubscribe) G.unsubscribe();
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    G.unsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) { leaveRoom(); return; }
+        var data = snapshot.data();
+        G.data = data;
+        G.isHost = (data.host === G.username);
+
+        // If kicked or room ended
+        if (!data.players.includes(G.username) && data.status !== 'done') {
+            leaveRoom();
+            return;
+        }
+
+        if (data.status === 'waiting') {
+            renderLobby(data);
+        } else if (data.status === 'playing') {
+            renderGame(data);
+        }
+    });
+}
+
+// ---------- Render Lobby ----------
+function renderLobby(data) {
+    var listId = G.isHost ? 'create-player-list' : 'joined-player-list';
+    var listEl = document.getElementById(listId);
+    listEl.innerHTML = data.players.map(function(p) {
+        var badges = '';
+        if (p === data.host) badges += '<span class="host-badge">HOST</span>';
+        if (p === G.username) badges += '<span class="you-badge">YOU</span>';
+        return '<div class="player-list-item"><span>' + escHtml(p) + badges + '</span></div>';
+    }).join('');
+
+    if (G.isHost) {
+        var btn = document.getElementById('start-game-btn');
+        btn.disabled = data.players.length < 3;
+        btn.textContent = data.players.length < 3
+            ? 'Start Game (need ' + (3 - data.players.length) + ' more)'
+            : 'Start Game (' + data.players.length + ' players)';
+
+        if (!document.getElementById('create-screen').classList.contains('active') &&
+            !document.getElementById('game-screen').classList.contains('active')) {
+            showScreen('create-screen');
+        }
+    } else {
+        if (!document.getElementById('joined-screen').classList.contains('active') &&
+            !document.getElementById('game-screen').classList.contains('active')) {
+            showScreen('joined-screen');
+        }
+    }
+}
+
+// ---------- Start Game ----------
+window.startGame = async function() {
+    if (!G.isHost || !G.data || G.data.players.length < 3) return;
+    if (window.SFX) window.SFX.powerup();
+    await startNewRound(1);
+};
+
+async function startNewRound(roundNum) {
+    var data = G.data;
+    var players = data.players;
+
+    // Pick random word and imposter
+    var word = ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
+    var imposterIdx = Math.floor(Math.random() * players.length);
+    var imposter = players[imposterIdx];
+
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    await updateDoc(roomRef, {
+        status: 'playing',
+        round: roundNum,
+        phase: 'reveal',
+        secretWord: word,
+        imposter: imposter,
+        currentCluePlayer: 0,
+        clues: {},
+        votes: {},
+        imposterGuess: '',
+        phaseEndTime: Date.now() + 6000,
+        roundResult: ''
+    });
+}
+
+// ---------- Render Game ----------
+function renderGame(data) {
+    showScreen('game-screen');
+    document.getElementById('game-room-code').textContent = G.roomCode;
+    document.getElementById('game-round').textContent = data.round;
+
+    var phase = data.phase;
+    var main = document.getElementById('game-main');
+
+    // Detect phase change
+    var phaseChanged = (phase !== G.lastPhase);
+    if (phaseChanged) {
+        G.hasVoted = false;
+        G.hasGuessed = false;
+        G.lastPhase = phase;
+        // Phase change sounds
+        if (phase === 'reveal' && window.SFX) window.SFX.reveal();
+        if (phase === 'clue' && window.SFX) window.SFX.ding();
+        if (phase === 'discuss' && window.SFX) window.SFX.levelup();
+        if (phase === 'vote' && window.SFX) window.SFX.swoosh();
+        if (phase === 'result' && window.SFX) {
+            var caught = data.roundResult === 'caught';
+            if (caught) window.SFX.win(); else window.SFX.fail();
+        }
+        if (phase === 'scoreboard' && window.SFX) window.SFX.coin();
+    }
+
+    if (phase === 'reveal') renderRevealPhase(main, data);
+    else if (phase === 'clue') renderCluePhase(main, data);
+    else if (phase === 'discuss') renderDiscussPhase(main, data);
+    else if (phase === 'vote') renderVotePhase(main, data);
+    else if (phase === 'result') renderResultPhase(main, data);
+    else if (phase === 'scoreboard') renderScoreboard(main, data);
+
+    renderPlayerBar(data);
+    startTimerFromData(data);
+}
+
+// ---------- Timer ----------
+function startTimerFromData(data) {
+    if (!data.phaseEndTime) return;
+    clearTimer();
+    G.timerInterval = setInterval(function() {
+        var remain = Math.max(0, data.phaseEndTime - Date.now());
+        var secs = Math.ceil(remain / 1000);
+        var timerText = document.querySelector('.timer-text');
+        var timerFill = document.querySelector('.timer-bar .fill');
+
+        if (timerText) {
+            timerText.textContent = secs + 's';
+            if (secs <= 5) timerText.classList.add('urgent');
+            else timerText.classList.remove('urgent');
+        }
+
+        // Calculate fill based on phase
+        var totalMs = 0;
+        if (data.phase === 'reveal') totalMs = 6000;
+        else if (data.phase === 'discuss') totalMs = 30000;
+        else if (data.phase === 'vote') totalMs = 20000;
+        else if (data.phase === 'result') totalMs = 15000;
+
+        if (timerFill && totalMs > 0) {
+            timerFill.style.width = Math.max(0, (remain / totalMs) * 100) + '%';
+        }
+
+        if (remain <= 0) {
+            clearTimer();
+            if (G.isHost) advancePhase(data);
+        }
+    }, 250);
+}
+
+function clearTimer() {
+    if (G.timerInterval) { clearInterval(G.timerInterval); G.timerInterval = null; }
+}
+
+// ---------- Phase Transitions (Host only) ----------
+async function advancePhase(data) {
+    if (!G.isHost) return;
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var phase = data.phase;
+
+    if (phase === 'reveal') {
+        await updateDoc(roomRef, { phase: 'clue', phaseEndTime: 0 });
+    } else if (phase === 'discuss') {
+        await updateDoc(roomRef, { phase: 'vote', phaseEndTime: Date.now() + 21000 });
+    } else if (phase === 'vote') {
+        await resolveVotes();
+    } else if (phase === 'result') {
+        // Check if imposter needs to guess - handled in result render
+        await updateDoc(roomRef, { phase: 'scoreboard', phaseEndTime: 0 });
+    }
+}
+
+async function advanceClue(data) {
+    if (!G.isHost) return;
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var nextIdx = data.currentCluePlayer + 1;
+
+    if (nextIdx >= data.players.length) {
+        // All clues submitted, go to discuss
+        await updateDoc(roomRef, { phase: 'discuss', phaseEndTime: Date.now() + 31000 });
+        if (window.SFX) window.SFX.levelup();
+    } else {
+        await updateDoc(roomRef, { currentCluePlayer: nextIdx });
+    }
+}
+
+async function resolveVotes() {
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var snapshot = await getDoc(roomRef);
+    var data = snapshot.data();
+
+    // Count votes
+    var voteCounts = {};
+    data.players.forEach(function(p) { voteCounts[p] = 0; });
+    Object.values(data.votes || {}).forEach(function(v) {
+        if (voteCounts[v] !== undefined) voteCounts[v]++;
+    });
+
+    // Find most voted
+    var maxVotes = 0;
+    var mostVoted = [];
+    Object.keys(voteCounts).forEach(function(p) {
+        if (voteCounts[p] > maxVotes) { maxVotes = voteCounts[p]; mostVoted = [p]; }
+        else if (voteCounts[p] === maxVotes) mostVoted.push(p);
+    });
+
+    var caught = mostVoted.length === 1 && mostVoted[0] === data.imposter;
+    var result = caught ? 'caught' : 'escaped';
+
+    // Update scores if escaped
+    var newScores = { ...data.scores };
+    if (!caught) {
+        // Imposter wins
+        newScores[data.imposter] = (newScores[data.imposter] || 0) + 3;
+    } else {
+        // Those who voted correctly get 1 point
+        Object.entries(data.votes || {}).forEach(function([voter, voted]) {
+            if (voted === data.imposter) {
+                newScores[voter] = (newScores[voter] || 0) + 1;
+            }
+        });
+    }
+
+    await updateDoc(roomRef, {
+        phase: 'result',
+        roundResult: result,
+        scores: newScores,
+        phaseEndTime: caught ? Date.now() + 16000 : Date.now() + 8000
+    });
+}
+
+// ---------- Phase Renderers ----------
+function renderRevealPhase(main, data) {
+    var isImposter = data.imposter === G.username;
+    var html = '<div class="phase-label">Round ' + data.round + ' - Word Reveal</div>';
+    html += '<div class="timer-text">5s</div>';
+    html += '<div class="timer-bar"><div class="fill" style="width:100%"></div></div>';
+
+    if (isImposter) {
+        html += '<div class="word-card imposter reveal-animate">';
+        html += '<h2>Your Role</h2>';
+        html += '<div class="word">You are the Imposter!</div>';
+        html += '<div style="color:#ff4757;font-size:0.85rem;margin-top:10px;">Blend in without knowing the word!</div>';
+        html += '</div>';
+    } else {
+        html += '<div class="word-card reveal-animate">';
+        html += '<h2>The Secret Word</h2>';
+        html += '<div class="word">' + escHtml(data.secretWord) + '</div>';
+        html += '<div style="color:#888;font-size:0.85rem;margin-top:10px;">Give a clue - but don\'t make it too obvious!</div>';
+        html += '</div>';
+    }
+    main.innerHTML = html;
+}
+
+function renderCluePhase(main, data) {
+    var currentPlayerIdx = data.currentCluePlayer || 0;
+    var currentPlayer = data.players[currentPlayerIdx];
+    var isMyTurn = currentPlayer === G.username;
+
+    var html = '<div class="phase-label">Clue Phase</div>';
+    html += '<div class="clue-area">';
+
+    html += '<div class="current-turn' + (isMyTurn ? ' your-turn' : '') + '">';
+    if (isMyTurn) {
+        html += 'Your turn! Give a <strong>one-word</strong> clue';
+    } else {
+        html += '<span class="turn-name">' + escHtml(currentPlayer) + '</span> is giving a clue...';
+    }
+    html += '</div>';
+
+    if (isMyTurn && !data.clues[G.username]) {
+        html += '<div class="clue-input-area">';
+        html += '<input type="text" class="clue-input" id="clue-input" placeholder="One word..." maxlength="30" autocomplete="off">';
+        html += '<button class="online-btn" onclick="window.submitClue()">Submit</button>';
+        html += '</div>';
+    }
+
+    // Show submitted clues
+    html += '<div class="clue-list">';
+    data.players.forEach(function(p, i) {
+        var clue = data.clues[p];
+        if (clue) {
+            html += '<div class="clue-item"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
+        } else if (i < currentPlayerIdx) {
+            html += '<div class="clue-item pending"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">skipped</span></div>';
+        } else if (i === currentPlayerIdx) {
+            html += '<div class="clue-item" style="border-color:#7b2ff7"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word" style="color:#7b2ff7">thinking...</span></div>';
+        } else {
+            html += '<div class="clue-item pending"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">waiting</span></div>';
+        }
+    });
+    html += '</div></div>';
+
+    main.innerHTML = html;
+
+    // Focus input
+    if (isMyTurn) {
+        var inp = document.getElementById('clue-input');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') window.submitClue();
+            });
+        }
+    }
+}
+
+window.submitClue = async function() {
+    var inp = document.getElementById('clue-input');
+    if (!inp) return;
+    var word = inp.value.trim();
+    if (!word) return;
+    // Only one word
+    word = word.split(/\s+/)[0];
+    if (!word) return;
+
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var clueKey = 'clues.' + G.username;
+    await updateDoc(roomRef, { [clueKey]: word });
+    if (window.SFX) window.SFX.pop();
+
+    // Host advances to next clue
+    setTimeout(async function() {
+        var snap = await getDoc(roomRef);
+        var freshData = snap.data();
+        if (G.isHost) {
+            advanceClue(freshData);
+        } else {
+            // If not host, check if host should advance (in case host is slow)
+            // Let host handle it
+        }
+    }, 500);
+
+    // Non-host: still try to advance if host hasn't
+    if (!G.isHost) {
+        setTimeout(async function() {
+            var snap = await getDoc(roomRef);
+            var d = snap.data();
+            if (d.phase === 'clue' && d.clues[d.players[d.currentCluePlayer]]) {
+                // Current player has clue but phase hasn't advanced - host might be the one who submitted
+                var nextIdx = d.currentCluePlayer + 1;
+                if (nextIdx >= d.players.length) {
+                    await updateDoc(roomRef, { phase: 'discuss', phaseEndTime: Date.now() + 31000 });
+                } else {
+                    await updateDoc(roomRef, { currentCluePlayer: nextIdx });
+                }
+            }
+        }, 2000);
+    }
+};
+
+function renderDiscussPhase(main, data) {
+    var html = '<div class="phase-label">Discussion Phase</div>';
+    html += '<div class="timer-text">30s</div>';
+    html += '<div class="timer-bar"><div class="fill" style="width:100%"></div></div>';
+    html += '<div style="color:#888;font-size:0.9rem;margin-bottom:10px;">Discuss who you think the Imposter is!</div>';
+
+    html += '<div class="clue-list" style="max-width:400px;width:100%">';
+    data.players.forEach(function(p) {
+        var clue = data.clues[p] || '(no clue)';
+        html += '<div class="clue-item"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
+    });
+    html += '</div>';
+
+    main.innerHTML = html;
+}
+
+function renderVotePhase(main, data) {
+    var html = '<div class="phase-label">Vote Phase</div>';
+    html += '<div class="timer-text">20s</div>';
+    html += '<div class="timer-bar"><div class="fill" style="width:100%"></div></div>';
+    html += '<div style="color:#888;font-size:0.9rem;margin-bottom:10px;">Vote for who you think is the Imposter!</div>';
+
+    // Count current votes (anonymous count)
+    var totalVotes = Object.keys(data.votes || {}).length;
+    html += '<div style="color:#555;font-size:0.8rem;margin-bottom:10px;">' + totalVotes + '/' + data.players.length + ' votes cast</div>';
+
+    var myVote = data.votes ? data.votes[G.username] : null;
+    var hasVoted = !!myVote;
+
+    html += '<div class="vote-grid">';
+    data.players.forEach(function(p) {
+        if (p === G.username) return; // Can't vote for yourself
+        var isSelected = myVote === p;
+        var cls = 'vote-card';
+        if (isSelected) cls += ' selected';
+        if (hasVoted && !isSelected) cls += ' voted';
+
+        html += '<div class="' + cls + '" data-player="' + escHtml(p) + '" onclick="window.castVote(this.dataset.player)">';
+        html += escHtml(p);
+        html += '</div>';
+    });
+    html += '</div>';
+
+    if (hasVoted) {
+        html += '<div style="color:#2ed573;font-size:0.9rem;margin-top:10px;">Vote cast! Waiting for others...</div>';
+    }
+
+    main.innerHTML = html;
+}
+
+window.castVote = async function(target) {
+    if (G.data.votes && G.data.votes[G.username]) return; // Already voted
+    if (target === G.username) return;
+
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var voteKey = 'votes.' + G.username;
+    await updateDoc(roomRef, { [voteKey]: target });
+    if (window.SFX) window.SFX.click();
+
+    // Check if all voted, host resolves
+    setTimeout(async function() {
+        var snap = await getDoc(roomRef);
+        var d = snap.data();
+        var allVoted = d.players.every(function(p) { return d.votes && d.votes[p]; });
+        if (allVoted && d.phase === 'vote') {
+            if (G.isHost) {
+                await resolveVotes();
+            } else {
+                // Give host 2 seconds, then any player can resolve
+                setTimeout(async function() {
+                    var snap2 = await getDoc(roomRef);
+                    if (snap2.data().phase === 'vote') {
+                        await resolveVotes();
+                    }
+                }, 2000);
+            }
+        }
+    }, 500);
+};
+
+function renderResultPhase(main, data) {
+    var caught = data.roundResult === 'caught';
+    var escaped = data.roundResult === 'escaped';
+    var guessed = data.roundResult === 'guessed';
+    var isImposter = data.imposter === G.username;
+
+    var html = '';
+
+    // Vote results
+    html += '<div class="result-card ' + (caught ? 'caught' : 'escaped') + ' reveal-animate ' + (!caught ? 'glow-red' : '') + '">';
+
+    if (caught && !guessed) {
+        html += '<h2>The Imposter Was Caught!</h2>';
+    } else if (guessed) {
+        html += '<h2 style="color:#ff4757">Imposter Guessed the Word!</h2>';
+        html += '<div style="color:#ff4757;margin-bottom:10px;">The Imposter wins anyway!</div>';
+    } else {
+        html += '<h2>The Imposter Escaped!</h2>';
+    }
+
+    html += '<div class="imposter-reveal">';
+    html += 'The Imposter was: <span class="imposter-name">' + escHtml(data.imposter) + '</span>';
+    html += '</div>';
+    html += '<div class="word-reveal">The word was: ' + escHtml(data.secretWord) + '</div>';
+
+    // Show who voted for whom
+    html += '<div class="vote-results">';
+    html += '<div style="color:#888;font-size:0.8rem;margin-bottom:4px;">Votes:</div>';
+    data.players.forEach(function(p) {
+        var votedFor = (data.votes && data.votes[p]) ? data.votes[p] : '(no vote)';
+        var isCorrect = votedFor === data.imposter;
+        html += '<div class="vote-result-item"><span class="voter">' + escHtml(p) + '</span>';
+        html += '<span class="voted-for" style="color:' + (isCorrect ? '#2ed573' : '#888') + '">' + escHtml(votedFor);
+        if (isCorrect) html += ' &#10003;';
+        html += '</span></div>';
+    });
+    html += '</div>';
+
+    // Imposter guess (if caught and not yet guessed)
+    if (caught && isImposter && !data.imposterGuess && !guessed) {
+        html += '<div class="guess-area">';
+        html += '<label>You were caught! Guess the secret word to still win:</label>';
+        html += '<div class="clue-input-area">';
+        html += '<input type="text" class="guess-input" id="guess-input" placeholder="Guess the word..." autocomplete="off">';
+        html += '<button class="online-btn" onclick="window.submitGuess()" style="background:#ff4757;">Guess</button>';
+        html += '</div>';
+        html += '<div class="timer-text" style="font-size:1rem;">Time is running out!</div>';
+        html += '</div>';
+    }
+
+    if (data.imposterGuess) {
+        var guessCorrect = data.imposterGuess.toLowerCase() === data.secretWord.toLowerCase();
+        html += '<div class="guess-result ' + (guessCorrect ? 'correct' : 'wrong') + '">';
+        html += 'Imposter guessed: "' + escHtml(data.imposterGuess) + '" - ';
+        html += guessCorrect ? 'CORRECT! Imposter wins!' : 'WRONG!';
+        html += '</div>';
+    }
+
+    html += '</div>';
+
+    // Timer for auto-advance
+    if (!caught || data.imposterGuess) {
+        html += '<div class="timer-text" style="font-size:0.9rem;margin-top:10px;">Next: Scoreboard</div>';
+    }
+
+    main.innerHTML = html;
+
+    // Focus guess input
+    if (caught && isImposter && !data.imposterGuess) {
+        var inp = document.getElementById('guess-input');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') window.submitGuess();
+            });
+        }
+    }
+
+}
+
+window.submitGuess = async function() {
+    var inp = document.getElementById('guess-input');
+    if (!inp || G.hasGuessed) return;
+    var guess = inp.value.trim();
+    if (!guess) return;
+    G.hasGuessed = true;
+
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var guessCorrect = guess.toLowerCase() === G.data.secretWord.toLowerCase();
+
+    var updates = { imposterGuess: guess };
+    if (guessCorrect) {
+        updates.roundResult = 'guessed';
+        // Imposter gets points, remove points from correct voters
+        var newScores = { ...G.data.scores };
+        // Revert correct voter points and give imposter 3
+        G.data.players.forEach(function(p) {
+            if (G.data.votes && G.data.votes[p] === G.data.imposter && p !== G.data.imposter) {
+                newScores[p] = Math.max(0, (newScores[p] || 0) - 1);
+            }
+        });
+        newScores[G.data.imposter] = (newScores[G.data.imposter] || 0) + 3;
+        updates.scores = newScores;
+    }
+    updates.phaseEndTime = Date.now() + 6000;
+
+    await updateDoc(roomRef, updates);
+    if (guessCorrect) {
+        if (window.SFX) window.SFX.death();
+    } else {
+        if (window.SFX) window.SFX.correct();
+    }
+};
+
+function renderScoreboard(main, data) {
+    var html = '<div class="phase-label">Scoreboard</div>';
+
+    // Sort players by score
+    var sorted = [...data.players].sort(function(a, b) {
+        return (data.scores[b] || 0) - (data.scores[a] || 0);
+    });
+
+    html += '<div class="scoreboard">';
+    html += '<h3>Scores after Round ' + data.round + '</h3>';
+    sorted.forEach(function(p, i) {
+        var isImp = p === data.imposter;
+        html += '<div class="score-item' + (isImp ? ' imposter-row' : '') + '">';
+        html += '<span class="score-name">';
+        if (i === 0) html += '&#x1f451; ';
+        html += escHtml(p);
+        if (isImp) html += ' <span style="font-size:0.75rem;color:#ff4757;">(Imposter)</span>';
+        html += '</span>';
+        html += '<span class="score-pts">' + (data.scores[p] || 0) + ' pts</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    if (G.isHost) {
+        html += '<div style="margin-top:20px;display:flex;gap:10px;">';
+        html += '<button class="online-btn" onclick="window.nextRound()">Next Round</button>';
+        html += '<button class="online-btn secondary" onclick="window.endGame()">End Game</button>';
+        html += '</div>';
+    } else {
+        html += '<div class="waiting-msg" style="margin-top:15px;">Waiting for host...</div>';
+    }
+
+    main.innerHTML = html;
+}
+
+window.nextRound = async function() {
+    if (!G.isHost) return;
+    if (window.SFX) window.SFX.powerup();
+    await startNewRound((G.data.round || 1) + 1);
+};
+
+window.endGame = async function() {
+    if (!G.isHost) return;
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    await updateDoc(roomRef, { status: 'waiting', phase: '', round: 0, secretWord: '', imposter: '', clues: {}, votes: {}, imposterGuess: '', roundResult: '', phaseEndTime: 0 });
+    if (window.SFX) window.SFX.back();
+};
+
+// ---------- Player Bar ----------
+function renderPlayerBar(data) {
+    var bar = document.getElementById('player-bar');
+    var showImposter = data.phase === 'result' || data.phase === 'scoreboard';
+    bar.innerHTML = data.players.map(function(p) {
+        var cls = 'player-chip';
+        if (p === G.username) cls += ' current';
+        if (showImposter && p === data.imposter) cls += ' is-imposter';
+        return '<span class="' + cls + '">' + escHtml(p) + '<span class="chip-score">' + (data.scores[p] || 0) + '</span></span>';
+    }).join('');
+}
+
+// ---------- Utilities ----------
+function escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+</script>
+
+<script src="sound.js"></script>
+<script src="fame.js"></script>
+<script type="module" src="firebase-lb.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

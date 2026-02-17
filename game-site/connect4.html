@@ -575,6 +575,17 @@ function leaveOnlineRoom() {
   showOnlineLobby();
 }
 
+function stringToBoard(s) {
+  var b = [];
+  for (var c = 0; c < COLS; c++) {
+    b.push([]);
+    for (var r = 0; r < ROWS; r++) {
+      b[c].push(parseInt(s[c * 6 + r]));
+    }
+  }
+  return b;
+}
+
 function renderBoardFromState(boardData, turn) {
   // boardData is a flat string, convert via stringToBoard then to internal board[row][col]
   var colMajor = (typeof boardData === 'string') ? stringToBoard(boardData) : boardData;
