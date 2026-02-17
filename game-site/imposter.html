@@ -788,12 +788,9 @@ async function startNewRound(roundNum) {
     }
     var imposter = players[imposterIdx];
 
-    // Make sure imposter is NOT the first to give a clue
-    // Find the first non-imposter player to start clue phase
-    var firstCluePlayer = 0;
-    if (players[0] === imposter) {
-        firstCluePlayer = 1 % players.length;
-    }
+    // Build clue order: everyone except imposter first, imposter last
+    var clueOrder = players.filter(function(p) { return p !== imposter; });
+    clueOrder.push(imposter);
 
     var roomRef = doc(db, 'imposter_rooms', G.roomCode);
     await updateDoc(roomRef, {
@@ -802,7 +799,8 @@ async function startNewRound(roundNum) {
         phase: 'reveal',
         secretWord: word,
         imposter: imposter,
-        currentCluePlayer: firstCluePlayer,
+        clueOrder: clueOrder,
+        currentCluePlayer: 0,
         clues: {},
         votes: {},
         imposterGuess: '',
@@ -908,9 +906,10 @@ async function advancePhase(data) {
 async function advanceClue(data) {
     if (!G.isHost) return;
     var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    var order = data.clueOrder || data.players;
     var nextIdx = data.currentCluePlayer + 1;
 
-    if (nextIdx >= data.players.length) {
+    if (nextIdx >= order.length) {
         // All clues submitted, go to discuss
         await updateDoc(roomRef, { phase: 'discuss', phaseEndTime: Date.now() + 31000 });
         if (window.SFX) window.SFX.levelup();
@@ -988,8 +987,9 @@ function renderRevealPhase(main, data) {
 }
 
 function renderCluePhase(main, data) {
+    var order = data.clueOrder || data.players;
     var currentPlayerIdx = data.currentCluePlayer || 0;
-    var currentPlayer = data.players[currentPlayerIdx];
+    var currentPlayer = order[currentPlayerIdx];
     var isMyTurn = currentPlayer === G.username;
 
     var html = '<div class="phase-label">Clue Phase</div>';
@@ -1010,9 +1010,9 @@ function renderCluePhase(main, data) {
         html += '</div>';
     }
 
-    // Show submitted clues
+    // Show submitted clues in clue order
     html += '<div class="clue-list">';
-    data.players.forEach(function(p, i) {
+    order.forEach(function(p, i) {
         var clue = data.clues[p];
         if (clue) {
             html += '<div class="clue-item"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
@@ -1071,10 +1071,11 @@ window.submitClue = async function() {
         setTimeout(async function() {
             var snap = await getDoc(roomRef);
             var d = snap.data();
-            if (d.phase === 'clue' && d.clues[d.players[d.currentCluePlayer]]) {
+            var fallbackOrder = d.clueOrder || d.players;
+            if (d.phase === 'clue' && d.clues[fallbackOrder[d.currentCluePlayer]]) {
                 // Current player has clue but phase hasn't advanced - host might be the one who submitted
                 var nextIdx = d.currentCluePlayer + 1;
-                if (nextIdx >= d.players.length) {
+                if (nextIdx >= fallbackOrder.length) {
                     await updateDoc(roomRef, { phase: 'discuss', phaseEndTime: Date.now() + 31000 });
                 } else {
                     await updateDoc(roomRef, { currentCluePlayer: nextIdx });
