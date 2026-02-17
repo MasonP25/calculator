@@ -275,47 +275,42 @@ function buildLevel2() {
 }
 
 function buildLevel3() {
-  // Medium - Polargeist made easier: wider gaps, fewer obstacles, slower speed
+  // Easy-Medium - Polargeist: gentle intro to mixed modes
   const obs = [];
   const u = BLOCK;
-  let x = 700;
+  let x = 800;
 
-  // Cube section - generous spacing
-  obs.push(makeSpike(x)); x += u*7;
-  obs.push(makeSpike(x)); obs.push(makeSpike(x+u)); x += u*8;
+  // Cube section - very generous spacing, single spikes only
+  obs.push(makeSpike(x)); x += u*9;
+  obs.push(makeSpike(x)); x += u*9;
   obs.push(makePlatform(x, GROUND_Y - u*2, u*3));
   obs.push(makeOrb(x + u*1, GROUND_Y - u*4));
-  x += u*8;
-  obs.push(makeSpike(x)); x += u*7;
-  obs.push(makePlatform(x, GROUND_Y - u*3, u*2));
+  x += u*10;
+  obs.push(makeSpike(x)); x += u*9;
+
+  // Ship section - very wide spacing
+  obs.push(makePortal(x, MODE_SHIP)); x += u*6;
   obs.push(makeSpike(x + u*6));
-  x += u*9;
-
-  // Ship section - wide alternating with lots of room
-  obs.push(makePortal(x, MODE_SHIP)); x += u*5;
-  obs.push(makeSpike(x + u*5));
-  obs.push(makeSpikeTop(x + u*11));
-  obs.push(makeOrb(x + u*8, GROUND_Y/2));
-  obs.push(makeSpike(x + u*17));
+  obs.push(makeOrb(x + u*10, GROUND_Y/2));
+  obs.push(makeSpikeTop(x + u*14));
   x += u*22;
 
-  // Wave section - gentle, few obstacles
-  obs.push(makePortal(x, MODE_WAVE)); x += u*5;
-  obs.push(makeSpike(x + u*5));
-  obs.push(makeSpikeTop(x + u*11));
-  obs.push(makeOrb(x + u*8, GROUND_Y/2));
-  obs.push(makeSpike(x + u*17));
+  // Wave section - only 2 obstacles with big gaps
+  obs.push(makePortal(x, MODE_WAVE)); x += u*6;
+  obs.push(makeSpike(x + u*6));
+  obs.push(makeOrb(x + u*10, GROUND_Y/2));
+  obs.push(makeSpikeTop(x + u*14));
   x += u*22;
 
-  // Back to cube - easy finish
-  obs.push(makePortal(x, MODE_CUBE)); x += u*5;
-  obs.push(makeSpike(x)); x += u*7;
-  obs.push(makeSpike(x)); obs.push(makeSpike(x+u));
+  // Back to cube - easy finish, single spikes
+  obs.push(makePortal(x, MODE_CUBE)); x += u*6;
+  obs.push(makeSpike(x)); x += u*9;
+  obs.push(makeSpike(x));
   x += u*8;
   obs.push(makeOrb(x, GROUND_Y - u*3));
   x += u*5;
 
-  return { obstacles: obs, length: x + 400, speed: 3.8, name: 'Polargeist', diff: 'medium' };
+  return { obstacles: obs, length: x + 400, speed: 3.0, name: 'Polargeist', diff: 'easy' };
 }
 
 function buildLevel4() {
