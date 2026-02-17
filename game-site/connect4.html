@@ -576,12 +576,12 @@ function leaveOnlineRoom() {
 }
 
 function renderBoardFromState(boardData, turn) {
-  // boardData is 7 columns x 6 rows: boardData[col][row], values 0/1/2
-  // Convert to our internal board[row][col]
+  // boardData is a flat string, convert via stringToBoard then to internal board[row][col]
+  var colMajor = (typeof boardData === 'string') ? stringToBoard(boardData) : boardData;
   board = Array.from({length: ROWS}, () => new Array(COLS).fill(0));
   for (var c = 0; c < COLS; c++) {
     for (var r = 0; r < ROWS; r++) {
-      board[r][c] = boardData[c][r];
+      board[r][c] = colMajor[c][r];
     }
   }
   currentPlayer = turn;
@@ -730,10 +730,30 @@ var gameRoomCode = document.getElementById('game-room-code');
 var gamePlayerInfo = document.getElementById('game-player-info');
 
 function makeEmptyBoard() {
-    // 7 columns x 6 rows, all zeros
+    // Flat string: 42 chars, 7 cols x 6 rows, all zeros
+    // Index = col * 6 + row
+    return '000000000000000000000000000000000000000000';
+}
+
+function boardToString(internalBoard) {
+    // Convert internal board[row][col] to flat string (col-major)
+    var s = '';
+    for (var c = 0; c < 7; c++) {
+        for (var r = 0; r < 6; r++) {
+            s += internalBoard[r][c];
+        }
+    }
+    return s;
+}
+
+function stringToBoard(s) {
+    // Convert flat string to boardData[col][row] format
     var b = [];
     for (var c = 0; c < 7; c++) {
-        b.push([0, 0, 0, 0, 0, 0]);
+        b.push([]);
+        for (var r = 0; r < 6; r++) {
+            b[c].push(parseInt(s[c * 6 + r]));
+        }
     }
     return b;
 }
@@ -886,27 +906,17 @@ window._c4OnlineCellClickHandler = async function(col) {
     var row = c4.getDropRow(col);
     if (row === -1) return;
 
-    // Build new board in Firestore format: boardData[col][row]
-    // Read current board from our internal state
-    var newBoard = [];
-    for (var cc = 0; cc < 7; cc++) {
-        newBoard.push([]);
-        for (var rr = 0; rr < 6; rr++) {
-            newBoard[cc].push(c4.board[rr][cc]);
-        }
-    }
-    // Place the piece
-    newBoard[col][row] = st.myRole;
-
-    var nextPlayer = st.myRole === 1 ? 2 : 1;
-
-    // Check for win
-    // Temporarily place on internal board to use checkWin
+    // Temporarily place on internal board
     var prevVal = c4.board[row][col];
     c4.board[row][col] = st.myRole;
+
+    // Build new board as flat string for Firestore
+    var newBoardStr = boardToString(c4.board);
+
     var winResult = c4.checkWin(row, col, st.myRole);
     c4.board[row][col] = prevVal;
 
+    var nextPlayer = st.myRole === 1 ? 2 : 1;
     var newStatus = 'playing';
     var winner = '';
 
@@ -916,8 +926,9 @@ window._c4OnlineCellClickHandler = async function(col) {
     } else {
         // Check draw: top row all filled
         var allFilled = true;
+        var colMajor = stringToBoard(newBoardStr);
         for (var dc = 0; dc < 7; dc++) {
-            if (newBoard[dc][0] === 0) { allFilled = false; break; }
+            if (colMajor[dc][0] === 0) { allFilled = false; break; }
         }
         if (allFilled) {
             newStatus = 'done';
@@ -928,7 +939,7 @@ window._c4OnlineCellClickHandler = async function(col) {
     try {
         var roomRef = doc(db, 'c4_rooms', st.roomId);
         await updateDoc(roomRef, {
-            board: newBoard,
+            board: newBoardStr,
             currentPlayer: nextPlayer,
             status: newStatus,
             winner: winner
