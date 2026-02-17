@@ -378,6 +378,7 @@ canvas {
 
     var popped = 0;
     if (cluster.length >= 3) {
+      if (window.SFX) window.SFX.pop();
       // Pop cluster with animation
       for (var i = 0; i < cluster.length; i++) {
         var bpos = getBubblePos(cluster[i].r, cluster[i].c);
@@ -400,6 +401,7 @@ canvas {
 
       score += popped * 10 + (floating.length > 0 ? floating.length * 5 : 0);
       totalPopped += popped;
+      if (floating.length > 0 && window.SFX) window.SFX.combo();
     }
 
     while (grid.length > 0) {
@@ -434,6 +436,7 @@ canvas {
 
   function endGame(won) {
     updateUI();
+    if (won) { if (window.SFX) window.SFX.win(); } else { if (window.SFX) window.SFX.fail(); }
     document.getElementById('endTitle').textContent = won ? 'Board Cleared!' : 'Game Over';
     document.getElementById('endTitle').style.color = won ? '#2ed573' : '#ff4757';
     document.getElementById('endScore').textContent = score;
@@ -445,6 +448,7 @@ canvas {
 
   function shoot(angle) {
     if (gameOver || shootBubble) return;
+    if (window.SFX) window.SFX.shoot();
     var speed = 10;
     shootBubble = {
       x: W / 2,
@@ -464,10 +468,12 @@ canvas {
     if (shootBubble.x - BUBBLE_R <= 0) {
       shootBubble.x = BUBBLE_R;
       shootBubble.vx = -shootBubble.vx;
+      if (window.SFX) window.SFX.bounce();
     }
     if (shootBubble.x + BUBBLE_R >= W) {
       shootBubble.x = W - BUBBLE_R;
       shootBubble.vx = -shootBubble.vx;
+      if (window.SFX) window.SFX.bounce();
     }
 
     if (shootBubble.y - BUBBLE_R <= 0) {

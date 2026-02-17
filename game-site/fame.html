@@ -100,32 +100,32 @@
     margin-top: 0.2rem;
   }
 
-  /* Tabs */
-  .tabs {
+  /* Search bar */
+  .search-bar {
     max-width: 1100px;
     margin: 0 auto 1.5rem;
     display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
+    gap: 0.6rem;
     justify-content: center;
+    align-items: center;
   }
-  .tab {
+  .search-input {
     background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    border-radius: 20px;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.78rem;
-    color: #aaa;
-    cursor: pointer;
-    transition: all 0.2s;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    color: #e0e0e0;
     font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    width: 280px;
+    outline: none;
+    transition: border-color 0.2s;
   }
-  .tab:hover { border-color: #7b2ff7; color: #e0e0e0; }
-  .tab.active {
-    background: #7b2ff7;
-    border-color: #7b2ff7;
-    color: #fff;
-    font-weight: 600;
+  .search-input:focus { border-color: #7b2ff7; }
+  .search-input::placeholder { color: #555; }
+  .result-count {
+    font-size: 0.8rem;
+    color: #666;
   }
 
   /* Game cards grid */
@@ -272,7 +272,10 @@
   <button class="scope-btn" id="btnGlobal" onclick="setScope('global')">Global</button>
 </div>
 
-<div class="tabs" id="tabs"></div>
+<div class="search-bar">
+  <input class="search-input" id="searchInput" type="text" placeholder="Search games...">
+  <span class="result-count" id="resultCount"></span>
+</div>
 
 <div class="grid" id="grid"></div>
 
@@ -333,7 +336,7 @@ function setScope(scope) {
     { id: 'bubbles',     name: 'Bubble Shooter',    emoji: '\uD83E\uDEE7', unit: 'score',       lower: false }
   ];
 
-  var currentFilter = 'all';
+  var searchQuery = '';
 
   // --- Player name (from auth) ---
   var userDisplay = document.getElementById('currentUserDisplay');
@@ -345,24 +348,12 @@ function setScope(scope) {
   updateNameDisplay();
   setInterval(updateNameDisplay, 1000);
 
-  // --- Build tabs ---
-  function buildTabs() {
-    var tabs = document.getElementById('tabs');
-    tabs.innerHTML = '';
-    var allBtn = document.createElement('button');
-    allBtn.className = 'tab' + (currentFilter === 'all' ? ' active' : '');
-    allBtn.textContent = 'All Games';
-    allBtn.addEventListener('click', function() { currentFilter = 'all'; render(); });
-    tabs.appendChild(allBtn);
-
-    GAMES.forEach(function(g) {
-      var btn = document.createElement('button');
-      btn.className = 'tab' + (currentFilter === g.id ? ' active' : '');
-      btn.textContent = g.emoji + ' ' + g.name;
-      btn.addEventListener('click', function() { currentFilter = g.id; render(); });
-      tabs.appendChild(btn);
-    });
-  }
+  // --- Search ---
+  var searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', function() {
+    searchQuery = searchInput.value.trim().toLowerCase();
+    render();
+  });
 
   // --- Rank medal ---
   function rankDisplay(i) {
@@ -545,13 +536,27 @@ function setScope(scope) {
 
   // --- Main render ---
   window.render = function() {
-    buildTabs();
     buildStats();
 
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
 
-    var list = currentFilter === 'all' ? GAMES : GAMES.filter(function(g) { return g.id === currentFilter; });
+    var list = GAMES;
+    if (searchQuery) {
+      list = GAMES.filter(function(g) {
+        return g.name.toLowerCase().indexOf(searchQuery) !== -1 ||
+               g.id.toLowerCase().indexOf(searchQuery) !== -1 ||
+               g.unit.toLowerCase().indexOf(searchQuery) !== -1;
+      });
+    }
+
+    var countEl = document.getElementById('resultCount');
+    if (searchQuery) {
+      countEl.textContent = list.length + ' of ' + GAMES.length + ' games';
+    } else {
+      countEl.textContent = GAMES.length + ' games';
+    }
+
     list.forEach(function(g) {
       grid.appendChild(buildCard(g));
     });
