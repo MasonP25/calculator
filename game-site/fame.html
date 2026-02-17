@@ -218,6 +218,39 @@
     padding: 1.2rem 0;
     font-style: italic;
   }
+
+  /* Local / Global toggle */
+  .scope-toggle {
+    max-width: 1100px;
+    margin: 0 auto 1.2rem;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+  }
+  .scope-btn {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    color: #aaa;
+    padding: 0.45rem 1.4rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .scope-btn:first-child { border-radius: 10px 0 0 10px; }
+  .scope-btn:last-child  { border-radius: 0 10px 10px 0; }
+  .scope-btn.active {
+    background: #7b2ff7;
+    border-color: #7b2ff7;
+    color: #fff;
+    font-weight: 600;
+  }
+  .loading-msg {
+    color: #888;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 1.2rem 0;
+  }
 </style>
 </head>
 <body>
@@ -234,6 +267,11 @@
 
 <div class="stats-bar" id="statsBar"></div>
 
+<div class="scope-toggle" id="scopeToggle">
+  <button class="scope-btn active" id="btnLocal" onclick="setScope('local')">Local</button>
+  <button class="scope-btn" id="btnGlobal" onclick="setScope('global')">Global</button>
+</div>
+
 <div class="tabs" id="tabs"></div>
 
 <div class="grid" id="grid"></div>
@@ -241,8 +279,15 @@
 <script src="fame.js"></script>
 <script type="module" src="firebase-lb.js"></script>
 <script>
+var currentScope = 'local';
+function setScope(scope) {
+  currentScope = scope;
+  document.getElementById('btnLocal').className = 'scope-btn' + (scope === 'local' ? ' active' : '');
+  document.getElementById('btnGlobal').className = 'scope-btn' + (scope === 'global' ? ' active' : '');
+  render();
+}
+
 (function() {
-  // Game definitions: id, name, emoji, score unit, lower-is-better
   var GAMES = [
     { id: 'snake',       name: 'Snake',          emoji: '\uD83D\uDC0D', unit: 'points',      lower: false },
     { id: 'pong',        name: 'Pong',           emoji: '\uD83C\uDFD3', unit: 'wins',        lower: false },
@@ -278,10 +323,12 @@
     { id: 'battleship', name: 'Battleship',      emoji: '\u26F5',       unit: 'wins',        lower: false },
     { id: 'whack',      name: 'Whack-a-Mole',    emoji: '\uD83D\uDC39', unit: 'score',       lower: false },
     { id: 'sliding',    name: 'Sliding Puzzle',   emoji: '\uD83E\uDDE9', unit: 'seconds',     lower: true  },
-{ id: 'stack',       name: 'Stack Tower',      emoji: '\uD83C\uDFD7', unit: 'score',       lower: false },
+    { id: 'stack',       name: 'Stack Tower',      emoji: '\uD83C\uDFD7', unit: 'score',       lower: false },
     { id: 'wordsearch',  name: 'Word Search',      emoji: '\uD83D\uDD0E', unit: 'seconds',     lower: true  },
     { id: 'geodash',     name: 'Geometry Dash',    emoji: '\u25A0',       unit: 'progress %',  lower: false },
-    { id: 'rps',         name: 'Rock Paper Scissors', emoji: '\u270A',    unit: 'wins',        lower: false }
+    { id: 'rps',         name: 'Rock Paper Scissors', emoji: '\u270A',    unit: 'wins',        lower: false },
+    { id: 'pacman',      name: 'Pac-Man',           emoji: '\uD83D\uDC3A', unit: 'score',       lower: false },
+    { id: 'solitaire',   name: 'Solitaire',         emoji: '\uD83C\uDCCF', unit: 'score',       lower: false }
   ];
 
   var currentFilter = 'all';
@@ -291,14 +338,9 @@
   function updateNameDisplay() {
     var name = window.HallOfFame.getPlayerName();
     userDisplay.textContent = name;
-    if (name === 'Guest') {
-      userDisplay.style.color = '#888';
-    } else {
-      userDisplay.style.color = '#00d4ff';
-    }
+    userDisplay.style.color = (name === 'Guest') ? '#888' : '#00d4ff';
   }
   updateNameDisplay();
-  // Re-check periodically in case user signs in/out
   setInterval(updateNameDisplay, 1000);
 
   // --- Build tabs ---
@@ -328,11 +370,68 @@
     return '#' + (i + 1);
   }
 
+  // --- Render a score table into a card ---
+  function renderScoreTable(card, scores, game) {
+    // Remove old table/empty/loading
+    var old = card.querySelector('.score-table, .empty-msg, .loading-msg');
+    if (old) old.remove();
+
+    var top5 = scores.slice(0, 5);
+    if (top5.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-msg';
+      empty.textContent = currentScope === 'global' ? 'No global scores yet' : 'No scores yet';
+      card.appendChild(empty);
+      return;
+    }
+
+    var table = document.createElement('table');
+    table.className = 'score-table';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['Rank', 'Name', 'Score', 'Date'].forEach(function(h) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    top5.forEach(function(entry, i) {
+      var tr = document.createElement('tr');
+      if (i === 0) tr.className = 'rank-1';
+      else if (i === 1) tr.className = 'rank-2';
+      else if (i === 2) tr.className = 'rank-3';
+
+      var tdRank = document.createElement('td');
+      var badge = document.createElement('span');
+      badge.className = 'rank-badge';
+      badge.textContent = rankDisplay(i);
+      tdRank.appendChild(badge);
+      tr.appendChild(tdRank);
+
+      var tdName = document.createElement('td');
+      tdName.textContent = entry.name;
+      tr.appendChild(tdName);
+
+      var tdScore = document.createElement('td');
+      tdScore.className = 'score-val';
+      tdScore.textContent = entry.score + ' ' + game.unit;
+      tr.appendChild(tdScore);
+
+      var tdDate = document.createElement('td');
+      tdDate.textContent = entry.date || '';
+      tr.appendChild(tdDate);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    card.appendChild(table);
+  }
+
   // --- Build a game card ---
   function buildCard(game) {
-    var scores = window.HallOfFame.getScores(game.id);
-    var top5 = scores.slice(0, 5);
-
     var card = document.createElement('div');
     card.className = 'game-card';
 
@@ -353,55 +452,26 @@
     header.appendChild(unitSpan);
     card.appendChild(header);
 
-    if (top5.length === 0) {
-      var empty = document.createElement('div');
-      empty.className = 'empty-msg';
-      empty.textContent = 'No scores yet';
-      card.appendChild(empty);
+    if (currentScope === 'global') {
+      // Show loading, then fetch from Firebase
+      var loading = document.createElement('div');
+      loading.className = 'loading-msg';
+      loading.textContent = 'Loading global scores...';
+      card.appendChild(loading);
+
+      if (window.FirebaseLB) {
+        window.FirebaseLB.getScores(game.id, 5).then(function(scores) {
+          renderScoreTable(card, scores, game);
+        }).catch(function() {
+          loading.textContent = 'Failed to load global scores';
+        });
+      } else {
+        loading.textContent = 'Global leaderboard unavailable';
+      }
     } else {
-      var table = document.createElement('table');
-      table.className = 'score-table';
-      var thead = document.createElement('thead');
-      var headRow = document.createElement('tr');
-      ['Rank', 'Name', 'Score', 'Date'].forEach(function(h) {
-        var th = document.createElement('th');
-        th.textContent = h;
-        headRow.appendChild(th);
-      });
-      thead.appendChild(headRow);
-      table.appendChild(thead);
-
-      var tbody = document.createElement('tbody');
-      top5.forEach(function(entry, i) {
-        var tr = document.createElement('tr');
-        if (i === 0) tr.className = 'rank-1';
-        else if (i === 1) tr.className = 'rank-2';
-        else if (i === 2) tr.className = 'rank-3';
-
-        var tdRank = document.createElement('td');
-        var badge = document.createElement('span');
-        badge.className = 'rank-badge';
-        badge.textContent = rankDisplay(i);
-        tdRank.appendChild(badge);
-        tr.appendChild(tdRank);
-
-        var tdName = document.createElement('td');
-        tdName.textContent = entry.name;
-        tr.appendChild(tdName);
-
-        var tdScore = document.createElement('td');
-        tdScore.className = 'score-val';
-        tdScore.textContent = entry.score + ' ' + game.unit;
-        tr.appendChild(tdScore);
-
-        var tdDate = document.createElement('td');
-        tdDate.textContent = entry.date || '';
-        tr.appendChild(tdDate);
-
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      card.appendChild(table);
+      // Local scores from localStorage
+      var scores = window.HallOfFame.getScores(game.id);
+      renderScoreTable(card, scores, game);
     }
 
     return card;
@@ -411,6 +481,21 @@
   function buildStats() {
     var bar = document.getElementById('statsBar');
     bar.innerHTML = '';
+
+    if (currentScope === 'global') {
+      var box = document.createElement('div');
+      box.className = 'stat-box';
+      var val = document.createElement('div');
+      val.className = 'stat-value';
+      val.textContent = 'Worldwide';
+      var lbl = document.createElement('div');
+      lbl.className = 'stat-label';
+      lbl.textContent = 'Global Leaderboard';
+      box.appendChild(val);
+      box.appendChild(lbl);
+      bar.appendChild(box);
+      return;
+    }
 
     var totalGames = 0;
     var totalEntries = 0;
@@ -426,7 +511,7 @@
       }
     });
 
-    var champion = '—';
+    var champion = '\u2014';
     var maxFirst = 0;
     for (var name in firstPlaceCounts) {
       if (firstPlaceCounts[name] > maxFirst) {
@@ -438,7 +523,7 @@
     var stats = [
       { value: totalGames, label: 'Games with Scores' },
       { value: totalEntries, label: 'Total Entries' },
-      { value: (maxFirst > 0 ? champion : '—'), label: 'Champion (' + maxFirst + ' #1s)' }
+      { value: (maxFirst > 0 ? champion : '\u2014'), label: 'Champion (' + maxFirst + ' #1s)' }
     ];
 
     stats.forEach(function(s) {
@@ -457,7 +542,7 @@
   }
 
   // --- Main render ---
-  function render() {
+  window.render = function() {
     buildTabs();
     buildStats();
 
@@ -468,7 +553,7 @@
     list.forEach(function(g) {
       grid.appendChild(buildCard(g));
     });
-  }
+  };
 
   render();
 })();
