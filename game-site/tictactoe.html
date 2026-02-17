@@ -1031,39 +1031,48 @@ window._onlineCreateGame = async function() {
     var username = ttt.getMyUsername();
     var roomCode = ttt.generateRoomCode();
 
-    var roomRef = doc(db, 'ttt_rooms', roomCode);
-
-    var existing = await getDoc(roomRef);
-    if (existing.exists() && existing.data().status !== 'done') {
-        window._onlineCreateGame();
-        return;
-    }
-
-    await setDoc(roomRef, {
-        board: ['', '', '', '', '', '', '', '', ''],
-        currentTurn: 'X',
-        hostPlayer: username,
-        guestPlayer: '',
-        status: 'waiting',
-        winner: ''
-    });
-
-    window._onlineState = {
-        roomId: roomCode,
-        myRole: 'X',
-        playing: false,
-        hostName: username,
-        guestName: ''
-    };
-
+    // Show UI immediately
     onlineLobbyBtns.style.display = 'none';
     onlineCreateArea.style.display = '';
     onlineLeaveBtn.style.display = '';
     roomCodeDisplay.textContent = roomCode;
+    waitingMsg.textContent = 'Creating room...';
     waitingMsg.style.display = '';
 
-    ttt.resetGame();
-    startListening(roomCode);
+    try {
+        var roomRef = doc(db, 'ttt_rooms', roomCode);
+
+        var existing = await getDoc(roomRef);
+        if (existing.exists() && existing.data().status !== 'done') {
+            window._onlineCreateGame();
+            return;
+        }
+
+        await setDoc(roomRef, {
+            board: ['', '', '', '', '', '', '', '', ''],
+            currentTurn: 'X',
+            hostPlayer: username,
+            guestPlayer: '',
+            status: 'waiting',
+            winner: ''
+        });
+
+        window._onlineState = {
+            roomId: roomCode,
+            myRole: 'X',
+            playing: false,
+            hostName: username,
+            guestName: ''
+        };
+
+        waitingMsg.textContent = 'Waiting for opponent to join...';
+        ttt.resetGame();
+        startListening(roomCode);
+    } catch (err) {
+        console.error('Create game error:', err);
+        waitingMsg.textContent = 'Error: ' + err.message;
+        waitingMsg.style.color = '#ff4757';
+    }
 };
 
 window._onlineJoinGame = async function(code) {
@@ -1075,44 +1084,50 @@ window._onlineJoinGame = async function(code) {
         return;
     }
 
-    var roomRef = doc(db, 'ttt_rooms', code);
-    var snapshot = await getDoc(roomRef);
+    try {
+        var roomRef = doc(db, 'ttt_rooms', code);
+        var snapshot = await getDoc(roomRef);
 
-    if (!snapshot.exists()) {
-        joinError.textContent = 'Room not found';
+        if (!snapshot.exists()) {
+            joinError.textContent = 'Room not found';
+            joinError.style.display = '';
+            return;
+        }
+
+        var data = snapshot.data();
+        if (data.status !== 'waiting') {
+            joinError.textContent = 'Room is full or game already ended';
+            joinError.style.display = '';
+            return;
+        }
+
+        var username = ttt.getMyUsername();
+
+        await updateDoc(roomRef, {
+            guestPlayer: username,
+            status: 'playing'
+        });
+
+        window._onlineState = {
+            roomId: code,
+            myRole: 'O',
+            playing: true,
+            hostName: data.hostPlayer,
+            guestName: username
+        };
+
+        onlinePanel.style.display = 'none';
+        onlineInfo.style.display = '';
+        gameRoomCode.textContent = code;
+        gamePlayerInfo.innerHTML = 'You are <span class="you-o">O</span> (' + username + ') vs ' + data.hostPlayer;
+
+        ttt.resetGame();
+        startListening(code);
+    } catch (err) {
+        console.error('Join game error:', err);
+        joinError.textContent = 'Error: ' + err.message;
         joinError.style.display = '';
-        return;
     }
-
-    var data = snapshot.data();
-    if (data.status !== 'waiting') {
-        joinError.textContent = 'Room is full or game already ended';
-        joinError.style.display = '';
-        return;
-    }
-
-    var username = ttt.getMyUsername();
-
-    await updateDoc(roomRef, {
-        guestPlayer: username,
-        status: 'playing'
-    });
-
-    window._onlineState = {
-        roomId: code,
-        myRole: 'O',
-        playing: true,
-        hostName: data.hostPlayer,
-        guestName: username
-    };
-
-    onlinePanel.style.display = 'none';
-    onlineInfo.style.display = '';
-    gameRoomCode.textContent = code;
-    gamePlayerInfo.innerHTML = 'You are <span class="you-o">O</span> (' + username + ') vs ' + data.hostPlayer;
-
-    ttt.resetGame();
-    startListening(code);
 };
 
 window._onlineCellClickHandler = async function(idx) {
