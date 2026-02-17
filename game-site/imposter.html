@@ -475,7 +475,7 @@ h1 {
 .glow-red { animation: glowRed 1.5s ease-in-out infinite; }
 
 /* Chat Sidebar */
-#chat-toggle{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
+#chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
 #chat-toggle:hover{transform:scale(1.1);}
 #chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
 #chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:95;display:flex;flex-direction:column;transition:right 0.3s;}
@@ -1474,6 +1474,7 @@ function _chatRender(msgs) {
         _chatUnread += msgs.length - _chatLastCount;
         _chatBadge.textContent = _chatUnread > 99 ? '99+' : _chatUnread;
         _chatBadge.style.display = 'flex';
+        if (_chatLastCount > 0 && window.SFX) window.SFX.coin();
     }
     _chatLastCount = msgs.length;
     _chatMessages.innerHTML = '';

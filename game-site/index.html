@@ -115,6 +115,134 @@
     box-shadow: 0 6px 20px rgba(123, 47, 247, 0.3);
   }
   .fame-link span { margin-right: 0.4rem; }
+
+  /* ── Global Chat Panel ── */
+  #chat-panel {
+    position: fixed;
+    bottom: 0;
+    right: 24px;
+    width: 320px;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+    transition: height 0.3s ease;
+  }
+  #chat-panel.collapsed { height: 42px; }
+  #chat-panel.expanded  { height: 392px; /* 42 header + 350 body */ }
+
+  #chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #1a1a2e, #2a2a4a);
+    padding: 0 14px;
+    height: 42px;
+    min-height: 42px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid #7b2ff744;
+  }
+  #chat-header:hover { background: linear-gradient(135deg, #1f1f36, #32325a); }
+  #chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #e0e0e0;
+  }
+  #chat-header-left .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+  }
+  #chat-unread {
+    background: #7b2ff7;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    display: none;
+  }
+  #chat-toggle-icon {
+    font-size: 1rem;
+    color: #888;
+    transition: transform 0.3s;
+  }
+  #chat-panel.expanded #chat-toggle-icon { transform: rotate(180deg); }
+
+  #chat-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    background: #0f0f1a;
+  }
+  #chat-panel.collapsed #chat-body { display: none; }
+
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  #chat-messages::-webkit-scrollbar { width: 5px; }
+  #chat-messages::-webkit-scrollbar-track { background: transparent; }
+  #chat-messages::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+
+  .chat-msg { word-wrap: break-word; }
+  .chat-msg .chat-name { color: #feca57; font-weight: 700; margin-right: 5px; }
+  .chat-msg .chat-time { color: #555; font-size: 0.7rem; margin-left: 6px; }
+  .chat-msg.dm {
+    background: rgba(123, 47, 247, 0.15);
+    border-left: 3px solid #7b2ff7;
+    padding: 4px 8px;
+    border-radius: 0 6px 6px 0;
+  }
+  .chat-msg.dm .chat-dm-label { color: #a66fff; font-weight: 700; margin-right: 4px; }
+
+  #chat-input-area {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #1a1a2e;
+    border-top: 1px solid #2a2a4a;
+  }
+  #chat-input {
+    flex: 1;
+    background: #0f0f1a;
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #e0e0e0;
+    font-size: 0.82rem;
+    outline: none;
+    font-family: inherit;
+  }
+  #chat-input:focus { border-color: #7b2ff7; }
+  #chat-input::placeholder { color: #555; }
+  #chat-send {
+    background: #7b2ff7;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 700;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: background 0.2s;
+  }
+  #chat-send:hover { background: #6a1fe0; }
 </style>
 </head>
 <body>
@@ -407,6 +535,236 @@
       <span class="badge solo">Mouse</span>
     </a>
   </div>
+<!-- Global Chat Panel -->
+<div id="chat-panel" class="collapsed">
+  <div id="chat-header" onclick="toggleChat()">
+    <div id="chat-header-left">
+      <span class="dot"></span>
+      <span>Global Chat</span>
+      <span id="chat-unread">0</span>
+    </div>
+    <span id="chat-toggle-icon">&#9650;</span>
+  </div>
+  <div id="chat-body">
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Type a message... (/message user1 user2 text)" maxlength="500" autocomplete="off">
+      <button id="chat-send" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Chat panel toggle (non-module, so onclick works) */
+  let chatExpanded = false;
+  let chatUnread = 0;
+  function toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    chatExpanded = !chatExpanded;
+    panel.className = chatExpanded ? 'expanded' : 'collapsed';
+    if (chatExpanded) {
+      chatUnread = 0;
+      const badge = document.getElementById('chat-unread');
+      badge.style.display = 'none';
+      badge.textContent = '0';
+      const msgs = document.getElementById('chat-messages');
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  }
+  function bumpUnread() {
+    if (chatExpanded) return;
+    chatUnread++;
+    const badge = document.getElementById('chat-unread');
+    badge.textContent = chatUnread > 99 ? '99+' : chatUnread;
+    badge.style.display = 'inline';
+  }
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, where, or }
+      from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+  };
+
+  const app = initializeApp(firebaseConfig, 'global-chat');
+  const db  = getFirestore(app);
+
+  function getUser() {
+    return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+  }
+
+  const msgsDiv = document.getElementById('chat-messages');
+  const input   = document.getElementById('chat-input');
+
+  /* ── helpers ── */
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function hhmm(ts) {
+    const dt = new Date(ts);
+    return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
+  }
+
+  /* ── render ── */
+  let globalMsgs = [];
+  let dmMsgs = [];
+  let initialGlobalLoad = true;
+  let initialDmLoad = true;
+
+  function renderAll() {
+    const all = [...globalMsgs, ...dmMsgs].sort((a,b) => a.timestamp - b.timestamp);
+    msgsDiv.innerHTML = '';
+    const me = getUser();
+    for (const m of all) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg' + (m.type === 'dm' ? ' dm' : '');
+      if (m.type === 'dm') {
+        if (m.from === me) {
+          const toList = (m.to || []).join(', ');
+          div.innerHTML = '<span class="chat-dm-label">[DM to ' + esc(toList) + ']</span>'
+            + '<span class="chat-name">' + esc(m.from) + ':</span>'
+            + esc(m.text)
+            + '<span class="chat-time">' + (m.time || hhmm(m.timestamp)) + '</span>';
+        } else {
+          div.innerHTML = '<span class="chat-dm-label">[DM from ' + esc(m.from) + ']</span> '
+            + esc(m.text)
+            + '<span class="chat-time">' + (m.time || hhmm(m.timestamp)) + '</span>';
+        }
+      } else {
+        div.innerHTML = '<span class="chat-name">' + esc(m.name) + ':</span>'
+          + esc(m.text)
+          + '<span class="chat-time">' + (m.time || hhmm(m.timestamp)) + '</span>';
+      }
+      msgsDiv.appendChild(div);
+    }
+    msgsDiv.scrollTop = msgsDiv.scrollHeight;
+  }
+
+  /* ── global listener ── */
+  const globalQ = query(collection(db, 'global_chat'), orderBy('timestamp', 'asc'), limit(50));
+  onSnapshot(globalQ, snap => {
+    globalMsgs = snap.docs.map(d => d.data());
+    if (!initialGlobalLoad) {
+      snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
+    }
+    initialGlobalLoad = false;
+    renderAll();
+  });
+
+  /* ── DM listener ── */
+  function startDmListener() {
+    const me = getUser();
+    if (me === 'Guest') return;
+    const dmQ = query(
+      collection(db, 'direct_messages'),
+      or(
+        where('from', '==', me),
+        where('to', 'array-contains', me)
+      ),
+      orderBy('timestamp', 'asc'),
+      limit(50)
+    );
+    onSnapshot(dmQ, snap => {
+      dmMsgs = snap.docs.map(d => d.data());
+      if (!initialDmLoad) {
+        snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
+      }
+      initialDmLoad = false;
+      renderAll();
+    });
+  }
+  startDmListener();
+  /* re-check user periodically in case they log in later */
+  let lastUser = getUser();
+  setInterval(() => {
+    const cur = getUser();
+    if (cur !== lastUser && cur !== 'Guest') {
+      lastUser = cur;
+      initialDmLoad = true;
+      startDmListener();
+    }
+  }, 3000);
+
+  /* ── send ── */
+  async function send() {
+    const text = input.value.trim();
+    if (!text) return;
+    const me = getUser();
+    const now = Date.now();
+    const time = hhmm(now);
+
+    /* check for /message command */
+    const dmMatch = text.match(/^\/message\s+(.+)/i);
+    if (dmMatch) {
+      const rest = dmMatch[1];
+      const tokens = rest.split(/\s+/);
+      /* collect usernames until we find a token that isn't a plausible username
+         heuristic: usernames don't contain spaces, message body is everything after recipients */
+      if (tokens.length < 2) { input.value = ''; return; }
+      /* find where message text starts: at least 1 username then rest is message */
+      const recipients = [];
+      let msgStart = -1;
+      for (let i = 0; i < tokens.length; i++) {
+        /* if we have at least one recipient and the rest looks like a message, break */
+        if (i >= 1) {
+          /* peek: is this token a short single-word that could be another username?
+             We'll be greedy: treat everything after what looks like usernames as message.
+             Simple rule: if removing this token leaves nothing for the message, it must be a recipient */
+          const remaining = tokens.slice(i + 1).join(' ');
+          if (remaining.length === 0 && recipients.length >= 1) {
+            /* last token is the message itself */
+            msgStart = i;
+            break;
+          }
+        }
+        /* For simplicity: first N tokens that don't contain spaces are usernames,
+           rest is the message. We need at least 1 username and 1 word of message. */
+        if (i < tokens.length - 1) {
+          recipients.push(tokens[i]);
+        } else {
+          msgStart = i;
+          break;
+        }
+      }
+      if (msgStart === -1 || recipients.length === 0) { input.value = ''; return; }
+      const msgText = tokens.slice(msgStart).join(' ');
+      if (!msgText) { input.value = ''; return; }
+
+      await addDoc(collection(db, 'direct_messages'), {
+        from: me,
+        to: recipients,
+        text: msgText,
+        time: time,
+        timestamp: now,
+        type: 'dm'
+      });
+    } else {
+      await addDoc(collection(db, 'global_chat'), {
+        name: me,
+        text: text,
+        time: time,
+        timestamp: now,
+        type: 'global'
+      });
+    }
+    input.value = '';
+  }
+
+  /* expose to onclick */
+  window.sendChatMessage = send;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+</script>
+
 <script src="auth.js"></script>
 <script src="theme.js"></script>
 </body>
