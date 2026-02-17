@@ -759,15 +759,9 @@ function renderLobby(data) {
             ? 'Start Game (need ' + (3 - data.players.length) + ' more)'
             : 'Start Game (' + data.players.length + ' players)';
 
-        if (!document.getElementById('create-screen').classList.contains('active') &&
-            !document.getElementById('game-screen').classList.contains('active')) {
-            showScreen('create-screen');
-        }
+        showScreen('create-screen');
     } else {
-        if (!document.getElementById('joined-screen').classList.contains('active') &&
-            !document.getElementById('game-screen').classList.contains('active')) {
-            showScreen('joined-screen');
-        }
+        showScreen('joined-screen');
     }
 }
 
@@ -782,10 +776,24 @@ async function startNewRound(roundNum) {
     var data = G.data;
     var players = data.players;
 
-    // Pick random word and imposter
+    // Pick random word and imposter (truly random using crypto if available)
     var word = ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
-    var imposterIdx = Math.floor(Math.random() * players.length);
+    var imposterIdx;
+    if (window.crypto && window.crypto.getRandomValues) {
+        var arr = new Uint32Array(1);
+        window.crypto.getRandomValues(arr);
+        imposterIdx = arr[0] % players.length;
+    } else {
+        imposterIdx = Math.floor(Math.random() * players.length);
+    }
     var imposter = players[imposterIdx];
+
+    // Make sure imposter is NOT the first to give a clue
+    // Find the first non-imposter player to start clue phase
+    var firstCluePlayer = 0;
+    if (players[0] === imposter) {
+        firstCluePlayer = 1 % players.length;
+    }
 
     var roomRef = doc(db, 'imposter_rooms', G.roomCode);
     await updateDoc(roomRef, {
@@ -794,7 +802,7 @@ async function startNewRound(roundNum) {
         phase: 'reveal',
         secretWord: word,
         imposter: imposter,
-        currentCluePlayer: 0,
+        currentCluePlayer: firstCluePlayer,
         clues: {},
         votes: {},
         imposterGuess: '',
@@ -1179,7 +1187,13 @@ function renderResultPhase(main, data) {
     html += '<div class="imposter-reveal">';
     html += 'The Imposter was: <span class="imposter-name">' + escHtml(data.imposter) + '</span>';
     html += '</div>';
-    html += '<div class="word-reveal">The word was: ' + escHtml(data.secretWord) + '</div>';
+
+    // Hide the word from the imposter if they still need to guess it
+    if (isImposter && caught && !data.imposterGuess) {
+        html += '<div class="word-reveal">The word was: ???</div>';
+    } else {
+        html += '<div class="word-reveal">The word was: ' + escHtml(data.secretWord) + '</div>';
+    }
 
     // Show who voted for whom
     html += '<div class="vote-results">';
@@ -1313,6 +1327,8 @@ window.nextRound = async function() {
 
 window.endGame = async function() {
     if (!G.isHost) return;
+    G.lastPhase = null;
+    clearTimer();
     var roomRef = doc(db, 'imposter_rooms', G.roomCode);
     await updateDoc(roomRef, { status: 'waiting', phase: '', round: 0, secretWord: '', imposter: '', clues: {}, votes: {}, imposterGuess: '', roundResult: '', phaseEndTime: 0 });
     if (window.SFX) window.SFX.back();
