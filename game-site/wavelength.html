@@ -1103,10 +1103,13 @@ h1 {
         var my = (e.clientY - rect.top) * scaleY;
         var dx = mx - cx;
         var dy = cy - my;
-        var angle = Math.atan2(dy, dx);
-        var degrees = (angle * 180) / Math.PI;
-        // Invert so clicking right moves needle right (match dial drawing convention)
-        degrees = 180 - degrees;
+        // Use atan2 to get angle from center, then convert to dial degrees
+        // atan2 convention: right=0rad, up=PI/2rad, left=PI rad
+        // Dial convention: left=0deg, top=90deg, right=180deg
+        var rad = Math.atan2(Math.abs(dy), dx);
+        // rad goes from PI (left) to 0 (right)
+        // We want degrees from 0 (left) to 180 (right)
+        var degrees = ((Math.PI - rad) / Math.PI) * 180;
         degrees = Math.max(2, Math.min(178, degrees));
         return degrees;
     }
