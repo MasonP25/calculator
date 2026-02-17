@@ -62,7 +62,7 @@
   }
   .col-header:hover { color: #00d4ff; }
   .headers { display: grid; grid-template-columns: repeat(7, 60px); gap: 6px; margin-bottom: 4px; padding: 0 10px; }
-  .msg { margin-top: 1rem; font-size: 1.2rem; min-height: 2rem; }
+  .msg { margin-top: 1rem; font-size: 1.2rem; min-height: 2rem; text-align: center; }
   .msg .p1t { color: #ff4757; } .msg .p2t { color: #feca57; }
   button.restart {
     margin-top: 0.8rem;
@@ -203,6 +203,23 @@
     transition: background 0.2s;
   }
   .leave-btn:hover { background: #ff475722; }
+  .online-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: #1a1a2e;
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 2px solid #2a2a4a;
+    margin-bottom: 0.5rem;
+  }
+  .online-score .os-red { color: #ff4757; }
+  .online-score .os-yellow { color: #feca57; }
+  .online-score .os-draw { color: #aaa; }
+  .online-score .os-sep { color: #555; margin: 0 2px; }
 
   /* Chat Sidebar */
   #chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
@@ -264,6 +281,13 @@
   <span>Room: <span class="room-label" id="game-room-code"></span></span>
   <div class="player-info" id="game-player-info"></div>
   <button class="leave-btn" id="online-leave-game-btn">Leave Game</button>
+</div>
+<div class="online-score" id="online-score" style="display:none;">
+  <span class="os-red"><span id="os-red-name">Red</span>: <span id="os-red-wins">0</span></span>
+  <span class="os-sep">|</span>
+  <span class="os-draw">Draw: <span id="os-draws">0</span></span>
+  <span class="os-sep">|</span>
+  <span class="os-yellow"><span id="os-yellow-name">Yellow</span>: <span id="os-yellow-wins">0</span></span>
 </div>
 
 <!-- Chat Sidebar -->
@@ -608,6 +632,7 @@ function leaveOnlineRoom() {
   }
   window._c4OnlineState = null;
   onlineInfo.style.display = 'none';
+  hideOnlineScore();
   onlinePanel.style.display = mode === 'online' ? '' : 'none';
   gameArea.style.display = mode === 'online' ? 'none' : '';
   showOnlineLobby();
@@ -651,6 +676,24 @@ function renderBoardFromState(boardData, turn) {
   }
 }
 
+var onlineScores = { red: 0, yellow: 0, draw: 0 };
+
+function showOnlineScore() {
+  var st = window._c4OnlineState;
+  var el = document.getElementById('online-score');
+  el.style.display = 'flex';
+  document.getElementById('os-red-name').textContent = st.hostName || 'Red';
+  document.getElementById('os-yellow-name').textContent = st.guestName || 'Yellow';
+  document.getElementById('os-red-wins').textContent = onlineScores.red;
+  document.getElementById('os-yellow-wins').textContent = onlineScores.yellow;
+  document.getElementById('os-draws').textContent = onlineScores.draw;
+}
+
+function hideOnlineScore() {
+  document.getElementById('online-score').style.display = 'none';
+  onlineScores = { red: 0, yellow: 0, draw: 0 };
+}
+
 function endOnlineGame(winner, combo) {
   gameOver = true;
   if (winner && combo) {
@@ -659,6 +702,7 @@ function endOnlineGame(winner, combo) {
 
   var st = window._c4OnlineState;
   if (winner === 1 || winner === 2) {
+    if (winner === 1) onlineScores.red++; else onlineScores.yellow++;
     var winnerName = winner === 1 ? (st.hostName || 'Red') : (st.guestName || 'Yellow');
     var colorName = winner === 1 ? 'Red' : 'Yellow';
     var cls = winner === 1 ? 'p1t' : 'p2t';
@@ -666,9 +710,11 @@ function endOnlineGame(winner, combo) {
     msgEl.innerHTML = '<span class="' + cls + '">' + (isMe ? 'You win!' : winnerName + ' wins!') + '</span>';
     if (isMe) { if (window.SFX) window.SFX.win(); } else { if (window.SFX) window.SFX.fail(); }
   } else {
+    onlineScores.draw++;
     msgEl.textContent = 'Draw!';
     if (window.SFX) window.SFX.fail();
   }
+  showOnlineScore();
 }
 
 function onlineCellClick(col) {
@@ -795,7 +841,9 @@ window._c4Online = {
   getDropRow: getDropRow,
   checkWin: checkWin,
   renderChat: renderChat,
-  resetChat: resetChat
+  resetChat: resetChat,
+  showOnlineScore: showOnlineScore,
+  hideOnlineScore: hideOnlineScore
 };
 
 init();
@@ -892,6 +940,7 @@ function startListening(roomId) {
             var roleClass = st.myRole === 1 ? 'you-red' : 'you-yellow';
             gamePlayerInfo.innerHTML = 'You are <span class="' + roleClass + '">' + myColor +
                 '</span> (' + c4.getMyUsername() + ') vs ' + opponentName;
+            c4.showOnlineScore();
         }
 
         if (data.status === 'playing' || data.status === 'done') {
