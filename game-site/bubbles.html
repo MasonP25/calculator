@@ -119,19 +119,26 @@ canvas {
   var BUBBLE_R = 17;
   var BUBBLE_D = BUBBLE_R * 2;
   var COLS = 12;
-  var ROW_H = BUBBLE_R * 1.73; // sqrt(3) * R
+  var ROW_H = BUBBLE_R * 1.73;
   var COLORS = ['#ff4757','#2ed573','#1e90ff','#feca57','#a55eea','#ff6b81'];
   var TOP_OFFSET = BUBBLE_R + 2;
 
-  var grid = [];       // grid[row][col] = colorIndex or -1
+  var grid = [];
   var score = 0;
   var totalPopped = 0;
   var gameOver = false;
-  var shootBubble = null; // { x, y, vx, vy, color }
+  var shootBubble = null;
   var nextColor = 0;
   var aimAngle = -Math.PI / 2;
   var animFrame = null;
-  var rowShift = 0; // number of rows shifted down
+  var rowShift = 0;
+
+  // Animation arrays
+  var particles = [];
+  var poppingBubbles = [];
+  var fallingBubbles = [];
+  var lastTime = 0;
+  var loopRunning = false;
 
   var scoreEl = document.getElementById('score');
   var bubblesEl = document.getElementById('bubblesLeft');
@@ -186,10 +193,17 @@ canvas {
     gameOver = false;
     shootBubble = null;
     rowShift = 0;
+    particles = [];
+    poppingBubbles = [];
+    fallingBubbles = [];
     initGrid(8);
     nextColor = pickNextColor();
     updateUI();
-    draw();
+    if (!loopRunning) {
+      loopRunning = true;
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
   }
 
   function updateUI() {
@@ -197,10 +211,50 @@ canvas {
     bubblesEl.textContent = countBubbles();
   }
 
-  // Find nearest grid position for a point
+  // --- Animation Helpers ---
+
+  function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 };
+  }
+
+  function createPopParticles(x, y, colorHex) {
+    var rgb = hexToRgb(colorHex);
+    var count = 8 + Math.floor(Math.random() * 5);
+    for (var i = 0; i < count; i++) {
+      var angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.5;
+      var speed = 1.5 + Math.random() * 3;
+      var life = 0.35 + Math.random() * 0.25;
+      particles.push({
+        x: x, y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 2 + Math.random() * 3,
+        rgb: rgb, life: life, maxLife: life
+      });
+    }
+  }
+
+  function createPoppingBubble(x, y, colorHex) {
+    poppingBubbles.push({ x: x, y: y, color: colorHex, t: 0, duration: 0.3 });
+  }
+
+  function createFallingBubble(x, y, colorHex) {
+    fallingBubbles.push({
+      x: x + (Math.random() - 0.5) * 2, y: y,
+      vy: 0.5 + Math.random() * 1.0,
+      vx: (Math.random() - 0.5) * 1.5,
+      color: colorHex, alpha: 1.0,
+      rotation: 0, rotSpeed: (Math.random() - 0.5) * 0.1
+    });
+  }
+
   function nearestGridPos(x, y) {
     var bestR = 0, bestC = 0, bestDist = Infinity;
-    // Check existing rows + 2 extra
     var maxR = grid.length + 2;
     for (var r = 0; r < maxR; r++) {
       var cols = (r % 2 === 0) ? COLS : COLS - 1;
@@ -219,7 +273,6 @@ canvas {
     return { r: bestR, c: bestC };
   }
 
-  // Find matching cluster using BFS
   function findCluster(r, c, color) {
     var visited = {};
     var cluster = [];
@@ -261,12 +314,10 @@ canvas {
     return result;
   }
 
-  // Find floating bubbles (not connected to top row)
   function findFloating() {
     var connected = {};
     var queue = [];
 
-    // Start from all bubbles in row 0
     if (grid.length > 0) {
       for (var c = 0; c < grid[0].length; c++) {
         if (grid[0][c] >= 0) {
@@ -308,7 +359,6 @@ canvas {
     var r = pos.r;
     var c = pos.c;
 
-    // Ensure grid rows exist
     while (grid.length <= r) {
       var cols = (grid.length % 2 === 0) ? COLS : COLS - 1;
       var newRow = [];
@@ -316,7 +366,6 @@ canvas {
       grid.push(newRow);
     }
 
-    // Ensure column exists
     var maxC = (r % 2 === 0) ? COLS : COLS - 1;
     while (grid[r].length < maxC) grid[r].push(-1);
 
@@ -325,20 +374,26 @@ canvas {
 
     grid[r][c] = color;
 
-    // Find matching cluster
     var cluster = findCluster(r, c, color);
 
     var popped = 0;
     if (cluster.length >= 3) {
-      // Pop cluster
+      // Pop cluster with animation
       for (var i = 0; i < cluster.length; i++) {
+        var bpos = getBubblePos(cluster[i].r, cluster[i].c);
+        var bcolor = COLORS[grid[cluster[i].r][cluster[i].c]];
+        createPoppingBubble(bpos.x, bpos.y, bcolor);
+        createPopParticles(bpos.x, bpos.y, bcolor);
         grid[cluster[i].r][cluster[i].c] = -1;
         popped++;
       }
 
-      // Find and remove floating bubbles
+      // Floating bubbles fall
       var floating = findFloating();
       for (var i = 0; i < floating.length; i++) {
+        var fpos = getBubblePos(floating[i].r, floating[i].c);
+        var fcolor = COLORS[grid[floating[i].r][floating[i].c]];
+        createFallingBubble(fpos.x, fpos.y, fcolor);
         grid[floating[i].r][floating[i].c] = -1;
         popped++;
       }
@@ -347,7 +402,6 @@ canvas {
       totalPopped += popped;
     }
 
-    // Trim empty bottom rows
     while (grid.length > 0) {
       var lastRow = grid[grid.length - 1];
       var allEmpty = true;
@@ -358,15 +412,13 @@ canvas {
       else break;
     }
 
-    // Check win
     if (countBubbles() === 0) {
       gameOver = true;
-      score += 1000; // bonus for clearing
+      score += 1000;
       endGame(true);
       return;
     }
 
-    // Check if bubbles reached bottom
     if (grid.length > 0) {
       var lastRowY = TOP_OFFSET + (grid.length - 1) * ROW_H + BUBBLE_R;
       if (lastRowY >= H - BUBBLE_R * 3) {
@@ -401,16 +453,14 @@ canvas {
       vy: Math.sin(angle) * speed,
       color: nextColor
     };
-    animateShoot();
   }
 
-  function animateShoot() {
+  function updateShootBubble() {
     if (!shootBubble) return;
 
     shootBubble.x += shootBubble.vx;
     shootBubble.y += shootBubble.vy;
 
-    // Wall bounce
     if (shootBubble.x - BUBBLE_R <= 0) {
       shootBubble.x = BUBBLE_R;
       shootBubble.vx = -shootBubble.vx;
@@ -420,18 +470,14 @@ canvas {
       shootBubble.vx = -shootBubble.vx;
     }
 
-    // Hit top
     if (shootBubble.y - BUBBLE_R <= 0) {
       snapBubble(shootBubble.x, BUBBLE_R, shootBubble.color);
       shootBubble = null;
-      draw();
       return;
     }
 
-    // Hit existing bubble
-    var hit = false;
-    for (var r = 0; r < grid.length && !hit; r++) {
-      for (var c = 0; c < grid[r].length && !hit; c++) {
+    for (var r = 0; r < grid.length; r++) {
+      for (var c = 0; c < grid[r].length; c++) {
         if (grid[r][c] < 0) continue;
         var pos = getBubblePos(r, c);
         var dx = shootBubble.x - pos.x;
@@ -439,22 +485,115 @@ canvas {
         if (dx * dx + dy * dy < BUBBLE_D * BUBBLE_D * 0.85) {
           snapBubble(shootBubble.x, shootBubble.y, shootBubble.color);
           shootBubble = null;
-          hit = true;
+          return;
         }
       }
     }
+  }
 
-    draw();
-    if (shootBubble) {
-      animFrame = requestAnimationFrame(animateShoot);
+  function updateAnimations(dt) {
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      p.vy += 4.0 * dt;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.radius *= (1 - dt * 1.5);
+      if (p.radius < 0.3) p.radius = 0.3;
     }
+
+    for (var i = poppingBubbles.length - 1; i >= 0; i--) {
+      poppingBubbles[i].t += dt;
+      if (poppingBubbles[i].t >= poppingBubbles[i].duration) {
+        poppingBubbles.splice(i, 1);
+      }
+    }
+
+    for (var i = fallingBubbles.length - 1; i >= 0; i--) {
+      var fb = fallingBubbles[i];
+      fb.vy += 6.0 * dt;
+      fb.y += fb.vy;
+      fb.x += fb.vx;
+      fb.alpha -= dt * 1.2;
+      fb.rotation += fb.rotSpeed;
+      if (fb.alpha <= 0 || fb.y > H + 50) {
+        fallingBubbles.splice(i, 1);
+      }
+    }
+  }
+
+  function drawAnimations() {
+    for (var i = 0; i < poppingBubbles.length; i++) {
+      var pb = poppingBubbles[i];
+      var progress = pb.t / pb.duration;
+      var scale;
+      if (progress < 0.3) {
+        scale = 1.0 + 0.4 * (progress / 0.3);
+      } else {
+        scale = 1.4 * (1.0 - (progress - 0.3) / 0.7);
+      }
+      if (scale < 0) scale = 0;
+      ctx.save();
+      ctx.globalAlpha = 1.0 - progress;
+      ctx.beginPath();
+      ctx.arc(pb.x, pb.y, (BUBBLE_R - 1) * scale, 0, Math.PI * 2);
+      ctx.fillStyle = pb.color;
+      ctx.fill();
+      if (progress < 0.2) {
+        ctx.beginPath();
+        ctx.arc(pb.x, pb.y, (BUBBLE_R - 1) * scale, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * (1 - progress / 0.2)) + ')';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.save();
+      ctx.globalAlpha = p.life / p.maxLife;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgb(' + p.rgb.r + ',' + p.rgb.g + ',' + p.rgb.b + ')';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    for (var i = 0; i < fallingBubbles.length; i++) {
+      var fb = fallingBubbles[i];
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, fb.alpha);
+      ctx.translate(fb.x, fb.y);
+      ctx.rotate(fb.rotation);
+      ctx.beginPath();
+      ctx.arc(0, 0, BUBBLE_R - 1, 0, Math.PI * 2);
+      ctx.fillStyle = fb.color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-4, -4, BUBBLE_R * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function gameLoop(timestamp) {
+    var dt = (timestamp - lastTime) / 1000;
+    if (dt > 0.1) dt = 0.1;
+    lastTime = timestamp;
+
+    updateShootBubble();
+    updateAnimations(dt);
+    draw();
+
+    animFrame = requestAnimationFrame(gameLoop);
   }
 
   function draw() {
     ctx.fillStyle = '#0f0f1a';
     ctx.fillRect(0, 0, W, H);
 
-    // Draw grid bubbles
     for (var r = 0; r < grid.length; r++) {
       for (var c = 0; c < grid[r].length; c++) {
         if (grid[r][c] < 0) continue;
@@ -463,7 +602,6 @@ canvas {
       }
     }
 
-    // Draw danger line
     var dangerY = H - BUBBLE_R * 3;
     ctx.strokeStyle = '#ff475733';
     ctx.lineWidth = 1;
@@ -474,19 +612,17 @@ canvas {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw shooting bubble in flight
+    drawAnimations();
+
     if (shootBubble) {
       drawBubble(shootBubble.x, shootBubble.y, COLORS[shootBubble.color]);
     }
 
-    // Draw aiming area
     if (!shootBubble && !gameOver) {
-      // Next bubble at bottom center
       var bx = W / 2;
       var by = H - BUBBLE_R - 10;
       drawBubble(bx, by, COLORS[nextColor]);
 
-      // Aim line
       ctx.strokeStyle = 'rgba(255,255,255,0.2)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
@@ -505,14 +641,12 @@ canvas {
     ctx.fillStyle = color;
     ctx.fill();
 
-    // Shine
     ctx.beginPath();
     ctx.arc(x - 4, y - 4, BUBBLE_R * 0.35, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.fill();
   }
 
-  // Mouse/touch handling
   function getAngle(clientX, clientY) {
     var rect = canvas.getBoundingClientRect();
     var mx = clientX - rect.left;
@@ -520,7 +654,6 @@ canvas {
     var bx = W / 2;
     var by = H - BUBBLE_R - 10;
     var angle = Math.atan2(my - by, mx - bx);
-    // Clamp to upward angles
     if (angle > -0.15) angle = -0.15;
     if (angle < -Math.PI + 0.15) angle = -Math.PI + 0.15;
     return angle;
@@ -529,7 +662,6 @@ canvas {
   canvas.addEventListener('mousemove', function(e) {
     if (gameOver || shootBubble) return;
     aimAngle = getAngle(e.clientX, e.clientY);
-    draw();
   });
 
   canvas.addEventListener('click', function(e) {
@@ -543,7 +675,6 @@ canvas {
     if (gameOver || shootBubble) return;
     var touch = e.touches[0];
     aimAngle = getAngle(touch.clientX, touch.clientY);
-    draw();
   });
 
   canvas.addEventListener('touchend', function(e) {

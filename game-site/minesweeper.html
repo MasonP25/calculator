@@ -16,8 +16,6 @@
     min-height: 100vh;
     padding: 1rem;
   }
-  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
-  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
   h1 { font-size: 2rem; }
   .diff-select { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
   .diff-btn {
@@ -53,13 +51,17 @@
     border-radius: 8px; font-size: 0.9rem; cursor: pointer;
   }
   .hint-text { color: #555; font-size: 0.75rem; margin-top: 0.5rem; }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <a href="index.html">&larr; Back</a>
-  <h1>Minesweeper</h1>
-</div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Minesweeper</h1>
 <div class="diff-select">
   <button class="diff-btn active" data-d="easy">Easy (9x9)</button>
   <button class="diff-btn" data-d="med">Medium (16x16)</button>

@@ -16,14 +16,6 @@
     min-height: 100vh;
     padding: 2rem;
   }
-  .top-bar {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-  }
-  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
-  .top-bar a:hover { text-decoration: underline; }
   h1 { font-size: 2rem; }
   .info {
     display: flex;
@@ -100,13 +92,17 @@
     margin-bottom: 1rem;
     height: 2rem;
   }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <a href="index.html">&larr; Back</a>
-  <h1>Memory Match</h1>
-</div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Memory Match</h1>
 <div class="info">
   Moves: <span id="moves">0</span>
   Pairs: <span id="pairs">0</span> / <span id="total">8</span>

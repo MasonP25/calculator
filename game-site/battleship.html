@@ -13,28 +13,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-.top-bar {
-  display: flex;
-  align-items: center;
-  padding: 12px 24px;
-  background: #1a1a2e;
-  border-bottom: 2px solid #2a2a4a;
-  gap: 16px;
-}
-.top-bar a {
-  color: #7b2ff7;
-  text-decoration: none;
-  font-size: 18px;
-  font-weight: 600;
-  transition: opacity 0.2s;
-}
-.top-bar a:hover { opacity: 0.8; }
-.top-bar h1 {
-  font-size: 22px;
-  color: #00d4ff;
-  letter-spacing: 1px;
-}
-
 /* Screens */
 .screen { display: none; flex-direction: column; align-items: center; padding: 20px; }
 .screen.active { display: flex; }
@@ -195,14 +173,18 @@ body {
   .grid-labels .label { width: 28px; }
   .grid-row-wrapper .row-label { height: 28px; }
 }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <a href="index.html">&larr; Back</a>
-  <h1>Battleship</h1>
-</div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Battleship</h1>
 
 <div class="toast" id="toast"></div>
 

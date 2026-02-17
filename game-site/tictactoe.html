@@ -20,35 +20,6 @@ body {
     flex-direction: column;
     align-items: center;
 }
-
-.top-bar {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    padding: 18px 28px;
-    gap: 18px;
-    background: #1a1a2e;
-    border-bottom: 2px solid #2a2a4a;
-}
-
-.top-bar a {
-    color: #7b2ff7;
-    text-decoration: none;
-    font-size: 1.1rem;
-    font-weight: 600;
-    transition: opacity 0.2s;
-}
-
-.top-bar a:hover {
-    opacity: 0.8;
-}
-
-.top-bar h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #ffffff;
-}
-
 .container {
     display: flex;
     flex-direction: column;
@@ -253,14 +224,157 @@ body {
 .new-game-btn:active {
     transform: scale(0.97);
 }
+
+a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+}
+a.back:hover { color: #e0e0e0; }
+
+/* Online Mode Styles */
+.online-panel {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+.online-panel h3 {
+    margin-bottom: 15px;
+    color: #e0e0e0;
+    font-size: 1rem;
+}
+
+.online-lobby-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.online-btn {
+    background: #7b2ff7;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.15s;
+}
+
+.online-btn:hover { background: #6a22e0; }
+.online-btn:active { transform: scale(0.97); }
+
+.online-btn.secondary {
+    background: #2a2a4a;
+}
+.online-btn.secondary:hover { background: #3a3a5a; }
+
+.room-code-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #feca57;
+    letter-spacing: 8px;
+    margin: 15px 0;
+    font-family: monospace;
+}
+
+.waiting-msg {
+    color: #888;
+    font-size: 0.9rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.join-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.join-input {
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    color: #feca57;
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 6px;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    width: 160px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.25s;
+}
+
+.join-input:focus { border-color: #7b2ff7; }
+.join-input::placeholder {
+    color: #444;
+    letter-spacing: 2px;
+    font-size: 1rem;
+}
+
+.join-error {
+    color: #ff4757;
+    font-size: 0.85rem;
+}
+
+.online-info {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 12px 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.online-info .room-label {
+    color: #feca57;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 3px;
+}
+
+.online-info .player-info {
+    margin: 6px 0;
+}
+
+.you-x { color: #00d4ff; font-weight: 700; }
+.you-o { color: #ff4757; font-weight: 700; }
+
+.leave-btn {
+    background: none;
+    border: 1px solid #ff475766;
+    color: #ff4757;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s;
+}
+.leave-btn:hover { background: #ff475722; }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <a href="index.html">&larr; Back</a>
-    <h1>Tic Tac Toe</h1>
-</div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Tic Tac Toe</h1>
 
 <div class="container">
     <!-- Mode Selector -->
@@ -269,6 +383,7 @@ body {
         <div class="selector-row" id="mode-selector">
             <button class="selector-btn active" data-mode="2p">2 Player</button>
             <button class="selector-btn" data-mode="ai">vs AI</button>
+            <button class="selector-btn" data-mode="online">Online</button>
         </div>
     </div>
 
@@ -280,6 +395,34 @@ body {
             <button class="selector-btn" data-diff="medium">Medium</button>
             <button class="selector-btn" data-diff="hard">Hard</button>
         </div>
+    </div>
+
+    <!-- Online Panel -->
+    <div class="online-panel" id="online-panel" style="display:none;">
+        <h3>Online Multiplayer</h3>
+        <div id="online-lobby-btns" class="online-lobby-btns">
+            <button class="online-btn" id="create-game-btn">Create Game</button>
+            <button class="online-btn secondary" id="join-game-btn">Join Game</button>
+        </div>
+        <div id="online-create-area" style="display:none;">
+            <p style="color:#888; font-size:0.85rem; margin-bottom:8px;">Share this code with your friend:</p>
+            <div class="room-code-display" id="room-code-display">----</div>
+            <p class="waiting-msg" id="waiting-msg">Waiting for opponent to join...</p>
+        </div>
+        <div id="online-join-area" class="join-area" style="display:none;">
+            <p style="color:#888; font-size:0.85rem;">Enter room code:</p>
+            <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="CODE">
+            <button class="online-btn" id="join-submit-btn">Join</button>
+            <p class="join-error" id="join-error" style="display:none;"></p>
+        </div>
+        <button class="leave-btn" id="online-leave-btn" style="display:none;">Cancel</button>
+    </div>
+
+    <!-- Online Info (shown during game) -->
+    <div class="online-info" id="online-info" style="display:none;">
+        <span>Room: <span class="room-label" id="game-room-code"></span></span>
+        <div class="player-info" id="game-player-info"></div>
+        <button class="leave-btn" id="online-leave-game-btn">Leave Game</button>
     </div>
 
     <!-- Score Display -->
@@ -314,65 +457,94 @@ body {
 
 <script>
 (function() {
-    // State
-    let board = Array(9).fill(null);
-    let currentPlayer = 'X';
-    let gameOver = false;
-    let mode = '2p';       // '2p' or 'ai'
-    let difficulty = 'easy'; // 'easy', 'medium', 'hard'
-    let scores = { X: 0, O: 0, draw: 0 };
-    let aiThinking = false;
+    var board = Array(9).fill(null);
+    var currentPlayer = 'X';
+    var gameOver = false;
+    var mode = '2p';
+    var difficulty = 'easy';
+    var scores = { X: 0, O: 0, draw: 0 };
+    var aiThinking = false;
 
-    // Winning combinations
-    const WIN_COMBOS = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-        [0, 4, 8], [2, 4, 6]              // diagonals
+    var WIN_COMBOS = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
     ];
 
-    // DOM references
-    const cells = document.querySelectorAll('.cell');
-    const boardEl = document.getElementById('board');
-    const statusEl = document.getElementById('status');
-    const scoreXEl = document.getElementById('score-x');
-    const scoreOEl = document.getElementById('score-o');
-    const scoreDrawEl = document.getElementById('score-draw');
-    const newGameBtn = document.getElementById('new-game-btn');
-    const modeSelector = document.getElementById('mode-selector');
-    const difficultyGroup = document.getElementById('difficulty-group');
-    const difficultySelector = document.getElementById('difficulty-selector');
-    const winLineEl = document.getElementById('win-line');
+    var cells = document.querySelectorAll('.cell');
+    var boardEl = document.getElementById('board');
+    var statusEl = document.getElementById('status');
+    var scoreXEl = document.getElementById('score-x');
+    var scoreOEl = document.getElementById('score-o');
+    var scoreDrawEl = document.getElementById('score-draw');
+    var newGameBtn = document.getElementById('new-game-btn');
+    var modeSelector = document.getElementById('mode-selector');
+    var difficultyGroup = document.getElementById('difficulty-group');
+    var difficultySelector = document.getElementById('difficulty-selector');
+    var winLineEl = document.getElementById('win-line');
+
+    // Online DOM refs
+    var onlinePanel = document.getElementById('online-panel');
+    var onlineLobbyBtns = document.getElementById('online-lobby-btns');
+    var onlineCreateArea = document.getElementById('online-create-area');
+    var onlineJoinArea = document.getElementById('online-join-area');
+    var createGameBtn = document.getElementById('create-game-btn');
+    var joinGameBtn = document.getElementById('join-game-btn');
+    var roomCodeDisplay = document.getElementById('room-code-display');
+    var waitingMsg = document.getElementById('waiting-msg');
+    var joinCodeInput = document.getElementById('join-code-input');
+    var joinSubmitBtn = document.getElementById('join-submit-btn');
+    var joinError = document.getElementById('join-error');
+    var onlineLeaveBtn = document.getElementById('online-leave-btn');
+    var onlineInfo = document.getElementById('online-info');
+    var gameRoomCode = document.getElementById('game-room-code');
+    var gamePlayerInfo = document.getElementById('game-player-info');
+    var onlineLeaveGameBtn = document.getElementById('online-leave-game-btn');
 
     // --- Mode & Difficulty Buttons ---
     modeSelector.addEventListener('click', function(e) {
-        const btn = e.target.closest('.selector-btn');
+        var btn = e.target.closest('.selector-btn');
         if (!btn) return;
-        window.SFX?.click();
-        const newMode = btn.dataset.mode;
+        if (window.SFX) window.SFX.click();
+        var newMode = btn.dataset.mode;
         if (newMode === mode) return;
+
+        if (mode === 'online') {
+            leaveOnlineRoom();
+        }
+
         mode = newMode;
-        modeSelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+        modeSelector.querySelectorAll('.selector-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
         difficultyGroup.style.display = mode === 'ai' ? '' : 'none';
+        onlinePanel.style.display = mode === 'online' ? '' : 'none';
+        onlineInfo.style.display = 'none';
+        if (mode === 'online') {
+            showOnlineLobby();
+        }
         resetGame();
     });
 
     difficultySelector.addEventListener('click', function(e) {
-        const btn = e.target.closest('.selector-btn');
+        var btn = e.target.closest('.selector-btn');
         if (!btn) return;
-        window.SFX?.click();
-        const newDiff = btn.dataset.diff;
+        if (window.SFX) window.SFX.click();
+        var newDiff = btn.dataset.diff;
         if (newDiff === difficulty) return;
         difficulty = newDiff;
-        difficultySelector.querySelectorAll('.selector-btn').forEach(b => b.classList.remove('active'));
+        difficultySelector.querySelectorAll('.selector-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
         resetGame();
     });
 
     // --- New Game ---
     newGameBtn.addEventListener('click', function() {
-        window.SFX?.click();
-        resetGame();
+        if (window.SFX) window.SFX.click();
+        if (mode === 'online' && window._onlineState && window._onlineState.roomId) {
+            onlineNewGame();
+        } else {
+            resetGame();
+        }
     });
 
     function resetGame() {
@@ -381,13 +553,11 @@ body {
         gameOver = false;
         aiThinking = false;
 
-        // Clear cells
-        cells.forEach(cell => {
+        cells.forEach(function(cell) {
             cell.innerHTML = '';
             cell.classList.remove('taken', 'game-over', 'winner-cell');
         });
 
-        // Hide win line
         winLineEl.classList.remove('show');
         winLineEl.style.width = '0';
         winLineEl.style.height = '0';
@@ -397,14 +567,18 @@ body {
 
     // --- Cell Click ---
     boardEl.addEventListener('click', function(e) {
-        const cell = e.target.closest('.cell');
+        var cell = e.target.closest('.cell');
         if (!cell) return;
-        const idx = parseInt(cell.dataset.index);
+        var idx = parseInt(cell.dataset.index);
         if (board[idx] !== null || gameOver || aiThinking) return;
+
+        if (mode === 'online') {
+            onlineCellClick(idx);
+            return;
+        }
 
         makeMove(idx);
 
-        // If AI mode and game not over, let AI play
         if (mode === 'ai' && !gameOver && currentPlayer === 'O') {
             aiThinking = true;
             setTimeout(aiMove, 350);
@@ -413,45 +587,41 @@ body {
 
     function makeMove(idx) {
         board[idx] = currentPlayer;
-        const cell = cells[idx];
+        var cell = cells[idx];
         cell.classList.add('taken');
 
-        // Create mark element with animation
-        const mark = document.createElement('span');
+        var mark = document.createElement('span');
         mark.classList.add('mark', currentPlayer === 'X' ? 'x-mark' : 'o-mark');
         mark.textContent = currentPlayer;
         cell.appendChild(mark);
 
-        // Trigger animation on next frame
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
                 mark.classList.add('show');
             });
         });
 
-        window.SFX?.place();
+        if (window.SFX) window.SFX.place();
 
-        // Check win
-        const winCombo = checkWin(currentPlayer);
+        var winCombo = checkWin(currentPlayer);
         if (winCombo) {
             endGame(currentPlayer, winCombo);
             return;
         }
 
-        // Check draw
-        if (board.every(c => c !== null)) {
+        if (board.every(function(c) { return c !== null; })) {
             endGame(null, null);
             return;
         }
 
-        // Switch player
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
         updateStatus();
     }
 
     function checkWin(player) {
-        for (const combo of WIN_COMBOS) {
-            if (combo.every(i => board[i] === player)) {
+        for (var ci = 0; ci < WIN_COMBOS.length; ci++) {
+            var combo = WIN_COMBOS[ci];
+            if (combo.every(function(i) { return board[i] === player; })) {
                 return combo;
             }
         }
@@ -460,50 +630,45 @@ body {
 
     function endGame(winner, combo) {
         gameOver = true;
-        cells.forEach(c => c.classList.add('game-over'));
+        cells.forEach(function(c) { c.classList.add('game-over'); });
 
         if (winner) {
             scores[winner]++;
             updateScores();
-
-            // Highlight winning cells
-            combo.forEach(i => cells[i].classList.add('winner-cell'));
-
-            // Draw win line
+            combo.forEach(function(i) { cells[i].classList.add('winner-cell'); });
             drawWinLine(combo);
 
-            let streakText = '';
+            var streakText = '';
             if (mode === 'ai') {
-                const sk = (winner === 'X') ? window.HallOfFame?.winStreak('tictactoe') : window.HallOfFame?.loseStreak('tictactoe');
+                var sk = (winner === 'X') ? (window.HallOfFame ? window.HallOfFame.winStreak('tictactoe') : null) : (window.HallOfFame ? window.HallOfFame.loseStreak('tictactoe') : null);
                 if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
-                if(winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', 1);
+                if (winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', 1);
             }
 
             statusEl.className = 'status win-msg-' + winner.toLowerCase();
             statusEl.textContent = winner + ' wins!' + streakText;
-            window.SFX?.win();
+            if (window.SFX) window.SFX.win();
         } else {
             scores.draw++;
             updateScores();
             statusEl.className = 'status draw-msg';
             statusEl.textContent = "It's a draw!";
-            window.SFX?.fail();
+            if (window.SFX) window.SFX.fail();
         }
     }
 
     function drawWinLine(combo) {
-        // Get cell positions relative to the board
-        const boardRect = boardEl.getBoundingClientRect();
-        const startCell = cells[combo[0]].getBoundingClientRect();
-        const endCell = cells[combo[2]].getBoundingClientRect();
+        var boardRect = boardEl.getBoundingClientRect();
+        var startCell = cells[combo[0]].getBoundingClientRect();
+        var endCell = cells[combo[2]].getBoundingClientRect();
 
-        const startX = startCell.left + startCell.width / 2 - boardRect.left;
-        const startY = startCell.top + startCell.height / 2 - boardRect.top;
-        const endX = endCell.left + endCell.width / 2 - boardRect.left;
-        const endY = endCell.top + endCell.height / 2 - boardRect.top;
+        var startX = startCell.left + startCell.width / 2 - boardRect.left;
+        var startY = startCell.top + startCell.height / 2 - boardRect.top;
+        var endX = endCell.left + endCell.width / 2 - boardRect.left;
+        var endY = endCell.top + endCell.height / 2 - boardRect.top;
 
-        const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
-        const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+        var length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+        var angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
 
         winLineEl.style.width = length + 'px';
         winLineEl.style.height = '5px';
@@ -512,14 +677,27 @@ body {
         winLineEl.style.transformOrigin = '0 50%';
         winLineEl.style.transform = 'rotate(' + angle + 'deg)';
 
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
             winLineEl.classList.add('show');
         });
     }
 
     function updateStatus() {
-        statusEl.className = 'status ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
-        statusEl.textContent = currentPlayer + "'s turn";
+        if (mode === 'online' && window._onlineState && window._onlineState.myRole) {
+            var st = window._onlineState;
+            if (!st.playing) {
+                statusEl.className = 'status x-turn';
+                statusEl.textContent = 'Waiting for game to start...';
+                return;
+            }
+            var turnName = currentPlayer === 'X' ? (st.hostName || 'X') : (st.guestName || 'O');
+            var isMyTurn = currentPlayer === st.myRole;
+            statusEl.className = 'status ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
+            statusEl.textContent = isMyTurn ? "Your turn (" + st.myRole + ")" : turnName + "'s turn (" + currentPlayer + ")";
+        } else {
+            statusEl.className = 'status ' + (currentPlayer === 'X' ? 'x-turn' : 'o-turn');
+            statusEl.textContent = currentPlayer + "'s turn";
+        }
     }
 
     function updateScores() {
@@ -531,20 +709,12 @@ body {
     // --- AI ---
     function aiMove() {
         if (gameOver) { aiThinking = false; return; }
-
-        let move;
+        var move;
         switch (difficulty) {
-            case 'easy':
-                move = aiEasy();
-                break;
-            case 'medium':
-                move = aiMedium();
-                break;
-            case 'hard':
-                move = aiHard();
-                break;
+            case 'easy': move = aiEasy(); break;
+            case 'medium': move = aiMedium(); break;
+            case 'hard': move = aiHard(); break;
         }
-
         if (move !== undefined && move !== null) {
             makeMove(move);
         }
@@ -552,41 +722,33 @@ body {
     }
 
     function getEmpty() {
-        const empty = [];
-        for (let i = 0; i < 9; i++) {
+        var empty = [];
+        for (var i = 0; i < 9; i++) {
             if (board[i] === null) empty.push(i);
         }
         return empty;
     }
 
-    // Easy: random move
     function aiEasy() {
-        const empty = getEmpty();
+        var empty = getEmpty();
         return empty[Math.floor(Math.random() * empty.length)];
     }
 
-    // Medium: block or take wins, otherwise random
     function aiMedium() {
-        // Check if AI can win
-        const winMove = findWinningMove('O');
+        var winMove = findWinningMove('O');
         if (winMove !== null) return winMove;
-
-        // Block opponent win
-        const blockMove = findWinningMove('X');
+        var blockMove = findWinningMove('X');
         if (blockMove !== null) return blockMove;
-
-        // Take center if available
         if (board[4] === null) return 4;
-
-        // Random
         return aiEasy();
     }
 
     function findWinningMove(player) {
-        for (const combo of WIN_COMBOS) {
-            const values = combo.map(i => board[i]);
-            const playerCount = values.filter(v => v === player).length;
-            const emptyCount = values.filter(v => v === null).length;
+        for (var ci = 0; ci < WIN_COMBOS.length; ci++) {
+            var combo = WIN_COMBOS[ci];
+            var values = combo.map(function(i) { return board[i]; });
+            var playerCount = values.filter(function(v) { return v === player; }).length;
+            var emptyCount = values.filter(function(v) { return v === null; }).length;
             if (playerCount === 2 && emptyCount === 1) {
                 return combo[values.indexOf(null)];
             }
@@ -594,34 +756,30 @@ body {
         return null;
     }
 
-    // Hard: minimax (unbeatable)
     function aiHard() {
-        let bestScore = -Infinity;
-        let bestMove = null;
-
-        for (let i = 0; i < 9; i++) {
+        var bestScore = -Infinity;
+        var bestMove = null;
+        for (var i = 0; i < 9; i++) {
             if (board[i] !== null) continue;
             board[i] = 'O';
-            const score = minimax(board, 0, false);
+            var score = minimax(board, 0, false);
             board[i] = null;
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = i;
             }
         }
-
         return bestMove;
     }
 
     function minimax(b, depth, isMaximizing) {
-        // Check terminal states
         if (checkWin('O')) return 10 - depth;
         if (checkWin('X')) return depth - 10;
-        if (b.every(c => c !== null)) return 0;
+        if (b.every(function(c) { return c !== null; })) return 0;
 
         if (isMaximizing) {
-            let best = -Infinity;
-            for (let i = 0; i < 9; i++) {
+            var best = -Infinity;
+            for (var i = 0; i < 9; i++) {
                 if (b[i] !== null) continue;
                 b[i] = 'O';
                 best = Math.max(best, minimax(b, depth + 1, false));
@@ -629,20 +787,391 @@ body {
             }
             return best;
         } else {
-            let best = Infinity;
-            for (let i = 0; i < 9; i++) {
-                if (b[i] !== null) continue;
-                b[i] = 'X';
-                best = Math.min(best, minimax(b, depth + 1, true));
-                b[i] = null;
+            var best2 = Infinity;
+            for (var j = 0; j < 9; j++) {
+                if (b[j] !== null) continue;
+                b[j] = 'X';
+                best2 = Math.min(best2, minimax(b, depth + 1, true));
+                b[j] = null;
             }
-            return best;
+            return best2;
         }
     }
 
-    // Initialize
+    // --- Online Mode Helpers ---
+
+    function getMyUsername() {
+        return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+    }
+
+    function generateRoomCode() {
+        var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        var code = '';
+        for (var i = 0; i < 4; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
+    function showOnlineLobby() {
+        onlineLobbyBtns.style.display = '';
+        onlineCreateArea.style.display = 'none';
+        onlineJoinArea.style.display = 'none';
+        onlineLeaveBtn.style.display = 'none';
+        onlineInfo.style.display = 'none';
+        joinError.style.display = 'none';
+        joinCodeInput.value = '';
+    }
+
+    function leaveOnlineRoom() {
+        if (window._onlineUnsubscribe) {
+            window._onlineUnsubscribe();
+            window._onlineUnsubscribe = null;
+        }
+        window._onlineState = null;
+        onlineInfo.style.display = 'none';
+        onlinePanel.style.display = mode === 'online' ? '' : 'none';
+        showOnlineLobby();
+    }
+
+    function renderBoardFromState(boardData, turn) {
+        board = boardData.map(function(v) { return v === '' ? null : v; });
+        currentPlayer = turn;
+        gameOver = false;
+
+        cells.forEach(function(cell, i) {
+            cell.innerHTML = '';
+            cell.classList.remove('taken', 'game-over', 'winner-cell');
+            if (board[i] !== null) {
+                cell.classList.add('taken');
+                var mark = document.createElement('span');
+                mark.classList.add('mark', board[i] === 'X' ? 'x-mark' : 'o-mark', 'show');
+                mark.textContent = board[i];
+                cell.appendChild(mark);
+            }
+        });
+
+        winLineEl.classList.remove('show');
+        winLineEl.style.width = '0';
+        winLineEl.style.height = '0';
+
+        var winnerX = checkWin('X');
+        var winnerO = checkWin('O');
+        if (winnerX) {
+            endOnlineGame('X', winnerX);
+        } else if (winnerO) {
+            endOnlineGame('O', winnerO);
+        } else if (board.every(function(c) { return c !== null; })) {
+            endOnlineGame(null, null);
+        } else {
+            updateStatus();
+        }
+    }
+
+    function endOnlineGame(winner, combo) {
+        gameOver = true;
+        cells.forEach(function(c) { c.classList.add('game-over'); });
+
+        if (winner) {
+            scores[winner]++;
+            updateScores();
+            if (combo) {
+                combo.forEach(function(i) { cells[i].classList.add('winner-cell'); });
+                drawWinLine(combo);
+            }
+            var st = window._onlineState;
+            var winnerName = winner === 'X' ? (st.hostName || 'X') : (st.guestName || 'O');
+            var isMe = winner === st.myRole;
+            statusEl.className = 'status win-msg-' + winner.toLowerCase();
+            statusEl.textContent = isMe ? 'You win!' : winnerName + ' wins!';
+            if (isMe) { if (window.SFX) window.SFX.win(); } else { if (window.SFX) window.SFX.fail(); }
+        } else {
+            scores.draw++;
+            updateScores();
+            statusEl.className = 'status draw-msg';
+            statusEl.textContent = "It's a draw!";
+            if (window.SFX) window.SFX.fail();
+        }
+    }
+
+    // Expose for the module script
+    window._tttOnline = {
+        getMyUsername: getMyUsername,
+        generateRoomCode: generateRoomCode,
+        showOnlineLobby: showOnlineLobby,
+        leaveOnlineRoom: leaveOnlineRoom,
+        renderBoardFromState: renderBoardFromState,
+        resetGame: resetGame,
+        get mode() { return mode; },
+        get board() { return board; },
+        get gameOver() { return gameOver; },
+        get currentPlayer() { return currentPlayer; }
+    };
+
+    window._onlineCellClickHandler = null;
+    window._onlineNewGameHandler = null;
+
+    function onlineCellClick(idx) {
+        if (window._onlineCellClickHandler) {
+            window._onlineCellClickHandler(idx);
+        }
+    }
+
+    function onlineNewGame() {
+        if (window._onlineNewGameHandler) {
+            window._onlineNewGameHandler();
+        }
+    }
+
+    createGameBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        if (window._onlineCreateGame) window._onlineCreateGame();
+    });
+
+    joinGameBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        onlineLobbyBtns.style.display = 'none';
+        onlineJoinArea.style.display = '';
+        joinCodeInput.focus();
+    });
+
+    joinSubmitBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        if (window._onlineJoinGame) window._onlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+    });
+
+    joinCodeInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            if (window.SFX) window.SFX.click();
+            if (window._onlineJoinGame) window._onlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+        }
+    });
+
+    onlineLeaveBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        leaveOnlineRoom();
+        resetGame();
+    });
+
+    onlineLeaveGameBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        leaveOnlineRoom();
+        resetGame();
+    });
+
     updateStatus();
 })();
+</script>
+
+<!-- Online multiplayer Firebase module -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+};
+
+var app = initializeApp(firebaseConfig, 'ttt-online');
+var db = getFirestore(app);
+
+var ttt = window._tttOnline;
+
+var onlinePanel = document.getElementById('online-panel');
+var onlineLobbyBtns = document.getElementById('online-lobby-btns');
+var onlineCreateArea = document.getElementById('online-create-area');
+var roomCodeDisplay = document.getElementById('room-code-display');
+var waitingMsg = document.getElementById('waiting-msg');
+var joinError = document.getElementById('join-error');
+var onlineLeaveBtn = document.getElementById('online-leave-btn');
+var onlineInfo = document.getElementById('online-info');
+var gameRoomCode = document.getElementById('game-room-code');
+var gamePlayerInfo = document.getElementById('game-player-info');
+
+function startListening(roomId) {
+    if (window._onlineUnsubscribe) {
+        window._onlineUnsubscribe();
+    }
+
+    var roomRef = doc(db, 'ttt_rooms', roomId);
+    window._onlineUnsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var st = window._onlineState;
+        if (!st || st.roomId !== roomId) return;
+
+        st.hostName = data.hostPlayer || 'X';
+        st.guestName = data.guestPlayer || 'O';
+
+        if (data.status === 'playing' && !st.playing) {
+            st.playing = true;
+            onlinePanel.style.display = 'none';
+            onlineInfo.style.display = '';
+            gameRoomCode.textContent = roomId;
+
+            var opponentName = st.myRole === 'X' ? st.guestName : st.hostName;
+            var roleClass = st.myRole === 'X' ? 'you-x' : 'you-o';
+            gamePlayerInfo.innerHTML = 'You are <span class="' + roleClass + '">' + st.myRole +
+                '</span> (' + ttt.getMyUsername() + ') vs ' + opponentName;
+        }
+
+        if (data.status === 'playing' || data.status === 'done') {
+            ttt.renderBoardFromState(data.board, data.currentTurn);
+        }
+    });
+}
+
+window._onlineCreateGame = async function() {
+    var username = ttt.getMyUsername();
+    var roomCode = ttt.generateRoomCode();
+
+    var roomRef = doc(db, 'ttt_rooms', roomCode);
+
+    var existing = await getDoc(roomRef);
+    if (existing.exists() && existing.data().status !== 'done') {
+        window._onlineCreateGame();
+        return;
+    }
+
+    await setDoc(roomRef, {
+        board: ['', '', '', '', '', '', '', '', ''],
+        currentTurn: 'X',
+        hostPlayer: username,
+        guestPlayer: '',
+        status: 'waiting',
+        winner: ''
+    });
+
+    window._onlineState = {
+        roomId: roomCode,
+        myRole: 'X',
+        playing: false,
+        hostName: username,
+        guestName: ''
+    };
+
+    onlineLobbyBtns.style.display = 'none';
+    onlineCreateArea.style.display = '';
+    onlineLeaveBtn.style.display = '';
+    roomCodeDisplay.textContent = roomCode;
+    waitingMsg.style.display = '';
+
+    ttt.resetGame();
+    startListening(roomCode);
+};
+
+window._onlineJoinGame = async function(code) {
+    joinError.style.display = 'none';
+
+    if (!code || code.length !== 4) {
+        joinError.textContent = 'Enter a 4-character room code';
+        joinError.style.display = '';
+        return;
+    }
+
+    var roomRef = doc(db, 'ttt_rooms', code);
+    var snapshot = await getDoc(roomRef);
+
+    if (!snapshot.exists()) {
+        joinError.textContent = 'Room not found';
+        joinError.style.display = '';
+        return;
+    }
+
+    var data = snapshot.data();
+    if (data.status !== 'waiting') {
+        joinError.textContent = 'Room is full or game already ended';
+        joinError.style.display = '';
+        return;
+    }
+
+    var username = ttt.getMyUsername();
+
+    await updateDoc(roomRef, {
+        guestPlayer: username,
+        status: 'playing'
+    });
+
+    window._onlineState = {
+        roomId: code,
+        myRole: 'O',
+        playing: true,
+        hostName: data.hostPlayer,
+        guestName: username
+    };
+
+    onlinePanel.style.display = 'none';
+    onlineInfo.style.display = '';
+    gameRoomCode.textContent = code;
+    gamePlayerInfo.innerHTML = 'You are <span class="you-o">O</span> (' + username + ') vs ' + data.hostPlayer;
+
+    ttt.resetGame();
+    startListening(code);
+};
+
+window._onlineCellClickHandler = async function(idx) {
+    var st = window._onlineState;
+    if (!st || !st.playing) return;
+    if (ttt.gameOver) return;
+    if (ttt.currentPlayer !== st.myRole) return;
+    if (ttt.board[idx] !== null) return;
+
+    var newBoard = ttt.board.map(function(v) { return v === null ? '' : v; });
+    newBoard[idx] = st.myRole;
+
+    var nextTurn = st.myRole === 'X' ? 'O' : 'X';
+
+    var tempBoard = newBoard.map(function(v) { return v === '' ? null : v; });
+    var newStatus = 'playing';
+    var winner = '';
+
+    var WIN_COMBOS = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+    ];
+
+    for (var ci = 0; ci < WIN_COMBOS.length; ci++) {
+        var combo = WIN_COMBOS[ci];
+        if (combo.every(function(i) { return tempBoard[i] === st.myRole; })) {
+            newStatus = 'done';
+            winner = st.myRole;
+            break;
+        }
+    }
+
+    if (!winner && tempBoard.every(function(c) { return c !== null; })) {
+        newStatus = 'done';
+        winner = 'draw';
+    }
+
+    var roomRef = doc(db, 'ttt_rooms', st.roomId);
+    await updateDoc(roomRef, {
+        board: newBoard,
+        currentTurn: nextTurn,
+        status: newStatus,
+        winner: winner
+    });
+};
+
+window._onlineNewGameHandler = async function() {
+    var st = window._onlineState;
+    if (!st || !st.roomId) return;
+
+    var roomRef = doc(db, 'ttt_rooms', st.roomId);
+    await updateDoc(roomRef, {
+        board: ['', '', '', '', '', '', '', '', ''],
+        currentTurn: 'X',
+        status: 'playing',
+        winner: ''
+    });
+};
 </script>
 
 <script src="sound.js"></script>

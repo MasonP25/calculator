@@ -17,8 +17,6 @@
     padding: 1rem;
     user-select: none;
   }
-  .top-bar { display: flex; align-items: center; gap: 2rem; margin-bottom: 0.5rem; }
-  .top-bar a { color: #7b2ff7; text-decoration: none; font-size: 0.9rem; }
   h1 { font-size: 2rem; }
 
   .diff-select { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; flex-wrap: wrap; justify-content: center; }
@@ -173,14 +171,18 @@
     .cell .notes span { font-size: 0.42rem; }
     h1 { font-size: 1.5rem; }
   }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <a href="index.html">&larr; Back</a>
-  <h1>Sudoku</h1>
-</div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Sudoku</h1>
 
 <div class="diff-select">
   <button class="diff-btn active" data-d="easy">Easy</button>

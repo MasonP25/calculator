@@ -7,9 +7,6 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:1rem 1rem 2rem;user-select:none;overflow-x:hidden}
-.top-bar{display:flex;align-items:center;gap:2rem;margin-bottom:.5rem}
-.top-bar a{color:#7b2ff7;text-decoration:none;font-size:.9rem}
-.top-bar a:hover{text-decoration:underline}
 h1{font-size:1.8rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .info-bar{display:flex;align-items:center;gap:1rem;margin-bottom:.4rem;flex-wrap:wrap;justify-content:center}
 .info-pill{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:20px;padding:4px 14px;font-size:.85rem;color:#aaa}
@@ -56,10 +53,17 @@ h1{font-size:1.8rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-b
 .star{position:absolute;font-size:1.5rem;animation:starFloat 1.5s ease forwards}
 @keyframes starFloat{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3) rotate(360deg)}}
 @media(max-width:420px){.cw-cell{width:30px;height:30px;font-size:.9rem;border-radius:4px}.crossword{gap:2px}.circle-area{width:230px;height:230px}.letter-node{width:46px;height:46px;font-size:1.2rem}h1{font-size:1.5rem}}
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
 </style>
 </head>
 <body>
-<div class="top-bar"><a href="index.html">&larr; Back</a><h1>Wordscapes</h1></div>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Wordscapes</h1>
 <div class="info-bar">
   <div class="info-pill">Level <b id="lvlNum">1</b> / <b id="lvlTotal">32</b></div>
   <div class="info-pill accent">Bonus <b id="bonusCt">0</b></div>
