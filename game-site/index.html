@@ -96,12 +96,32 @@
     border: 1px solid #feca5744;
     margin-left: 0.3rem;
   }
+  .fame-link {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 1.4rem;
+    background: linear-gradient(135deg, #1a1a2e, #1f1a3e);
+    border: 2px solid #7b2ff733;
+    border-radius: 12px;
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .fame-link:hover {
+    transform: translateY(-3px);
+    border-color: #7b2ff7;
+    box-shadow: 0 6px 20px rgba(123, 47, 247, 0.3);
+  }
+  .fame-link span { margin-right: 0.4rem; }
 </style>
 </head>
 <body>
   <h1>ARCADE</h1>
   <p class="subtitle">Pick a game to play</p>
   <p class="count">40 games</p>
+  <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
 
   <div class="section-title">Featured</div>
   <div class="games">
