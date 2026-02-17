@@ -116,43 +116,43 @@
   }
   .fame-link span { margin-right: 0.4rem; }
 
-  /* ── Global Chat Panel ── */
+  /* ── Chat Panel ── */
   #chat-panel {
     position: fixed;
     bottom: 0;
     right: 80px;
-    width: 320px;
+    width: 340px;
     z-index: 90;
     font-family: 'Segoe UI', Tahoma, sans-serif;
     display: flex;
     flex-direction: column;
-    border-radius: 12px 12px 0 0;
+    border-radius: 14px 14px 0 0;
     overflow: hidden;
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+    box-shadow: 0 -4px 28px rgba(0,0,0,0.55);
     transition: height 0.3s ease;
   }
-  #chat-panel.collapsed { height: 42px; }
-  #chat-panel.expanded  { height: 392px; /* 42 header + 350 body */ }
+  #chat-panel.collapsed { height: 44px; }
+  #chat-panel.expanded  { height: 460px; }
 
   #chat-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(135deg, #1a1a2e, #2a2a4a);
+    background: linear-gradient(135deg, #1e1e38, #2e2e52);
     padding: 0 14px;
-    height: 42px;
-    min-height: 42px;
+    height: 44px;
+    min-height: 44px;
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid #7b2ff744;
+    border-bottom: 1px solid #7b2ff733;
   }
-  #chat-header:hover { background: linear-gradient(135deg, #1f1f36, #32325a); }
+  #chat-header:hover { background: linear-gradient(135deg, #242448, #38385e); }
   #chat-header-left {
     display: flex;
     align-items: center;
     gap: 8px;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: #e0e0e0;
   }
   #chat-header-left .dot {
@@ -160,15 +160,18 @@
     border-radius: 50%;
     background: #22c55e;
     flex-shrink: 0;
+    box-shadow: 0 0 6px #22c55e88;
   }
   #chat-unread {
     background: #7b2ff7;
     color: #fff;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 700;
     padding: 1px 6px;
     border-radius: 10px;
     display: none;
+    min-width: 16px;
+    text-align: center;
   }
   #chat-toggle-icon {
     font-size: 1rem;
@@ -176,6 +179,113 @@
     transition: transform 0.3s;
   }
   #chat-panel.expanded #chat-toggle-icon { transform: rotate(180deg); }
+
+  /* Channel tabs bar */
+  #chat-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #14142a;
+    min-height: 36px;
+    overflow-x: auto;
+    border-bottom: 1px solid #2a2a4a;
+  }
+  #chat-tabs::-webkit-scrollbar { height: 0; }
+  .chat-tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #777;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    font-family: inherit;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .chat-tab:hover { color: #bbb; background: #1a1a36; }
+  .chat-tab.active { color: #e0e0e0; border-bottom-color: #7b2ff7; }
+  .chat-tab .tab-close {
+    margin-left: 6px;
+    font-size: 0.65rem;
+    color: #555;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+  .chat-tab .tab-close:hover { color: #ff4757; }
+  .chat-tab .tab-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #7b2ff7;
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 4px;
+  }
+  #chat-new-dm {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin: 0 6px;
+    border-radius: 50%;
+    border: 1.5px solid #2a2a4a;
+    background: #1a1a2e;
+    color: #888;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #chat-new-dm:hover { border-color: #7b2ff7; color: #e0e0e0; }
+
+  /* Search overlay for new DM */
+  #chat-search-bar {
+    display: none;
+    padding: 8px 10px;
+    background: #14142a;
+    border-bottom: 1px solid #2a2a4a;
+  }
+  #chat-search-bar.visible { display: flex; gap: 6px; }
+  #chat-search-input {
+    flex: 1;
+    background: #0f0f1a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: #e0e0e0;
+    font-size: 0.8rem;
+    outline: none;
+    font-family: inherit;
+  }
+  #chat-search-input:focus { border-color: #7b2ff7; }
+  #chat-search-input::placeholder { color: #555; }
+  #chat-search-go {
+    background: #7b2ff7;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: background 0.2s;
+  }
+  #chat-search-go:hover { background: #6a1fe0; }
+  #chat-search-err {
+    color: #ff4757;
+    font-size: 0.72rem;
+    padding: 2px 10px 4px;
+    background: #14142a;
+    display: none;
+  }
 
   #chat-body {
     display: flex;
@@ -192,24 +302,53 @@
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     font-size: 0.82rem;
-    line-height: 1.4;
+    line-height: 1.45;
   }
-  #chat-messages::-webkit-scrollbar { width: 5px; }
+  #chat-messages::-webkit-scrollbar { width: 4px; }
   #chat-messages::-webkit-scrollbar-track { background: transparent; }
   #chat-messages::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
 
-  .chat-msg { word-wrap: break-word; }
-  .chat-msg .chat-name { color: #feca57; font-weight: 700; margin-right: 5px; }
-  .chat-msg .chat-time { color: #555; font-size: 0.7rem; margin-left: 6px; }
-  .chat-msg.dm {
-    background: rgba(123, 47, 247, 0.15);
-    border-left: 3px solid #7b2ff7;
+  .chat-msg {
+    word-wrap: break-word;
     padding: 4px 8px;
-    border-radius: 0 6px 6px 0;
+    border-radius: 8px;
+    transition: background 0.15s;
   }
-  .chat-msg.dm .chat-dm-label { color: #a66fff; font-weight: 700; margin-right: 4px; }
+  .chat-msg:hover { background: #1a1a3222; }
+  .chat-msg .chat-name {
+    color: #7b8fff;
+    font-weight: 700;
+    margin-right: 5px;
+    cursor: pointer;
+  }
+  .chat-msg .chat-name:hover { text-decoration: underline; color: #a0b0ff; }
+  .chat-msg .chat-time { color: #444; font-size: 0.68rem; margin-left: 6px; }
+  .chat-msg .chat-text { color: #d0d0d0; }
+  .chat-msg.me .chat-name { color: #22c55e; }
+  .chat-msg.system-msg {
+    color: #666;
+    font-style: italic;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 6px 0;
+  }
+
+  /* Empty state */
+  .chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #444;
+    font-size: 0.82rem;
+    gap: 6px;
+    padding: 30px 20px;
+    text-align: center;
+  }
+  .chat-empty-icon { font-size: 2rem; opacity: 0.4; }
 
   #chat-input-area {
     display: flex;
@@ -217,32 +356,39 @@
     padding: 8px 10px;
     background: #1a1a2e;
     border-top: 1px solid #2a2a4a;
+    align-items: center;
   }
   #chat-input {
     flex: 1;
     background: #0f0f1a;
-    border: 1px solid #2a2a4a;
-    border-radius: 6px;
-    padding: 6px 10px;
+    border: 1.5px solid #2a2a4a;
+    border-radius: 20px;
+    padding: 7px 14px;
     color: #e0e0e0;
     font-size: 0.82rem;
     outline: none;
     font-family: inherit;
+    transition: border-color 0.2s;
   }
   #chat-input:focus { border-color: #7b2ff7; }
   #chat-input::placeholder { color: #555; }
   #chat-send {
     background: #7b2ff7;
     border: none;
-    border-radius: 6px;
+    border-radius: 50%;
     color: #fff;
     font-weight: 700;
-    padding: 6px 12px;
+    width: 34px;
+    height: 34px;
     cursor: pointer;
-    font-size: 0.82rem;
-    transition: background 0.2s;
+    font-size: 0.9rem;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  #chat-send:hover { background: #6a1fe0; }
+  #chat-send:hover { background: #6a1fe0; transform: scale(1.08); }
 </style>
 </head>
 <body>
@@ -535,55 +681,49 @@
       <span class="badge solo">Mouse</span>
     </a>
   </div>
-<!-- Global Chat Panel -->
+<!-- Chat Panel -->
 <div id="chat-panel" class="collapsed">
   <div id="chat-header" onclick="toggleChat()">
     <div id="chat-header-left">
       <span class="dot"></span>
-      <span>Global Chat</span>
+      <span>Chat</span>
       <span id="chat-unread">0</span>
     </div>
     <span id="chat-toggle-icon">&#9650;</span>
   </div>
   <div id="chat-body">
+    <div id="chat-tabs">
+      <button class="chat-tab active" data-channel="global">Global</button>
+      <button id="chat-new-dm" title="New conversation">+</button>
+    </div>
+    <div id="chat-search-bar">
+      <input type="text" id="chat-search-input" placeholder="Enter username..." maxlength="15" autocomplete="off">
+      <button id="chat-search-go">Chat</button>
+    </div>
+    <div id="chat-search-err"></div>
     <div id="chat-messages"></div>
     <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="Type a message... (/message user1 user2 text)" maxlength="500" autocomplete="off">
-      <button id="chat-send" onclick="sendChatMessage()">Send</button>
+      <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
+      <button id="chat-send" onclick="sendChatMessage()">&#10148;</button>
     </div>
   </div>
 </div>
-
-<script>
-  /* Chat panel toggle (non-module, so onclick works) */
-  let chatExpanded = false;
-  let chatUnread = 0;
-  function toggleChat() {
-    const panel = document.getElementById('chat-panel');
-    chatExpanded = !chatExpanded;
-    panel.className = chatExpanded ? 'expanded' : 'collapsed';
-    if (chatExpanded) {
-      chatUnread = 0;
-      const badge = document.getElementById('chat-unread');
-      badge.style.display = 'none';
-      badge.textContent = '0';
-      const msgs = document.getElementById('chat-messages');
-      msgs.scrollTop = msgs.scrollHeight;
-    }
-  }
-  function bumpUnread() {
-    if (chatExpanded) return;
-    chatUnread++;
-    const badge = document.getElementById('chat-unread');
-    badge.textContent = chatUnread > 99 ? '99+' : chatUnread;
-    badge.style.display = 'inline';
-  }
-</script>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 (function() {
+  /* ── state ── */
+  var chatExpanded = false;
+  var chatUnread = 0;
+  var activeChannel = 'global'; // 'global' or username for DM
+  var dmChannels = []; // [{name:'user', unread:0}]
+  var globalMsgs = [];
+  var dmCache = {}; // {username: [msgs]}
+  var dmListeners = {}; // {chatId: unsubscribe}
+  var initialGlobalLoad = true;
+
+  /* ── Firebase ── */
   var firebaseConfig = {
     apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
     authDomain: "calculator-81d08.firebaseapp.com",
@@ -592,17 +732,13 @@
     messagingSenderId: "375406495739",
     appId: "1:375406495739:web:fd28553263599864426d5e"
   };
-
   var app = firebase.initializeApp(firebaseConfig, 'global-chat');
   var db = firebase.firestore(app);
 
+  /* ── helpers ── */
   function getUser() {
     return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
   }
-
-  var msgsDiv = document.getElementById('chat-messages');
-  var input = document.getElementById('chat-input');
-
   function esc(s) {
     var d = document.createElement('div');
     d.textContent = s;
@@ -612,26 +748,218 @@
     var dt = new Date(ts);
     return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
   }
+  function makeChatId(a, b) {
+    return [a.toLowerCase(), b.toLowerCase()].sort().join('_');
+  }
 
-  var globalMsgs = [];
-  var initialLoad = true;
+  /* ── DOM refs ── */
+  var panel = document.getElementById('chat-panel');
+  var msgsDiv = document.getElementById('chat-messages');
+  var input = document.getElementById('chat-input');
+  var tabsDiv = document.getElementById('chat-tabs');
+  var searchBar = document.getElementById('chat-search-bar');
+  var searchInput = document.getElementById('chat-search-input');
+  var searchErr = document.getElementById('chat-search-err');
 
-  function renderAll() {
+  /* ── toggle panel ── */
+  window.toggleChat = function() {
+    chatExpanded = !chatExpanded;
+    panel.className = chatExpanded ? 'expanded' : 'collapsed';
+    if (chatExpanded) {
+      chatUnread = 0;
+      var badge = document.getElementById('chat-unread');
+      badge.style.display = 'none';
+      badge.textContent = '0';
+      renderMessages();
+    }
+  };
+  function bumpUnread() {
+    if (chatExpanded) return;
+    chatUnread++;
+    var badge = document.getElementById('chat-unread');
+    badge.textContent = chatUnread > 99 ? '99+' : chatUnread;
+    badge.style.display = 'inline';
+  }
+
+  /* ── tabs ── */
+  function renderTabs() {
+    /* keep the Global tab and + button, rebuild DM tabs */
+    var existing = tabsDiv.querySelectorAll('.chat-tab[data-channel]:not([data-channel="global"])');
+    for (var i = 0; i < existing.length; i++) existing[i].remove();
+    var newDmBtn = document.getElementById('chat-new-dm');
+    for (var j = 0; j < dmChannels.length; j++) {
+      var ch = dmChannels[j];
+      var btn = document.createElement('button');
+      btn.className = 'chat-tab' + (activeChannel === ch.name ? ' active' : '');
+      btn.setAttribute('data-channel', ch.name);
+      btn.innerHTML = esc(ch.name) + '<span class="tab-close" data-close="' + esc(ch.name) + '">&times;</span>'
+        + (ch.unread > 0 ? '<span class="tab-dot" style="display:block"></span>' : '<span class="tab-dot"></span>');
+      tabsDiv.insertBefore(btn, newDmBtn);
+    }
+    /* update global tab active state */
+    var globalTab = tabsDiv.querySelector('[data-channel="global"]');
+    if (globalTab) globalTab.className = 'chat-tab' + (activeChannel === 'global' ? ' active' : '');
+  }
+
+  tabsDiv.addEventListener('click', function(e) {
+    /* close DM tab */
+    if (e.target.classList.contains('tab-close')) {
+      e.stopPropagation();
+      var name = e.target.getAttribute('data-close');
+      closeDm(name);
+      return;
+    }
+    var tab = e.target.closest('.chat-tab');
+    if (!tab) return;
+    var ch = tab.getAttribute('data-channel');
+    if (ch) switchChannel(ch);
+  });
+
+  function switchChannel(ch) {
+    activeChannel = ch;
+    /* clear unread for this dm */
+    for (var i = 0; i < dmChannels.length; i++) {
+      if (dmChannels[i].name === ch) dmChannels[i].unread = 0;
+    }
+    searchBar.classList.remove('visible');
+    searchErr.style.display = 'none';
+    renderTabs();
+    renderMessages();
+  }
+
+  function closeDm(name) {
+    dmChannels = dmChannels.filter(function(c) { return c.name !== name; });
+    /* unsub listener */
+    var me = getUser();
+    var cid = makeChatId(me, name);
+    if (dmListeners[cid]) { dmListeners[cid](); delete dmListeners[cid]; }
+    delete dmCache[name];
+    if (activeChannel === name) activeChannel = 'global';
+    saveDmChannels();
+    renderTabs();
+    renderMessages();
+  }
+
+  /* ── new DM ── */
+  document.getElementById('chat-new-dm').addEventListener('click', function() {
+    var me = getUser();
+    if (me === 'Guest') {
+      searchErr.textContent = 'Sign in to send direct messages';
+      searchErr.style.display = 'block';
+      return;
+    }
+    searchBar.classList.toggle('visible');
+    searchErr.style.display = 'none';
+    if (searchBar.classList.contains('visible')) {
+      searchInput.value = '';
+      searchInput.focus();
+    }
+  });
+
+  function startDmWith(username) {
+    var me = getUser();
+    if (me === 'Guest') return;
+    if (username.toLowerCase() === me.toLowerCase()) {
+      searchErr.textContent = "You can't message yourself";
+      searchErr.style.display = 'block';
+      return;
+    }
+    /* check if tab already exists */
+    var exists = false;
+    for (var i = 0; i < dmChannels.length; i++) {
+      if (dmChannels[i].name.toLowerCase() === username.toLowerCase()) {
+        username = dmChannels[i].name;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      dmChannels.push({ name: username, unread: 0 });
+      listenDm(username);
+      saveDmChannels();
+    }
+    searchBar.classList.remove('visible');
+    searchErr.style.display = 'none';
+    switchChannel(username);
+  }
+
+  document.getElementById('chat-search-go').addEventListener('click', function() {
+    var val = searchInput.value.trim();
+    if (!val) return;
+    startDmWith(val);
+  });
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      var val = searchInput.value.trim();
+      if (val) startDmWith(val);
+    }
+  });
+
+  /* ── persist open DM tabs in localStorage ── */
+  function saveDmChannels() {
+    var names = dmChannels.map(function(c) { return c.name; });
+    localStorage.setItem('arcade_dm_channels', JSON.stringify(names));
+  }
+  function loadDmChannels() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('arcade_dm_channels') || '[]');
+      for (var i = 0; i < saved.length; i++) {
+        dmChannels.push({ name: saved[i], unread: 0 });
+        listenDm(saved[i]);
+      }
+    } catch(e) {}
+    renderTabs();
+  }
+
+  /* ── render messages ── */
+  function renderMessages() {
+    var me = getUser();
+    var msgs;
+    if (activeChannel === 'global') {
+      msgs = globalMsgs;
+    } else {
+      msgs = dmCache[activeChannel] || [];
+    }
+
     msgsDiv.innerHTML = '';
-    var all = globalMsgs.slice().sort(function(a, b) { return a.timestamp - b.timestamp; });
-    for (var i = 0; i < all.length; i++) {
-      var m = all[i];
+    if (msgs.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'chat-empty';
+      if (activeChannel === 'global') {
+        empty.innerHTML = '<span class="chat-empty-icon">&#128172;</span>No messages yet. Say hello!';
+      } else {
+        empty.innerHTML = '<span class="chat-empty-icon">&#9993;</span>Start a conversation with ' + esc(activeChannel);
+      }
+      msgsDiv.appendChild(empty);
+      return;
+    }
+
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i];
       var div = document.createElement('div');
-      div.className = 'chat-msg';
-      div.innerHTML = '<span class="chat-name">' + esc(m.name || 'Guest') + ':</span>'
-        + esc(m.text)
+      var isMe = (m.name || m.from || '') === me;
+      div.className = 'chat-msg' + (isMe ? ' me' : '');
+
+      var nameDisplay = m.name || m.from || 'Guest';
+      div.innerHTML = '<span class="chat-name" data-user="' + esc(nameDisplay) + '">' + esc(nameDisplay) + '</span>'
+        + '<span class="chat-text">' + esc(m.text) + '</span>'
         + '<span class="chat-time">' + (m.time || hhmm(m.timestamp)) + '</span>';
       msgsDiv.appendChild(div);
     }
     msgsDiv.scrollTop = msgsDiv.scrollHeight;
   }
 
-  /* send message */
+  /* click username to open DM */
+  msgsDiv.addEventListener('click', function(e) {
+    if (e.target.classList.contains('chat-name')) {
+      var user = e.target.getAttribute('data-user');
+      if (user && user !== getUser() && user !== 'Guest') {
+        startDmWith(user);
+      }
+    }
+  });
+
+  /* ── send ── */
   function send() {
     var text = input.value.trim();
     if (!text) return;
@@ -639,35 +967,74 @@
     var now = Date.now();
     var time = hhmm(now);
 
-    db.collection('global_chat').add({
-      name: me,
-      text: text,
-      time: time,
-      timestamp: now,
-      type: 'global'
-    }).then(function() {
-      input.value = '';
-    }).catch(function(err) {
-      console.error('Failed to send message:', err);
-    });
+    if (activeChannel === 'global') {
+      db.collection('global_chat').add({
+        name: me, text: text, time: time, timestamp: now, type: 'global'
+      }).catch(function(err) { console.error('Send error:', err); });
+    } else {
+      if (me === 'Guest') return;
+      var cid = makeChatId(me, activeChannel);
+      db.collection('direct_messages').add({
+        chatId: cid, from: me, to: activeChannel, text: text, time: time, timestamp: now
+      }).catch(function(err) { console.error('DM send error:', err); });
+    }
+    input.value = '';
   }
 
   window.sendChatMessage = send;
   input.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
 
-  /* listen for messages */
-  db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(50)
+  /* ── global listener ── */
+  db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(80)
     .onSnapshot(function(snap) {
       globalMsgs = [];
       snap.forEach(function(doc) { globalMsgs.push(doc.data()); });
-      if (!initialLoad) {
-        snap.docChanges().forEach(function(ch) { if (ch.type === 'added') bumpUnread(); });
+      if (!initialGlobalLoad) {
+        snap.docChanges().forEach(function(ch) {
+          if (ch.type === 'added') bumpUnread();
+        });
       }
-      initialLoad = false;
-      renderAll();
-    }, function(err) {
-      console.error('Global chat listener error:', err);
-    });
+      initialGlobalLoad = false;
+      if (activeChannel === 'global') renderMessages();
+    }, function(err) { console.error('Global chat error:', err); });
+
+  /* ── DM listener per conversation ── */
+  function listenDm(username) {
+    var me = getUser();
+    if (me === 'Guest') return;
+    var cid = makeChatId(me, username);
+    if (dmListeners[cid]) return; // already listening
+    var initialDmLoad = true;
+    dmListeners[cid] = db.collection('direct_messages')
+      .where('chatId', '==', cid)
+      .orderBy('timestamp', 'asc')
+      .limitToLast(80)
+      .onSnapshot(function(snap) {
+        var msgs = [];
+        snap.forEach(function(doc) { msgs.push(doc.data()); });
+        dmCache[username] = msgs;
+        if (!initialDmLoad) {
+          snap.docChanges().forEach(function(ch) {
+            if (ch.type === 'added' && ch.doc.data().from !== me) {
+              bumpUnread();
+              /* mark tab as having unread */
+              for (var i = 0; i < dmChannels.length; i++) {
+                if (dmChannels[i].name === username && activeChannel !== username) {
+                  dmChannels[i].unread++;
+                  renderTabs();
+                }
+              }
+            }
+          });
+        }
+        initialDmLoad = false;
+        if (activeChannel === username) renderMessages();
+      }, function(err) { console.error('DM listener error:', err); });
+  }
+
+  /* ── init ── */
+  loadDmChannels();
+  renderMessages();
 })();
 </script>
 
