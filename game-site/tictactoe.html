@@ -413,6 +413,7 @@ a.back:hover { color: #e0e0e0; }
             <p style="color:#888; font-size:0.85rem;">Enter room code:</p>
             <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="CODE">
             <button class="online-btn" id="join-submit-btn">Join</button>
+            <button class="leave-btn" id="join-back-btn" style="margin-top:4px;">Back</button>
             <p class="join-error" id="join-error" style="display:none;"></p>
         </div>
         <button class="leave-btn" id="online-leave-btn" style="display:none;">Cancel</button>
@@ -496,6 +497,7 @@ a.back:hover { color: #e0e0e0; }
     var joinSubmitBtn = document.getElementById('join-submit-btn');
     var joinError = document.getElementById('join-error');
     var onlineLeaveBtn = document.getElementById('online-leave-btn');
+    var joinBackBtn = document.getElementById('join-back-btn');
     var onlineInfo = document.getElementById('online-info');
     var gameRoomCode = document.getElementById('game-room-code');
     var gamePlayerInfo = document.getElementById('game-player-info');
@@ -945,6 +947,11 @@ a.back:hover { color: #e0e0e0; }
             if (window.SFX) window.SFX.click();
             if (window._onlineJoinGame) window._onlineJoinGame(joinCodeInput.value.trim().toUpperCase());
         }
+    });
+
+    joinBackBtn.addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        showOnlineLobby();
     });
 
     onlineLeaveBtn.addEventListener('click', function() {
