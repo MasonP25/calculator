@@ -476,6 +476,7 @@ body {
             if (mode === 'ai') {
                 const sk = (winner === 'X') ? window.HallOfFame?.winStreak('tictactoe') : window.HallOfFame?.loseStreak('tictactoe');
                 if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
+                if(winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', 1);
             }
 
             statusEl.className = 'status win-msg-' + winner.toLowerCase();

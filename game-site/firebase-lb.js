@@ -1,6 +1,6 @@
 // ─── FIREBASE GLOBAL LEADERBOARD + AUTH ───
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp, doc, setDoc, getDoc }
+import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -96,20 +96,22 @@ window.FirebaseLB = {
   getScores: async function(gameId, max) {
     max = max || 10;
     try {
-      const dir = LOWER_BETTER.includes(gameId) ? 'asc' : 'desc';
       const q = query(
         collection(db, 'scores'),
-        where('gameId', '==', gameId),
-        orderBy('score', dir),
-        limit(max)
+        where('gameId', '==', gameId)
       );
       const snap = await getDocs(q);
       var results = [];
-      snap.forEach(function(doc) {
-        var d = doc.data();
-        results.push({ name: d.name, score: d.score, date: d.date || '' });
+      snap.forEach(function(d) {
+        var data = d.data();
+        results.push({ name: data.name, score: data.score, date: data.date || '' });
       });
-      return results;
+      // Sort client-side (avoids needing composite Firestore index)
+      var lower = LOWER_BETTER.includes(gameId);
+      results.sort(function(a, b) {
+        return lower ? a.score - b.score : b.score - a.score;
+      });
+      return results.slice(0, max);
     } catch (e) {
       console.warn('Firebase getScores failed:', e);
       return [];

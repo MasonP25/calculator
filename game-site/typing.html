@@ -595,6 +595,7 @@ function endTest() {
   const accuracy = totalTypedChars > 0 ? Math.round(((totalTypedChars - errorCount) / totalTypedChars) * 100) : 0;
 
   wpmDisplay.textContent = finalWPM;
+  if(window.HallOfFame) window.HallOfFame.submit('typing', finalWPM);
 
   // Show results
   document.getElementById('resultWpm').textContent = finalWPM;

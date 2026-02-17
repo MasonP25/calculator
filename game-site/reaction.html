@@ -213,6 +213,7 @@ arena.addEventListener('click', () => {
     scores.push(time);
     if (scores.length > 5) scores.shift();
     if (time < best) best = time;
+    if(window.HallOfFame) window.HallOfFame.submit('reaction', time);
     updateScores();
     setTimeout(() => { state = 'waiting'; }, 300);
   } else if (state === 'result') {

@@ -277,6 +277,7 @@ function endGame(col) {
   failCol = col;
   failFlash = 30;
   saveHigh();
+  if(window.HallOfFame) window.HallOfFame.submit('tiles', score);
   msgEl.textContent = '';
 }
 

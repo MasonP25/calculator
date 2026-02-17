@@ -199,6 +199,7 @@ function update() {
   } else if (p2Dead) {
     p2.alive = false;
     score1++; s1El.textContent = score1;
+    if(window.HallOfFame) window.HallOfFame.submit('tron', 1);
     endRound('P1 wins!');
   } else {
     p1.x = nx1; p1.y = ny1; grid[ny1][nx1] = 1;

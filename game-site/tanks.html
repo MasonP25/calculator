@@ -271,6 +271,7 @@ function endRound(msg) {
   gameOver = true;
   if (score1 >= 5 || score2 >= 5) {
     const winner = score1 >= 5 ? 'P1' : (botMode ? 'Bot' : 'P2');
+    if(score1 >= 5 && window.HallOfFame) window.HallOfFame.submit('tanks', 1);
     msgEl.textContent = winner + ' wins the match! SPACE to restart';
     score1 = 0; score2 = 0;
     document.getElementById('s1').textContent = '0';

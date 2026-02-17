@@ -163,6 +163,7 @@ function dropPiece(col) {
     if (botMode) {
       const sk = (currentPlayer === 1) ? window.HallOfFame?.winStreak('connect4') : window.HallOfFame?.loseStreak('connect4');
       if (sk) streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
+      if(currentPlayer === 1 && window.HallOfFame) window.HallOfFame.submit('connect4', 1);
     }
     msgEl.innerHTML = '<span class="' + cls + '">' + name + ' wins!</span>' + streakHtml;
     gameOver = true;

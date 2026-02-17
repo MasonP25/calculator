@@ -800,6 +800,7 @@ function handleCorrectGuess(groupIdx) {
       gameOver = true;
       window.SFX?.win();
       const ws = window.HallOfFame?.winStreak('connections');
+      if(window.HallOfFame) window.HallOfFame.submit('connections', 1);
       setTimeout(() => {
         btnRow.style.display = "none";
         mistakesArea.style.display = "none";

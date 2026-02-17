@@ -200,6 +200,7 @@ function handleClick(r, c) {
     clearInterval(timerInt);
     window.SFX?.win();
     const ws = window.HallOfFame?.winStreak('minesweeper');
+    if(window.HallOfFame) window.HallOfFame.submit('minesweeper', timerVal);
     if (ws) { document.getElementById('streakCurrent').textContent = ws.current; document.getElementById('streakBest').textContent = ws.best; }
     msgEl.innerHTML = '<span style="color:#00d4ff">You Win! Time: ' + timerVal + 's</span> | Streak: <span style="color:#00d4ff;font-weight:bold;">' + (ws ? ws.current : 0) + '</span>';
   }

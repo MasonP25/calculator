@@ -408,6 +408,7 @@ function checkCollisions() {
         if (lives <= 0) {
           gameOver = true;
           gameRunning = false;
+          if(window.HallOfFame) window.HallOfFame.submit('pacman', score);
           msgEl.textContent = 'Game Over! Final Score: ' + score;
           restartBtn.style.display = 'inline-block';
         } else {

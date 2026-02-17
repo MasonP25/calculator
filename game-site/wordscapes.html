@@ -367,6 +367,7 @@ function saveProg(){
 function lvComplete(){
   window.SFX?.win();
   _sb('ws_level',Math.max(curLv+1,parseInt(_gb('ws_level','0'))));
+  if(window.HallOfFame) window.HallOfFame.submit('wordscapes', curLv + 1);
   overlayMsg.textContent='You found all '+lvWords.length+' words! Score: '+score;
   overlay.classList.add('show');burstStars();
 }

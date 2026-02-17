@@ -691,6 +691,7 @@ function checkWin() {
     winStats.textContent = `Score: ${score} | Moves: ${moveCount} | Time: ${timerVal}s`;
     winOverlay.classList.add('show');
     window.SFX?.win();
+    if(window.HallOfFame) window.HallOfFame.submit('solitaire', score);
   }
 }
 

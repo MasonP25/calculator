@@ -707,6 +707,7 @@ function updateStatus(result) {
       // G.turn is the side that is in checkmate (loser). If G.turn !== playerColor, player won.
       const sk = (G.turn !== playerColor) ? window.HallOfFame?.winStreak('chess') : window.HallOfFame?.loseStreak('chess');
       if (sk) streakHtml = ' <span style="font-size:0.85rem;font-weight:normal;">Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span></span>';
+      if(G.turn !== playerColor && window.HallOfFame) window.HallOfFame.submit('chess', 1);
     }
     statusEl.innerHTML = `<span class="game-over-msg">Checkmate! ${winner} wins!${streakHtml}</span>`;
   } else if(result.stalemate) {

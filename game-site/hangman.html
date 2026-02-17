@@ -520,6 +520,7 @@
       if (streak > bestStreak) bestStreak = streak;
       saveStats();
       updateScores();
+      if(window.HallOfFame) window.HallOfFame.submit('hangman', 1);
       showMessage('You Win! Streak: ' + streak, 'win');
       return;
     }

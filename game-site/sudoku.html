@@ -643,6 +643,7 @@ function checkWin() {
   clearInterval(timerInt);
   window.SFX?.win();
   window.HallOfFame?.winStreak('sudoku');
+  if(window.HallOfFame) window.HallOfFame.submit('sudoku', timerVal);
   updateStreakUI();
   winTimeEl.textContent = formatTime(timerVal);
   winMistakesEl.textContent = mistakes;

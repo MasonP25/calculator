@@ -522,6 +522,7 @@ function triggerWin(player) {
   const name = player === 1 ? 'Player 1' : 'Player 2';
   const color = player === 1 ? '#00d4ff' : '#ff4757';
   msgEl.innerHTML = '<span style="color:' + color + ';font-size:1.3rem;font-weight:bold">' + name + ' wins!</span> &mdash; Press SPACE to play again';
+  if(player === 1 && window.HallOfFame) window.HallOfFame.submit('racer', 1);
   window.SFX?.win();
   // Big celebration particles
   for (let i = 0; i < 50; i++) {

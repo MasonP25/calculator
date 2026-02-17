@@ -345,6 +345,7 @@ function update() {
       _sb('doodleBest', highScore);
       bestEl.textContent = highScore;
     }
+    if(window.HallOfFame) window.HallOfFame.submit('doodle', score);
   }
 }
 

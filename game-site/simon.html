@@ -444,6 +444,7 @@ function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.
     }
 
     const finalRound = round > 0 ? round - 1 : 0;
+    if(window.HallOfFame) window.HallOfFame.submit('simon', finalRound);
     showMessage('Game Over! You reached round ' + round + '. Score: ' + finalRound, 'error');
     startBtn.textContent = 'Play Again';
     startBtn.disabled = false;

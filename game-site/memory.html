@@ -204,6 +204,7 @@ function flipCard(index) {
 
         if (pairCount === totalPairs) {
           winMsgEl.textContent = `You won in ${moves} moves!`;
+          if(window.HallOfFame) window.HallOfFame.submit('memory', moves);
         }
       }, 400);
     } else {
