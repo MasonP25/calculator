@@ -274,10 +274,12 @@
     <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
 </div>
 
+<div id="game-area">
 <div class="headers" id="headers"></div>
 <div class="board" id="board"></div>
 <div class="msg" id="msg"><span class="p1t">Red's turn</span></div>
 <button class="restart" id="restart">New Game</button>
+</div>
 <script>
 (function() {
 const ROWS = 6, COLS = 7;
@@ -308,12 +310,15 @@ var gamePlayerInfo = document.getElementById('game-player-info');
 var onlineLeaveGameBtn = document.getElementById('online-leave-game-btn');
 
 // Mode buttons
+var gameArea = document.getElementById('game-area');
+
 document.getElementById('mode2p').addEventListener('click', function() {
   if (mode === 'online') leaveOnlineRoom();
   mode = '2p';
   updateModeButtons();
   onlinePanel.style.display = 'none';
   onlineInfo.style.display = 'none';
+  gameArea.style.display = '';
   init();
 });
 document.getElementById('modeBot').addEventListener('click', function() {
@@ -322,6 +327,7 @@ document.getElementById('modeBot').addEventListener('click', function() {
   updateModeButtons();
   onlinePanel.style.display = 'none';
   onlineInfo.style.display = 'none';
+  gameArea.style.display = '';
   init();
 });
 document.getElementById('modeOnline').addEventListener('click', function() {
@@ -330,8 +336,8 @@ document.getElementById('modeOnline').addEventListener('click', function() {
   updateModeButtons();
   onlinePanel.style.display = '';
   onlineInfo.style.display = 'none';
+  gameArea.style.display = 'none';
   showOnlineLobby();
-  init();
 });
 
 function updateModeButtons() {
@@ -603,6 +609,7 @@ function leaveOnlineRoom() {
   window._c4OnlineState = null;
   onlineInfo.style.display = 'none';
   onlinePanel.style.display = mode === 'online' ? '' : 'none';
+  gameArea.style.display = mode === 'online' ? 'none' : '';
   showOnlineLobby();
 }
 
@@ -876,6 +883,7 @@ function startListening(roomId) {
             st.playing = true;
             onlinePanel.style.display = 'none';
             onlineInfo.style.display = '';
+            document.getElementById('game-area').style.display = '';
             gameRoomCode.textContent = roomId;
 
             var opponentName = st.myRole === 1 ? st.guestName : st.hostName;
@@ -983,6 +991,7 @@ window._c4OnlineJoinGame = async function(code) {
 
         onlinePanel.style.display = 'none';
         onlineInfo.style.display = '';
+        document.getElementById('game-area').style.display = '';
         gameRoomCode.textContent = code;
         gamePlayerInfo.innerHTML = 'You are <span class="you-yellow">Yellow</span> (' + username + ') vs ' + data.hostPlayer;
 

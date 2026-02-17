@@ -426,6 +426,7 @@ a.back:hover { color: #e0e0e0; }
         <button class="leave-btn" id="online-leave-game-btn">Leave Game</button>
     </div>
 
+    <div id="game-area">
     <!-- Score Display -->
     <div class="score-display">
         <span class="score-x">X: <span id="score-x">0</span></span>
@@ -454,6 +455,7 @@ a.back:hover { color: #e0e0e0; }
 
     <!-- New Game Button -->
     <button class="new-game-btn" id="new-game-btn">New Game</button>
+    </div>
 </div>
 
 <script>
@@ -483,6 +485,8 @@ a.back:hover { color: #e0e0e0; }
     var difficultyGroup = document.getElementById('difficulty-group');
     var difficultySelector = document.getElementById('difficulty-selector');
     var winLineEl = document.getElementById('win-line');
+
+    var gameArea = document.getElementById('game-area');
 
     // Online DOM refs
     var onlinePanel = document.getElementById('online-panel');
@@ -521,6 +525,7 @@ a.back:hover { color: #e0e0e0; }
         difficultyGroup.style.display = mode === 'ai' ? '' : 'none';
         onlinePanel.style.display = mode === 'online' ? '' : 'none';
         onlineInfo.style.display = 'none';
+        gameArea.style.display = mode === 'online' ? 'none' : '';
         if (mode === 'online') {
             showOnlineLobby();
         }
@@ -833,6 +838,7 @@ a.back:hover { color: #e0e0e0; }
         window._onlineState = null;
         onlineInfo.style.display = 'none';
         onlinePanel.style.display = mode === 'online' ? '' : 'none';
+        gameArea.style.display = mode === 'online' ? 'none' : '';
         showOnlineLobby();
     }
 
@@ -1020,6 +1026,7 @@ function startListening(roomId) {
             st.playing = true;
             onlinePanel.style.display = 'none';
             onlineInfo.style.display = '';
+            document.getElementById('game-area').style.display = '';
             gameRoomCode.textContent = roomId;
 
             var opponentName = st.myRole === 'X' ? st.guestName : st.hostName;
@@ -1125,6 +1132,7 @@ window._onlineJoinGame = async function(code) {
 
         onlinePanel.style.display = 'none';
         onlineInfo.style.display = '';
+        document.getElementById('game-area').style.display = '';
         gameRoomCode.textContent = code;
         gamePlayerInfo.innerHTML = 'You are <span class="you-o">O</span> (' + username + ') vs ' + data.hostPlayer;
 
