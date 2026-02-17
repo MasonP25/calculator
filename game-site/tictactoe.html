@@ -79,6 +79,7 @@ body {
 .score-display {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     font-size: 1.2rem;
     font-weight: 600;
@@ -457,7 +458,7 @@ a.back:hover { color: #e0e0e0; }
         <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
     </div>
 
-    <div id="game-area" style="display:flex;flex-direction:column;align-items:center;gap:22px;">
+    <div id="game-area" style="display:flex;flex-direction:column;align-items:center;gap:22px;width:100%;">
     <!-- Score Display -->
     <div class="score-display">
         <span class="score-x">X: <span id="score-x">0</span></span>
