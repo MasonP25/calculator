@@ -1114,24 +1114,27 @@ h1 {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
-                // Label positions: place text at midpoint angle of each zone ring
+                // Label positions: place text at midpoint angle of each zone ring (both sides)
                 var labelZones = [
+                    { halfSize: 30, innerHalf: 22, pts: 1, color: '#a080dd' },
                     { halfSize: 22, innerHalf: 12, pts: 2, color: '#c4a0ff' },
                     { halfSize: 12, innerHalf: 4, pts: 3, color: '#d4b8ff' },
                     { halfSize: 4, innerHalf: 0, pts: 4, color: '#fff' }
                 ];
                 labelZones.forEach(function(lz) {
-                    // Place label at the midpoint between this zone edge and inner zone edge
-                    var labelDeg = tAngle + (lz.halfSize + lz.innerHalf) / 2;
-                    var labelRad = Math.PI - (labelDeg / 180) * Math.PI;
+                    var midOffset = (lz.halfSize + lz.innerHalf) / 2;
                     var labelDist = radius * 0.55;
-                    var lx = cx + Math.cos(labelRad) * labelDist;
-                    var ly = cy - Math.sin(labelRad) * labelDist;
-
-                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                    ctx.fillText('+' + lz.pts, lx + 1, ly + 1);
-                    ctx.fillStyle = lz.color;
-                    ctx.fillText('+' + lz.pts, lx, ly);
+                    // Draw on both sides of the target
+                    [-1, 1].forEach(function(sign) {
+                        var labelDeg = tAngle + sign * midOffset;
+                        var labelRad = Math.PI - (labelDeg / 180) * Math.PI;
+                        var lx = cx + Math.cos(labelRad) * labelDist;
+                        var ly = cy - Math.sin(labelRad) * labelDist;
+                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                        ctx.fillText('+' + lz.pts, lx + 1, ly + 1);
+                        ctx.fillStyle = lz.color;
+                        ctx.fillText('+' + lz.pts, lx, ly);
+                    });
                 });
             }
         }
