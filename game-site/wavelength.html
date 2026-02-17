@@ -1088,6 +1088,33 @@ h1 {
             ctx.lineWidth = 2;
             ctx.strokeStyle = 'rgba(123, 47, 247, 0.6)';
             ctx.stroke();
+
+            // Point labels on zones (only during reveal, not for psychic preview)
+            if (data.phase === 'reveal') {
+                ctx.font = 'bold 18px Segoe UI, Tahoma, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Label positions: place text at midpoint angle of each zone ring
+                var labelZones = [
+                    { halfSize: 22, innerHalf: 12, pts: 2, color: '#c4a0ff' },
+                    { halfSize: 12, innerHalf: 4, pts: 3, color: '#d4b8ff' },
+                    { halfSize: 4, innerHalf: 0, pts: 4, color: '#fff' }
+                ];
+                labelZones.forEach(function(lz) {
+                    // Place label at the midpoint between this zone edge and inner zone edge
+                    var labelDeg = tAngle + (lz.halfSize + lz.innerHalf) / 2;
+                    var labelRad = Math.PI - (labelDeg / 180) * Math.PI;
+                    var labelDist = radius * 0.55;
+                    var lx = cx + Math.cos(labelRad) * labelDist;
+                    var ly = cy - Math.sin(labelRad) * labelDist;
+
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.fillText('+' + lz.pts, lx + 1, ly + 1);
+                    ctx.fillStyle = lz.color;
+                    ctx.fillText('+' + lz.pts, lx, ly);
+                });
+            }
         }
 
         // Guess needle
