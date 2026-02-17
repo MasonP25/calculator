@@ -163,7 +163,7 @@
     box-shadow: 0 0 6px #22c55e88;
   }
   #chat-unread {
-    background: #7b2ff7;
+    background: #ff4757;
     color: #fff;
     font-size: 0.62rem;
     font-weight: 700;
@@ -212,11 +212,14 @@
   .chat-tab:hover { color: #bbb; background: #1a1a36; }
   .chat-tab.active { color: #e0e0e0; border-bottom-color: #7b2ff7; }
   .chat-tab .tab-close {
-    margin-left: 6px;
-    font-size: 0.65rem;
-    color: #555;
+    margin-left: 8px;
+    font-size: 0.95rem;
+    color: #666;
     cursor: pointer;
     vertical-align: middle;
+    line-height: 1;
+    font-weight: 700;
+    transition: color 0.15s;
   }
   .chat-tab .tab-close:hover { color: #ff4757; }
   .chat-tab .tab-dot {
@@ -762,23 +765,57 @@
   var searchErr = document.getElementById('chat-search-err');
 
   /* ── toggle panel ── */
+  var dmUnreadTotal = 0;
+
   window.toggleChat = function() {
     chatExpanded = !chatExpanded;
     panel.className = chatExpanded ? 'expanded' : 'collapsed';
     if (chatExpanded) {
-      chatUnread = 0;
-      var badge = document.getElementById('chat-unread');
-      badge.style.display = 'none';
-      badge.textContent = '0';
+      /* if currently viewing a DM channel, clear its unreads */
+      if (activeChannel !== 'global') {
+        clearDmUnreadsFor(activeChannel);
+      }
       renderMessages();
     }
   };
-  function bumpUnread() {
-    if (chatExpanded) return;
-    chatUnread++;
+
+  function updateDmBadge() {
     var badge = document.getElementById('chat-unread');
-    badge.textContent = chatUnread > 99 ? '99+' : chatUnread;
-    badge.style.display = 'inline';
+    if (dmUnreadTotal > 0) {
+      badge.textContent = dmUnreadTotal > 99 ? '99+' : dmUnreadTotal;
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+      badge.textContent = '0';
+    }
+  }
+
+  function bumpDmUnread(username) {
+    /* bump per-channel unread */
+    for (var i = 0; i < dmChannels.length; i++) {
+      if (dmChannels[i].name === username) {
+        /* don't bump if we're expanded and viewing this channel */
+        if (chatExpanded && activeChannel === username) return;
+        dmChannels[i].unread++;
+        break;
+      }
+    }
+    /* bump total */
+    dmUnreadTotal++;
+    updateDmBadge();
+    renderTabs();
+  }
+
+  function clearDmUnreadsFor(username) {
+    for (var i = 0; i < dmChannels.length; i++) {
+      if (dmChannels[i].name === username) {
+        dmUnreadTotal = Math.max(0, dmUnreadTotal - dmChannels[i].unread);
+        dmChannels[i].unread = 0;
+        break;
+      }
+    }
+    updateDmBadge();
+    renderTabs();
   }
 
   /* ── tabs ── */
@@ -818,8 +855,8 @@
   function switchChannel(ch) {
     activeChannel = ch;
     /* clear unread for this dm */
-    for (var i = 0; i < dmChannels.length; i++) {
-      if (dmChannels[i].name === ch) dmChannels[i].unread = 0;
+    if (ch !== 'global') {
+      clearDmUnreadsFor(ch);
     }
     searchBar.classList.remove('visible');
     searchErr.style.display = 'none';
@@ -1011,11 +1048,6 @@
     .onSnapshot(function(snap) {
       globalMsgs = [];
       snap.forEach(function(doc) { globalMsgs.push(doc.data()); });
-      if (!initialGlobalLoad) {
-        snap.docChanges().forEach(function(ch) {
-          if (ch.type === 'added') bumpUnread();
-        });
-      }
       initialGlobalLoad = false;
       if (activeChannel === 'global') renderMessages();
     }, function(err) { console.error('Global chat error:', err); });
@@ -1038,14 +1070,7 @@
         if (!initialDmLoad) {
           snap.docChanges().forEach(function(ch) {
             if (ch.type === 'added' && ch.doc.data().from !== me) {
-              bumpUnread();
-              /* mark tab as having unread */
-              for (var i = 0; i < dmChannels.length; i++) {
-                if (dmChannels[i].name === username && activeChannel !== username) {
-                  dmChannels[i].unread++;
-                  renderTabs();
-                }
-              }
+              bumpDmUnread(username);
             }
           });
         }
