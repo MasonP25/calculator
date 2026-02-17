@@ -1,6 +1,6 @@
-// ─── FIREBASE GLOBAL LEADERBOARD ───
+// ─── FIREBASE GLOBAL LEADERBOARD + AUTH ───
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp }
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,6 +14,66 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// ─── Password hashing (SHA-256) ───
+async function hashPassword(pw) {
+  var data = new TextEncoder().encode(pw + '_arcade_firebase_salt');
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(function(b) {
+    return b.toString(16).padStart(2, '0');
+  }).join('');
+}
+
+// ─── Firebase Auth (username + password via Firestore) ───
+window.FirebaseAuth = {
+  signUp: async function(username, password) {
+    try {
+      var key = username.toLowerCase();
+      var userDoc = await getDoc(doc(db, 'users', key));
+      if (userDoc.exists()) return { ok: false, msg: 'Username already taken' };
+      var hash = await hashPassword(password);
+      await setDoc(doc(db, 'users', key), {
+        username: username,
+        hash: hash,
+        createdAt: serverTimestamp()
+      });
+      localStorage.setItem('arcade_currentUser', username);
+      localStorage.setItem('arcadePlayerName', username);
+      return { ok: true, username: username };
+    } catch (e) {
+      console.warn('Firebase signUp failed:', e);
+      return { ok: false, msg: 'Sign up failed. Try again.' };
+    }
+  },
+
+  signIn: async function(username, password) {
+    try {
+      var key = username.toLowerCase();
+      var userDoc = await getDoc(doc(db, 'users', key));
+      if (!userDoc.exists()) return { ok: false, msg: 'Username not found' };
+      var data = userDoc.data();
+      var hash = await hashPassword(password);
+      if (hash !== data.hash) return { ok: false, msg: 'Wrong password' };
+      var displayName = data.username || username;
+      localStorage.setItem('arcade_currentUser', displayName);
+      localStorage.setItem('arcadePlayerName', displayName);
+      return { ok: true, username: displayName };
+    } catch (e) {
+      console.warn('Firebase signIn failed:', e);
+      return { ok: false, msg: 'Sign in failed. Try again.' };
+    }
+  },
+
+  signOut: function() {
+    localStorage.removeItem('arcade_currentUser');
+    localStorage.setItem('arcadePlayerName', 'Guest');
+  },
+
+  ready: true
+};
+
+// Notify auth.js that Firebase is ready
+window.dispatchEvent(new CustomEvent('firebase-auth-ready'));
 
 const LOWER_BETTER = ['reaction','minesweeper','memory','sudoku'];
 

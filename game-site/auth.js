@@ -1,12 +1,6 @@
-// auth.js — Local user authentication for Arcade
+// auth.js — Arcade authentication (Firebase-backed with localStorage fallback)
 (function() {
-  // ─── Storage ───
-  function getUsers() {
-    return JSON.parse(localStorage.getItem('arcade_users') || '{}');
-  }
-  function saveUsers(u) {
-    localStorage.setItem('arcade_users', JSON.stringify(u));
-  }
+  // ─── Local Storage helpers ───
   function getCurrentUser() {
     return localStorage.getItem('arcade_currentUser') || null;
   }
@@ -20,15 +14,6 @@
     }
   }
 
-  // ─── Password hashing (SHA-256 via Web Crypto) ───
-  async function hashPw(pw) {
-    var data = new TextEncoder().encode(pw + '_arcade_salt_2024');
-    var buf = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(buf)).map(function(b) {
-      return b.toString(16).padStart(2, '0');
-    }).join('');
-  }
-
   // ─── Auth logic ───
   async function doSignUp(username, password) {
     username = username.trim();
@@ -36,11 +21,20 @@
     if (username.length > 15) return { ok: false, msg: 'Username must be 15 characters or less' };
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return { ok: false, msg: 'Letters, numbers, and underscores only' };
     if (!password || password.length < 3) return { ok: false, msg: 'Password must be at least 3 characters' };
-    var users = getUsers();
+
+    // Try Firebase first
+    if (window.FirebaseAuth) {
+      return await window.FirebaseAuth.signUp(username, password);
+    }
+
+    // Fallback: local-only
+    var users = JSON.parse(localStorage.getItem('arcade_users') || '{}');
     if (users[username.toLowerCase()]) return { ok: false, msg: 'Username already taken' };
-    var h = await hashPw(password);
+    var data = new TextEncoder().encode(password + '_arcade_salt_2024');
+    var buf = await crypto.subtle.digest('SHA-256', data);
+    var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     users[username.toLowerCase()] = { display: username, hash: h };
-    saveUsers(users);
+    localStorage.setItem('arcade_users', JSON.stringify(users));
     setCurrentUser(username);
     return { ok: true };
   }
@@ -48,16 +42,29 @@
   async function doSignIn(username, password) {
     username = username.trim();
     if (!username) return { ok: false, msg: 'Enter a username' };
-    var users = getUsers();
+    if (!password) return { ok: false, msg: 'Enter your password' };
+
+    // Try Firebase first
+    if (window.FirebaseAuth) {
+      return await window.FirebaseAuth.signIn(username, password);
+    }
+
+    // Fallback: local-only
+    var users = JSON.parse(localStorage.getItem('arcade_users') || '{}');
     var u = users[username.toLowerCase()];
     if (!u) return { ok: false, msg: 'Username not found' };
-    var h = await hashPw(password);
+    var data = new TextEncoder().encode(password + '_arcade_salt_2024');
+    var buf = await crypto.subtle.digest('SHA-256', data);
+    var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     if (h !== u.hash) return { ok: false, msg: 'Wrong password' };
     setCurrentUser(u.display);
     return { ok: true };
   }
 
-  function doSignOut() {
+  async function doSignOut() {
+    if (window.FirebaseAuth) {
+      window.FirebaseAuth.signOut();
+    }
     setCurrentUser(null);
     updateBadge();
   }
@@ -92,6 +99,7 @@
     '.auth-btn{display:block;width:100%;background:linear-gradient(135deg,#7b2ff7,#5b1fd7);color:#fff;' +
     'border:none;padding:0.65rem;border-radius:8px;font-size:0.92rem;cursor:pointer;font-family:inherit;transition:opacity .2s}' +
     '.auth-btn:hover{opacity:0.9}' +
+    '.auth-btn:disabled{opacity:0.5;cursor:not-allowed}' +
     '.auth-err{color:#ff4757;font-size:0.78rem;text-align:center;margin-bottom:0.7rem;min-height:1.1rem}' +
     '.auth-close{position:absolute;top:0.6rem;right:0.8rem;background:none;border:none;color:#555;font-size:1.4rem;cursor:pointer;transition:color .2s}' +
     '.auth-close:hover{color:#e0e0e0}' +
@@ -125,44 +133,61 @@
         '<button class="auth-btn" type="submit" id="authGo">Sign In</button>' +
       '</form>' +
       '<button class="auth-guest" id="authSkip">Continue as Guest</button>' +
-      '<p class="auth-info">Accounts are stored locally on this device</p>' +
+      '<p class="auth-info">Synced across all your devices</p>' +
     '</div>';
   document.body.appendChild(overlay);
 
   var tab = 'in';
-  var tabs = overlay.querySelectorAll('.auth-tab');
+  var tabBtns = overlay.querySelectorAll('.auth-tab');
   var errEl = document.getElementById('authErr');
   var uEl = document.getElementById('authU');
   var pEl = document.getElementById('authP');
   var p2El = document.getElementById('authP2');
   var goBtn = document.getElementById('authGo');
 
-  tabs.forEach(function(t) {
+  function updateFormFields() {
+    p2El.style.display = tab === 'up' ? 'block' : 'none';
+    goBtn.textContent = tab === 'in' ? 'Sign In' : 'Sign Up';
+    errEl.textContent = '';
+  }
+
+  tabBtns.forEach(function(t) {
     t.addEventListener('click', function() {
       tab = t.dataset.t;
-      tabs.forEach(function(b) { b.classList.toggle('active', b.dataset.t === tab); });
-      p2El.style.display = tab === 'up' ? 'block' : 'none';
-      goBtn.textContent = tab === 'in' ? 'Sign In' : 'Sign Up';
-      errEl.textContent = '';
+      tabBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.t === tab); });
+      updateFormFields();
     });
   });
 
   document.getElementById('authForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     errEl.textContent = '';
+    goBtn.disabled = true;
+    var origText = goBtn.textContent;
+    goBtn.textContent = 'Please wait...';
     var result;
-    if (tab === 'up') {
-      if (pEl.value !== p2El.value) { errEl.textContent = 'Passwords do not match'; return; }
-      result = await doSignUp(uEl.value, pEl.value);
-    } else {
-      result = await doSignIn(uEl.value, pEl.value);
-    }
-    if (result.ok) {
-      closeModal();
-      updateBadge();
-      if (window.SFX) window.SFX.correct();
-    } else {
-      errEl.textContent = result.msg;
+    try {
+      if (tab === 'up') {
+        if (pEl.value !== p2El.value) {
+          errEl.textContent = 'Passwords do not match';
+          return;
+        }
+        result = await doSignUp(uEl.value, pEl.value);
+      } else {
+        result = await doSignIn(uEl.value, pEl.value);
+      }
+      if (result.ok) {
+        closeModal();
+        updateBadge();
+        if (window.SFX) window.SFX.correct();
+      } else {
+        errEl.textContent = result.msg;
+      }
+    } catch (err) {
+      errEl.textContent = 'Something went wrong. Try again.';
+    } finally {
+      goBtn.disabled = false;
+      goBtn.textContent = origText;
     }
   });
 
@@ -173,6 +198,9 @@
   function openModal() {
     uEl.value = ''; pEl.value = ''; p2El.value = '';
     errEl.textContent = '';
+    tab = 'in';
+    tabBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.t === 'in'); });
+    updateFormFields();
     overlay.classList.add('show');
     setTimeout(function() { uEl.focus(); }, 100);
   }
@@ -210,4 +238,9 @@
   };
 
   updateBadge();
+
+  // Listen for Firebase auth state (auto-login if already signed in)
+  window.addEventListener('firebase-auth-ready', function() {
+    updateBadge();
+  });
 })();
