@@ -332,7 +332,6 @@ h1 {
     font-size: 0.95rem;
     font-weight: 600;
 }
-.vote-card:hover { border-color: #7b2ff7; background: #2a2a4a; transform: translateY(-2px); }
 .vote-card.selected { border-color: #ff4757; background: #2a0a0a; box-shadow: 0 0 15px rgba(255, 71, 87, 0.3); }
 .vote-card .vote-count { font-size: 0.75rem; color: #888; margin-top: 6px; }
 .vote-card.voted { opacity: 0.6; cursor: default; }
@@ -496,6 +495,39 @@ h1 {
 #chat-input:focus{border-color:#7b2ff7;}
 #chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
 #chat-send:hover{background:#6a22e0;}
+
+/* === ANIMATIONS === */
+@keyframes eliminateShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+@keyframes imposterRevealFlash {
+    0% { background: rgba(255, 71, 87, 0.1); }
+    30% { background: rgba(255, 71, 87, 0.35); }
+    60% { background: rgba(255, 71, 87, 0.15); }
+    100% { background: rgba(255, 71, 87, 0.13); }
+}
+@keyframes clueSlideIn {
+    0% { opacity: 0; transform: translateX(-12px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+.eliminate-shake { animation: eliminateShake 0.4s ease; }
+.imposter-reveal-flash { animation: imposterRevealFlash 0.5s ease; }
+.clue-slide-in { animation: clueSlideIn 0.35s ease; }
+
+.vote-card {
+    transition: all 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.vote-card:hover {
+    border-color: #7b2ff7;
+    background: #2a2a4a;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(123, 47, 247, 0.2);
+}
 
 /* Responsive */
 @media (max-width: 500px) {
@@ -1081,7 +1113,7 @@ function renderCluePhase(main, data) {
     order.forEach(function(p, i) {
         var clue = data.clues[p];
         if (clue) {
-            html += '<div class="clue-item"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
+            html += '<div class="clue-item clue-slide-in"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
         } else if (i < currentPlayerIdx) {
             html += '<div class="clue-item pending"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">skipped</span></div>';
         } else if (i === currentPlayerIdx) {
@@ -1263,8 +1295,8 @@ function renderResultPhase(main, data) {
         html += '<h2>The Imposter Escaped!</h2>';
     }
 
-    html += '<div class="imposter-reveal">';
-    html += 'The Imposter was: <span class="imposter-name">' + escHtml(data.imposter) + '</span>';
+    html += '<div class="imposter-reveal imposter-reveal-flash">';
+    html += 'The Imposter was: <span class="imposter-name eliminate-shake" style="display:inline-block">' + escHtml(data.imposter) + '</span>';
     html += '</div>';
 
     // Hide the word from the imposter if they still need to guess it

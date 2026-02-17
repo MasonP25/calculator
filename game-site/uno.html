@@ -629,6 +629,49 @@ h1 {
 #chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
 #chat-send:hover{background:#6a22e0;}
 
+/* === ANIMATIONS === */
+@keyframes discardShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-3px) rotate(-1deg); }
+    40% { transform: translateX(3px) rotate(1deg); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+}
+@keyframes discardBigShake {
+    0%, 100% { transform: translateX(0) scale(1); }
+    15% { transform: translateX(-5px) rotate(-2deg) scale(1.04); }
+    30% { transform: translateX(5px) rotate(2deg) scale(1.04); }
+    50% { transform: translateX(-4px) rotate(-1deg); }
+    70% { transform: translateX(4px) rotate(1deg); }
+    85% { transform: translateX(-2px); }
+}
+@keyframes reverseRotate {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes skipFlash {
+    0%, 100% { background: transparent; }
+    30% { background: rgba(255, 71, 87, 0.25); }
+    60% { background: rgba(255, 71, 87, 0.15); }
+}
+@keyframes myTurnGlow {
+    0% { box-shadow: 0 0 0px rgba(123, 47, 247, 0); }
+    50% { box-shadow: 0 0 18px rgba(123, 47, 247, 0.35); }
+    100% { box-shadow: 0 0 0px rgba(123, 47, 247, 0); }
+}
+
+.discard-shake { animation: discardShake 0.35s ease; }
+.discard-big-shake { animation: discardBigShake 0.45s ease; }
+.direction-spin { animation: reverseRotate 0.5s ease; display: inline-block; }
+.skip-flash { animation: skipFlash 0.4s ease; border-radius: 10px; }
+.hand-area.my-turn-glow { animation: myTurnGlow 0.6s ease; }
+
+.hand-cards .card:not(.dimmed):hover {
+    transform: translateY(-8px) scale(1.05);
+    z-index: 5;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .card { width: 58px; height: 82px; }
@@ -1059,6 +1102,20 @@ h1 {
         var drawDisabled = !iAmCurrentPlayer || data.status !== 'playing';
         drawPile.classList.toggle('disabled', drawDisabled);
 
+        // My turn glow on hand area
+        var handArea = document.querySelector('.hand-area');
+        if (handArea && iAmCurrentPlayer && data.status === 'playing') {
+            if (!handArea.dataset.wasMyTurn) {
+                handArea.classList.remove('my-turn-glow');
+                void handArea.offsetWidth;
+                handArea.classList.add('my-turn-glow');
+                setTimeout(function() { handArea.classList.remove('my-turn-glow'); }, 600);
+                handArea.dataset.wasMyTurn = '1';
+            }
+        } else if (handArea) {
+            handArea.dataset.wasMyTurn = '';
+        }
+
         // My hand
         var myHand = data.hands[myUsername] || [];
         handCards.innerHTML = '';
@@ -1480,6 +1537,46 @@ function detectEvents(prev, curr) {
             uno.showToast(playerWhoPlayed + ' played ' + cardDesc);
         }
         if (window.SFX) window.SFX.place();
+
+        // Discard pile animation
+        var dp = document.getElementById('discard-pile');
+        if (dp) {
+            var isBig = lastPlayed.value === 'draw2' || lastPlayed.value === 'draw4';
+            var cls = isBig ? 'discard-big-shake' : 'discard-shake';
+            dp.classList.remove('discard-shake', 'discard-big-shake');
+            void dp.offsetWidth;
+            dp.classList.add(cls);
+            setTimeout(function() { dp.classList.remove(cls); }, isBig ? 450 : 350);
+        }
+
+        // Reverse card: spin direction indicator
+        if (lastPlayed.value === 'reverse') {
+            var di = document.getElementById('direction-indicator');
+            if (di) {
+                di.classList.remove('direction-spin');
+                void di.offsetWidth;
+                di.classList.add('direction-spin');
+                setTimeout(function() { di.classList.remove('direction-spin'); }, 500);
+            }
+        }
+
+        // Skip card: flash the skipped player
+        if (lastPlayed.value === 'skip') {
+            var skippedIdx = ((prev.currentPlayer + (curr.direction || 1)) % curr.players.length + curr.players.length) % curr.players.length;
+            var skippedName = curr.players[skippedIdx];
+            if (skippedName && skippedName !== myName) {
+                setTimeout(function() {
+                    var slots = document.querySelectorAll('.opponent-slot');
+                    slots.forEach(function(slot) {
+                        var nameEl = slot.querySelector('.opp-name');
+                        if (nameEl && nameEl.textContent === skippedName) {
+                            slot.classList.add('skip-flash');
+                            setTimeout(function() { slot.classList.remove('skip-flash'); }, 400);
+                        }
+                    });
+                }, 50);
+            }
+        }
     }
 
     // Check if someone drew cards
