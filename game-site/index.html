@@ -120,9 +120,9 @@
   #chat-panel {
     position: fixed;
     bottom: 0;
-    right: 24px;
+    right: 80px;
     width: 320px;
-    z-index: 9999;
+    z-index: 90;
     font-family: 'Segoe UI', Tahoma, sans-serif;
     display: flex;
     flex-direction: column;
@@ -650,51 +650,6 @@
     msgsDiv.scrollTop = msgsDiv.scrollHeight;
   }
 
-  /* ── global listener ── */
-  const globalQ = query(collection(db, 'global_chat'), orderBy('timestamp', 'asc'), limit(50));
-  onSnapshot(globalQ, snap => {
-    globalMsgs = snap.docs.map(d => d.data());
-    if (!initialGlobalLoad) {
-      snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
-    }
-    initialGlobalLoad = false;
-    renderAll();
-  });
-
-  /* ── DM listener ── */
-  function startDmListener() {
-    const me = getUser();
-    if (me === 'Guest') return;
-    const dmQ = query(
-      collection(db, 'direct_messages'),
-      or(
-        where('from', '==', me),
-        where('to', 'array-contains', me)
-      ),
-      orderBy('timestamp', 'asc'),
-      limit(50)
-    );
-    onSnapshot(dmQ, snap => {
-      dmMsgs = snap.docs.map(d => d.data());
-      if (!initialDmLoad) {
-        snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
-      }
-      initialDmLoad = false;
-      renderAll();
-    });
-  }
-  startDmListener();
-  /* re-check user periodically in case they log in later */
-  let lastUser = getUser();
-  setInterval(() => {
-    const cur = getUser();
-    if (cur !== lastUser && cur !== 'Guest') {
-      lastUser = cur;
-      initialDmLoad = true;
-      startDmListener();
-    }
-  }, 3000);
-
   /* ── send ── */
   async function send() {
     const text = input.value.trim();
@@ -703,32 +658,21 @@
     const now = Date.now();
     const time = hhmm(now);
 
-    /* check for /message command */
     const dmMatch = text.match(/^\/message\s+(.+)/i);
     if (dmMatch) {
       const rest = dmMatch[1];
       const tokens = rest.split(/\s+/);
-      /* collect usernames until we find a token that isn't a plausible username
-         heuristic: usernames don't contain spaces, message body is everything after recipients */
       if (tokens.length < 2) { input.value = ''; return; }
-      /* find where message text starts: at least 1 username then rest is message */
       const recipients = [];
       let msgStart = -1;
       for (let i = 0; i < tokens.length; i++) {
-        /* if we have at least one recipient and the rest looks like a message, break */
         if (i >= 1) {
-          /* peek: is this token a short single-word that could be another username?
-             We'll be greedy: treat everything after what looks like usernames as message.
-             Simple rule: if removing this token leaves nothing for the message, it must be a recipient */
           const remaining = tokens.slice(i + 1).join(' ');
           if (remaining.length === 0 && recipients.length >= 1) {
-            /* last token is the message itself */
             msgStart = i;
             break;
           }
         }
-        /* For simplicity: first N tokens that don't contain spaces are usernames,
-           rest is the message. We need at least 1 username and 1 word of message. */
         if (i < tokens.length - 1) {
           recipients.push(tokens[i]);
         } else {
@@ -760,9 +704,55 @@
     input.value = '';
   }
 
-  /* expose to onclick */
+  /* expose send to onclick and Enter key BEFORE listeners (so it always works) */
   window.sendChatMessage = send;
   input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+  /* ── global listener ── */
+  const globalQ = query(collection(db, 'global_chat'), orderBy('timestamp', 'asc'), limit(50));
+  onSnapshot(globalQ, snap => {
+    globalMsgs = snap.docs.map(d => d.data());
+    if (!initialGlobalLoad) {
+      snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
+    }
+    initialGlobalLoad = false;
+    renderAll();
+  });
+
+  /* ── DM listener (wrapped in try-catch; needs Firestore composite index) ── */
+  function startDmListener() {
+    try {
+      const me = getUser();
+      if (me === 'Guest') return;
+      const dmQ = query(
+        collection(db, 'direct_messages'),
+        or(
+          where('from', '==', me),
+          where('to', 'array-contains', me)
+        ),
+        orderBy('timestamp', 'asc'),
+        limit(50)
+      );
+      onSnapshot(dmQ, snap => {
+        dmMsgs = snap.docs.map(d => d.data());
+        if (!initialDmLoad) {
+          snap.docChanges().forEach(ch => { if (ch.type === 'added') bumpUnread(); });
+        }
+        initialDmLoad = false;
+        renderAll();
+      }, err => { console.warn('DM listener error (composite index may be needed):', err); });
+    } catch(e) { console.warn('DM listener setup error:', e); }
+  }
+  startDmListener();
+  let lastUser = getUser();
+  setInterval(() => {
+    const cur = getUser();
+    if (cur !== lastUser && cur !== 'Guest') {
+      lastUser = cur;
+      initialDmLoad = true;
+      startDmListener();
+    }
+  }, 3000);
 </script>
 
 <script src="auth.js"></script>
