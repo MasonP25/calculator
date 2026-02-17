@@ -1628,7 +1628,7 @@ h1 {
     function renderChatMessages(msgs) {
         if (!msgs) msgs = [];
         var inRoom = !!roomCode;
-        chatToggleBtn.style.display = inRoom ? '' : 'none';
+        chatToggleBtn.style.display = inRoom ? 'block' : 'none';
         if (!inRoom) { chatPanel.classList.remove('open'); chatIsOpen = false; return; }
         if (msgs.length > chatPrevCount && !chatIsOpen) {
             chatUnreadCount += msgs.length - chatPrevCount;

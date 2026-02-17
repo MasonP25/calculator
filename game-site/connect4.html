@@ -748,7 +748,7 @@ function escHtml(s) { var d = document.createElement('div'); d.textContent = s; 
 function renderChat(msgs) {
     if (!msgs) msgs = [];
     var inRoom = window._c4OnlineState && window._c4OnlineState.roomId;
-    chatToggle.style.display = inRoom ? '' : 'none';
+    chatToggle.style.display = inRoom ? 'block' : 'none';
     if (!inRoom) { chatPanel.classList.remove('open'); chatIsOpen = false; return; }
     if (msgs.length > chatPrevCount && !chatIsOpen) {
         chatUnread += msgs.length - chatPrevCount;

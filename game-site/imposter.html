@@ -1468,7 +1468,7 @@ async function _chatDoSend() {
 function _chatRender(msgs) {
     if (!msgs) msgs = [];
     var inRoom = !!G.roomCode;
-    _chatToggle.style.display = inRoom ? '' : 'none';
+    _chatToggle.style.display = inRoom ? 'block' : 'none';
     if (!inRoom) { _chatPanel.classList.remove('open'); _chatOpen = false; return; }
     if (msgs.length > _chatLastCount && !_chatOpen) {
         _chatUnread += msgs.length - _chatLastCount;
