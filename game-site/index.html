@@ -856,7 +856,7 @@
     }
   });
 
-  function startDmWith(username) {
+  function startDmWith(username, skipValidation) {
     var me = getUser();
     if (me === 'Guest') return;
     if (username.toLowerCase() === me.toLowerCase()) {
@@ -873,6 +873,28 @@
         break;
       }
     }
+    if (!exists && !skipValidation) {
+      /* validate username exists in Firestore users collection (doc ID = lowercase username) */
+      searchErr.textContent = 'Checking user...';
+      searchErr.style.display = 'block';
+      db.collection('users').doc(username.toLowerCase()).get()
+        .then(function(docSnap) {
+          if (!docSnap.exists) {
+            searchErr.textContent = 'User "' + username + '" not found';
+            searchErr.style.display = 'block';
+            return;
+          }
+          var data = docSnap.data();
+          var displayName = data.username || username;
+          searchErr.style.display = 'none';
+          startDmWith(displayName, true);
+        })
+        .catch(function() {
+          searchErr.textContent = 'Could not verify user';
+          searchErr.style.display = 'block';
+        });
+      return;
+    }
     if (!exists) {
       dmChannels.push({ name: username, unread: 0 });
       listenDm(username);
@@ -886,12 +908,12 @@
   document.getElementById('chat-search-go').addEventListener('click', function() {
     var val = searchInput.value.trim();
     if (!val) return;
-    startDmWith(val);
+    startDmWith(val, false);
   });
   searchInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       var val = searchInput.value.trim();
-      if (val) startDmWith(val);
+      if (val) startDmWith(val, false);
     }
   });
 
@@ -954,7 +976,7 @@
     if (e.target.classList.contains('chat-name')) {
       var user = e.target.getAttribute('data-user');
       if (user && user !== getUser() && user !== 'Guest') {
-        startDmWith(user);
+        startDmWith(user, true);
       }
     }
   });
