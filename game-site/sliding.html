@@ -55,10 +55,30 @@
   }
   .tile.hint-glow {
     animation: hintPulse 0.8s ease-in-out infinite alternate;
+    z-index: 5;
   }
   @keyframes hintPulse {
-    from { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 6px rgba(0,212,255,0.4); }
-    to { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 18px rgba(0,212,255,0.9); }
+    from { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 8px rgba(0,212,255,0.5); }
+    to { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 22px rgba(0,212,255,1), 0 0 40px rgba(0,212,255,0.3); }
+  }
+  .ghost-target {
+    position: absolute;
+    border: 3px dashed rgba(0,212,255,0.5);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 1;
+    animation: ghostPulse 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes ghostPulse {
+    from { opacity: 0.3; }
+    to { opacity: 0.7; }
+  }
+  .hint-msg {
+    color: #00d4ff;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    min-height: 1.2rem;
+    text-align: center;
   }
   .msg { margin-top: 1rem; min-height: 1.5rem; font-size: 1.1rem; color: #00d4ff; }
   .buttons { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
@@ -126,6 +146,7 @@
   </div>
 </div>
 <div class="msg" id="msg"></div>
+<div class="hint-msg" id="hintMsg"></div>
 <div class="buttons">
   <button class="btn" id="shuffleBtn">Shuffle</button>
   <button class="btn secondary" id="hintBtn">Hint</button>
@@ -392,12 +413,17 @@ function onWin() {
   window.HallOfFame?.submit('sliding', timerVal);
 }
 
-// --- Hint: find the tile whose move brings board closest to goal ---
+// --- Hint system: deeper lookahead with visual target ---
+let ghostEl = null;
+const hintMsgEl = document.getElementById('hintMsg');
+
 function clearHint() {
   if (hintTile !== null && tileEls[hintTile]) {
     tileEls[hintTile].classList.remove('hint-glow');
   }
   hintTile = null;
+  if (ghostEl) { ghostEl.remove(); ghostEl = null; }
+  hintMsgEl.textContent = '';
 }
 
 function manhattanDistance(arr) {
@@ -405,41 +431,137 @@ function manhattanDistance(arr) {
   for (let i = 0; i < arr.length; i++) {
     const num = arr[i];
     if (num === 0) continue;
-    const goalIdx = num - 1; // tile num should be at index num-1
-    const dr = Math.abs(getRow(i) - getRow(goalIdx));
-    const dc = Math.abs(getCol(i) - getCol(goalIdx));
-    dist += dr + dc;
+    const goalIdx = num - 1;
+    dist += Math.abs(getRow(i) - getRow(goalIdx)) + Math.abs(getCol(i) - getCol(goalIdx));
   }
   return dist;
 }
 
-function getHintTile() {
+function linearConflict(arr) {
+  let conflict = 0;
+  for (let r = 0; r < N; r++) {
+    for (let c1 = 0; c1 < N; c1++) {
+      const i1 = r * N + c1;
+      const n1 = arr[i1];
+      if (n1 === 0 || getRow(n1 - 1) !== r) continue;
+      for (let c2 = c1 + 1; c2 < N; c2++) {
+        const i2 = r * N + c2;
+        const n2 = arr[i2];
+        if (n2 === 0 || getRow(n2 - 1) !== r) continue;
+        if (getCol(n1 - 1) > getCol(n2 - 1)) conflict++;
+      }
+    }
+  }
+  for (let c = 0; c < N; c++) {
+    for (let r1 = 0; r1 < N; r1++) {
+      const i1 = r1 * N + c;
+      const n1 = arr[i1];
+      if (n1 === 0 || getCol(n1 - 1) !== c) continue;
+      for (let r2 = r1 + 1; r2 < N; r2++) {
+        const i2 = r2 * N + c;
+        const n2 = arr[i2];
+        if (n2 === 0 || getCol(n2 - 1) !== c) continue;
+        if (getRow(n1 - 1) > getRow(n2 - 1)) conflict++;
+      }
+    }
+  }
+  return conflict;
+}
+
+function heuristic(arr) {
+  return manhattanDistance(arr) + 2 * linearConflict(arr);
+}
+
+// BFS with heuristic pruning - search up to maxDepth moves ahead
+function findBestMove(maxDepth) {
   const ei = emptyIndex();
   const adj = neighbors(ei);
-  let bestDist = Infinity;
+  let bestScore = Infinity;
   let bestTile = null;
 
   for (const ti of adj) {
     const num = board[ti];
-    // Simulate the swap
     const testBoard = [...board];
     [testBoard[ti], testBoard[ei]] = [testBoard[ei], testBoard[ti]];
-    const d = manhattanDistance(testBoard);
-    if (d < bestDist) {
-      bestDist = d;
+
+    // DFS with alpha-beta style pruning
+    const score = deepSearch(testBoard, maxDepth - 1, ti, bestScore);
+    if (score < bestScore) {
+      bestScore = score;
       bestTile = num;
     }
   }
   return bestTile;
 }
 
+function deepSearch(arr, depth, lastMoved, bestSoFar) {
+  const h = heuristic(arr);
+  if (h === 0) return -1000 + (depth); // solved = best possible
+  if (depth <= 0) return h;
+
+  const ei = arr.indexOf(0);
+  const adj = neighbors(ei);
+  let best = h; // at minimum, current heuristic
+
+  // Sort neighbors by heuristic to try best first
+  const moves = [];
+  for (const ti of adj) {
+    if (ti === lastMoved) continue; // don't undo last move
+    const test = [...arr];
+    [test[ti], test[ei]] = [test[ei], test[ti]];
+    moves.push({ ti, h: heuristic(test), board: test });
+  }
+  moves.sort((a, b) => a.h - b.h);
+
+  for (const m of moves) {
+    if (m.h >= bestSoFar) continue; // prune
+    const score = deepSearch(m.board, depth - 1, ei, Math.min(best, bestSoFar));
+    if (score < best) best = score;
+  }
+  return best;
+}
+
+function getMoveDirection(tileNum) {
+  const ti = board.indexOf(tileNum);
+  const ei = emptyIndex();
+  const tr = getRow(ti), tc = getCol(ti);
+  const er = getRow(ei), ec = getCol(ei);
+  if (tr > er) return '↑ up';
+  if (tr < er) return '↓ down';
+  if (tc > ec) return '← left';
+  return '→ right';
+}
+
 function showHint() {
   if (solved) return;
   clearHint();
-  const tile = getHintTile();
+
+  // Use deeper search for smaller boards
+  const depth = N <= 3 ? 8 : (N <= 4 ? 5 : 3);
+  const tile = findBestMove(depth);
+
   if (tile !== null && tileEls[tile]) {
     hintTile = tile;
     tileEls[tile].classList.add('hint-glow');
+
+    // Show ghost at target position
+    const goalIdx = tile - 1;
+    const size = getTileSize();
+    const gx = getCol(goalIdx) * (size + GAP);
+    const gy = getRow(goalIdx) * (size + GAP);
+
+    ghostEl = document.createElement('div');
+    ghostEl.className = 'ghost-target';
+    ghostEl.style.width = size + 'px';
+    ghostEl.style.height = size + 'px';
+    ghostEl.style.left = '0px';
+    ghostEl.style.top = '0px';
+    ghostEl.style.transform = `translate(${gx}px, ${gy}px)`;
+    boardEl.appendChild(ghostEl);
+
+    // Show text hint
+    const dir = getMoveDirection(tile);
+    hintMsgEl.textContent = `Move tile ${tile} ${dir}`;
   }
 }
 
