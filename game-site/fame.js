@@ -15,6 +15,10 @@ window.HallOfFame = {
     }
     list = list.slice(0, 10);
     localStorage.setItem(key, JSON.stringify(list));
+    // Also push to Firebase global leaderboard if available
+    if (window.FirebaseLB) {
+      window.FirebaseLB.submit(gameId, score, name);
+    }
     return list;
   },
   getScores: function(gameId) {
