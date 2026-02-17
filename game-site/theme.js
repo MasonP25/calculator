@@ -78,15 +78,17 @@
       .subtitle,.hint,.controls,.hint-text { color:${t.dim}!important; }
       canvas { border-color:${t.border}!important; }
 
-      /* Cards */
+      /* Cards & panels */
       .card,.panel,.score-col,.results-box,#setup,.vs-scores,.board,
-      .mode-select button,.diff-btn,.round-btn,.mode-btn {
+      .mode-select button,.diff-btn,.round-btn,.mode-btn,
+      .game-card,.stat-box,.online-panel,.online-info,.online-score,
+      .score-display,.selector-btn,.lobby-container,.screen {
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
       }
-      .card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
+      .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
       .card.featured { background:linear-gradient(135deg,${t.bg2},${t.bg3})!important; border-color:${t.accent}33!important; }
       .card.featured:hover { border-color:${t.accent}!important; }
-      .card p,.card .badge.solo { color:${t.dim}!important; }
+      .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
 
       /* Badges */
       .badge.mp { background:${t.accent}20!important; color:${t.accent}!important; border-color:${t.accent}44!important; }
@@ -94,20 +96,24 @@
       .badge.new { background:${t.accent2}18!important; color:${t.accent2}!important; border-color:${t.accent2}44!important; }
 
       /* Buttons */
-      .start-btn,.next-btn,.restart,button.restart {
+      .start-btn,.next-btn,.restart,button.restart,.new-game-btn,.online-btn,.menu-btn {
         background:linear-gradient(135deg,${t.accent},${t.bg3})!important;
       }
       .mode-select button.active,.diff-btn.active,.round-btn.active,.mode-btn.active,
-      .mode-select button:hover,.diff-btn:hover,.round-btn:hover,.mode-btn:hover {
+      .selector-btn.active,.scope-btn.active,
+      .mode-select button:hover,.diff-btn:hover,.round-btn:hover,.mode-btn:hover,
+      .selector-btn:hover,.scope-btn:hover {
         border-color:${t.accent}!important; color:${t.accent}!important;
       }
+      .selector-btn.active { background:${t.bg3}!important; }
 
       /* Info/scores */
       .info span,.scores .val,.scores .p1v,.scores .p2v,.lb-score,.panel .val,
-      .p1c,.p2c,#score,#high,#best,#lives,#level,#lines,#spd {
+      .p1c,.p2c,#score,#high,#best,#lives,#level,#lines,#spd,
+      .stat-value,.score-val {
         color:${t.accent2}!important;
       }
-      .scores .label,.round-info,.section-title,.count { color:${t.dim}!important; }
+      .scores .label,.round-info,.section-title,.count,.stat-label,.score-type { color:${t.dim}!important; }
 
       /* Game specific */
       .player-row,.lb-row { background:${t.bg1}!important; }
@@ -133,12 +139,53 @@
       /* Tile colors for 2048 */
       .tile { color:${t.text}!important; }
 
+      /* Leaderboard / Hall of Fame */
+      .game-card-header .score-type { background:${t.bg1}!important; }
+      .score-table th { color:${t.dim}!important; border-bottom-color:${t.border}!important; }
+      .score-table td { border-bottom-color:${t.bg3}!important; color:${t.text}!important; }
+      .scope-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .scope-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }
+      .search-input,.name-section input,.join-input {
+        background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important;
+      }
+      .search-input:focus,.name-section input:focus,.join-input:focus { border-color:${t.accent}!important; }
+      .empty-msg { color:${t.dim}!important; }
+
+      /* Online panels */
+      .room-code-display { color:${t.accent2}!important; }
+      .waiting-msg { color:${t.dim}!important; }
+      .leave-btn { border-color:${t.border}!important; }
+
+      /* Chat elements */
+      #chat-panel,#chat-header { background:${t.bg2}!important; border-color:${t.border}!important; }
+      #chat-body,#chat-messages { background:${t.bg1}!important; }
+      #chat-input-area { background:${t.bg2}!important; border-color:${t.border}!important; }
+      #chat-input { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      #chat-input:focus { border-color:${t.accent}!important; }
+      #chat-send { background:${t.accent}!important; }
+      #chat-tabs { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .chat-tab { color:${t.dim}!important; }
+      .chat-tab.active { color:${t.text}!important; border-bottom-color:${t.accent}!important; }
+
+      /* Auth */
+      .auth-badge { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .auth-box { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .auth-tab { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .auth-tab.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }
+      .auth-inp { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .auth-inp:focus { border-color:${t.accent}!important; }
+      .auth-btn { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
+      .auth-overlay { background:${t.bg1}dd!important; }
+
       /* Theme picker itself */
       .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
       .theme-panel { background:${t.bg2}; border-color:${t.border}; }
       .theme-option { border-color:${t.border}; }
       .theme-option:hover,.theme-option.active { border-color:${t.accent}; }
       .theme-option span { color:${t.text}; }
+
+      /* Sound button */
+      #sfx-mute-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
     `;
 
     // Update picker active state
