@@ -1,6 +1,6 @@
 // ─── FIREBASE GLOBAL LEADERBOARD + AUTH ───
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp, doc, setDoc, getDoc }
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -35,7 +35,7 @@ window.FirebaseAuth = {
       await setDoc(doc(db, 'users', key), {
         username: username,
         hash: hash,
-        createdAt: serverTimestamp()
+        createdAt: new Date().toLocaleDateString()
       });
       localStorage.setItem('arcade_currentUser', username);
       localStorage.setItem('arcadePlayerName', username);
@@ -85,8 +85,7 @@ window.FirebaseLB = {
         gameId: gameId,
         name: name,
         score: score,
-        date: new Date().toLocaleDateString(),
-        timestamp: serverTimestamp()
+        date: new Date().toLocaleDateString()
       });
     } catch (e) {
       console.warn('Firebase submit failed:', e);

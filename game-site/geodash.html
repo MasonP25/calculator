@@ -356,7 +356,7 @@ function renderLevelSelect() {
       <div class="diff ${lvl.diff}">${lvl.diff}</div>
       <div class="best-lbl">Best Progress</div>
       <div class="best-val">${best}%</div>
-      <div class="stars">${'&#9733;'.repeat(3).split('').map((s,j) => j < stars ? `<span class="lit">${s}</span>` : s).join('')}</div>
+      <div class="stars">${[0,1,2].map(j => j < stars ? '<span class="lit">\u2605</span>' : '\u2605').join('')}</div>
     `;
     card.onclick = () => { window.SFX?.select(); startLevel(i); };
     levelCardsEl.appendChild(card);
@@ -1202,9 +1202,15 @@ function gameLoop() {
 }
 
 // ── Start ──
-renderLevelSelect();
 updateHUD();
 gameLoop();
+// Defer level select render until fame.js loads (for per-user scores)
+if (window.HallOfFame) {
+  renderLevelSelect();
+} else {
+  renderLevelSelect(); // show with fallback data first
+  window.addEventListener('load', function() { renderLevelSelect(); });
+}
 </script>
 <script src="sound.js"></script>
 <script src="fame.js"></script>

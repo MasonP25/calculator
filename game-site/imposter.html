@@ -474,6 +474,29 @@ h1 {
 }
 .glow-red { animation: glowRed 1.5s ease-in-out infinite; }
 
+/* Chat Sidebar */
+#chat-toggle{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
+#chat-toggle:hover{transform:scale(1.1);}
+#chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+#chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:95;display:flex;flex-direction:column;transition:right 0.3s;}
+#chat-panel.open{right:0;}
+#chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #2a2a4a;}
+#chat-header span{font-weight:700;color:#e0e0e0;font-size:1rem;}
+#chat-close{background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;}
+#chat-close:hover{color:#e0e0e0;}
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:#2a2a4a #1a1a2e;}
+#chat-messages::-webkit-scrollbar{width:6px;}
+#chat-messages::-webkit-scrollbar-track{background:#1a1a2e;}
+#chat-messages::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+.chat-msg .chat-name{color:#feca57;font-weight:700;font-size:0.8rem;margin-right:6px;}
+.chat-msg .chat-text{color:#e0e0e0;font-size:0.85rem;word-break:break-word;}
+.chat-msg .chat-time{color:#555;font-size:0.7rem;margin-left:6px;}
+#chat-input-area{display:flex;gap:6px;padding:10px;border-top:2px solid #2a2a4a;}
+#chat-input{flex:1;background:#0f0f1a;border:2px solid #2a2a4a;color:#e0e0e0;font-size:0.85rem;font-family:inherit;padding:8px 10px;border-radius:6px;outline:none;}
+#chat-input:focus{border-color:#7b2ff7;}
+#chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
+#chat-send:hover{background:#6a22e0;}
+
 /* Responsive */
 @media (max-width: 500px) {
     .word-card { padding: 25px 20px; }
@@ -553,6 +576,14 @@ h1 {
         <!-- Dynamic content injected here -->
     </div>
     <div class="player-bar" id="player-bar"></div>
+</div>
+
+<!-- Chat Sidebar -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+    <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
 </div>
 
 <script type="module">
@@ -788,9 +819,40 @@ async function startNewRound(roundNum) {
     }
     var imposter = players[imposterIdx];
 
-    // Build clue order: everyone except imposter first, imposter last
-    var clueOrder = players.filter(function(p) { return p !== imposter; });
-    clueOrder.push(imposter);
+    // Build clue order: Fisher-Yates shuffle, but imposter must not be first
+    var clueOrder = players.slice();
+    for (var i = clueOrder.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = clueOrder[i];
+        clueOrder[i] = clueOrder[j];
+        clueOrder[j] = tmp;
+    }
+    // If imposter ended up first, swap with a random other position
+    if (clueOrder[0] === imposter) {
+        var swapIdx = 1 + Math.floor(Math.random() * (clueOrder.length - 1));
+        clueOrder[0] = clueOrder[swapIdx];
+        clueOrder[swapIdx] = imposter;
+    }
+
+    // Determine category hint for imposter
+    var categoryHints = {
+        'Places': 'Place',
+        'Food': 'Food',
+        'Animals': 'Animal',
+        'Activities': 'Activity',
+        'Objects': 'Object',
+        'Occupations': 'Person',
+        'Nature': 'Place',
+        'Entertainment': 'Place'
+    };
+    var imposterHint = '';
+    var cats = Object.keys(WORDS);
+    for (var ci = 0; ci < cats.length; ci++) {
+        if (WORDS[cats[ci]].indexOf(word) !== -1) {
+            imposterHint = categoryHints[cats[ci]] || '';
+            break;
+        }
+    }
 
     var roomRef = doc(db, 'imposter_rooms', G.roomCode);
     await updateDoc(roomRef, {
@@ -805,7 +867,8 @@ async function startNewRound(roundNum) {
         votes: {},
         imposterGuess: '',
         phaseEndTime: Date.now() + 6000,
-        roundResult: ''
+        roundResult: '',
+        imposterHint: imposterHint
     });
 }
 
@@ -974,6 +1037,9 @@ function renderRevealPhase(main, data) {
         html += '<div class="word-card imposter reveal-animate">';
         html += '<h2>Your Role</h2>';
         html += '<div class="word">You are the Imposter!</div>';
+        if (data.imposterHint) {
+            html += '<div style="color:#feca57;font-size:1rem;font-weight:600;margin-top:12px;">Hint: It\'s a ' + escHtml(data.imposterHint) + '</div>';
+        }
         html += '<div style="color:#ff4757;font-size:0.85rem;margin-top:10px;">Blend in without knowing the word!</div>';
         html += '</div>';
     } else {
@@ -1091,12 +1157,17 @@ function renderDiscussPhase(main, data) {
     html += '<div class="timer-bar"><div class="fill" style="width:100%"></div></div>';
     html += '<div style="color:#888;font-size:0.9rem;margin-bottom:10px;">Discuss who you think the Imposter is!</div>';
 
+    var discussOrder = data.clueOrder || data.players;
     html += '<div class="clue-list" style="max-width:400px;width:100%">';
-    data.players.forEach(function(p) {
+    discussOrder.forEach(function(p) {
         var clue = data.clues[p] || '(no clue)';
         html += '<div class="clue-item"><span class="clue-player">' + escHtml(p) + '</span><span class="clue-word">' + escHtml(clue) + '</span></div>';
     });
     html += '</div>';
+
+    if (G.isHost) {
+        html += '<button class="online-btn" style="margin-top:15px;" onclick="window.skipDiscussion()">Skip to Vote</button>';
+    }
 
     main.innerHTML = html;
 }
@@ -1134,6 +1205,13 @@ function renderVotePhase(main, data) {
 
     main.innerHTML = html;
 }
+
+window.skipDiscussion = async function() {
+    if (!G.isHost) return;
+    clearTimer();
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    await updateDoc(roomRef, { phase: 'vote', phaseEndTime: Date.now() + 21000 });
+};
 
 window.castVote = async function(target) {
     if (G.data.votes && G.data.votes[G.username]) return; // Already voted
@@ -1353,6 +1431,90 @@ function escHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
+
+// ---------- Chat ----------
+var _chatOpen = false, _chatUnread = 0, _chatLastCount = 0;
+var _chatPanel = document.getElementById('chat-panel');
+var _chatToggle = document.getElementById('chat-toggle');
+var _chatMessages = document.getElementById('chat-messages');
+var _chatInput = document.getElementById('chat-input');
+var _chatBadge = document.getElementById('chat-badge');
+
+document.getElementById('chat-close').addEventListener('click', function() { _chatOpen = false; _chatPanel.classList.remove('open'); });
+_chatToggle.addEventListener('click', function() {
+    _chatOpen = !_chatOpen; _chatPanel.classList.toggle('open', _chatOpen);
+    if (_chatOpen) { _chatUnread = 0; _chatBadge.style.display = 'none'; _chatInput.focus(); requestAnimationFrame(function(){ _chatMessages.scrollTop = _chatMessages.scrollHeight; }); }
+});
+document.getElementById('chat-send').addEventListener('click', function() { _chatDoSend(); });
+_chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') _chatDoSend(); });
+
+async function _chatDoSend() {
+    var text = _chatInput.value.trim();
+    if (!text || !G.roomCode) return;
+    _chatInput.value = '';
+    try {
+        var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+        var snap = await getDoc(roomRef);
+        if (!snap.exists()) return;
+        var d = snap.data();
+        var chat = (d.chat || []).slice();
+        var now = new Date();
+        chat.push({ name: G.username, text: text, time: ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2) });
+        if (chat.length > 50) chat = chat.slice(chat.length - 50);
+        await updateDoc(roomRef, { chat: chat });
+    } catch(e) { console.error('Chat error:', e); }
+}
+
+function _chatRender(msgs) {
+    if (!msgs) msgs = [];
+    var inRoom = !!G.roomCode;
+    _chatToggle.style.display = inRoom ? '' : 'none';
+    if (!inRoom) { _chatPanel.classList.remove('open'); _chatOpen = false; return; }
+    if (msgs.length > _chatLastCount && !_chatOpen) {
+        _chatUnread += msgs.length - _chatLastCount;
+        _chatBadge.textContent = _chatUnread > 99 ? '99+' : _chatUnread;
+        _chatBadge.style.display = 'flex';
+    }
+    _chatLastCount = msgs.length;
+    _chatMessages.innerHTML = '';
+    for (var i = 0; i < msgs.length; i++) {
+        var m = msgs[i];
+        var div = document.createElement('div');
+        div.className = 'chat-msg';
+        div.innerHTML = '<span class="chat-name">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
+        _chatMessages.appendChild(div);
+    }
+    requestAnimationFrame(function(){ _chatMessages.scrollTop = _chatMessages.scrollHeight; });
+}
+
+function _chatReset() {
+    _chatLastCount = 0; _chatUnread = 0; _chatBadge.style.display = 'none';
+    _chatMessages.innerHTML = ''; _chatToggle.style.display = 'none';
+    _chatPanel.classList.remove('open'); _chatOpen = false;
+}
+
+// Patch subscribeRoom to render chat, and leaveRoom to reset chat
+var _origSubscribe = subscribeRoom;
+subscribeRoom = function() {
+    if (G.unsubscribe) G.unsubscribe();
+    var roomRef = doc(db, 'imposter_rooms', G.roomCode);
+    G.unsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) { leaveRoom(); return; }
+        var data = snapshot.data();
+        G.data = data;
+        G.isHost = (data.host === G.username);
+        _chatRender(data.chat || []);
+        if (!data.players.includes(G.username) && data.status !== 'done') { leaveRoom(); return; }
+        if (data.status === 'waiting') { renderLobby(data); }
+        else if (data.status === 'playing') { renderGame(data); }
+    });
+};
+
+var _origLeaveRoom = window.leaveRoom;
+window.leaveRoom = async function() {
+    _chatReset();
+    await _origLeaveRoom();
+};
 </script>
 
 <script src="sound.js"></script>

@@ -504,6 +504,29 @@ h1 {
     color: #feca57;
 }
 
+/* Chat Sidebar */
+#chat-toggle{position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
+#chat-toggle:hover{transform:scale(1.1);}
+#chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+#chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:95;display:flex;flex-direction:column;transition:right 0.3s;}
+#chat-panel.open{right:0;}
+#chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #2a2a4a;}
+#chat-header span{font-weight:700;color:#e0e0e0;font-size:1rem;}
+#chat-close{background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;}
+#chat-close:hover{color:#e0e0e0;}
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:#2a2a4a #1a1a2e;}
+#chat-messages::-webkit-scrollbar{width:6px;}
+#chat-messages::-webkit-scrollbar-track{background:#1a1a2e;}
+#chat-messages::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+.chat-msg .chat-name{color:#feca57;font-weight:700;font-size:0.8rem;margin-right:6px;}
+.chat-msg .chat-text{color:#e0e0e0;font-size:0.85rem;word-break:break-word;}
+.chat-msg .chat-time{color:#555;font-size:0.7rem;margin-left:6px;}
+#chat-input-area{display:flex;gap:6px;padding:10px;border-top:2px solid #2a2a4a;}
+#chat-input{flex:1;background:#0f0f1a;border:2px solid #2a2a4a;color:#e0e0e0;font-size:0.85rem;font-family:inherit;padding:8px 10px;border-radius:6px;outline:none;}
+#chat-input:focus{border-color:#7b2ff7;}
+#chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
+#chat-send:hover{background:#6a22e0;}
+
 /* Responsive */
 @media (max-width: 500px) {
     .dial-wrapper { width: 320px; height: 180px; }
@@ -613,7 +636,18 @@ h1 {
 <div class="winner-overlay" id="winner-overlay">
     <h2 id="winner-text"></h2>
     <div class="winner-scoreboard" id="winner-scoreboard"></div>
-    <button class="online-btn" id="back-to-lobby-btn">Back to Lobby</button>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <button class="online-btn" id="play-again-btn" style="display:none;">Play Again</button>
+        <button class="online-btn secondary" id="back-to-lobby-btn">Back to Lobby</button>
+    </div>
+</div>
+
+<!-- Chat Sidebar -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+    <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
 </div>
 
 <script>
@@ -777,6 +811,9 @@ h1 {
             return;
         }
         lastData = data;
+
+        // Render chat
+        if (window._wlGame && window._wlGame.renderChat) window._wlGame.renderChat(data.chat || []);
 
         // If game started
         if (data.status === 'playing' || data.status === 'done') {
@@ -1236,6 +1273,8 @@ h1 {
         // Winner check
         if (data.winner) {
             showWinnerOverlay(data);
+        } else {
+            winnerOverlay.classList.remove('visible');
         }
     }
 
@@ -1265,6 +1304,9 @@ h1 {
             sb.appendChild(row);
         });
 
+        // Show play again button only for host
+        document.getElementById('play-again-btn').style.display = isHost ? '' : 'none';
+
         winnerOverlay.classList.add('visible');
         if (window.SFX) {
             if (data.winner === myUsername) window.SFX.win();
@@ -1279,7 +1321,7 @@ h1 {
         document.getElementById('sp-points').textContent = pts > 0 ? '+' + pts : '0';
         document.getElementById('sp-label').textContent = pts === 4 ? 'BULLSEYE!' : pts === 3 ? 'Close!' : pts === 2 ? 'Near' : 'Miss!';
         var psychic = getPsychic(data);
-        document.getElementById('sp-psychic').textContent = pts > 0 ? (psychic + ' earns ' + pts + ' point' + (pts !== 1 ? 's' : '') + '!') : '';
+        document.getElementById('sp-psychic').textContent = pts > 0 ? ('Players +' + pts + ' | ' + psychic + ' (Psychic) +1') : '';
         sp.classList.add('visible');
         setTimeout(function() { sp.classList.remove('visible'); }, 3500);
     }
@@ -1370,10 +1412,17 @@ h1 {
         var scores = JSON.parse(JSON.stringify(data.scores || {}));
         var psychic = getPsychic(data);
 
-        // Award points to the psychic
-        if (scores[psychic] !== undefined) {
-            scores[psychic] += pts;
+        // Psychic gets 1 point if guess is in any scoring zone
+        if (pts > 0 && scores[psychic] !== undefined) {
+            scores[psychic] += 1;
         }
+
+        // All non-psychic players get the accuracy points
+        data.players.forEach(function(name) {
+            if (name !== psychic && scores[name] !== undefined) {
+                scores[name] += pts;
+            }
+        });
 
         await window._wlUpdateDoc(docRef, {
             phase: 'reveal',
@@ -1483,11 +1532,113 @@ h1 {
         leaveLobby();
     });
 
+    document.getElementById('play-again-btn').addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        window._wlPlayAgain();
+    });
+
+    window._wlPlayAgain = async function() {
+        if (!roomCode || !isHost) return;
+        var docRef = window._wlDoc(roomCode);
+        var snap = await window._wlGetDoc(docRef);
+        if (!snap.exists()) return;
+        var data = snap.data();
+
+        // Reset scores to 0 for all players
+        var scores = {};
+        data.players.forEach(function(name) { scores[name] = 0; });
+
+        var spec = pickSpectrum();
+        var target = Math.floor(Math.random() * 160) + 10;
+
+        await window._wlUpdateDoc(docRef, {
+            status: 'playing',
+            psychicIndex: 0,
+            spectrum: { left: spec[0], right: spec[1] },
+            targetAngle: target,
+            clue: '',
+            guessAngle: 90,
+            phase: 'psychic',
+            roundScore: 0,
+            winner: '',
+            scores: scores
+        });
+
+        winnerOverlay.classList.remove('visible');
+        scorePopup.classList.remove('visible');
+        lastPhase = '';
+        usedSpectrums = [];
+    };
+
+    // ===== CHAT =====
+    var chatPanel = document.getElementById('chat-panel');
+    var chatToggleBtn = document.getElementById('chat-toggle');
+    var chatClose = document.getElementById('chat-close');
+    var chatMessagesEl = document.getElementById('chat-messages');
+    var chatInputEl = document.getElementById('chat-input');
+    var chatSendBtn = document.getElementById('chat-send');
+    var chatBadgeEl = document.getElementById('chat-badge');
+    var chatIsOpen = false;
+    var chatUnreadCount = 0;
+    var chatPrevCount = 0;
+
+    chatToggleBtn.addEventListener('click', function() {
+        chatIsOpen = !chatIsOpen;
+        chatPanel.classList.toggle('open', chatIsOpen);
+        if (chatIsOpen) { chatUnreadCount = 0; chatBadgeEl.style.display = 'none'; chatInputEl.focus(); requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; }); }
+    });
+    chatClose.addEventListener('click', function() { chatIsOpen = false; chatPanel.classList.remove('open'); });
+    chatSendBtn.addEventListener('click', function() { doSendChat(); });
+    chatInputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSendChat(); });
+
+    function doSendChat() {
+        var text = chatInputEl.value.trim();
+        if (!text || !roomCode) return;
+        chatInputEl.value = '';
+        if (window._wlChatSend) window._wlChatSend(text);
+    }
+
+    function renderChatMessages(msgs) {
+        if (!msgs) msgs = [];
+        var inRoom = !!roomCode;
+        chatToggleBtn.style.display = inRoom ? '' : 'none';
+        if (!inRoom) { chatPanel.classList.remove('open'); chatIsOpen = false; return; }
+        if (msgs.length > chatPrevCount && !chatIsOpen) {
+            chatUnreadCount += msgs.length - chatPrevCount;
+            chatBadgeEl.textContent = chatUnreadCount > 99 ? '99+' : chatUnreadCount;
+            chatBadgeEl.style.display = 'flex';
+        }
+        chatPrevCount = msgs.length;
+        chatMessagesEl.innerHTML = '';
+        for (var i = 0; i < msgs.length; i++) {
+            var m = msgs[i];
+            var div = document.createElement('div');
+            div.className = 'chat-msg';
+            var escName = document.createElement('div'); escName.textContent = m.name;
+            var escText = document.createElement('div'); escText.textContent = m.text;
+            div.innerHTML = '<span class="chat-name">' + escName.innerHTML + '</span><span class="chat-text">' + escText.innerHTML + '</span><span class="chat-time">' + (m.time||'') + '</span>';
+            chatMessagesEl.appendChild(div);
+        }
+        requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; });
+    }
+
+    function resetChatState() {
+        chatPrevCount = 0; chatUnreadCount = 0; chatBadgeEl.style.display = 'none';
+        chatMessagesEl.innerHTML = ''; chatToggleBtn.style.display = 'none';
+        chatPanel.classList.remove('open'); chatIsOpen = false;
+    }
+
+    // Patch leaveLobby
+    var origLeaveLobby = leaveLobby;
+    leaveLobby = function() { resetChatState(); origLeaveLobby(); };
+
     // Expose for firebase module
     window._wlGame = {
         getMyUsername: getMyUsername,
         generateRoomCode: generateRoomCode,
-        showToast: showToast
+        showToast: showToast,
+        renderChat: renderChatMessages,
+        resetChat: resetChatState
     };
 
     // Initial draw
@@ -1520,6 +1671,36 @@ window._wlSetDoc = function(ref, data) { return setDoc(ref, data); };
 window._wlGetDoc = function(ref) { return getDoc(ref); };
 window._wlUpdateDoc = function(ref, data) { return updateDoc(ref, data); };
 window._wlOnSnapshot = function(ref, cb) { return onSnapshot(ref, cb); };
+
+// Chat send
+window._wlChatSend = async function(text) {
+    var wl = window._wlGame;
+    var roomCode = '';
+    // Get roomCode from the game-room-code element or from the room-code-display
+    var rcEl = document.getElementById('game-room-code');
+    if (rcEl && rcEl.textContent && rcEl.textContent !== '') roomCode = rcEl.textContent;
+    if (!roomCode) {
+        var rcEl2 = document.getElementById('room-code-display');
+        if (rcEl2 && rcEl2.textContent && rcEl2.textContent !== '----') roomCode = rcEl2.textContent;
+    }
+    if (!roomCode) {
+        var rcEl3 = document.getElementById('guest-room-code');
+        if (rcEl3 && rcEl3.textContent && rcEl3.textContent !== '----') roomCode = rcEl3.textContent;
+    }
+    if (!roomCode || !text) return;
+    try {
+        var roomRef = doc(db, 'wavelength_rooms', roomCode);
+        var snap = await getDoc(roomRef);
+        if (!snap.exists()) return;
+        var d = snap.data();
+        var chat = (d.chat || []).slice();
+        var username = wl.getMyUsername();
+        var now = new Date();
+        chat.push({ name: username, text: text, time: ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2) });
+        if (chat.length > 50) chat = chat.slice(chat.length - 50);
+        await updateDoc(roomRef, { chat: chat });
+    } catch(e) { console.error('Chat error:', e); }
+};
 </script>
 
 <script src="sound.js"></script>
