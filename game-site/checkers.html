@@ -436,7 +436,7 @@ function getJumpSequences(b, r, c, piece, captures) {
         // Check not already captured in this chain
         if (captures.some(cap => cap[0] === mr && cap[1] === mc)) continue;
         const jr = mr + dr, jc = mc + dc;
-        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && (b[jr][jc] === EMPTY || (jr === r && jc === c))) {
+        if (jr >= 0 && jr < 8 && jc >= 0 && jc < 8 && b[jr][jc] === EMPTY) {
           foundJump = true;
           const newCaptures = [...captures, [mr, mc, r, c]];
           const nb = cloneBoard(b);
@@ -468,24 +468,16 @@ function getAllJumpSequences(b, r, c) {
   return getJumpSequences(b, r, c, piece, []);
 }
 
-// Get all legal moves for a player (mandatory capture enforced)
+// Get all legal moves for a player (captures are optional)
 function getLegalMoves(b, player) {
-  let allJumps = [];
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (!belongs(b[r][c], player)) continue;
-      const jumpSeqs = getAllJumpSequences(b, r, c);
-      allJumps.push(...jumpSeqs);
-    }
-  }
-  if (allJumps.length > 0) return allJumps;
-
   let allMoves = [];
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
       if (!belongs(b[r][c], player)) continue;
       const { moves } = getMovesForPiece(b, r, c);
       allMoves.push(...moves);
+      const jumpSeqs = getAllJumpSequences(b, r, c);
+      allMoves.push(...jumpSeqs);
     }
   }
   return allMoves;
@@ -555,8 +547,6 @@ function checkWin(b) {
 function render() {
   boardEl.innerHTML = '';
   const legalMoves = gameOver ? [] : getLegalMoves(board, currentPlayer);
-  const forcedPieces = gameOver ? [] : getForcedPieces(board, currentPlayer);
-  const isJumpRequired = forcedPieces.length > 0;
 
   // Selected piece moves
   let selectedMoves = [];
@@ -578,14 +568,6 @@ function render() {
         if ((r === lastMove.from[0] && c === lastMove.from[1]) ||
             (r === lastMove.to[0] && c === lastMove.to[1])) {
           if ((r + c) % 2 === 1) sq.classList.add('last-move');
-        }
-      }
-
-      // Forced pieces highlight
-      if (!gameOver && isJumpRequired && belongs(board[r][c], currentPlayer) &&
-          forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
-        if (!(selectedPiece && selectedPiece[0] === r && selectedPiece[1] === c)) {
-          sq.classList.add('forced');
         }
       }
 
@@ -677,11 +659,6 @@ function handleSquareClick(r, c) {
 
     // Click on own piece to switch selection
     if (belongs(piece, currentPlayer)) {
-      const forcedPieces = getForcedPieces(board, currentPlayer);
-      if (forcedPieces.length > 0 && !forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
-        // Cannot select a non-forced piece
-        return;
-      }
       selectedPiece = [r, c];
       window.SFX?.click();
       render();
@@ -696,10 +673,6 @@ function handleSquareClick(r, c) {
 
   // No piece selected - try to select one
   if (belongs(piece, currentPlayer)) {
-    const forcedPieces = getForcedPieces(board, currentPlayer);
-    if (forcedPieces.length > 0 && !forcedPieces.some(fp => fp[0] === r && fp[1] === c)) {
-      return;
-    }
     selectedPiece = [r, c];
     window.SFX?.click();
     render();
@@ -851,7 +824,7 @@ function aiMedium(moves) {
 function aiHard(moves) {
   let bestMove = moves[0];
   let bestScore = -Infinity;
-  const depth = 6;
+  const depth = 5;
 
   for (const move of moves) {
     const result = executeMove(board, move);
