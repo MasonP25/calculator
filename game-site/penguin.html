@@ -529,7 +529,8 @@ function dismissBlocker() {
 }
 
 function updateLockInState() {
-  const myPenguins = penguins.filter(p => p.player === currentAimPlayer && p.alive);
+  const aimIdx = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
+  const myPenguins = penguins.filter(p => p.player === aimIdx && p.alive);
   const allAimed = myPenguins.every(p => p.aimed);
   const btn = document.getElementById('lockInBtn');
   btn.disabled = !allAimed;
@@ -1276,8 +1277,8 @@ function handleOnlineUpdate(data) {
     }
   }
 
-  // Game started — trigger when we're still in lobby (initial start) or roundEnd
-  if (data.status === 'playing' && (phase === 'lobby' || phase === 'roundEnd')) {
+  // Game started — trigger for guests when host starts the game
+  if (data.status === 'playing' && (phase === 'lobby' || phase === 'roundEnd') && !onlineIsHost) {
     onlineInitGame(data);
   }
 
@@ -1313,6 +1314,9 @@ function handleOnlineUpdate(data) {
 }
 
 async function onlineStartGame() {
+  const btn = document.getElementById('onlineStartBtn');
+  btn.disabled = true;
+  btn.textContent = 'Starting...';
   try {
     const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
     const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
@@ -1328,15 +1332,10 @@ async function onlineStartGame() {
 
     // Serialize penguins
     const serialized = penguins.map(p => ({ x: p.x, y: p.y, player: p.player, alive: true }));
-    const updatedData = {
+
+    // Start game for host immediately
+    onlineInitGame({
       ...data,
-      status: 'playing',
-      penguins: serialized,
-      shots: {},
-      round: 0,
-      arenaSize: RINK_INIT
-    };
-    await updateDocFn(roomRef, {
       status: 'playing',
       penguins: serialized,
       shots: {},
@@ -1344,10 +1343,18 @@ async function onlineStartGame() {
       arenaSize: RINK_INIT
     });
 
-    // Directly init the game for the host (don't rely on listener)
-    onlineInitGame(updatedData);
+    // Push to Firestore so guests see it
+    await updateDocFn(roomRef, {
+      status: 'playing',
+      penguins: serialized,
+      shots: {},
+      round: 0,
+      arenaSize: RINK_INIT
+    });
   } catch (e) {
     console.error('Start error:', e);
+    btn.disabled = false;
+    btn.textContent = 'Start Game';
   }
 }
 
