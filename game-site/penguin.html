@@ -218,30 +218,27 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 <div class="screen" id="onlineScreen">
   <div class="online-panel" id="onlinePanel">
     <h3>Online Multiplayer</h3>
-    <div id="onlineLobby">
-      <div class="setup-row" style="margin-bottom:12px">
-        <span class="setup-label">Your Name:</span>
-        <input class="setup-input" id="onlineName" value="" maxlength="12" placeholder="Enter name">
+    <div id="onlineLobbyBtns" class="setup-row" style="margin-bottom:12px">
+      <input class="setup-input" id="onlineName" value="" maxlength="12" placeholder="Your name" style="margin-bottom:8px;width:100%">
+      <div class="setup-row">
+        <button class="online-btn" onclick="showCreateArea()">Create Game</button>
+        <button class="online-btn" style="background:#2a2a4a" onclick="showJoinArea()">Join Game</button>
       </div>
-      <div class="setup-row" style="margin-bottom:12px">
-        <span class="setup-label">Players:</span>
-        <select class="setup-select" id="onlinePlayerCount">
-          <option value="2">2</option><option value="3">3</option><option value="4">4</option>
-          <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-        </select>
-      </div>
-      <button class="online-btn" onclick="createRoom()">Create Room</button>
-      <div style="margin:12px 0;color:#888">— or —</div>
-      <input class="setup-input" id="joinCode" placeholder="Enter room code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px">
-      <button class="online-btn" onclick="joinRoom()">Join Room</button>
-      <div id="onlineError" style="color:#ff4757;font-size:0.8rem;margin-top:8px;display:none"></div>
     </div>
-    <div id="onlineWaiting" style="display:none">
-      <div class="room-code-display" id="roomCodeDisplay"></div>
+    <div id="onlineCreateArea" style="display:none">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Share this code with friends:</p>
+      <div class="room-code-display" id="roomCodeDisplay">----</div>
       <p class="waiting-msg" id="waitingMsg">Waiting for players...</p>
       <div id="onlinePlayerList" style="margin:12px 0"></div>
       <button class="online-btn" id="onlineStartBtn" style="display:none" onclick="onlineStartGame()">Start Game</button>
-      <button class="leave-btn" onclick="leaveRoom()">Leave</button>
+      <button class="leave-btn" onclick="leaveRoom()">Cancel</button>
+    </div>
+    <div id="onlineJoinArea" style="display:none">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Enter room code:</p>
+      <input class="setup-input" id="joinCode" maxlength="4" style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.8rem;font-weight:700;font-family:monospace;color:#feca57;width:160px;margin:0 auto 10px">
+      <div><button class="online-btn" onclick="joinRoom()">Join</button></div>
+      <button class="leave-btn" style="margin-top:8px" onclick="showLobbyBtns()">Back</button>
+      <div id="onlineError" style="color:#ff4757;font-size:0.8rem;margin-top:8px;display:none"></div>
     </div>
   </div>
   <button class="menu-btn" style="font-size:14px;padding:8px 20px;margin-top:12px" onclick="backToMenu()">Back</button>
@@ -429,18 +426,22 @@ function initPenguins() {
   rinkX = (CANVAS_W - rinkSize) / 2;
   rinkY = (CANVAS_H - rinkSize) / 2;
 
-  for (let p = 0; p < n; p++) {
-    const angle = (p / n) * Math.PI * 2 - Math.PI / 2;
-    const cx = CANVAS_W / 2 + Math.cos(angle) * (rinkSize * 0.3);
-    const cy = CANVAS_H / 2 + Math.sin(angle) * (rinkSize * 0.3);
+  const margin = PENGUIN_R * 3; // stay away from edges
+  const minX = rinkX + margin, maxX = rinkX + rinkSize - margin;
+  const minY = rinkY + margin, maxY = rinkY + rinkSize - margin;
+  const placed = [];
 
+  for (let p = 0; p < n; p++) {
     for (let j = 0; j < ppp; j++) {
-      const spread = ppp > 1 ? (j - (ppp - 1) / 2) * (PENGUIN_R * 2.8) : 0;
-      const perpAngle = angle + Math.PI / 2;
+      let x, y, attempts = 0;
+      do {
+        x = minX + Math.random() * (maxX - minX);
+        y = minY + Math.random() * (maxY - minY);
+        attempts++;
+      } while (attempts < 200 && placed.some(pt => Math.hypot(pt.x - x, pt.y - y) < PENGUIN_R * 3));
+      placed.push({ x, y });
       penguins.push({
-        x: cx + Math.cos(perpAngle) * spread,
-        y: cy + Math.sin(perpAngle) * spread,
-        vx: 0, vy: 0,
+        x, y, vx: 0, vy: 0,
         player: p, alive: true, falling: false, fallScale: 1,
         aimAngle: 0, aimPower: 0, aimed: false
       });
@@ -748,11 +749,16 @@ function endRound() {
     if (alive === 0) p.alive = false;
   });
 
-  // Check win
+  // Check win — in AI mode, end as soon as human is eliminated
   const alivePlayers = players.filter(p => p.alive);
-  if (alivePlayers.length <= 1) {
+  const humanAlive = mode === 'ai' ? players.filter(p => !p.isAI && p.alive).length > 0 : true;
+  if (alivePlayers.length <= 1 || (mode === 'ai' && !humanAlive)) {
     phase = 'gameOver';
-    showResult(alivePlayers.length === 1 ? alivePlayers[0] : null);
+    if (!humanAlive) {
+      showResult(null, true); // human lost
+    } else {
+      showResult(alivePlayers.length === 1 ? alivePlayers[0] : null, false);
+    }
     return;
   }
 
@@ -793,11 +799,21 @@ function endRound() {
   }, 1000);
 }
 
-function showResult(winner) {
+function showResult(winner, humanLost) {
   const overlay = document.getElementById('resultOverlay');
-  document.getElementById('resultTitle').textContent = winner ? winner.name + ' Wins!' : 'Draw!';
-  document.getElementById('resultTitle').style.color = winner ? winner.color : '#ffd166';
-  document.getElementById('resultSub').textContent = winner ? 'All other penguins knocked off!' : 'No penguins left!';
+  if (humanLost) {
+    document.getElementById('resultTitle').textContent = 'You Lose!';
+    document.getElementById('resultTitle').style.color = '#ff4757';
+    document.getElementById('resultSub').textContent = 'All your penguins were knocked off!';
+  } else if (winner) {
+    document.getElementById('resultTitle').textContent = winner.name + ' Wins!';
+    document.getElementById('resultTitle').style.color = winner.color;
+    document.getElementById('resultSub').textContent = 'All other penguins knocked off!';
+  } else {
+    document.getElementById('resultTitle').textContent = 'Draw!';
+    document.getElementById('resultTitle').style.color = '#ffd166';
+    document.getElementById('resultSub').textContent = 'No penguins left!';
+  }
   overlay.style.display = 'flex';
 }
 
@@ -1093,19 +1109,37 @@ function getMyUsername() {
   return (inp.value || '').trim() || 'Player';
 }
 
+function showCreateArea() {
+  document.getElementById('onlineLobbyBtns').style.display = 'none';
+  document.getElementById('onlineCreateArea').style.display = '';
+  document.getElementById('onlineJoinArea').style.display = 'none';
+  createRoom();
+}
+
+function showJoinArea() {
+  document.getElementById('onlineLobbyBtns').style.display = 'none';
+  document.getElementById('onlineCreateArea').style.display = 'none';
+  document.getElementById('onlineJoinArea').style.display = '';
+}
+
+function showLobbyBtns() {
+  document.getElementById('onlineLobbyBtns').style.display = '';
+  document.getElementById('onlineCreateArea').style.display = 'none';
+  document.getElementById('onlineJoinArea').style.display = 'none';
+}
+
 async function createRoom() {
   const name = getMyUsername();
   if (!name) { showOnlineError('Enter a name'); return; }
-  const playerCount = parseInt(document.getElementById('onlinePlayerCount').value);
 
   try {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
     const { doc: docFn, setDoc: setDocFn } = await getFirebaseFns();
     const roomRef = docFn(window._pkDB, 'penguin_rooms', code);
     await setDocFn(roomRef, {
       host: name,
       players: [name],
-      maxPlayers: playerCount,
+      maxPlayers: 8,
       status: 'waiting',
       penguins: [],
       shots: {},
@@ -1118,14 +1152,13 @@ async function createRoom() {
     onlineMyIndex = 0;
     onlineIsHost = true;
 
-    document.getElementById('onlineLobby').style.display = 'none';
-    document.getElementById('onlineWaiting').style.display = '';
     document.getElementById('roomCodeDisplay').textContent = code;
     document.getElementById('onlineStartBtn').style.display = 'none';
 
     startListening(code);
   } catch (e) {
     showOnlineError('Error creating room: ' + e.message);
+    showLobbyBtns();
   }
 }
 
@@ -1143,7 +1176,7 @@ async function joinRoom() {
 
     const data = snap.data();
     if (data.status !== 'waiting') { showOnlineError('Game already started'); return; }
-    if (data.players.length >= data.maxPlayers) { showOnlineError('Room is full'); return; }
+    if (data.players.length >= 8) { showOnlineError('Room is full'); return; }
 
     const newPlayers = [...data.players, name];
     await updateDocFn(roomRef, { players: newPlayers });
@@ -1152,8 +1185,9 @@ async function joinRoom() {
     onlineMyIndex = newPlayers.length - 1;
     onlineIsHost = false;
 
-    document.getElementById('onlineLobby').style.display = 'none';
-    document.getElementById('onlineWaiting').style.display = '';
+    // Switch to create area view to show waiting state
+    document.getElementById('onlineJoinArea').style.display = 'none';
+    document.getElementById('onlineCreateArea').style.display = '';
     document.getElementById('roomCodeDisplay').textContent = code;
 
     startListening(code);
@@ -1194,7 +1228,8 @@ function handleOnlineUpdate(data) {
       `${data.players.length}/${data.maxPlayers} players joined`;
 
     if (onlineIsHost && data.players.length >= 2) {
-      document.getElementById('onlineStartBtn').style.display = '';
+      document.getElementById('onlineStartBtn').style.display = 'block';
+      document.getElementById('onlineStartBtn').textContent = `Start Game (${data.players.length} players)`;
     }
   }
 
@@ -1380,8 +1415,7 @@ async function onlinePlayAgain() {
 async function leaveRoom() {
   if (window._pkUnsubscribe) { window._pkUnsubscribe(); window._pkUnsubscribe = null; }
   onlineRoomId = null;
-  document.getElementById('onlineLobby').style.display = '';
-  document.getElementById('onlineWaiting').style.display = 'none';
+  showLobbyBtns();
 }
 
 // ═══════════════════════════════════════
