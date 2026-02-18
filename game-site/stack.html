@@ -296,7 +296,7 @@ function endGame() {
     highScore = score;
     localStorage.setItem('stackBest', highScore);
     bestEl.textContent = highScore;
-    if(window.SFX) window.SFX.levelUp();
+    if(window.SFX) window.SFX.levelup();
   }
 
   window.HallOfFame?.submit('stack', score);

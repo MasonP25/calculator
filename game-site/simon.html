@@ -386,7 +386,7 @@ function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.
 
       if (playerIndex === sequence.length) {
         // Completed this round
-        if(window.SFX) window.SFX.levelUp();
+        if(window.SFX) window.SFX.levelup();
         isPlayerTurn = false;
         disableButtons(true);
         showMessage('Correct!', 'success');

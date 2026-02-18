@@ -800,7 +800,7 @@ function endRound() {
   }
 
   // Round survived - level up sound
-  if(window.SFX) window.SFX.levelUp();
+  if(window.SFX) window.SFX.levelup();
 
   // Shrink rink
   round++;
@@ -1121,18 +1121,33 @@ function drawArrow(p) {
 //  GAME LOOP
 // ═══════════════════════════════════════
 function gameLoop() {
-  updatePhysics();
-  draw();
+  try {
+    updatePhysics();
+    draw();
 
-  // Falling animation update
-  penguins.forEach(p => {
-    if (p.falling) {
-      p.x += p.vx * 0.5;
-      p.y += p.vy * 0.5;
-      p.vx *= 0.95;
-      p.vy *= 0.95;
+    // Falling animation update
+    penguins.forEach(p => {
+      if (p.falling) {
+        p.x += p.vx * 0.5;
+        p.y += p.vy * 0.5;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+      }
+    });
+
+    // Safety: force end round if simulating too long (15s)
+    if (phase === 'simulating') {
+      if (!window._simStart) window._simStart = Date.now();
+      if (Date.now() - window._simStart > 15000) {
+        console.warn('Forcing endRound after 15s timeout');
+        endRound();
+      }
+    } else {
+      window._simStart = null;
     }
-  });
+  } catch (e) {
+    console.error('gameLoop error:', e);
+  }
 
   animFrame = requestAnimationFrame(gameLoop);
 }

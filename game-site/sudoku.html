@@ -591,7 +591,7 @@ function checkCompletions(r, c) {
     if (rowDone) {
       completedSets.add(rowKey);
       for (let i = 0; i < 9; i++) animateCell(r, i, i * 40);
-      if(window.SFX) window.SFX.levelUp();
+      if(window.SFX) window.SFX.levelup();
     }
   }
 
@@ -603,7 +603,7 @@ function checkCompletions(r, c) {
     if (colDone) {
       completedSets.add(colKey);
       for (let i = 0; i < 9; i++) animateCell(i, c, i * 40);
-      if(window.SFX) window.SFX.levelUp();
+      if(window.SFX) window.SFX.levelup();
     }
   }
 
@@ -620,7 +620,7 @@ function checkCompletions(r, c) {
       let delay = 0;
       for (let i = br; i < br + 3; i++)
         for (let j = bc; j < bc + 3; j++) { animateCell(i, j, delay); delay += 40; }
-      if(window.SFX) window.SFX.levelUp();
+      if(window.SFX) window.SFX.levelup();
     }
   }
 }
