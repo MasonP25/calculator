@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penguin Knockout</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0f0f1a; color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden;
+}
+h1 { font-size: 2rem; margin: 12px 0 4px; background: linear-gradient(135deg,#00d4ff,#7b2ff7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+a.back { position: fixed; top: 12px; left: 16px; color: #888; text-decoration: none;
+  font-size: 0.85rem; z-index: 100; transition: color 0.2s; }
+a.back:hover { color: #e0e0e0; }
+canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display: block; }
+
+/* Screens */
+.screen { display: none; flex-direction: column; align-items: center; padding: 20px; }
+.screen.active { display: flex; }
+
+/* Menu */
+#menu { justify-content: center; min-height: calc(100vh - 80px); gap: 16px; }
+#menu h2 { font-size: 28px; color: #00d4ff; margin-bottom: 8px; }
+#menu p { color: #888; margin-bottom: 16px; text-align: center; }
+.menu-btn {
+  padding: 14px 40px; font-size: 18px; font-family: inherit;
+  border: 2px solid #7b2ff7; background: transparent; color: #7b2ff7;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s; min-width: 260px;
+}
+.menu-btn:hover { background: #7b2ff7; color: #fff; }
+
+/* Setup */
+#setup { gap: 14px; padding-top: 10px; }
+#setup h2 { font-size: 24px; color: #00d4ff; }
+.setup-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.setup-label { color: #888; font-size: 0.9rem; }
+.setup-select, .setup-input {
+  background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+  padding: 8px 14px; border-radius: 8px; font-family: inherit; font-size: 0.9rem;
+}
+.setup-select:focus, .setup-input:focus { border-color: #7b2ff7; outline: none; }
+.player-names { display: flex; flex-direction: column; gap: 8px; max-width: 300px; width: 100%; }
+.player-names input { width: 100%; }
+.diff-btn {
+  padding: 10px 24px; font-size: 14px; font-family: inherit;
+  border: 2px solid #2a2a4a; background: #1a1a2e; color: #e0e0e0;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+}
+.diff-btn:hover, .diff-btn.active { border-color: #7b2ff7; color: #7b2ff7; }
+.start-btn {
+  padding: 12px 36px; font-size: 16px; font-family: inherit;
+  background: linear-gradient(135deg,#7b2ff7,#1a1a2e); border: none; color: #fff;
+  border-radius: 8px; cursor: pointer; transition: transform 0.2s; margin-top: 8px;
+}
+.start-btn:hover { transform: translateY(-2px); }
+
+/* HUD */
+.hud { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center;
+  font-size: 0.85rem; margin-bottom: 4px; min-height: 1.5rem; }
+.hud span { color: #00d4ff; font-weight: bold; }
+.player-indicator { display: flex; gap: 8px; align-items: center; }
+.pi-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.pi-name { font-size: 0.8rem; }
+.pi-count { font-size: 0.75rem; color: #888; }
+.pi-dead { opacity: 0.3; text-decoration: line-through; }
+
+/* Lock In button */
+#lockInBtn {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  padding: 10px 32px; font-size: 16px; font-family: inherit;
+  background: linear-gradient(135deg,#2ed573,#1a1a2e); border: 2px solid #2ed573;
+  color: #fff; border-radius: 8px; cursor: pointer; z-index: 20;
+  display: none; transition: transform 0.2s;
+}
+#lockInBtn:hover { transform: translateX(-50%) translateY(-2px); }
+#lockInBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Turn blocker overlay */
+#turnBlocker {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15,15,26,0.95); display: none; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 30; border-radius: 8px;
+}
+#turnBlocker h2 { font-size: 1.8rem; margin-bottom: 8px; }
+#turnBlocker p { color: #888; margin-bottom: 16px; font-size: 0.9rem; }
+#turnBlocker .ready-btn {
+  padding: 12px 36px; font-size: 16px; font-family: inherit;
+  background: linear-gradient(135deg,#7b2ff7,#1a1a2e); border: none; color: #fff;
+  border-radius: 8px; cursor: pointer;
+}
+
+/* Online panel */
+.online-panel { background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+  padding: 20px; max-width: 400px; width: 100%; text-align: center; }
+.online-panel h3 { color: #00d4ff; margin-bottom: 12px; }
+.online-panel input { width: 100%; margin-bottom: 10px; }
+.online-btn { padding: 10px 24px; font-size: 14px; font-family: inherit;
+  border: 2px solid #7b2ff7; background: transparent; color: #7b2ff7;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s; margin: 4px; }
+.online-btn:hover { background: #7b2ff7; color: #fff; }
+.room-code-display { font-size: 2rem; font-weight: bold; color: #00d4ff;
+  letter-spacing: 6px; margin: 12px 0; }
+.waiting-msg { color: #888; font-size: 0.85rem; }
+.online-info { font-size: 0.8rem; color: #888; margin-bottom: 4px; }
+.leave-btn { padding: 4px 12px; font-size: 0.75rem; border: 1px solid #2a2a4a;
+  background: transparent; color: #888; border-radius: 6px; cursor: pointer; margin-left: 8px; }
+
+/* Chat */
+#chat-panel { position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
+  background: #1a1a2e; border-left: 2px solid #2a2a4a; z-index: 95;
+  display: flex; flex-direction: column; transition: right 0.3s; }
+#chat-panel.open { right: 0; }
+#chat-header { padding: 10px 14px; border-bottom: 2px solid #2a2a4a;
+  display: flex; justify-content: space-between; align-items: center; }
+#chat-header span { color: #00d4ff; font-weight: bold; }
+#chat-close { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; }
+#chat-body { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+#chat-messages { display: flex; flex-direction: column; gap: 4px; }
+.chat-msg { font-size: 0.8rem; }
+.chat-msg .chat-name { color: #7b2ff7; font-weight: bold; }
+.chat-msg .chat-time { color: #555; font-size: 0.7rem; margin-left: 6px; }
+#chat-input-area { padding: 8px; border-top: 2px solid #2a2a4a; display: flex; gap: 6px; }
+#chat-input { flex: 1; background: #0f0f1a; border: 1px solid #2a2a4a; color: #e0e0e0;
+  padding: 6px 10px; border-radius: 6px; font-family: inherit; font-size: 0.8rem; }
+#chat-input:focus { border-color: #7b2ff7; outline: none; }
+#chat-send { background: #7b2ff7; border: none; color: #fff; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+#chat-toggle { position: fixed; top: 12px; right: 16px; background: #1a1a2e;
+  border: 2px solid #2a2a4a; color: #e0e0e0; width: 36px; height: 36px;
+  border-radius: 50%; cursor: pointer; z-index: 96; font-size: 1rem;
+  display: none; transition: border-color 0.2s; }
+#chat-toggle:hover { border-color: #7b2ff7; }
+
+/* Result overlay */
+#resultOverlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15,15,26,0.85); display: none; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 25; border-radius: 8px;
+}
+#resultOverlay h2 { font-size: 2rem; color: #ffd166; margin-bottom: 12px; }
+#resultOverlay p { color: #888; margin-bottom: 16px; }
+#resultOverlay button {
+  padding: 10px 30px; font-size: 14px; font-family: inherit;
+  border: 2px solid #7b2ff7; background: transparent; color: #7b2ff7;
+  border-radius: 8px; cursor: pointer; margin: 4px;
+}
+#resultOverlay button:hover { background: #7b2ff7; color: #fff; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Home</a>
+<h1>Penguin Knockout</h1>
+
+<!-- Menu -->
+<div class="screen active" id="menu">
+  <h2>&#128039; Penguin Knockout</h2>
+  <p>Launch penguins on ice! Knock opponents off the rink.</p>
+  <button class="menu-btn" onclick="showSetup('local')">&#127919; Local (Hot Seat)</button>
+  <button class="menu-btn" onclick="showSetup('ai')">&#129302; vs AI</button>
+  <button class="menu-btn" onclick="showSetup('online')">&#127760; Online</button>
+</div>
+
+<!-- Setup -->
+<div class="screen" id="setup">
+  <h2 id="setupTitle">Game Setup</h2>
+  <div id="setupLocal">
+    <div class="setup-row" style="margin-bottom:12px">
+      <span class="setup-label">Players:</span>
+      <select class="setup-select" id="playerCount" onchange="updatePlayerNames()">
+        <option value="2">2 Players</option>
+        <option value="3">3 Players</option>
+        <option value="4">4 Players</option>
+        <option value="5">5 Players</option>
+        <option value="6">6 Players</option>
+        <option value="7">7 Players</option>
+        <option value="8">8 Players</option>
+      </select>
+    </div>
+    <div class="player-names" id="playerNames"></div>
+  </div>
+  <div id="setupAI" style="display:none">
+    <div class="setup-row" style="margin-bottom:12px">
+      <span class="setup-label">AI Opponents:</span>
+      <select class="setup-select" id="aiCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+      </select>
+    </div>
+    <div class="setup-row" style="margin-bottom:12px">
+      <span class="setup-label">Difficulty:</span>
+      <div class="setup-row">
+        <button class="diff-btn active" onclick="setDiff(this,'easy')">Easy</button>
+        <button class="diff-btn" onclick="setDiff(this,'medium')">Medium</button>
+        <button class="diff-btn" onclick="setDiff(this,'hard')">Hard</button>
+      </div>
+    </div>
+    <div class="setup-row">
+      <span class="setup-label">Your Name:</span>
+      <input class="setup-input" id="aiPlayerName" value="Player 1" maxlength="12">
+    </div>
+  </div>
+  <button class="start-btn" onclick="startGame()">Start Game</button>
+  <button class="menu-btn" style="font-size:14px;padding:8px 20px;margin-top:8px" onclick="backToMenu()">Back</button>
+</div>
+
+<!-- Online -->
+<div class="screen" id="onlineScreen">
+  <div class="online-panel" id="onlinePanel">
+    <h3>Online Multiplayer</h3>
+    <div id="onlineLobby">
+      <div class="setup-row" style="margin-bottom:12px">
+        <span class="setup-label">Your Name:</span>
+        <input class="setup-input" id="onlineName" value="" maxlength="12" placeholder="Enter name">
+      </div>
+      <div class="setup-row" style="margin-bottom:12px">
+        <span class="setup-label">Players:</span>
+        <select class="setup-select" id="onlinePlayerCount">
+          <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+          <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+        </select>
+      </div>
+      <button class="online-btn" onclick="createRoom()">Create Room</button>
+      <div style="margin:12px 0;color:#888">— or —</div>
+      <input class="setup-input" id="joinCode" placeholder="Enter room code" maxlength="6" style="text-transform:uppercase;text-align:center;letter-spacing:4px">
+      <button class="online-btn" onclick="joinRoom()">Join Room</button>
+      <div id="onlineError" style="color:#ff4757;font-size:0.8rem;margin-top:8px;display:none"></div>
+    </div>
+    <div id="onlineWaiting" style="display:none">
+      <div class="room-code-display" id="roomCodeDisplay"></div>
+      <p class="waiting-msg" id="waitingMsg">Waiting for players...</p>
+      <div id="onlinePlayerList" style="margin:12px 0"></div>
+      <button class="online-btn" id="onlineStartBtn" style="display:none" onclick="onlineStartGame()">Start Game</button>
+      <button class="leave-btn" onclick="leaveRoom()">Leave</button>
+    </div>
+  </div>
+  <button class="menu-btn" style="font-size:14px;padding:8px 20px;margin-top:12px" onclick="backToMenu()">Back</button>
+</div>
+
+<!-- Game -->
+<div class="screen" id="gameScreen">
+  <div class="hud" id="hud"></div>
+  <div style="position:relative;display:inline-block">
+    <canvas id="c" width="800" height="600"></canvas>
+    <button id="lockInBtn" onclick="lockIn()">Lock In</button>
+    <div id="turnBlocker">
+      <h2 id="blockerTitle"></h2>
+      <p id="blockerSub"></p>
+      <button class="ready-btn" id="blockerReady" onclick="dismissBlocker()">Ready</button>
+    </div>
+    <div id="resultOverlay">
+      <h2 id="resultTitle"></h2>
+      <p id="resultSub"></p>
+      <button onclick="playAgain()">Play Again</button>
+      <button onclick="backToMenu()">Menu</button>
+    </div>
+  </div>
+  <div class="online-info" id="gameOnlineInfo" style="display:none"></div>
+</div>
+
+<!-- Chat -->
+<button id="chat-toggle" onclick="toggleChat()">&#128172;</button>
+<div id="chat-panel">
+  <div id="chat-header">
+    <span>Chat</span>
+    <button id="chat-close" onclick="toggleChat()">&#10005;</button>
+  </div>
+  <div id="chat-body"><div id="chat-messages"></div></div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="Type a message..." maxlength="200">
+    <button id="chat-send" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════
+const CANVAS_W = 800, CANVAS_H = 600;
+const RINK_INIT = 480; // initial rink size (square)
+const RINK_SHRINK = 16; // shrink per round per side
+const RINK_MIN = 200;
+const PENGUIN_R = 16;
+const FRICTION = 0.988;
+const MAX_POWER = 12;
+const MIN_SPEED = 0.08;
+const COLORS = ['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#00bcd4','#e91e63','#f1c40f'];
+const COLOR_NAMES = ['Blue','Red','Green','Orange','Purple','Cyan','Pink','Yellow'];
+
+function penguinsPerPlayer(n) {
+  if (n === 2) return 4;
+  if (n === 3) return 3;
+  if (n <= 5) return 2;
+  return 1;
+}
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let mode = ''; // local, ai, online
+let difficulty = 'easy';
+let players = []; // { name, color, isAI, alive }
+let penguins = []; // { x, y, vx, vy, player, alive, falling, fallScale, aimAngle, aimPower, aimed }
+let rinkSize = RINK_INIT;
+let rinkX, rinkY; // top-left of rink
+let round = 0;
+let phase = 'aim'; // aim, launching, simulating, roundEnd, gameOver
+let currentAimPlayer = 0; // for hot seat: which player is currently aiming
+let selectedPenguin = -1;
+let dragging = false;
+let dragStartX = 0, dragStartY = 0;
+let animFrame = null;
+let lockedPlayers = new Set();
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// ═══════════════════════════════════════
+//  MENU / SETUP
+// ═══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function backToMenu() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  showScreen('menu');
+  document.getElementById('chat-toggle').style.display = 'none';
+  document.getElementById('chat-panel').classList.remove('open');
+  if (window._pkUnsubscribe) { window._pkUnsubscribe(); window._pkUnsubscribe = null; }
+}
+
+function showSetup(m) {
+  mode = m;
+  if (m === 'local') {
+    document.getElementById('setupLocal').style.display = '';
+    document.getElementById('setupAI').style.display = 'none';
+    document.getElementById('setupTitle').textContent = 'Local Game Setup';
+    updatePlayerNames();
+    showScreen('setup');
+  } else if (m === 'ai') {
+    document.getElementById('setupLocal').style.display = 'none';
+    document.getElementById('setupAI').style.display = '';
+    document.getElementById('setupTitle').textContent = 'vs AI Setup';
+    showScreen('setup');
+  } else {
+    showScreen('onlineScreen');
+  }
+}
+
+function updatePlayerNames() {
+  const n = parseInt(document.getElementById('playerCount').value);
+  const container = document.getElementById('playerNames');
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const inp = document.createElement('input');
+    inp.className = 'setup-input';
+    inp.value = 'Player ' + (i + 1);
+    inp.maxLength = 12;
+    inp.dataset.idx = i;
+    container.appendChild(inp);
+  }
+}
+
+function setDiff(btn, d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+//  GAME INIT
+// ═══════════════════════════════════════
+function startGame() {
+  players = [];
+  penguins = [];
+  round = 0;
+  rinkSize = RINK_INIT;
+  lockedPlayers = new Set();
+
+  if (mode === 'local') {
+    const n = parseInt(document.getElementById('playerCount').value);
+    const inputs = document.getElementById('playerNames').querySelectorAll('input');
+    for (let i = 0; i < n; i++) {
+      players.push({ name: inputs[i].value || ('Player ' + (i+1)), color: COLORS[i], isAI: false, alive: true });
+    }
+  } else if (mode === 'ai') {
+    const aiN = parseInt(document.getElementById('aiCount').value);
+    const name = document.getElementById('aiPlayerName').value || 'Player 1';
+    players.push({ name, color: COLORS[0], isAI: false, alive: true });
+    for (let i = 0; i < aiN; i++) {
+      players.push({ name: 'AI ' + (i+1), color: COLORS[i+1], isAI: true, alive: true });
+    }
+  }
+
+  initPenguins();
+  phase = 'aim';
+  currentAimPlayer = 0;
+  showScreen('gameScreen');
+  updateHUD();
+
+  if (mode === 'local') {
+    showBlockerForPlayer(currentAimPlayer);
+  } else if (mode === 'ai') {
+    // AI calculates its shots, human aims
+    calcAIShots();
+  }
+
+  gameLoop();
+}
+
+function initPenguins() {
+  penguins = [];
+  const n = players.length;
+  const ppp = penguinsPerPlayer(n);
+  rinkX = (CANVAS_W - rinkSize) / 2;
+  rinkY = (CANVAS_H - rinkSize) / 2;
+
+  for (let p = 0; p < n; p++) {
+    const angle = (p / n) * Math.PI * 2 - Math.PI / 2;
+    const cx = CANVAS_W / 2 + Math.cos(angle) * (rinkSize * 0.3);
+    const cy = CANVAS_H / 2 + Math.sin(angle) * (rinkSize * 0.3);
+
+    for (let j = 0; j < ppp; j++) {
+      const spread = ppp > 1 ? (j - (ppp - 1) / 2) * (PENGUIN_R * 2.8) : 0;
+      const perpAngle = angle + Math.PI / 2;
+      penguins.push({
+        x: cx + Math.cos(perpAngle) * spread,
+        y: cy + Math.sin(perpAngle) * spread,
+        vx: 0, vy: 0,
+        player: p, alive: true, falling: false, fallScale: 1,
+        aimAngle: 0, aimPower: 0, aimed: false
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════
+function updateHUD() {
+  const hud = document.getElementById('hud');
+  let html = `<div>Round <span>${round + 1}</span></div>`;
+  players.forEach((p, i) => {
+    const count = penguins.filter(pg => pg.player === i && pg.alive).length;
+    const dead = count === 0;
+    html += `<div class="player-indicator ${dead ? 'pi-dead' : ''}">
+      <span class="pi-dot" style="background:${p.color}"></span>
+      <span class="pi-name">${p.name}</span>
+      <span class="pi-count">(${count})</span>
+    </div>`;
+  });
+  hud.innerHTML = html;
+}
+
+// ═══════════════════════════════════════
+//  TURN BLOCKER (Hot Seat)
+// ═══════════════════════════════════════
+function showBlockerForPlayer(pIdx) {
+  // Skip eliminated players
+  while (pIdx < players.length && !players[pIdx].alive) pIdx++;
+  if (pIdx >= players.length) {
+    // All players have aimed
+    launchAll();
+    return;
+  }
+  currentAimPlayer = pIdx;
+  const blocker = document.getElementById('turnBlocker');
+  document.getElementById('blockerTitle').textContent = players[pIdx].name + "'s Turn";
+  document.getElementById('blockerTitle').style.color = players[pIdx].color;
+  document.getElementById('blockerSub').textContent = 'Aim your penguins! Click and drag to set direction & power.';
+  blocker.style.display = 'flex';
+  document.getElementById('lockInBtn').style.display = 'none';
+}
+
+function dismissBlocker() {
+  document.getElementById('turnBlocker').style.display = 'none';
+  // Show lock in button
+  const myPenguins = penguins.filter(p => p.player === currentAimPlayer && p.alive);
+  if (myPenguins.length > 0) {
+    document.getElementById('lockInBtn').style.display = '';
+    updateLockInState();
+  }
+}
+
+function updateLockInState() {
+  const myPenguins = penguins.filter(p => p.player === currentAimPlayer && p.alive);
+  const allAimed = myPenguins.every(p => p.aimed);
+  const btn = document.getElementById('lockInBtn');
+  btn.disabled = !allAimed;
+  btn.textContent = allAimed ? 'Lock In!' : 'Aim all penguins first';
+}
+
+function lockIn() {
+  document.getElementById('lockInBtn').style.display = 'none';
+
+  if (mode === 'local') {
+    // Next player
+    let next = currentAimPlayer + 1;
+    showBlockerForPlayer(next);
+  } else if (mode === 'ai') {
+    launchAll();
+  } else if (mode === 'online') {
+    submitOnlineShots();
+  }
+}
+
+// ═══════════════════════════════════════
+//  AIMING (Input)
+// ═══════════════════════════════════════
+canvas.addEventListener('mousedown', onMouseDown);
+canvas.addEventListener('mousemove', onMouseMove);
+canvas.addEventListener('mouseup', onMouseUp);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); onMouseDown(touchToMouse(e)); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); onMouseMove(touchToMouse(e)); }, { passive: false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); onMouseUp(touchToMouse(e)); }, { passive: false });
+
+function touchToMouse(e) {
+  const t = e.changedTouches[0];
+  const r = canvas.getBoundingClientRect();
+  return { offsetX: t.clientX - r.left, offsetY: t.clientY - r.top };
+}
+
+function onMouseDown(e) {
+  if (phase !== 'aim') return;
+  const mx = e.offsetX, my = e.offsetY;
+
+  // Find a penguin belonging to current aim player
+  const aimPlayer = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
+  for (let i = 0; i < penguins.length; i++) {
+    const p = penguins[i];
+    if (p.player !== aimPlayer || !p.alive) continue;
+    const dx = mx - p.x, dy = my - p.y;
+    if (dx * dx + dy * dy <= (PENGUIN_R + 6) * (PENGUIN_R + 6)) {
+      selectedPenguin = i;
+      dragging = true;
+      dragStartX = mx;
+      dragStartY = my;
+      return;
+    }
+  }
+}
+
+function onMouseMove(e) {
+  if (!dragging || selectedPenguin < 0) return;
+  const mx = e.offsetX, my = e.offsetY;
+  const p = penguins[selectedPenguin];
+  const dx = mx - p.x, dy = my - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > 5) {
+    p.aimAngle = Math.atan2(dy, dx);
+    p.aimPower = Math.min(dist / 15, MAX_POWER);
+    p.aimed = true;
+  }
+}
+
+function onMouseUp(e) {
+  if (dragging && selectedPenguin >= 0) {
+    const p = penguins[selectedPenguin];
+    const mx = e.offsetX, my = e.offsetY;
+    const dx = mx - p.x, dy = my - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 5) {
+      p.aimAngle = Math.atan2(dy, dx);
+      p.aimPower = Math.min(dist / 15, MAX_POWER);
+      p.aimed = true;
+    }
+    updateLockInState();
+  }
+  dragging = false;
+  selectedPenguin = -1;
+}
+
+// ═══════════════════════════════════════
+//  AI
+// ═══════════════════════════════════════
+function calcAIShots() {
+  players.forEach((pl, pi) => {
+    if (!pl.isAI || !pl.alive) return;
+    const myPengs = penguins.filter(p => p.player === pi && p.alive);
+    const oppPengs = penguins.filter(p => p.player !== pi && p.alive);
+
+    myPengs.forEach(pg => {
+      if (difficulty === 'easy') {
+        pg.aimAngle = Math.random() * Math.PI * 2;
+        pg.aimPower = 3 + Math.random() * 5;
+        pg.aimed = true;
+      } else if (difficulty === 'medium') {
+        // Aim at nearest opponent
+        let nearest = null, nearDist = Infinity;
+        oppPengs.forEach(op => {
+          const d = Math.hypot(op.x - pg.x, op.y - pg.y);
+          if (d < nearDist) { nearDist = d; nearest = op; }
+        });
+        if (nearest) {
+          pg.aimAngle = Math.atan2(nearest.y - pg.y, nearest.x - pg.x) + (Math.random() - 0.5) * 0.3;
+          pg.aimPower = Math.min(nearDist / 30 + 3, MAX_POWER * 0.8);
+        } else {
+          pg.aimAngle = Math.random() * Math.PI * 2;
+          pg.aimPower = 4;
+        }
+        pg.aimed = true;
+      } else { // hard
+        // Target opponent closest to edge, aim to push them off
+        let bestTarget = null, bestScore = -Infinity;
+        const cx = CANVAS_W / 2, cy = CANVAS_H / 2;
+        oppPengs.forEach(op => {
+          const edgeDistX = Math.min(op.x - rinkX, rinkX + rinkSize - op.x);
+          const edgeDistY = Math.min(op.y - rinkY, rinkY + rinkSize - op.y);
+          const edgeDist = Math.min(edgeDistX, edgeDistY);
+          const score = (rinkSize / 2) - edgeDist; // higher = closer to edge
+          if (score > bestScore) { bestScore = score; bestTarget = op; }
+        });
+        if (bestTarget) {
+          // Aim through target toward nearest edge
+          const angleToTarget = Math.atan2(bestTarget.y - pg.y, bestTarget.x - pg.x);
+          pg.aimAngle = angleToTarget + (Math.random() - 0.5) * 0.15;
+          const dist = Math.hypot(bestTarget.x - pg.x, bestTarget.y - pg.y);
+          pg.aimPower = Math.min(dist / 20 + 5, MAX_POWER * 0.9);
+        } else {
+          pg.aimAngle = Math.random() * Math.PI * 2;
+          pg.aimPower = 5;
+        }
+        pg.aimed = true;
+      }
+    });
+  });
+}
+
+// ═══════════════════════════════════════
+//  LAUNCH & PHYSICS
+// ═══════════════════════════════════════
+function launchAll() {
+  phase = 'launching';
+  document.getElementById('lockInBtn').style.display = 'none';
+  document.getElementById('turnBlocker').style.display = 'none';
+
+  // Brief reveal of all arrows
+  setTimeout(() => {
+    // Apply velocities
+    penguins.forEach(p => {
+      if (!p.alive || !p.aimed) return;
+      p.vx = Math.cos(p.aimAngle) * p.aimPower;
+      p.vy = Math.sin(p.aimAngle) * p.aimPower;
+    });
+    phase = 'simulating';
+  }, 800); // show arrows for 0.8s
+}
+
+function updatePhysics() {
+  if (phase !== 'simulating') return;
+
+  let anyMoving = false;
+
+  // Update positions
+  penguins.forEach(p => {
+    if (!p.alive) {
+      if (p.falling) {
+        p.fallScale -= 0.03;
+        if (p.fallScale <= 0) p.falling = false;
+      }
+      return;
+    }
+
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= FRICTION;
+    p.vy *= FRICTION;
+
+    if (Math.abs(p.vx) < MIN_SPEED && Math.abs(p.vy) < MIN_SPEED) {
+      p.vx = 0; p.vy = 0;
+    } else {
+      anyMoving = true;
+    }
+
+    // Check rink boundary
+    if (p.x - PENGUIN_R < rinkX || p.x + PENGUIN_R > rinkX + rinkSize ||
+        p.y - PENGUIN_R < rinkY || p.y + PENGUIN_R > rinkY + rinkSize) {
+      p.alive = false;
+      p.falling = true;
+      p.fallScale = 1;
+      p.vx = p.vx * 0.5;
+      p.vy = p.vy * 0.5;
+    }
+  });
+
+  // Collisions
+  for (let i = 0; i < penguins.length; i++) {
+    for (let j = i + 1; j < penguins.length; j++) {
+      const a = penguins[i], b = penguins[j];
+      if (!a.alive || !b.alive) continue;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const minDist = PENGUIN_R * 2;
+
+      if (dist < minDist && dist > 0) {
+        const nx = dx / dist, ny = dy / dist;
+        const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+        const dvn = dvx * nx + dvy * ny;
+
+        if (dvn > 0) {
+          a.vx -= dvn * nx;
+          a.vy -= dvn * ny;
+          b.vx += dvn * nx;
+          b.vy += dvn * ny;
+          // Add a bit of bounce energy
+          const bounce = 1.05;
+          b.vx *= bounce; b.vy *= bounce;
+          a.vx *= bounce; a.vy *= bounce;
+        }
+
+        // Separate
+        const overlap = minDist - dist;
+        a.x -= overlap / 2 * nx;
+        a.y -= overlap / 2 * ny;
+        b.x += overlap / 2 * nx;
+        b.y += overlap / 2 * ny;
+        anyMoving = true;
+      }
+    }
+  }
+
+  if (!anyMoving) {
+    endRound();
+  }
+}
+
+function endRound() {
+  phase = 'roundEnd';
+
+  // Check eliminations
+  players.forEach((p, i) => {
+    const alive = penguins.filter(pg => pg.player === i && pg.alive).length;
+    if (alive === 0) p.alive = false;
+  });
+
+  // Check win
+  const alivePlayers = players.filter(p => p.alive);
+  if (alivePlayers.length <= 1) {
+    phase = 'gameOver';
+    showResult(alivePlayers.length === 1 ? alivePlayers[0] : null);
+    return;
+  }
+
+  // Shrink rink
+  round++;
+  if (rinkSize > RINK_MIN) {
+    rinkSize = Math.max(RINK_MIN, rinkSize - RINK_SHRINK * 2);
+    rinkX = (CANVAS_W - rinkSize) / 2;
+    rinkY = (CANVAS_H - rinkSize) / 2;
+
+    // Push penguins that are now outside the new rink inward
+    penguins.forEach(p => {
+      if (!p.alive) return;
+      p.x = Math.max(rinkX + PENGUIN_R + 2, Math.min(rinkX + rinkSize - PENGUIN_R - 2, p.x));
+      p.y = Math.max(rinkY + PENGUIN_R + 2, Math.min(rinkY + rinkSize - PENGUIN_R - 2, p.y));
+    });
+  }
+
+  // Reset aims
+  penguins.forEach(p => { p.aimed = false; p.aimAngle = 0; p.aimPower = 0; });
+  lockedPlayers = new Set();
+
+  updateHUD();
+
+  // Next round
+  setTimeout(() => {
+    phase = 'aim';
+    if (mode === 'local') {
+      currentAimPlayer = 0;
+      showBlockerForPlayer(0);
+    } else if (mode === 'ai') {
+      calcAIShots();
+      document.getElementById('lockInBtn').style.display = '';
+      updateLockInState();
+    } else if (mode === 'online') {
+      onlineStartAiming();
+    }
+  }, 1000);
+}
+
+function showResult(winner) {
+  const overlay = document.getElementById('resultOverlay');
+  document.getElementById('resultTitle').textContent = winner ? winner.name + ' Wins!' : 'Draw!';
+  document.getElementById('resultTitle').style.color = winner ? winner.color : '#ffd166';
+  document.getElementById('resultSub').textContent = winner ? 'All other penguins knocked off!' : 'No penguins left!';
+  overlay.style.display = 'flex';
+}
+
+function playAgain() {
+  document.getElementById('resultOverlay').style.display = 'none';
+  if (mode === 'online') {
+    // Reset online game
+    onlinePlayAgain();
+  } else {
+    startGame();
+  }
+}
+
+// ═══════════════════════════════════════
+//  DRAWING
+// ═══════════════════════════════════════
+function draw() {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Water background
+  ctx.fillStyle = '#0a2a4a';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Water waves
+  const t = Date.now() / 1000;
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  for (let i = 0; i < 8; i++) {
+    ctx.strokeStyle = '#1a5a8a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < CANVAS_W; x += 4) {
+      const waveY = 50 + i * 70 + Math.sin(x * 0.02 + t + i) * 8;
+      x === 0 ? ctx.moveTo(x, waveY) : ctx.lineTo(x, waveY);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Ice rink (square)
+  drawRink();
+
+  // Draw penguins
+  penguins.forEach((p, i) => {
+    if (!p.alive && !p.falling) return;
+    drawPenguin(p, i);
+  });
+
+  // Draw aim arrows
+  if (phase === 'aim' || phase === 'launching') {
+    const showPlayer = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
+    penguins.forEach(p => {
+      if (!p.alive || !p.aimed) return;
+      // In hot seat, only show current player's arrows
+      // In launching phase, show all
+      if (phase === 'aim' && mode === 'local' && p.player !== showPlayer) return;
+      if (phase === 'aim' && mode === 'online' && p.player !== showPlayer) return;
+
+      drawArrow(p);
+    });
+  }
+}
+
+function drawRink() {
+  ctx.save();
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(rinkX + 4, rinkY + 4, rinkSize, rinkSize);
+
+  // Ice surface
+  const grd = ctx.createLinearGradient(rinkX, rinkY, rinkX + rinkSize, rinkY + rinkSize);
+  grd.addColorStop(0, '#d4eef7');
+  grd.addColorStop(0.5, '#eaf6fb');
+  grd.addColorStop(1, '#c8e8f4');
+  ctx.fillStyle = grd;
+  ctx.fillRect(rinkX, rinkY, rinkSize, rinkSize);
+
+  // Ice texture lines
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = '#8bbbd4';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < rinkSize; i += 30) {
+    ctx.beginPath();
+    ctx.moveTo(rinkX + i, rinkY);
+    ctx.lineTo(rinkX + i, rinkY + rinkSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rinkX, rinkY + i);
+    ctx.lineTo(rinkX + rinkSize, rinkY + i);
+    ctx.stroke();
+  }
+
+  // Scratch marks on ice
+  ctx.globalAlpha = 0.05;
+  ctx.strokeStyle = '#6a9ab5';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 12; i++) {
+    const sx = rinkX + Math.random() * rinkSize;
+    const sy = rinkY + Math.random() * rinkSize;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + (Math.random() - 0.5) * 60, sy + (Math.random() - 0.5) * 60);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1;
+
+  // Border
+  ctx.strokeStyle = '#88c0d8';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(rinkX, rinkY, rinkSize, rinkSize);
+
+  // Cracks near edges (visual indicator of shrinking)
+  if (round > 0 && rinkSize > RINK_MIN) {
+    ctx.strokeStyle = 'rgba(100,180,220,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < round * 3; i++) {
+      const edge = Math.floor(Math.random() * 4);
+      let cx, cy;
+      if (edge === 0) { cx = rinkX + Math.random() * rinkSize; cy = rinkY + Math.random() * 20; }
+      else if (edge === 1) { cx = rinkX + Math.random() * rinkSize; cy = rinkY + rinkSize - Math.random() * 20; }
+      else if (edge === 2) { cx = rinkX + Math.random() * 20; cy = rinkY + Math.random() * rinkSize; }
+      else { cx = rinkX + rinkSize - Math.random() * 20; cy = rinkY + Math.random() * rinkSize; }
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + (Math.random() - 0.5) * 30, cy + (Math.random() - 0.5) * 30);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawPenguin(p, idx) {
+  ctx.save();
+  const color = players[p.player].color;
+
+  if (p.falling) {
+    ctx.globalAlpha = p.fallScale;
+    ctx.translate(p.x, p.y);
+    ctx.scale(p.fallScale, p.fallScale);
+    ctx.translate(-p.x, -p.y);
+    // Splash ring
+    ctx.strokeStyle = '#4a9ec4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PENGUIN_R * (2 - p.fallScale), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Body
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, PENGUIN_R, 0, Math.PI * 2);
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Belly
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.y + 1, PENGUIN_R * 0.55, PENGUIN_R * 0.65, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(p.x - 4, p.y - 4, 3, 0, Math.PI * 2);
+  ctx.arc(p.x + 4, p.y - 4, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(p.x - 4, p.y - 4, 1.5, 0, Math.PI * 2);
+  ctx.arc(p.x + 4, p.y - 4, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Beak
+  ctx.beginPath();
+  ctx.moveTo(p.x - 3, p.y);
+  ctx.lineTo(p.x + 3, p.y);
+  ctx.lineTo(p.x, p.y + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#ff9800';
+  ctx.fill();
+
+  // Color indicator ring
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, PENGUIN_R + 2, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Selection highlight
+  if (phase === 'aim' && idx === selectedPenguin && dragging) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PENGUIN_R + 6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawArrow(p) {
+  ctx.save();
+  const len = p.aimPower * 8;
+  const ex = p.x + Math.cos(p.aimAngle) * len;
+  const ey = p.y + Math.sin(p.aimAngle) * len;
+
+  // Arrow line
+  ctx.strokeStyle = players[p.player].color;
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+
+  // Arrowhead
+  const headLen = 10;
+  const angle = p.aimAngle;
+  ctx.fillStyle = players[p.player].color;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex - headLen * Math.cos(angle - 0.4), ey - headLen * Math.sin(angle - 0.4));
+  ctx.lineTo(ex - headLen * Math.cos(angle + 0.4), ey - headLen * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fill();
+
+  // Power dots
+  ctx.globalAlpha = 0.4;
+  const dots = Math.floor(p.aimPower / 2);
+  for (let i = 1; i <= dots; i++) {
+    const t = i / (dots + 1);
+    ctx.beginPath();
+    ctx.arc(p.x + (ex - p.x) * t, p.y + (ey - p.y) * t, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════
+function gameLoop() {
+  updatePhysics();
+  draw();
+
+  // Falling animation update
+  penguins.forEach(p => {
+    if (p.falling) {
+      p.x += p.vx * 0.5;
+      p.y += p.vy * 0.5;
+      p.vx *= 0.95;
+      p.vy *= 0.95;
+    }
+  });
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════
+//  ONLINE MULTIPLAYER
+// ═══════════════════════════════════════
+let onlineRoomId = null;
+let onlineMyIndex = -1;
+let onlineIsHost = false;
+
+function getMyUsername() {
+  const inp = document.getElementById('onlineName');
+  return (inp.value || '').trim() || 'Player';
+}
+
+async function createRoom() {
+  const name = getMyUsername();
+  if (!name) { showOnlineError('Enter a name'); return; }
+  const playerCount = parseInt(document.getElementById('onlinePlayerCount').value);
+
+  try {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const { doc: docFn, setDoc: setDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', code);
+    await setDocFn(roomRef, {
+      host: name,
+      players: [name],
+      maxPlayers: playerCount,
+      status: 'waiting',
+      penguins: [],
+      shots: {},
+      round: 0,
+      arenaSize: RINK_INIT,
+      chat: []
+    });
+
+    onlineRoomId = code;
+    onlineMyIndex = 0;
+    onlineIsHost = true;
+
+    document.getElementById('onlineLobby').style.display = 'none';
+    document.getElementById('onlineWaiting').style.display = '';
+    document.getElementById('roomCodeDisplay').textContent = code;
+    document.getElementById('onlineStartBtn').style.display = 'none';
+
+    startListening(code);
+  } catch (e) {
+    showOnlineError('Error creating room: ' + e.message);
+  }
+}
+
+async function joinRoom() {
+  const name = getMyUsername();
+  if (!name) { showOnlineError('Enter a name'); return; }
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (!code) { showOnlineError('Enter a room code'); return; }
+
+  try {
+    const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', code);
+    const snap = await getDocFn(roomRef);
+    if (!snap.exists()) { showOnlineError('Room not found'); return; }
+
+    const data = snap.data();
+    if (data.status !== 'waiting') { showOnlineError('Game already started'); return; }
+    if (data.players.length >= data.maxPlayers) { showOnlineError('Room is full'); return; }
+
+    const newPlayers = [...data.players, name];
+    await updateDocFn(roomRef, { players: newPlayers });
+
+    onlineRoomId = code;
+    onlineMyIndex = newPlayers.length - 1;
+    onlineIsHost = false;
+
+    document.getElementById('onlineLobby').style.display = 'none';
+    document.getElementById('onlineWaiting').style.display = '';
+    document.getElementById('roomCodeDisplay').textContent = code;
+
+    startListening(code);
+  } catch (e) {
+    showOnlineError('Error joining: ' + e.message);
+  }
+}
+
+function showOnlineError(msg) {
+  const el = document.getElementById('onlineError');
+  el.textContent = msg;
+  el.style.display = '';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function startListening(roomId) {
+  if (window._pkUnsubscribe) window._pkUnsubscribe();
+
+  getFirebaseFns().then(({ doc: docFn, onSnapshot: onSnapshotFn }) => {
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', roomId);
+    window._pkUnsubscribe = onSnapshotFn(roomRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      handleOnlineUpdate(data);
+    });
+  });
+}
+
+function handleOnlineUpdate(data) {
+  // Update player list in waiting screen
+  if (data.status === 'waiting') {
+    const listEl = document.getElementById('onlinePlayerList');
+    listEl.innerHTML = data.players.map((n, i) =>
+      `<div style="padding:4px 0"><span class="pi-dot" style="background:${COLORS[i]};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>${n}</div>`
+    ).join('');
+
+    document.getElementById('waitingMsg').textContent =
+      `${data.players.length}/${data.maxPlayers} players joined`;
+
+    if (onlineIsHost && data.players.length >= 2) {
+      document.getElementById('onlineStartBtn').style.display = '';
+    }
+  }
+
+  // Game started
+  if (data.status === 'playing' && phase !== 'aim' && phase !== 'simulating' && phase !== 'launching') {
+    onlineInitGame(data);
+  }
+
+  // Shots update
+  if (data.status === 'playing' && data.shots) {
+    const shotCount = Object.keys(data.shots).length;
+    const alivePlayers = data.players.filter((_, i) =>
+      penguins.some(p => p.player === i && p.alive)
+    ).length;
+
+    if (shotCount >= alivePlayers && phase === 'aim') {
+      // All players submitted - apply shots and launch
+      applyOnlineShots(data.shots);
+    }
+  }
+
+  // Round sync
+  if (data.round !== undefined && data.round > round && phase === 'roundEnd') {
+    // Sync new round
+    round = data.round;
+    rinkSize = data.arenaSize || rinkSize;
+    rinkX = (CANVAS_W - rinkSize) / 2;
+    rinkY = (CANVAS_H - rinkSize) / 2;
+  }
+
+  // Chat
+  if (data.chat) renderChat(data.chat);
+
+  // Play again
+  if (data.status === 'playing' && data.round === 0 && phase === 'gameOver') {
+    onlineInitGame(data);
+  }
+}
+
+async function onlineStartGame() {
+  try {
+    const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
+    const snap = await getDocFn(roomRef);
+    const data = snap.data();
+
+    // Init players
+    players = data.players.map((name, i) => ({
+      name, color: COLORS[i], isAI: false, alive: true
+    }));
+
+    initPenguins();
+
+    // Serialize penguins
+    const serialized = penguins.map(p => ({ x: p.x, y: p.y, player: p.player, alive: true }));
+    await updateDocFn(roomRef, {
+      status: 'playing',
+      penguins: serialized,
+      shots: {},
+      round: 0,
+      arenaSize: RINK_INIT
+    });
+  } catch (e) {
+    console.error('Start error:', e);
+  }
+}
+
+function onlineInitGame(data) {
+  players = data.players.map((name, i) => ({
+    name, color: COLORS[i], isAI: false, alive: true
+  }));
+
+  if (data.penguins && data.penguins.length > 0) {
+    penguins = data.penguins.map(p => ({
+      ...p, vx: 0, vy: 0, falling: false, fallScale: 1,
+      aimAngle: 0, aimPower: 0, aimed: false
+    }));
+  } else {
+    initPenguins();
+  }
+
+  round = data.round || 0;
+  rinkSize = data.arenaSize || RINK_INIT;
+  rinkX = (CANVAS_W - rinkSize) / 2;
+  rinkY = (CANVAS_H - rinkSize) / 2;
+
+  phase = 'aim';
+  showScreen('gameScreen');
+  document.getElementById('chat-toggle').style.display = '';
+  document.getElementById('gameOnlineInfo').style.display = '';
+  document.getElementById('gameOnlineInfo').textContent = 'Room: ' + onlineRoomId;
+  document.getElementById('resultOverlay').style.display = 'none';
+  updateHUD();
+
+  document.getElementById('lockInBtn').style.display = '';
+  updateLockInState();
+
+  if (animFrame) cancelAnimationFrame(animFrame);
+  gameLoop();
+}
+
+function onlineStartAiming() {
+  document.getElementById('lockInBtn').style.display = '';
+  updateLockInState();
+}
+
+async function submitOnlineShots() {
+  const myPenguins = penguins.filter(p => p.player === onlineMyIndex && p.alive && p.aimed);
+  const shots = myPenguins.map(p => ({
+    idx: penguins.indexOf(p),
+    angle: p.aimAngle,
+    power: p.aimPower
+  }));
+
+  try {
+    const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
+    const snap = await getDocFn(roomRef);
+    const data = snap.data();
+    const allShots = { ...(data.shots || {}), [onlineMyIndex]: shots };
+    await updateDocFn(roomRef, { shots: allShots });
+  } catch (e) {
+    console.error('Submit shots error:', e);
+  }
+
+  document.getElementById('lockInBtn').style.display = 'none';
+  document.getElementById('lockInBtn').textContent = 'Waiting for others...';
+}
+
+function applyOnlineShots(allShots) {
+  // Apply all shots to penguins
+  Object.entries(allShots).forEach(([playerIdx, shots]) => {
+    shots.forEach(s => {
+      if (penguins[s.idx]) {
+        penguins[s.idx].aimAngle = s.angle;
+        penguins[s.idx].aimPower = s.power;
+        penguins[s.idx].aimed = true;
+      }
+    });
+  });
+
+  launchAll();
+
+  // After simulation, host syncs state
+  if (onlineIsHost) {
+    const checkDone = setInterval(async () => {
+      if (phase === 'roundEnd' || phase === 'gameOver') {
+        clearInterval(checkDone);
+        try {
+          const { doc: docFn, updateDoc: updateDocFn } = await getFirebaseFns();
+          const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
+          const serialized = penguins.map(p => ({
+            x: p.x, y: p.y, player: p.player, alive: p.alive
+          }));
+          await updateDocFn(roomRef, {
+            penguins: serialized,
+            shots: {},
+            round: round,
+            arenaSize: rinkSize,
+            status: phase === 'gameOver' ? 'done' : 'playing'
+          });
+        } catch (e) { console.error(e); }
+      }
+    }, 200);
+  }
+}
+
+async function onlinePlayAgain() {
+  if (!onlineIsHost) return;
+  try {
+    const { doc: docFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
+    players.forEach(p => p.alive = true);
+    initPenguins();
+    const serialized = penguins.map(p => ({ x: p.x, y: p.y, player: p.player, alive: true }));
+    await updateDocFn(roomRef, {
+      status: 'playing', penguins: serialized, shots: {},
+      round: 0, arenaSize: RINK_INIT
+    });
+  } catch (e) { console.error(e); }
+}
+
+async function leaveRoom() {
+  if (window._pkUnsubscribe) { window._pkUnsubscribe(); window._pkUnsubscribe = null; }
+  onlineRoomId = null;
+  document.getElementById('onlineLobby').style.display = '';
+  document.getElementById('onlineWaiting').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+//  CHAT
+// ═══════════════════════════════════════
+function toggleChat() {
+  document.getElementById('chat-panel').classList.toggle('open');
+}
+
+function renderChat(msgs) {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = msgs.map(m =>
+    `<div class="chat-msg"><span class="chat-name">${m.name}:</span> ${m.text}<span class="chat-time">${m.time || ''}</span></div>`
+  ).join('');
+  container.parentElement.scrollTop = container.parentElement.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !onlineRoomId) return;
+  input.value = '';
+
+  try {
+    const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
+    const snap = await getDocFn(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const chat = (data.chat || []).slice();
+    const now = new Date();
+    chat.push({
+      name: getMyUsername(),
+      text,
+      time: ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2)
+    });
+    if (chat.length > 50) chat.splice(0, chat.length - 50);
+    await updateDocFn(roomRef, { chat });
+  } catch (e) { console.error('Chat error:', e); }
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendChat();
+});
+
+// ═══════════════════════════════════════
+//  FIREBASE LAZY LOAD
+// ═══════════════════════════════════════
+let _firebaseFns = null;
+async function getFirebaseFns() {
+  if (_firebaseFns) return _firebaseFns;
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js");
+  const { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } =
+    await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+  }, 'penguin-online');
+  window._pkDB = getFirestore(app);
+  _firebaseFns = { doc, setDoc, getDoc, updateDoc, onSnapshot };
+  return _firebaseFns;
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+updatePlayerNames();
+</script>
+<script src="sound.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>
