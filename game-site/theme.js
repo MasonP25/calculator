@@ -49,6 +49,12 @@
       text:'#f0d8e8', dim:'#a07890', accent:'#ff69b4', accent2:'#ffb7d5',
       glow:'rgba(255,105,180,0.3)', canvasBg:'#281828', canvasBg2:'#1a0f18',
     },
+    volcano: {
+      name: 'Volcano', icon: '🌋',
+      bg1:'#1a0a0a', bg2:'#2a1010', bg3:'#3a1818', border:'#5a2020',
+      text:'#f0d0c0', dim:'#a06050', accent:'#ff4500', accent2:'#ffcc00',
+      glow:'rgba(255,69,0,0.3)', canvasBg:'#2a1010', canvasBg2:'#1a0a0a',
+    },
   };
 
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';

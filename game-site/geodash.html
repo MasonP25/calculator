@@ -50,8 +50,6 @@
   .ls-card .diff.medium { color: #ffa502; }
   .ls-card .diff.hard { color: #ff4757; }
   .ls-card .diff.insane { color: #ff00aa; text-shadow: 0 0 8px rgba(255,0,170,0.4); }
-  .ls-card .best-lbl { font-size: 0.65rem; color: #666; margin-bottom: 0.1rem; }
-  .ls-card .best-val { font-size: 1.1rem; font-weight: bold; color: #00d4ff; }
   .ls-card .stars { font-size: 0.9rem; margin-top: 0.3rem; color: #555; }
   .ls-card .stars .lit { color: #ffd166; }
 
@@ -770,8 +768,6 @@ function renderLevelSelect() {
     card.innerHTML = `
       <h3>${lvl.name}</h3>
       <div class="diff ${lvl.diff}">${lvl.diff}</div>
-      <div class="best-lbl">Best Progress</div>
-      <div class="best-val">${best}%</div>
       <div class="stars">${[0,1,2].map(j => j < stars ? '<span class="lit">\u2605</span>' : '\u2605').join('')}</div>
     `;
     card.onclick = () => { window.SFX?.select(); startLevel(i); };
