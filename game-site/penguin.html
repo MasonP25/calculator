@@ -79,6 +79,7 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 }
 #lockInBtn:hover { transform: translateX(-50%) translateY(-2px); }
 #lockInBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+#lockInBtn:disabled:hover { transform: translateX(-50%); }
 
 /* Turn blocker overlay */
 #turnBlocker {
@@ -414,6 +415,8 @@ function startGame() {
   } else if (mode === 'ai') {
     // AI calculates its shots, human aims
     calcAIShots();
+    document.getElementById('lockInBtn').style.display = 'block';
+    updateLockInState();
   }
 
   gameLoop();
@@ -488,7 +491,7 @@ function dismissBlocker() {
   // Show lock in button
   const myPenguins = penguins.filter(p => p.player === currentAimPlayer && p.alive);
   if (myPenguins.length > 0) {
-    document.getElementById('lockInBtn').style.display = '';
+    document.getElementById('lockInBtn').style.display = 'block';
     updateLockInState();
   }
 }
@@ -781,7 +784,7 @@ function endRound() {
       showBlockerForPlayer(0);
     } else if (mode === 'ai') {
       calcAIShots();
-      document.getElementById('lockInBtn').style.display = '';
+      document.getElementById('lockInBtn').style.display = 'block';
       updateLockInState();
     } else if (mode === 'online') {
       onlineStartAiming();
@@ -1269,7 +1272,7 @@ function onlineInitGame(data) {
   document.getElementById('resultOverlay').style.display = 'none';
   updateHUD();
 
-  document.getElementById('lockInBtn').style.display = '';
+  document.getElementById('lockInBtn').style.display = 'block';
   updateLockInState();
 
   if (animFrame) cancelAnimationFrame(animFrame);
@@ -1277,7 +1280,7 @@ function onlineInitGame(data) {
 }
 
 function onlineStartAiming() {
-  document.getElementById('lockInBtn').style.display = '';
+  document.getElementById('lockInBtn').style.display = 'block';
   updateLockInState();
 }
 
