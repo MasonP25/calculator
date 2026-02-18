@@ -201,6 +201,15 @@
       .auth-btn { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
       .auth-overlay { background:${t.bg1}dd!important; }
 
+      /* Hall of Fame link */
+      .fame-link {
+        background:linear-gradient(135deg,${t.bg2},${t.bg3})!important;
+        border-color:${t.accent}33!important; color:${t.text}!important;
+      }
+      .fame-link:hover {
+        border-color:${t.accent}!important; box-shadow:0 6px 20px ${t.glow}!important;
+      }
+
       /* Theme picker itself */
       .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
       .theme-panel { background:${t.bg2}; border-color:${t.border}; }
