@@ -184,7 +184,7 @@ function update() {
     cScore++;
     cScoreEl.textContent = cScore;
     if (window.SFX) window.SFX.correct();
-    if (cScore >= 11) { if (window.SFX) window.SFX.win(); if (window.HallOfFame) window.HallOfFame.submit('pong', pScore); msgEl.textContent = 'Game Over! Press SPACE to restart.'; playing = false; return; }
+    if (cScore >= 11) { if (window.SFX) window.SFX.fail(); if (window.HallOfFame) window.HallOfFame.submit('pong', pScore); msgEl.textContent = 'Game Over! Press SPACE to restart.'; playing = false; return; }
     resetBall(true);
   }
   if (ball.x > W) {
@@ -263,8 +263,8 @@ document.addEventListener('keyup', e => { keys[e.key] = false; });
 resetBall(Math.random() > 0.5);
 loop();
 </script>
-<script src="sound.js"></script>
-<script src="fame.js"></script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=2"></script>
 <script type="module" src="firebase-lb.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=3"></script>
