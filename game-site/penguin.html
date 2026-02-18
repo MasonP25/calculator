@@ -97,21 +97,38 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 
 /* Online panel */
 .online-panel { background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
-  padding: 20px; max-width: 400px; width: 100%; text-align: center; }
+  padding: 20px; max-width: 460px; width: 100%; text-align: center; margin: 0 auto; }
 .online-panel h3 { color: #e0e0e0; margin-bottom: 15px; font-size: 1rem; }
 .online-lobby-btns { display: flex; gap: 12px; justify-content: center; }
-.online-panel input { width: 100%; margin-bottom: 10px; }
-.online-btn { padding: 10px 24px; font-size: 14px; font-family: inherit;
-  border: 2px solid #7b2ff7; background: transparent; color: #7b2ff7;
-  border-radius: 8px; cursor: pointer; transition: all 0.2s; margin: 4px; }
-.online-btn:hover { background: #7b2ff7; color: #fff; }
+.online-btn { background: #7b2ff7; color: #fff; border: none; padding: 10px 24px;
+  font-size: 0.95rem; font-weight: 600; font-family: 'Segoe UI', Tahoma, sans-serif;
+  border-radius: 8px; cursor: pointer; transition: background 0.25s, transform 0.15s; }
+.online-btn:hover { background: #6a22e0; }
+.online-btn:active { transform: scale(0.97); }
 .online-btn.secondary { background: #2a2a4a; }
-.room-code-display { font-size: 2rem; font-weight: bold; color: #00d4ff;
-  letter-spacing: 6px; margin: 12px 0; }
-.waiting-msg { color: #888; font-size: 0.85rem; }
-.online-info { font-size: 0.8rem; color: #888; margin-bottom: 4px; }
-.leave-btn { padding: 4px 12px; font-size: 0.75rem; border: 1px solid #2a2a4a;
-  background: transparent; color: #888; border-radius: 6px; cursor: pointer; margin-left: 8px; }
+.online-btn.secondary:hover { background: #3a3a5a; }
+.online-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.room-code-display { font-size: 2.5rem; font-weight: 700; color: #feca57;
+  letter-spacing: 8px; margin: 15px 0; font-family: monospace; }
+.waiting-msg { color: #888; font-size: 0.9rem; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.join-area { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.join-input { background: #0f0f1a; border: 2px solid #2a2a4a; color: #feca57;
+  font-size: 1.8rem; font-weight: 700; font-family: monospace; letter-spacing: 6px;
+  text-align: center; padding: 8px 16px; border-radius: 8px; width: 160px;
+  text-transform: uppercase; outline: none; transition: border-color 0.25s; }
+.join-input:focus { border-color: #7b2ff7; }
+.join-input::placeholder { color: #444; letter-spacing: 2px; font-size: 1rem; }
+.join-error { color: #ff4757; font-size: 0.85rem; }
+.online-info { background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+  padding: 12px 20px; width: 100%; max-width: 460px; text-align: center;
+  font-size: 0.85rem; color: #888; margin: 0 auto 0.8rem; }
+.online-info .room-label { color: #feca57; font-weight: 700; font-family: monospace; letter-spacing: 3px; }
+.player-list { margin: 12px 0; }
+.leave-btn { background: none; border: 1px solid #ff475766; color: #ff4757;
+  padding: 4px 14px; font-size: 0.8rem; font-family: 'Segoe UI', Tahoma, sans-serif;
+  border-radius: 6px; cursor: pointer; margin-top: 6px; transition: background 0.2s; }
+.leave-btn:hover { background: #ff475722; }
 
 /* Chat */
 #chat-panel { position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
@@ -236,12 +253,12 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
     </div>
 
     <!-- Join area -->
-    <div id="onlineJoinArea" style="display:none">
-      <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Enter room code:</p>
-      <input class="setup-input" id="joinCode" maxlength="4" style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.8rem;font-weight:700;font-family:monospace;color:#feca57;width:160px;margin:0 auto 10px">
-      <div><button class="online-btn" onclick="joinRoom()">Join</button></div>
-      <button class="leave-btn" style="margin-top:8px" onclick="showLobbyBtns()">Back</button>
-      <div id="onlineError" style="color:#ff4757;font-size:0.8rem;margin-top:8px;display:none"></div>
+    <div id="onlineJoinArea" class="join-area" style="display:none">
+      <p style="color:#888;font-size:0.85rem;">Enter room code:</p>
+      <input class="join-input" id="joinCode" type="text" maxlength="4" placeholder="CODE" autocomplete="off">
+      <button class="online-btn" onclick="joinRoom()">Join</button>
+      <button class="leave-btn" onclick="showLobbyBtns()">Back</button>
+      <p class="join-error" id="onlineError" style="display:none"></p>
     </div>
 
     <!-- Guest waiting area -->

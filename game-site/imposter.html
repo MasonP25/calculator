@@ -80,6 +80,7 @@ h1 {
 }
 
 .online-panel h3 { margin-bottom: 15px; color: #e0e0e0; font-size: 1rem; }
+.online-lobby-btns { display: flex; gap: 12px; justify-content: center; }
 
 .room-code-display {
     font-size: 2.5rem;
@@ -549,8 +550,15 @@ h1 {
 <!-- Menu Screen -->
 <div id="menu-screen" class="screen active">
     <h2>Find the Imposter among your friends!</h2>
-    <button class="menu-btn" id="create-game-btn">Create Game</button>
-    <button class="menu-btn secondary" onclick="showScreen('join-screen')">Join Game</button>
+    <div class="lobby-container">
+        <div class="online-panel">
+            <h3>Online Multiplayer (3-12 Players)</h3>
+            <div class="online-lobby-btns">
+                <button class="online-btn" id="create-game-btn">Create Game</button>
+                <button class="online-btn secondary" onclick="showScreen('join-screen')">Join Game</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Create Screen -->
