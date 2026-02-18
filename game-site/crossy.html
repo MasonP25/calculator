@@ -239,7 +239,7 @@ function hop(dr, dc) {
   player.targetY = newRow * TILE;
   player.onLog = null;
 
-  window.SFX?.jump();
+  if(window.SFX) window.SFX.jump();
 
   if (!playing) {
     playing = true;
@@ -281,6 +281,9 @@ function update() {
     highestRow = player.row;
     score = highestRow;
     scoreEl.textContent = score;
+    if (score > 0 && score % 10 === 0) {
+      if(window.SFX) window.SFX.levelUp();
+    }
   }
 
   ensureLanes();
@@ -378,7 +381,7 @@ function update() {
         const px = player.x;
         const halfP = PLAYER_SIZE / 2;
         if (px + halfP > car.x && px - halfP < car.x + car.w) {
-          window.SFX?.hit();
+          if(window.SFX) window.SFX.hit();
           die('Hit by a vehicle!');
           return;
         }
@@ -391,7 +394,7 @@ function update() {
         const trainW = W * 1.5;
         const px = player.x;
         if (px > currentLane.trainX && px < currentLane.trainX + trainW) {
-          window.SFX?.hit();
+          if(window.SFX) window.SFX.hit();
           die('Hit by a train!');
           return;
         }
@@ -413,13 +416,13 @@ function die(reason) {
   player.alive = false;
   gameOver = true;
   deathAnim = 30;
-  window.SFX?.death();
+  if(window.SFX) window.SFX.death();
 
   if (score > bestScore) {
     bestScore = score;
     _sb('crossyBest', bestScore.toString());
     bestEl.textContent = bestScore;
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
   }
 
   window.HallOfFame?.submit('crossy', score);

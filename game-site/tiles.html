@@ -279,6 +279,8 @@ function endGame(col) {
   failCol = col;
   failFlash = 30;
   saveHigh();
+  if(window.SFX) window.SFX.fail();
+  if(score > 0 && score >= highScore) { if(window.SFX) window.SFX.win(); }
   if(window.HallOfFame) window.HallOfFame.submit('tiles', score);
   msgEl.textContent = '';
 }

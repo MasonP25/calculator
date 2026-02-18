@@ -311,19 +311,19 @@ function update() {
             player.y = p.y - player.h;
             spawnParticles(playerCenterX, p.y, COL.spring, 15);
             spawnParticles(playerCenterX, p.y, COL.platformSpring, 8);
-            window.SFX?.powerup();
+            if(window.SFX) window.SFX.bounce();
           } else {
             player.vy = JUMP_VEL;
             player.y = p.y - player.h;
             spawnParticles(playerCenterX, p.y, COL.accent2, 8);
-            window.SFX?.jump();
+            if(window.SFX) window.SFX.jump();
           }
 
           // Handle fragile platforms
           if (p.type === 'fragile') {
             p.broken = true;
             spawnParticles(p.x + p.w / 2, p.y, COL.platformFragile, 12);
-            window.SFX?.hit();
+            if(window.SFX) window.SFX.hit();
           }
           break;
         }
@@ -341,7 +341,7 @@ function update() {
   // Game over: fell below screen
   if (player.y > camera + H + 50) {
     gameOver = true;
-    window.SFX?.death();
+    if(window.SFX) window.SFX.death();
     if (score > highScore) {
       highScore = score;
       _sb('doodleBest', highScore);

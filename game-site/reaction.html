@@ -205,6 +205,7 @@ arena.addEventListener('click', () => {
     arena.className = 'arena early';
     arenaText.textContent = 'Too early!';
     arenaSub.textContent = 'Click to try again';
+    if(window.SFX) window.SFX.wrong();
     setTimeout(() => { state = 'waiting'; resetSolo(); }, 1500);
   } else if (state === 'go') {
     const time = Math.round(performance.now() - startTime);
@@ -212,9 +213,13 @@ arena.addEventListener('click', () => {
     arena.className = 'arena result';
     arenaText.innerHTML = `<span style="color:#00d4ff">${time}ms</span>`;
     arenaSub.textContent = 'Click to try again';
+    if(window.SFX) window.SFX.click();
     scores.push(time);
     if (scores.length > 5) scores.shift();
-    if (time < best) best = time;
+    if (time < best) {
+      best = time;
+      if(window.SFX) window.SFX.win();
+    }
     if(window.HallOfFame) window.HallOfFame.submit('reaction', time);
     updateScores();
     setTimeout(() => { state = 'waiting'; }, 300);

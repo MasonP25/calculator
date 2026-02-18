@@ -554,11 +554,11 @@ function execMove(mv) {
   }
 
   // Sound effects
-  if(result.checkmate) window.SFX?.win();
-  else if(result.stalemate) window.SFX?.fail();
-  else if(result.inCheck) window.SFX?.buzz();
-  else if(captured) window.SFX?.hit();
-  else window.SFX?.place();
+  if(result.checkmate) { if(window.SFX) window.SFX.win(); }
+  else if(result.stalemate) { if(window.SFX) window.SFX.fail(); }
+  else if(result.inCheck) { if(window.SFX) window.SFX.buzz(); }
+  else if(captured) { if(window.SFX) window.SFX.hit(); }
+  else { if(window.SFX) window.SFX.move(); }
 
   algebraic.push(notation + suffix);
   return result;
@@ -745,7 +745,7 @@ function onSquareClick(r, c) {
   if(pc && pc.color===G.turn) {
     selectedSq = {r,c};
     validMoves = legalMoves(G.turn, G).filter(m=>m.fr.r===r&&m.fr.c===c);
-    window.SFX?.click();
+    if(window.SFX) window.SFX.click();
     render(); return;
   }
   selectedSq = null; validMoves = [];

@@ -652,6 +652,7 @@ function launchAll() {
   // Brief reveal of all arrows
   setTimeout(() => {
     // Apply velocities
+    if(window.SFX) window.SFX.swoosh();
     penguins.forEach(p => {
       if (!p.alive || !p.aimed) return;
       const spd = p.aimPower * 0.45;
@@ -696,6 +697,7 @@ function updatePhysics() {
       p.fallScale = 1;
       p.vx = p.vx * 0.5;
       p.vy = p.vy * 0.5;
+      if(window.SFX) window.SFX.death();
     }
   });
 
@@ -714,6 +716,7 @@ function updatePhysics() {
         const dvn = dvx * nx + dvy * ny;
 
         if (dvn > 0) {
+          if(window.SFX) window.SFX.bounce();
           a.vx -= dvn * nx;
           a.vy -= dvn * ny;
           b.vx += dvn * nx;
@@ -755,12 +758,17 @@ function endRound() {
   if (alivePlayers.length <= 1 || (mode === 'ai' && !humanAlive)) {
     phase = 'gameOver';
     if (!humanAlive) {
+      if(window.SFX) window.SFX.fail();
       showResult(null, true); // human lost
     } else {
+      if(window.SFX) window.SFX.win();
       showResult(alivePlayers.length === 1 ? alivePlayers[0] : null, false);
     }
     return;
   }
+
+  // Round survived - level up sound
+  if(window.SFX) window.SFX.levelUp();
 
   // Shrink rink
   round++;

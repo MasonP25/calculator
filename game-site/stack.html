@@ -217,9 +217,9 @@ function placeBlock() {
     });
 
     if (combo >= 3) {
-      window.SFX?.combo();
+      if(window.SFX) window.SFX.bonus();
     } else {
-      window.SFX?.correct();
+      if(window.SFX) window.SFX.bonus();
     }
   } else {
     // Trimmed placement
@@ -255,7 +255,7 @@ function placeBlock() {
       }
     }
 
-    window.SFX?.hit();
+    if(window.SFX) window.SFX.drop();
   }
 
   // Update score
@@ -280,7 +280,7 @@ function placeBlock() {
   }
 
   if (!isPerfect) {
-    window.SFX?.place();
+    if(window.SFX) window.SFX.drop();
   }
 
   spawnMovingBlock();
@@ -290,13 +290,13 @@ function endGame() {
   state = 'gameover';
   moving = null;
 
-  window.SFX?.fail();
+  if(window.SFX) window.SFX.fail();
 
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('stackBest', highScore);
     bestEl.textContent = highScore;
-    window.SFX?.win();
+    if(window.SFX) window.SFX.levelUp();
   }
 
   window.HallOfFame?.submit('stack', score);

@@ -457,7 +457,7 @@ function drawFromStock() {
     score = Math.max(0, score - 20);
     updateDisplay();
     render();
-    window.SFX?.click();
+    if(window.SFX) window.SFX.flip();
     return;
   }
   const count = Math.min(drawCount, stock.length);
@@ -466,7 +466,7 @@ function drawFromStock() {
     card.faceUp = true;
     waste.push(card);
   }
-  window.SFX?.click();
+  if(window.SFX) window.SFX.flip();
   render();
 }
 
@@ -496,7 +496,7 @@ function tryMoveToFoundation(card, sourcePile, sourceCol, sourceIdx) {
       score += 10;
       moveCount++;
       selectedCard = null;
-      window.SFX?.place();
+      if(window.SFX) window.SFX.place();
       updateDisplay();
       render();
       checkWin();
@@ -526,7 +526,7 @@ function handleCardClick(pile, colIdx, cardIdx) {
   // If nothing selected, select this card
   if (!selectedCard) {
     selectedCard = { pile, colIdx, cardIdx };
-    window.SFX?.click();
+    if(window.SFX) window.SFX.flip();
     render();
     return;
   }
@@ -556,7 +556,7 @@ function handleCardClick(pile, colIdx, cardIdx) {
   }
 
   // If can't move, select new card instead
-  window.SFX?.wrong();
+  if(window.SFX) window.SFX.wrong();
   selectedCard = { pile, colIdx, cardIdx };
   render();
 }
@@ -567,7 +567,7 @@ function handleFoundationClick(fIdx) {
 
   startTimer();
   let cards = getSelectedCards(selectedCard);
-  if (cards.length !== 1) { window.SFX?.wrong(); return; }
+  if (cards.length !== 1) { if(window.SFX) window.SFX.wrong(); return; }
 
   const card = cards[0];
   if (canPlaceOnFoundation(card, fIdx)) {
@@ -577,12 +577,12 @@ function handleFoundationClick(fIdx) {
     score += 10;
     moveCount++;
     selectedCard = null;
-    window.SFX?.place();
+    if(window.SFX) window.SFX.place();
     updateDisplay();
     render();
     checkWin();
   } else {
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.wrong();
     selectedCard = null;
     render();
   }
@@ -603,11 +603,11 @@ function handleEmptyTableauClick(colIdx) {
     moveCount++;
     if (selectedCard.pile === 'waste') score += 5;
     selectedCard = null;
-    window.SFX?.place();
+    if(window.SFX) window.SFX.place();
     updateDisplay();
     render();
   } else {
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.wrong();
     selectedCard = null;
     render();
   }
@@ -659,7 +659,7 @@ function tryMove(sel, dest) {
     moveCount++;
     if (sel.pile === 'waste') score += 5;
     if (sel.pile === 'foundation') score = Math.max(0, score);
-    window.SFX?.place();
+    if(window.SFX) window.SFX.place();
     updateDisplay();
     checkAutoComplete();
     return true;
@@ -674,7 +674,7 @@ function tryMove(sel, dest) {
       foundations[dest.colIdx].push(cards[0]);
       score += 10;
       moveCount++;
-      window.SFX?.place();
+      if(window.SFX) window.SFX.place();
       updateDisplay();
       checkWin();
       return true;
@@ -691,7 +691,7 @@ function checkWin() {
     if (timerInterval) clearInterval(timerInterval);
     winStats.textContent = `Score: ${score} | Moves: ${moveCount} | Time: ${timerVal}s`;
     winOverlay.classList.add('show');
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
     if(window.HallOfFame) window.HallOfFame.submit('solitaire', score);
   }
 }
@@ -1026,7 +1026,7 @@ function onDragEnd(e) {
       } else {
         selectedCard = sel;
         const moved = tryMove(sel, { pile: 'tableau', colIdx: target.colIdx });
-        if (!moved) window.SFX?.wrong();
+        if (!moved) if(window.SFX) window.SFX.wrong();
         selectedCard = null;
         render();
       }

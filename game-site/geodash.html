@@ -770,7 +770,7 @@ function renderLevelSelect() {
       <div class="diff ${lvl.diff}">${lvl.diff}</div>
       <div class="stars">${[0,1,2].map(j => j < stars ? '<span class="lit">\u2605</span>' : '\u2605').join('')}</div>
     `;
-    card.onclick = () => { window.SFX?.select(); startLevel(i); };
+    card.onclick = () => { if(window.SFX) window.SFX.click(); startLevel(i); };
     levelCardsEl.appendChild(card);
   });
 
@@ -783,7 +783,7 @@ function renderLevelSelect() {
     btn.onclick = () => {
       selectedColor = i;
       _sb('gd_color', i.toString());
-      window.SFX?.click();
+      if(window.SFX) window.SFX.click();
       renderLevelSelect();
     };
     colorPickerEl.appendChild(btn);
@@ -873,7 +873,7 @@ function die() {
   deaths++;
   shakeTimer = 15;
   shakeIntensity = 8;
-  window.SFX?.death();
+  if(window.SFX) window.SFX.death();
 
   // Spawn death particles
   deathParticles = [];
@@ -906,7 +906,7 @@ function die() {
 
 function completeLevel() {
   state = 'complete';
-  window.SFX?.win();
+  if(window.SFX) window.SFX.win();
   const prev = parseInt(_gb(`gd_best_${currentLevel}`, '0'));
   if (100 > prev) _sb(`gd_best_${currentLevel}`, '100');
   if(window.HallOfFame) window.HallOfFame.submit('geodash', 100);
@@ -940,7 +940,7 @@ function inputDown() {
     if (player.onGround) {
       player.vy = JUMP_FORCE;
       player.onGround = false;
-      window.SFX?.click();
+      if(window.SFX) window.SFX.jump();
     }
   }
 }
@@ -1153,7 +1153,7 @@ function update() {
       const orbRect = { x: o.x - 12, y: o.y - 12, w: 24, h: 24 };
       if (rectsOverlap(pr, orbRect)) {
         o.collected = true;
-        window.SFX?.coin();
+        if(window.SFX) window.SFX.coin();
       }
     }
 
@@ -1164,7 +1164,7 @@ function update() {
           player.mode = o.mode;
           portalFlash = 15;
           portalFlashColor = o.color;
-          window.SFX?.coin();
+          if(window.SFX) window.SFX.coin();
         }
       }
     }

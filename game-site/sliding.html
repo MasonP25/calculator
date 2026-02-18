@@ -396,7 +396,7 @@ function onTileClick(num) {
   moves++;
   movesEl.textContent = moves;
   updateTilePositions();
-  window.SFX?.slide();
+  if(window.SFX) window.SFX.slide();
 
   if (isSolved()) {
     onWin();
@@ -410,7 +410,7 @@ function onWin() {
   msgEl.textContent = '';
   winStats.textContent = `${moves} moves in ${timerVal}s`;
   winOverlay.classList.add('show');
-  window.SFX?.win();
+  if(window.SFX) window.SFX.win();
   window.HallOfFame?.submit('sliding', timerVal);
 }
 
@@ -586,7 +586,7 @@ function init() {
 // --- Size selector ---
 document.querySelectorAll('.size-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    window.SFX?.click();
+    if(window.SFX) window.SFX.click();
     document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     N = parseInt(btn.dataset.size);
@@ -596,13 +596,13 @@ document.querySelectorAll('.size-btn').forEach(btn => {
 
 // Shuffle button
 document.getElementById('shuffleBtn').addEventListener('click', () => {
-  window.SFX?.swoosh();
+  if(window.SFX) window.SFX.swoosh();
   init();
 });
 
 // Hint button
 document.getElementById('hintBtn').addEventListener('click', () => {
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
   showHint();
 });
 

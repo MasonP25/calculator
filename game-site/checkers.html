@@ -660,7 +660,7 @@ function handleSquareClick(r, c) {
     // Click on own piece to switch selection
     if (belongs(piece, currentPlayer)) {
       selectedPiece = [r, c];
-      window.SFX?.click();
+      if(window.SFX) window.SFX.click();
       render();
       return;
     }
@@ -674,7 +674,7 @@ function handleSquareClick(r, c) {
   // No piece selected - try to select one
   if (belongs(piece, currentPlayer)) {
     selectedPiece = [r, c];
-    window.SFX?.click();
+    if(window.SFX) window.SFX.click();
     render();
   }
 }
@@ -703,12 +703,12 @@ function makeMove(move) {
 
   // SFX: capture, promotion, or normal move
   if (result.captured.length > 0) {
-    window.SFX?.hit();
+    if(window.SFX) window.SFX.hit();
   } else {
-    window.SFX?.place();
+    if(window.SFX) window.SFX.move();
   }
   if (result.promoted) {
-    window.SFX?.powerup();
+    if(window.SFX) window.SFX.levelUp();
   }
 
   lastMove = { from: move.from, to: move.to };
@@ -731,7 +731,11 @@ function makeMove(move) {
       if(winner === RED && window.HallOfFame) window.HallOfFame.submit('checkers', 1);
     }
     gameMsg.innerHTML = `<div class="game-over-msg"><span class="turn-dot ${dot}" style="vertical-align:middle;margin-right:6px"></span>${winnerName} wins!${streakHtml}</div>`;
-    window.SFX?.win();
+    if (vsComputer && winner === BLACK) {
+      if(window.SFX) window.SFX.fail();
+    } else {
+      if(window.SFX) window.SFX.win();
+    }
     render();
     return;
   }

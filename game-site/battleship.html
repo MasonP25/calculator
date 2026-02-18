@@ -482,7 +482,7 @@ function placeShipAt(r, c) {
   const cells = getShipCells(r, c, ship.size, orientation);
   if (!canPlace(p, cells)) return;
 
-  window.SFX?.click();
+  if(window.SFX) window.SFX.place();
   const shipId = selectedShipIndex + 1;
   cells.forEach(({ r: rr, c: cc }) => { p.board[rr][cc] = shipId; });
   p.ships.push({ name: ship.name, size: ship.size, cells: cells.map(x => ({ ...x })), sunk: false });
@@ -738,7 +738,7 @@ function fireShot(r, c) {
   if (attacker.shots[r][c]) return; // Already shot here
 
   turnLocked = true;
-  window.SFX?.shoot();
+  if(window.SFX) window.SFX.shoot();
   attacker.shots[r][c] = true;
   attacker.shotsFired++;
 
@@ -751,10 +751,10 @@ function fireShot(r, c) {
     const allHit = ship.cells.every(({ r: sr, c: sc }) => attacker.shots[sr][sc]);
     if (allHit) {
       ship.sunk = true;
-      window.SFX?.explosion();
+      if(window.SFX) window.SFX.death();
       showToast(`${ship.name} sunk!`, 2000);
     } else {
-      window.SFX?.hit();
+      if(window.SFX) window.SFX.explosion();
       showToast('Hit!', 1200);
     }
 
@@ -766,21 +766,21 @@ function fireShot(r, c) {
       currentPhase = 'gameover';
       turnLocked = false;
       if (gameMode === 'ai' && currentTurn === 0) {
-        window.SFX?.win();
+        if(window.SFX) window.SFX.win();
         window.HallOfFame?.winStreak('battleship');
         if(window.HallOfFame) window.HallOfFame.submit('battleship', 1);
       } else if (gameMode === 'ai' && currentTurn === 1) {
-        window.SFX?.fail();
+        if(window.SFX) window.SFX.fail();
         window.HallOfFame?.loseStreak('battleship');
       } else {
-        window.SFX?.win();
+        if(window.SFX) window.SFX.win();
       }
       renderBattle();
       setTimeout(() => showGameOver(), 1500);
       return;
     }
   } else {
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.drop();
     showToast('Miss!', 1000);
   }
 

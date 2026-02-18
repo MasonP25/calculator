@@ -227,7 +227,7 @@ function playRound(playerChoice) {
   resultText.className = 'result-text';
   document.querySelectorAll('.choice-btn').forEach(b => b.classList.add('disabled'));
 
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
 
   // Shake for a moment then reveal
   setTimeout(() => {
@@ -248,7 +248,7 @@ function playRound(playerChoice) {
       resultText.className = 'result-text draw';
       handYou.classList.add('draw');
       handCpu.classList.add('draw');
-      window.SFX?.select();
+      if(window.SFX) window.SFX.bounce();
     } else if (BEATS[playerChoice] === cpuChoice) {
       result = 'win';
       scoreYou++;
@@ -256,7 +256,7 @@ function playRound(playerChoice) {
       resultText.className = 'result-text win';
       handYou.classList.add('win');
       handCpu.classList.add('lose');
-      window.SFX?.coin();
+      if(window.SFX) window.SFX.coin();
     } else {
       result = 'lose';
       scoreCpu++;
@@ -264,7 +264,7 @@ function playRound(playerChoice) {
       resultText.className = 'result-text lose';
       handYou.classList.add('lose');
       handCpu.classList.add('win');
-      window.SFX?.wrong();
+      if(window.SFX) window.SFX.wrong();
     }
 
     document.getElementById('scoreYou').textContent = scoreYou;
@@ -307,14 +307,14 @@ function showMatchResult() {
     _sb('rps_streak', streak.toString());
     _sb('rps_best_streak', bestStreakVal.toString());
     if(window.HallOfFame) window.HallOfFame.submit('rps', 1);
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
     matchStreak.textContent = streak > 1 ? `Win streak: ${streak}!` : '';
   } else {
     matchTitle.textContent = 'CPU Wins the Match!';
     matchTitle.className = 'lose';
     streak = 0;
     _sb('rps_streak', '0');
-    window.SFX?.fail();
+    if(window.SFX) window.SFX.fail();
     matchStreak.textContent = '';
   }
 

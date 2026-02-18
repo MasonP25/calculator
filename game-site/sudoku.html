@@ -497,7 +497,7 @@ function selectCell(r, c) {
   if (gameOver) return;
   selectedR = r;
   selectedC = c;
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
   renderBoard();
 }
 
@@ -533,7 +533,7 @@ function placeNumber(num) {
       history.push({ r, c, prevVal, prevNotes, action: 'erase' });
       board[r][c] = 0;
       notes[r][c].clear();
-      window.SFX?.click();
+      if(window.SFX) window.SFX.click();
     } else {
       history.push({ r, c, prevVal, prevNotes, action: 'place' });
       board[r][c] = num;
@@ -543,11 +543,11 @@ function placeNumber(num) {
       if (num !== solution[r][c]) {
         mistakes++;
         mistakesEl.textContent = mistakes;
-        window.SFX?.wrong();
+        if(window.SFX) window.SFX.wrong();
       } else {
         // Remove this number from notes in same row/col/box
         clearNotesFor(r, c, num);
-        window.SFX?.place();
+        if(window.SFX) window.SFX.place();
         checkCompletions(r, c);
       }
     }
@@ -591,7 +591,7 @@ function checkCompletions(r, c) {
     if (rowDone) {
       completedSets.add(rowKey);
       for (let i = 0; i < 9; i++) animateCell(r, i, i * 40);
-      window.SFX?.combo();
+      if(window.SFX) window.SFX.levelUp();
     }
   }
 
@@ -603,7 +603,7 @@ function checkCompletions(r, c) {
     if (colDone) {
       completedSets.add(colKey);
       for (let i = 0; i < 9; i++) animateCell(i, c, i * 40);
-      window.SFX?.combo();
+      if(window.SFX) window.SFX.levelUp();
     }
   }
 
@@ -620,7 +620,7 @@ function checkCompletions(r, c) {
       let delay = 0;
       for (let i = br; i < br + 3; i++)
         for (let j = bc; j < bc + 3; j++) { animateCell(i, j, delay); delay += 40; }
-      window.SFX?.combo();
+      if(window.SFX) window.SFX.levelUp();
     }
   }
 }
@@ -643,7 +643,7 @@ function checkWin() {
   // Win!
   gameOver = true;
   clearInterval(timerInt);
-  window.SFX?.win();
+  if(window.SFX) window.SFX.win();
   window.HallOfFame?.winStreak('sudoku');
   if(window.HallOfFame) window.HallOfFame.submit('sudoku', timerVal);
   updateStreakUI();

@@ -381,12 +381,12 @@ function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.
 
     if (colorIndex === sequence[playerIndex]) {
       // Correct
-      window.SFX?.click();
+      if(window.SFX) window.SFX.click();
       playerIndex++;
 
       if (playerIndex === sequence.length) {
         // Completed this round
-        window.SFX?.correct();
+        if(window.SFX) window.SFX.levelUp();
         isPlayerTurn = false;
         disableButtons(true);
         showMessage('Correct!', 'success');
@@ -403,7 +403,7 @@ function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.
       }
     } else {
       // Wrong!
-      window.SFX?.wrong();
+      if(window.SFX) window.SFX.wrong();
       await handleMistake();
     }
   }
@@ -431,7 +431,7 @@ function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.
   function gameOver() {
     gameActive = false;
     isPlayerTurn = false;
-    window.SFX?.death();
+    if(window.SFX) window.SFX.fail();
 
     if (round > highScore) {
       highScore = round;

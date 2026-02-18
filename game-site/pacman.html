@@ -244,7 +244,7 @@ function updatePacman() {
     map[pacman.y][pacman.x] = 0;
     score += 10;
     dots--;
-    window.SFX?.coin();
+    if(window.SFX) window.SFX.coin();
   } else if (tile === 3) {
     map[pacman.y][pacman.x] = 0;
     score += 50;
@@ -258,7 +258,7 @@ function updatePacman() {
         g.dy = -g.dy;
       }
     });
-    window.SFX?.powerup();
+    if(window.SFX) window.SFX.levelUp();
   }
 
   scoreEl.textContent = score;
@@ -273,7 +273,7 @@ function updatePacman() {
     level++;
     levelEl.textContent = level;
     gameSpeed = Math.min(12, 7 + level * 0.5);
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
     parseMap();
     resetPositions();
     gameStarted = false;
@@ -391,12 +391,12 @@ function checkCollisions() {
         ghostEatCombo++;
         score += 200 * ghostEatCombo;
         scoreEl.textContent = score;
-        window.SFX?.hit();
+        if(window.SFX) window.SFX.bonus();
       } else if (!g.eaten) {
         // Pac-Man dies
         lives--;
         livesEl.textContent = lives;
-        window.SFX?.death();
+        if(window.SFX) window.SFX.death();
         if (lives <= 0) {
           gameOver = true;
           gameRunning = false;

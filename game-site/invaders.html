@@ -322,7 +322,7 @@ function update(dt) {
   if (keys['Space'] && playerCooldown <= 0 && playerBullets.length < 3) {
     playerBullets.push({ x: player.x, y: player.y - 14 });
     playerCooldown = 0.35;
-    window.SFX?.shoot();
+    if(window.SFX) window.SFX.shoot();
   }
 
   // Move player bullets
@@ -433,7 +433,7 @@ function update(dt) {
         score += a.points;
         const colors = [COLORS.cyan, COLORS.green, COLORS.yellow];
         spawnParticles(a.x, a.y, colors[a.type], 10);
-        window.SFX?.hit();
+        if(window.SFX) window.SFX.explosion();
         break;
       }
     }
@@ -456,7 +456,7 @@ function update(dt) {
           life: 1.0, maxLife: 1.0,
           color: COLORS.yellow, size: 0, text: '+' + ufo.points
         });
-        window.SFX?.powerup();
+        if(window.SFX) window.SFX.bonus();
         ufo = null;
         playerBullets.splice(bi, 1);
         updateUI();
@@ -543,7 +543,7 @@ function update(dt) {
   // Check wave clear
   if (aliveAliens.length === 0) {
     wave++;
-    window.SFX?.levelup();
+    if(window.SFX) window.SFX.levelUp();
     spawnAliens();
     spawnBarriers();
     alienBullets = [];
@@ -572,7 +572,7 @@ function getBottomAliens() {
 function hitPlayer() {
   lives--;
   spawnParticles(player.x, player.y, COLORS.red, 15);
-  window.SFX?.explosion();
+  if(window.SFX) window.SFX.death();
   updateUI();
   if (lives <= 0) {
     triggerGameOver();
@@ -587,13 +587,13 @@ function triggerGameOver() {
   gameOverState = true;
   playing = false;
   spawnParticles(player.x, player.y, COLORS.red, 25);
-  window.SFX?.death();
+  if(window.SFX) window.SFX.fail();
 
   let newHigh = false;
   if (score > highScore) {
     highScore = score;
     _sb('invaders_high', highScore);
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
     newHigh = true;
   }
   updateUI();

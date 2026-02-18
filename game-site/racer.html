@@ -83,7 +83,7 @@ document.getElementById('mode2p').addEventListener('click', function() {
   document.getElementById('s1').textContent = '0'; document.getElementById('s2').textContent = '0';
   winState = null;
   init();
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
 });
 document.getElementById('modeBot').addEventListener('click', function() {
   this.classList.add('active'); document.getElementById('mode2p').classList.remove('active');
@@ -91,7 +91,7 @@ document.getElementById('modeBot').addEventListener('click', function() {
   document.getElementById('s1').textContent = '0'; document.getElementById('s2').textContent = '0';
   winState = null;
   init();
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
 });
 
 // --- Difficulty curve ---
@@ -231,13 +231,13 @@ function hitShip(ship, side) {
   if (ship.shield) {
     ship.shield = false;
     spawnParticles(ship.x, ship.y, '#00d4ff', 10, 2);
-    window.SFX?.hit();
+    if(window.SFX) window.SFX.hit();
     return;
   }
   ship.alive = false;
   ship.respawnTimer = 60;
   spawnParticles(ship.x, ship.y, side === 1 ? '#00d4ff' : '#ff4757', 20, 4);
-  window.SFX?.explosion();
+  if(window.SFX) window.SFX.hit();
 }
 
 // --- Bot AI (improved) ---
@@ -448,7 +448,7 @@ function update() {
         else if (pu.type === 'speed') p.speedBoost = 180; // 3 seconds
         else if (pu.type === 'shrink') p.shrink = 240; // 4 seconds
         spawnParticles(pu.x, pu.y, pu.type === 'shield' ? '#00d4ff' : (pu.type === 'speed' ? '#feca57' : '#2ecc71'), 12, 2);
-        window.SFX?.powerup();
+        if(window.SFX) window.SFX.nearmiss();
         powerups.splice(i, 1);
       }
     });
@@ -469,7 +469,7 @@ function update() {
     document.getElementById('s1').textContent = score1;
     resetShip(p1, 1);
     screenFlash = 10;
-    window.SFX?.coin();
+    if(window.SFX) window.SFX.coin();
     spawnParticles(MID / 2, 30, '#00d4ff', 15, 3);
     if (score1 >= WIN_SCORE) { triggerWin(1); return; }
     // Add difficulty
@@ -480,7 +480,7 @@ function update() {
     document.getElementById('s2').textContent = score2;
     resetShip(p2, 2);
     screenFlash = 10;
-    window.SFX?.coin();
+    if(window.SFX) window.SFX.coin();
     spawnParticles(MID + MID / 2, 30, '#ff4757', 15, 3);
     if (score2 >= WIN_SCORE) { triggerWin(2); return; }
     spawnAsteroid(false); spawnAsteroid(false);
@@ -525,7 +525,7 @@ function triggerWin(player) {
   const color = player === 1 ? '#00d4ff' : '#ff4757';
   msgEl.innerHTML = '<span style="color:' + color + ';font-size:1.3rem;font-weight:bold">' + name + ' wins!</span> &mdash; Press SPACE to play again';
   if(player === 1 && window.HallOfFame) window.HallOfFame.submit('racer', 1);
-  window.SFX?.win();
+  if(window.SFX) window.SFX.win();
   // Big celebration particles
   for (let i = 0; i < 50; i++) {
     spawnParticles(Math.random() * W, Math.random() * H * 0.5, color, 3, 3);
@@ -925,11 +925,11 @@ document.addEventListener('keydown', e => {
       init();
       playing = true;
       msgEl.textContent = '';
-      window.SFX?.select();
+      if(window.SFX) window.SFX.click();
     } else if (!playing) {
       playing = true;
       msgEl.textContent = '';
-      window.SFX?.select();
+      if(window.SFX) window.SFX.click();
     }
   }
 });

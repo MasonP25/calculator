@@ -256,7 +256,7 @@ const overlayDescriptions = {
 
 function selectMode(m) {
   if (gameActive) return;
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
   mode = m;
   document.querySelectorAll('.mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === m);
@@ -330,7 +330,7 @@ function showStartOverlay() {
 }
 
 function startGame() {
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
   startOverlay.classList.add('hidden');
   resultsOverlay.classList.add('hidden');
   resetStats();
@@ -374,7 +374,7 @@ function spawnTarget() {
     scale: 0.3
   };
   targetSpawnTime = performance.now();
-  window.SFX?.pop();
+  if(window.SFX) window.SFX.pop();
 }
 
 function getCanvasCoords(e) {
@@ -391,6 +391,7 @@ canvas.addEventListener('click', function(e) {
   if (!gameActive) return;
 
   const { x, y } = getCanvasCoords(e);
+  if(window.SFX) window.SFX.shoot();
   totalClicks++;
 
   if (currentTarget) {
@@ -414,7 +415,7 @@ canvas.addEventListener('click', function(e) {
 
       // Particle burst
       createHitParticles(currentTarget.x, currentTarget.y, currentTarget.radius);
-      window.SFX?.hit();
+      if(window.SFX) window.SFX.hit();
 
       currentTarget = null;
       targetCount++;
@@ -444,7 +445,7 @@ canvas.addEventListener('click', function(e) {
         precisionPoints -= 50;
       }
       createMissFlash(x, y);
-      window.SFX?.wrong();
+      if(window.SFX) window.SFX.wrong();
     }
   } else {
     // No target on screen, still a miss
@@ -453,7 +454,7 @@ canvas.addEventListener('click', function(e) {
       precisionPoints -= 50;
     }
     createMissFlash(x, y);
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.wrong();
   }
 
   elapsedTime = performance.now() - startTime;
@@ -509,7 +510,7 @@ function endGame() {
   }
 
   elapsedTime = performance.now() - startTime;
-  window.SFX?.ding();
+  if(window.SFX) window.SFX.fail();
 
   // Calculate stats
   const acc = totalClicks > 0 ? Math.round((hits / totalClicks) * 100) : 0;
@@ -555,7 +556,7 @@ function endGame() {
   saveHighScores();
 
   if (isHighScore) {
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
   }
 
   // Hall of Fame submit

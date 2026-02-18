@@ -180,7 +180,7 @@ function handleClick(r, c) {
 
   if (grid[r][c] === -1) {
     // Boom
-    window.SFX?.explosion();
+    if(window.SFX) window.SFX.explosion();
     revealed[r][c] = true;
     gameOver = true;
     clearInterval(timerInt);
@@ -196,11 +196,11 @@ function handleClick(r, c) {
   }
 
   reveal(r, c);
-  window.SFX?.reveal();
+  if(window.SFX) window.SFX.click();
   if (checkWin()) {
     gameOver = true; won = true;
     clearInterval(timerInt);
-    window.SFX?.win();
+    if(window.SFX) window.SFX.win();
     const ws = window.HallOfFame?.winStreak('minesweeper');
     if(window.HallOfFame) window.HallOfFame.submit('minesweeper', timerVal);
     if (ws) { document.getElementById('streakCurrent').textContent = ws.current; document.getElementById('streakBest').textContent = ws.best; }
@@ -214,7 +214,7 @@ function handleRightClick(r, c, e) {
   if (gameOver || revealed[r][c]) return;
   flagged[r][c] = !flagged[r][c];
   flags += flagged[r][c] ? 1 : -1;
-  window.SFX?.click();
+  if(window.SFX) window.SFX.place();
   document.getElementById('flagCount').textContent = flags;
   render();
 }

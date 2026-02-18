@@ -702,11 +702,11 @@ function onTileClick(idx) {
   const selIdx = selected.indexOf(idx);
   if (selIdx >= 0) {
     selected.splice(selIdx, 1);
-    window.SFX?.click();
+    if(window.SFX) window.SFX.click();
   } else {
     if (selected.length >= 4) return;
     selected.push(idx);
-    window.SFX?.click();
+    if(window.SFX) window.SFX.click();
   }
   renderGrid();
   updateButtons();
@@ -720,7 +720,7 @@ deselectBtn.addEventListener("click", () => {
   updateButtons();
 });
 shuffleBtn.addEventListener("click", () => {
-  window.SFX?.swoosh();
+  if(window.SFX) window.SFX.swoosh();
   shuffle(tiles);
   selected = [];
   renderGrid();
@@ -757,7 +757,7 @@ function onSubmit() {
 
   if (correctGroupIdx !== null) {
     // Correct guess!
-    window.SFX?.correct();
+    if(window.SFX) window.SFX.clear();
     handleCorrectGuess(correctGroupIdx);
   } else {
     // Wrong guess
@@ -766,7 +766,7 @@ function onSubmit() {
     for (const [gi, count] of Object.entries(groupCounts)) {
       if (count === 3) { oneAway = true; break; }
     }
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.wrong();
     handleWrongGuess(oneAway);
   }
 }
@@ -794,7 +794,7 @@ function handleCorrectGuess(groupIdx) {
     // Check win
     if (solvedGroups.length === 4) {
       gameOver = true;
-      window.SFX?.win();
+      if(window.SFX) window.SFX.win();
       const ws = window.HallOfFame?.winStreak('connections');
       if(window.HallOfFame) window.HallOfFame.submit('connections', 1);
       setTimeout(() => {
@@ -839,7 +839,7 @@ function handleWrongGuess(oneAway) {
     if (mistakesLeft <= 0) {
       // Game over - reveal all
       gameOver = true;
-      window.SFX?.fail();
+      if(window.SFX) window.SFX.fail();
       revealAll();
     }
   }, 600);

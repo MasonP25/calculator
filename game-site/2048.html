@@ -311,7 +311,7 @@ function slide(row) {
       if (arr[i] === 2048 && !won) {
         won = true;
         msgEl.innerHTML = '<span style="color:#00d4ff">You reached 2048! Keep going!</span>';
-        window.SFX?.win();
+        if(window.SFX) window.SFX.win();
       }
     }
   }
@@ -350,7 +350,7 @@ function moveLeft() {
           setTimeout(function() {
             msgEl.innerHTML = '<span style="color:#00d4ff">You reached 2048! Keep going!</span>';
           }, 170);
-          window.SFX?.win();
+          if(window.SFX) window.SFX.win();
         }
         i += 2;
       } else {
@@ -397,7 +397,7 @@ function moveRight() {
           setTimeout(function() {
             msgEl.innerHTML = '<span style="color:#00d4ff">You reached 2048! Keep going!</span>';
           }, 170);
-          window.SFX?.win();
+          if(window.SFX) window.SFX.win();
         }
         i += 2;
       } else {
@@ -446,7 +446,7 @@ function moveUp() {
           setTimeout(function() {
             msgEl.innerHTML = '<span style="color:#00d4ff">You reached 2048! Keep going!</span>';
           }, 170);
-          window.SFX?.win();
+          if(window.SFX) window.SFX.win();
         }
         i += 2;
       } else {
@@ -495,7 +495,7 @@ function moveDown() {
           setTimeout(function() {
             msgEl.innerHTML = '<span style="color:#00d4ff">You reached 2048! Keep going!</span>';
           }, 170);
-          window.SFX?.win();
+          if(window.SFX) window.SFX.win();
         }
         i += 2;
       } else {
@@ -527,9 +527,9 @@ function doMove(moveFn) {
   animating = true;
   const result = moveFn();
   if (result.moved) {
-    window.SFX?.swoosh();
+    if(window.SFX) window.SFX.move();
     if (result.merged.length > 0) {
-      window.SFX?.pop();
+      if(window.SFX) window.SFX.pop();
     }
 
     const newPos = addRandom();
@@ -548,7 +548,7 @@ function doMove(moveFn) {
       if (!canMove()) {
         gameOver = true;
         msgEl.innerHTML = '<span style="color:#ff4757">Game Over! Score: ' + score + '</span>';
-        window.SFX?.fail();
+        if(window.SFX) window.SFX.fail();
         window.HallOfFame?.submit('2048', score);
       }
     }, 170);

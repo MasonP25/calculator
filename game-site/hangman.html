@@ -498,9 +498,9 @@
     if (!currentWord.includes(letter)) {
       wrongGuesses++;
       drawHangman(wrongGuesses);
-      window.SFX?.wrong();
+      if(window.SFX) window.SFX.wrong();
     } else {
-      window.SFX?.correct();
+      if(window.SFX) window.SFX.coin();
     }
 
     wrongCountEl.textContent = wrongGuesses + ' / ' + MAX_WRONG;
@@ -511,7 +511,7 @@
     const won = currentWord.split('').every(l => guessedLetters.has(l));
     if (won) {
       gameOver = true;
-      window.SFX?.win();
+      if(window.SFX) window.SFX.win();
       streak++;
       if (streak > bestStreak) bestStreak = streak;
       saveStats();
@@ -524,7 +524,7 @@
     // Check lose
     if (wrongGuesses >= MAX_WRONG) {
       gameOver = true;
-      window.SFX?.death();
+      if(window.SFX) window.SFX.fail();
       streak = 0;
       saveStats();
       updateScores();

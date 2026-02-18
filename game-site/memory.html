@@ -178,6 +178,7 @@ function flipCard(index) {
   if (locked || card.classList.contains('flipped') || card.classList.contains('matched')) return;
 
   card.classList.add('flipped');
+  if(window.SFX) window.SFX.flip();
   flipped.push(index);
 
   if (flipped.length === 2) {
@@ -195,16 +196,19 @@ function flipCard(index) {
         matched.add(b);
         pairCount++;
         pairsEl.textContent = pairCount;
+        if(window.SFX) window.SFX.coin();
         flipped = [];
         locked = false;
 
         if (pairCount === totalPairs) {
+          if(window.SFX) window.SFX.win();
           winMsgEl.textContent = `You won in ${moves} moves!`;
           if(window.HallOfFame) window.HallOfFame.submit('memory', moves);
         }
       }, 400);
     } else {
       // No match — flip back
+      if(window.SFX) window.SFX.wrong();
       setTimeout(() => {
         cards[a].classList.remove('flipped');
         cards[b].classList.remove('flipped');

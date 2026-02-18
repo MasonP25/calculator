@@ -326,7 +326,7 @@ document.querySelectorAll('.size-btn').forEach(btn => {
 
 newGameBtn.addEventListener('click', () => {
   newGame();
-  window.SFX?.swoosh();
+  if(window.SFX) window.SFX.swoosh();
 });
 
 // ===================== PUZZLE GENERATION =====================
@@ -500,7 +500,7 @@ function renderWordList() {
 function onCellDown(r, c) {
   if (gameOver) return;
   if (!timerStarted) startTimer();
-  window.SFX?.click();
+  if(window.SFX) window.SFX.click();
   selecting = true;
   startCell = { r, c };
   currentCells = [{ r, c }];
@@ -583,7 +583,7 @@ function checkSelection() {
 
   if (matchedWord) {
     foundWords.add(matchedWord);
-    window.SFX?.correct();
+    if(window.SFX) window.SFX.coin();
 
     // Color the cells
     const color = HIGHLIGHT_COLORS[colorIndex % HIGHLIGHT_COLORS.length];
@@ -613,11 +613,11 @@ function checkSelection() {
       stopTimer();
       msgEl.textContent = 'You found all the words!';
       msgEl.className = 'msg win';
-      window.SFX?.win();
+      if(window.SFX) window.SFX.win();
       window.HallOfFame?.submit('wordsearch', seconds);
     }
   } else {
-    window.SFX?.wrong();
+    if(window.SFX) window.SFX.wrong();
   }
 }
 

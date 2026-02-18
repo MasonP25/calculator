@@ -192,14 +192,18 @@ function update() {
 
   if (headOn || (p1Dead && p2Dead)) {
     p1.alive = false; p2.alive = false;
+    if(window.SFX) window.SFX.death();
     endRound('Draw!');
   } else if (p1Dead) {
     p1.alive = false;
+    if(window.SFX) window.SFX.death();
     score2++; s2El.textContent = score2;
     endRound(botMode ? 'Bot wins!' : 'P2 wins!');
   } else if (p2Dead) {
     p2.alive = false;
+    if(window.SFX) window.SFX.death();
     score1++; s1El.textContent = score1;
+    if(window.SFX) window.SFX.win();
     if(window.HallOfFame) window.HallOfFame.submit('tron', 1);
     endRound('P1 wins!');
   } else {
@@ -227,16 +231,16 @@ document.addEventListener('keydown', e => {
     return;
   }
   // P1 WASD
-  if (e.key === 'w' || e.key === 'W') { if (p1.dy !== 1) { p1.dx=0; p1.dy=-1; } }
-  if (e.key === 's' || e.key === 'S') { if (p1.dy !== -1) { p1.dx=0; p1.dy=1; } }
-  if (e.key === 'a' || e.key === 'A') { if (p1.dx !== 1) { p1.dx=-1; p1.dy=0; } }
-  if (e.key === 'd' || e.key === 'D') { if (p1.dx !== -1) { p1.dx=1; p1.dy=0; } }
+  if (e.key === 'w' || e.key === 'W') { if (p1.dy !== 1) { p1.dx=0; p1.dy=-1; if(window.SFX) window.SFX.swoosh(); } }
+  if (e.key === 's' || e.key === 'S') { if (p1.dy !== -1) { p1.dx=0; p1.dy=1; if(window.SFX) window.SFX.swoosh(); } }
+  if (e.key === 'a' || e.key === 'A') { if (p1.dx !== 1) { p1.dx=-1; p1.dy=0; if(window.SFX) window.SFX.swoosh(); } }
+  if (e.key === 'd' || e.key === 'D') { if (p1.dx !== -1) { p1.dx=1; p1.dy=0; if(window.SFX) window.SFX.swoosh(); } }
   // P2 Arrows (only in 2P mode)
   if (!botMode) {
-    if (e.key === 'ArrowUp') { e.preventDefault(); if (p2.dy !== 1) { p2.dx=0; p2.dy=-1; } }
-    if (e.key === 'ArrowDown') { e.preventDefault(); if (p2.dy !== -1) { p2.dx=0; p2.dy=1; } }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); if (p2.dx !== 1) { p2.dx=-1; p2.dy=0; } }
-    if (e.key === 'ArrowRight') { e.preventDefault(); if (p2.dx !== -1) { p2.dx=1; p2.dy=0; } }
+    if (e.key === 'ArrowUp') { e.preventDefault(); if (p2.dy !== 1) { p2.dx=0; p2.dy=-1; if(window.SFX) window.SFX.swoosh(); } }
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (p2.dy !== -1) { p2.dx=0; p2.dy=1; if(window.SFX) window.SFX.swoosh(); } }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (p2.dx !== 1) { p2.dx=-1; p2.dy=0; if(window.SFX) window.SFX.swoosh(); } }
+    if (e.key === 'ArrowRight') { e.preventDefault(); if (p2.dx !== -1) { p2.dx=1; p2.dy=0; if(window.SFX) window.SFX.swoosh(); } }
   }
 });
 
