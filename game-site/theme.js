@@ -55,6 +55,24 @@
       text:'#f0d0c0', dim:'#a06050', accent:'#ff4500', accent2:'#ffcc00',
       glow:'rgba(255,69,0,0.3)', canvasBg:'#2a1010', canvasBg2:'#1a0a0a',
     },
+    galaxy: {
+      name: 'Galaxy', icon: '🪐',
+      bg1:'#0a0520', bg2:'#120a30', bg3:'#1e1245', border:'#2e1a60',
+      text:'#d8d0f0', dim:'#8070a8', accent:'#a855f7', accent2:'#e879f9',
+      glow:'rgba(168,85,247,0.3)', canvasBg:'#120a30', canvasBg2:'#0a0520',
+    },
+    mint: {
+      name: 'Mint', icon: '🍃',
+      bg1:'#0a1a18', bg2:'#102a25', bg3:'#183a32', border:'#205040',
+      text:'#d0f0e8', dim:'#68a090', accent:'#00d9a0', accent2:'#80ffd4',
+      glow:'rgba(0,217,160,0.3)', canvasBg:'#102a25', canvasBg2:'#0a1a18',
+    },
+    midnight_gold: {
+      name: 'Royal', icon: '👑',
+      bg1:'#0e0e18', bg2:'#16162a', bg3:'#22223a', border:'#3a3a50',
+      text:'#e8e0d0', dim:'#908878', accent:'#d4a520', accent2:'#ffd700',
+      glow:'rgba(212,165,32,0.3)', canvasBg:'#16162a', canvasBg2:'#0e0e18',
+    },
   };
 
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';
@@ -224,8 +242,8 @@
     Object.assign(panel.style, {
       position:'fixed', bottom:'68px', right:'16px', zIndex:'998',
       borderRadius:'12px', border:'2px solid', padding:'12px',
-      display:'none', flexWrap:'wrap', gap:'8px', width:'210px',
-      maxHeight:'calc(100vh - 100px)', overflowY:'auto',
+      display:'none', flexDirection:'column', gap:'6px', width:'210px',
+      maxHeight:'min(500px, calc(100vh - 100px))', overflowY:'auto',
       boxShadow:'0 8px 30px rgba(0,0,0,0.5)',
     });
 
