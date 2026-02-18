@@ -1277,8 +1277,8 @@ function handleOnlineUpdate(data) {
     }
   }
 
-  // Game started — trigger for guests when host starts the game
-  if (data.status === 'playing' && (phase === 'lobby' || phase === 'roundEnd') && !onlineIsHost) {
+  // Game started — trigger for guests when host starts the game (lobby only)
+  if (data.status === 'playing' && phase === 'lobby' && !onlineIsHost) {
     onlineInitGame(data);
   }
 
