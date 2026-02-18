@@ -225,6 +225,7 @@
       position:'fixed', bottom:'68px', right:'16px', zIndex:'998',
       borderRadius:'12px', border:'2px solid', padding:'12px',
       display:'none', flexWrap:'wrap', gap:'8px', width:'210px',
+      maxHeight:'calc(100vh - 100px)', overflowY:'auto',
       boxShadow:'0 8px 30px rgba(0,0,0,0.5)',
     });
 
