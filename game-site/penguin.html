@@ -248,7 +248,7 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
       <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Share this code with friends:</p>
       <div class="room-code-display" id="roomCodeDisplay">----</div>
       <div id="onlinePlayerList" style="margin:12px 0"></div>
-      <button class="online-btn" id="onlineStartBtn" style="display:none" onclick="onlineStartGame()">Start Game</button>
+      <button class="online-btn" id="onlineStartBtn" style="display:none;margin:8px auto" onclick="onlineStartGame()">Start Game</button>
       <p class="waiting-msg" id="waitingMsg">Waiting for players to join...</p>
       <button class="leave-btn" style="margin-top:8px" onclick="leaveRoom()">Cancel</button>
     </div>
@@ -341,7 +341,7 @@ let penguins = []; // { x, y, vx, vy, player, alive, falling, fallScale, aimAngl
 let rinkSize = RINK_INIT;
 let rinkX, rinkY; // top-left of rink
 let round = 0;
-let phase = 'aim'; // aim, launching, simulating, roundEnd, gameOver
+let phase = 'lobby'; // lobby, aim, launching, simulating, roundEnd, gameOver
 let currentAimPlayer = 0; // for hot seat: which player is currently aiming
 let selectedPenguin = -1;
 let dragging = false;
@@ -362,6 +362,7 @@ function showScreen(id) {
 
 function backToMenu() {
   if (animFrame) cancelAnimationFrame(animFrame);
+  phase = 'lobby';
   showScreen('menu');
   document.getElementById('chat-toggle').style.display = 'none';
   document.getElementById('chat-panel').classList.remove('open');
@@ -1270,13 +1271,13 @@ function handleOnlineUpdate(data) {
     document.getElementById('guestPlayerList').innerHTML = playerListHtml;
 
     if (onlineIsHost && data.players.length >= 2) {
-      document.getElementById('onlineStartBtn').style.display = 'block';
+      document.getElementById('onlineStartBtn').style.display = '';
       document.getElementById('onlineStartBtn').textContent = `Start Game (${data.players.length} players)`;
     }
   }
 
-  // Game started
-  if (data.status === 'playing' && phase !== 'aim' && phase !== 'simulating' && phase !== 'launching') {
+  // Game started — trigger when we're still in lobby (initial start) or roundEnd
+  if (data.status === 'playing' && (phase === 'lobby' || phase === 'roundEnd')) {
     onlineInitGame(data);
   }
 
@@ -1457,6 +1458,7 @@ async function onlinePlayAgain() {
 async function leaveRoom() {
   if (window._pkUnsubscribe) { window._pkUnsubscribe(); window._pkUnsubscribe = null; }
   onlineRoomId = null;
+  phase = 'lobby';
   showLobbyBtns();
 }
 
