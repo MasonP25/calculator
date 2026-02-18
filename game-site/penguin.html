@@ -248,7 +248,7 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
       <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Share this code with friends:</p>
       <div class="room-code-display" id="roomCodeDisplay">----</div>
       <div id="onlinePlayerList" style="margin:12px 0"></div>
-      <button class="online-btn" id="onlineStartBtn" style="display:none;margin:8px auto" onclick="onlineStartGame()">Start Game</button>
+      <div style="text-align:center;margin:8px 0"><button class="online-btn" id="onlineStartBtn" style="display:none" onclick="onlineStartGame()">Start Game</button></div>
       <p class="waiting-msg" id="waitingMsg">Waiting for players to join...</p>
       <button class="leave-btn" style="margin-top:8px" onclick="leaveRoom()">Cancel</button>
     </div>
@@ -1271,7 +1271,7 @@ function handleOnlineUpdate(data) {
     document.getElementById('guestPlayerList').innerHTML = playerListHtml;
 
     if (onlineIsHost && data.players.length >= 2) {
-      document.getElementById('onlineStartBtn').style.display = '';
+      document.getElementById('onlineStartBtn').style.display = 'inline-block';
       document.getElementById('onlineStartBtn').textContent = `Start Game (${data.players.length} players)`;
     }
   }
@@ -1328,6 +1328,14 @@ async function onlineStartGame() {
 
     // Serialize penguins
     const serialized = penguins.map(p => ({ x: p.x, y: p.y, player: p.player, alive: true }));
+    const updatedData = {
+      ...data,
+      status: 'playing',
+      penguins: serialized,
+      shots: {},
+      round: 0,
+      arenaSize: RINK_INIT
+    };
     await updateDocFn(roomRef, {
       status: 'playing',
       penguins: serialized,
@@ -1335,6 +1343,9 @@ async function onlineStartGame() {
       round: 0,
       arenaSize: RINK_INIT
     });
+
+    // Directly init the game for the host (don't rely on listener)
+    onlineInitGame(updatedData);
   } catch (e) {
     console.error('Start error:', e);
   }
