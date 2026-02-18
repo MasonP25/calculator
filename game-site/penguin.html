@@ -78,7 +78,7 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
   display: none; transition: transform 0.2s;
 }
 #lockInBtn:hover { transform: translateX(-50%) translateY(-2px); }
-#lockInBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+#lockInBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 #lockInBtn:disabled:hover { transform: translateX(-50%); }
 
 /* Turn blocker overlay */
@@ -850,13 +850,29 @@ function draw() {
     const showPlayer = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
     penguins.forEach(p => {
       if (!p.alive || !p.aimed) return;
-      // In hot seat, only show current player's arrows
-      // In launching phase, show all
-      if (phase === 'aim' && mode === 'local' && p.player !== showPlayer) return;
-      if (phase === 'aim' && mode === 'online' && p.player !== showPlayer) return;
+      // During aim phase, only show current player's arrows (hide others)
+      // During launching phase, show all
+      if (phase === 'aim' && p.player !== showPlayer) return;
 
       drawArrow(p);
     });
+  }
+
+  // Draw instruction text during aim phase
+  if (phase === 'aim') {
+    const aimPlayer = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
+    const myPengs = penguins.filter(p => p.player === aimPlayer && p.alive);
+    const aimedCount = myPengs.filter(p => p.aimed).length;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '16px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    if (myPengs.length > 0 && aimedCount < myPengs.length) {
+      ctx.fillText(`Click & drag your penguins to aim (${aimedCount}/${myPengs.length} aimed)`, CANVAS_W / 2, 30);
+    } else if (aimedCount === myPengs.length && myPengs.length > 0) {
+      ctx.fillText('All penguins aimed! Click "Lock In!" below', CANVAS_W / 2, 30);
+    }
+    ctx.restore();
   }
 }
 
