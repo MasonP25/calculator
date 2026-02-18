@@ -14,7 +14,6 @@
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden;
     user-select: none;
   }
   h1 { font-size: 2rem; background: linear-gradient(135deg, #00d4ff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -22,25 +21,23 @@
 
   /* ── Level Select Overlay ── */
   #levelSelect {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; width: 100%;
+    min-height: 100%;
     display: flex; flex-direction: column; align-items: center;
     background: rgba(15,15,26,0.97); z-index: 10;
-    overflow-y: auto; padding: 1.2rem 0.5rem;
-    scrollbar-width: thin; scrollbar-color: #2a2a4a #0f0f1a;
+    padding: 1.5rem 0.5rem;
   }
-  #levelSelect::-webkit-scrollbar { width: 6px; }
-  #levelSelect::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
   #levelSelect.hidden { display: none; }
   #levelSelect h2 {
-    font-size: 1.8rem; margin-bottom: 0.2rem; flex-shrink: 0;
+    font-size: 2rem; margin-bottom: 0.5rem;
     background: linear-gradient(135deg, #00d4ff, #7b2ff7);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .ls-subtitle { color: #666; font-size: 0.8rem; margin-bottom: 1rem; flex-shrink: 0; }
-  .ls-levels { display: flex; gap: 0.7rem; margin-bottom: 1rem; flex-wrap: wrap; justify-content: center; max-width: 780px; }
+  .ls-subtitle { color: #666; font-size: 0.85rem; margin-bottom: 1.2rem; }
+  .ls-levels { display: flex; gap: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; justify-content: center; max-width: 800px; }
   .ls-card {
     background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
-    padding: 0.8rem 1rem; width: 140px; text-align: center; cursor: pointer;
+    padding: 1rem 1rem; width: 150px; text-align: center; cursor: pointer; flex-shrink: 0;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
   .ls-card:hover {
@@ -754,7 +751,7 @@ function buildLevel10() {
   return { obstacles: obs, length: x + 400, speed: 4.8, name: 'xStep', diff: 'insane' };
 }
 
-const LEVELS = [ buildLevel1(), buildLevel2(), buildLevel3(), buildLevel4(), buildLevel5(), buildLevel6(), buildLevel7(), buildLevel8(), buildLevel9(), buildLevel10() ];
+const LEVELS = [ buildLevel1(), buildLevel3(), buildLevel2(), buildLevel4(), buildLevel5(), buildLevel6(), buildLevel7(), buildLevel8(), buildLevel9(), buildLevel10() ];
 
 // ══════════════════════════════════════════════════════
 //  LEVEL SELECT UI
@@ -811,6 +808,7 @@ function startLevel(idx) {
   resetPlayer(0);
   state = 'playing';
   levelSelectEl.classList.add('hidden');
+  document.body.style.overflow = 'hidden';
   document.getElementById('backBtn').style.display = '';
   document.getElementById('pauseBtn').style.display = '';
   updateHUD();
@@ -821,6 +819,7 @@ function backToSelect() {
   document.getElementById('backBtn').style.display = 'none';
   document.getElementById('pauseBtn').style.display = 'none';
   levelSelectEl.classList.remove('hidden');
+  document.body.style.overflow = '';
   renderLevelSelect();
 }
 
@@ -921,6 +920,7 @@ function completeLevel() {
     document.getElementById('backBtn').style.display = 'none';
     document.getElementById('pauseBtn').style.display = 'none';
     levelSelectEl.classList.remove('hidden');
+    document.body.style.overflow = '';
     renderLevelSelect();
   }, 2500);
 }
