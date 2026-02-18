@@ -653,8 +653,9 @@ function launchAll() {
     // Apply velocities
     penguins.forEach(p => {
       if (!p.alive || !p.aimed) return;
-      p.vx = Math.cos(p.aimAngle) * p.aimPower;
-      p.vy = Math.sin(p.aimAngle) * p.aimPower;
+      const spd = p.aimPower * 0.45;
+      p.vx = Math.cos(p.aimAngle) * spd;
+      p.vy = Math.sin(p.aimAngle) * spd;
     });
     phase = 'simulating';
   }, 800); // show arrows for 0.8s
