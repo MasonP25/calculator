@@ -98,12 +98,14 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 /* Online panel */
 .online-panel { background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
   padding: 20px; max-width: 400px; width: 100%; text-align: center; }
-.online-panel h3 { color: #00d4ff; margin-bottom: 12px; }
+.online-panel h3 { color: #e0e0e0; margin-bottom: 15px; font-size: 1rem; }
+.online-lobby-btns { display: flex; gap: 12px; justify-content: center; }
 .online-panel input { width: 100%; margin-bottom: 10px; }
 .online-btn { padding: 10px 24px; font-size: 14px; font-family: inherit;
   border: 2px solid #7b2ff7; background: transparent; color: #7b2ff7;
   border-radius: 8px; cursor: pointer; transition: all 0.2s; margin: 4px; }
 .online-btn:hover { background: #7b2ff7; color: #fff; }
+.online-btn.secondary { background: #2a2a4a; }
 .room-code-display { font-size: 2rem; font-weight: bold; color: #00d4ff;
   letter-spacing: 6px; margin: 12px 0; }
 .waiting-msg { color: #888; font-size: 0.85rem; }
@@ -217,28 +219,38 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 <!-- Online -->
 <div class="screen" id="onlineScreen">
   <div class="online-panel" id="onlinePanel">
-    <h3>Online Multiplayer</h3>
-    <div id="onlineLobbyBtns" class="setup-row" style="margin-bottom:12px">
-      <input class="setup-input" id="onlineName" value="" maxlength="12" placeholder="Your name" style="margin-bottom:8px;width:100%">
-      <div class="setup-row">
-        <button class="online-btn" onclick="showCreateArea()">Create Game</button>
-        <button class="online-btn" style="background:#2a2a4a" onclick="showJoinArea()">Join Game</button>
-      </div>
+    <h3>Online Multiplayer (2-8 Players)</h3>
+    <div id="onlineLobbyBtns" class="online-lobby-btns">
+      <button class="online-btn" onclick="showCreateArea()">Create Game</button>
+      <button class="online-btn secondary" onclick="showJoinArea()">Join Game</button>
     </div>
+
+    <!-- Create area -->
     <div id="onlineCreateArea" style="display:none">
       <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Share this code with friends:</p>
       <div class="room-code-display" id="roomCodeDisplay">----</div>
-      <p class="waiting-msg" id="waitingMsg">Waiting for players...</p>
       <div id="onlinePlayerList" style="margin:12px 0"></div>
       <button class="online-btn" id="onlineStartBtn" style="display:none" onclick="onlineStartGame()">Start Game</button>
-      <button class="leave-btn" onclick="leaveRoom()">Cancel</button>
+      <p class="waiting-msg" id="waitingMsg">Waiting for players to join...</p>
+      <button class="leave-btn" style="margin-top:8px" onclick="leaveRoom()">Cancel</button>
     </div>
+
+    <!-- Join area -->
     <div id="onlineJoinArea" style="display:none">
       <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Enter room code:</p>
       <input class="setup-input" id="joinCode" maxlength="4" style="text-transform:uppercase;text-align:center;letter-spacing:6px;font-size:1.8rem;font-weight:700;font-family:monospace;color:#feca57;width:160px;margin:0 auto 10px">
       <div><button class="online-btn" onclick="joinRoom()">Join</button></div>
       <button class="leave-btn" style="margin-top:8px" onclick="showLobbyBtns()">Back</button>
       <div id="onlineError" style="color:#ff4757;font-size:0.8rem;margin-top:8px;display:none"></div>
+    </div>
+
+    <!-- Guest waiting area -->
+    <div id="onlineGuestArea" style="display:none">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px">Room:</p>
+      <div class="room-code-display" id="guestRoomCode">----</div>
+      <div id="guestPlayerList" style="margin:12px 0"></div>
+      <p class="waiting-msg">Waiting for host to start the game...</p>
+      <button class="leave-btn" style="margin-top:8px" onclick="leaveRoom()">Leave</button>
     </div>
   </div>
   <button class="menu-btn" style="font-size:14px;padding:8px 20px;margin-top:12px" onclick="backToMenu()">Back</button>
@@ -1113,33 +1125,34 @@ let onlineMyIndex = -1;
 let onlineIsHost = false;
 
 function getMyUsername() {
-  const inp = document.getElementById('onlineName');
-  return (inp.value || '').trim() || 'Player';
+  return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+
+function hideAllOnlineAreas() {
+  document.getElementById('onlineLobbyBtns').style.display = 'none';
+  document.getElementById('onlineCreateArea').style.display = 'none';
+  document.getElementById('onlineJoinArea').style.display = 'none';
+  document.getElementById('onlineGuestArea').style.display = 'none';
 }
 
 function showCreateArea() {
-  document.getElementById('onlineLobbyBtns').style.display = 'none';
+  hideAllOnlineAreas();
   document.getElementById('onlineCreateArea').style.display = '';
-  document.getElementById('onlineJoinArea').style.display = 'none';
   createRoom();
 }
 
 function showJoinArea() {
-  document.getElementById('onlineLobbyBtns').style.display = 'none';
-  document.getElementById('onlineCreateArea').style.display = 'none';
+  hideAllOnlineAreas();
   document.getElementById('onlineJoinArea').style.display = '';
 }
 
 function showLobbyBtns() {
+  hideAllOnlineAreas();
   document.getElementById('onlineLobbyBtns').style.display = '';
-  document.getElementById('onlineCreateArea').style.display = 'none';
-  document.getElementById('onlineJoinArea').style.display = 'none';
 }
 
 async function createRoom() {
   const name = getMyUsername();
-  if (!name) { showOnlineError('Enter a name'); return; }
-
   try {
     const code = Math.random().toString(36).substring(2, 6).toUpperCase();
     const { doc: docFn, setDoc: setDocFn } = await getFirebaseFns();
@@ -1172,7 +1185,6 @@ async function createRoom() {
 
 async function joinRoom() {
   const name = getMyUsername();
-  if (!name) { showOnlineError('Enter a name'); return; }
   const code = document.getElementById('joinCode').value.trim().toUpperCase();
   if (!code) { showOnlineError('Enter a room code'); return; }
 
@@ -1193,10 +1205,10 @@ async function joinRoom() {
     onlineMyIndex = newPlayers.length - 1;
     onlineIsHost = false;
 
-    // Switch to create area view to show waiting state
-    document.getElementById('onlineJoinArea').style.display = 'none';
-    document.getElementById('onlineCreateArea').style.display = '';
-    document.getElementById('roomCodeDisplay').textContent = code;
+    // Switch to guest waiting area
+    hideAllOnlineAreas();
+    document.getElementById('onlineGuestArea').style.display = '';
+    document.getElementById('guestRoomCode').textContent = code;
 
     startListening(code);
   } catch (e) {
@@ -1227,13 +1239,17 @@ function startListening(roomId) {
 function handleOnlineUpdate(data) {
   // Update player list in waiting screen
   if (data.status === 'waiting') {
-    const listEl = document.getElementById('onlinePlayerList');
-    listEl.innerHTML = data.players.map((n, i) =>
+    const playerListHtml = data.players.map((n, i) =>
       `<div style="padding:4px 0"><span class="pi-dot" style="background:${COLORS[i]};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>${n}</div>`
     ).join('');
 
+    // Update host's create area
+    document.getElementById('onlinePlayerList').innerHTML = playerListHtml;
     document.getElementById('waitingMsg').textContent =
       `${data.players.length}/${data.maxPlayers} players joined`;
+
+    // Update guest's waiting area
+    document.getElementById('guestPlayerList').innerHTML = playerListHtml;
 
     if (onlineIsHost && data.players.length >= 2) {
       document.getElementById('onlineStartBtn').style.display = 'block';
