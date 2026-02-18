@@ -364,8 +364,8 @@ function update() {
         const best = parseInt(_gb('platformer_best', '0'));
         if (score > best) {
           _sb('platformer_best', score);
-          window.HallOfFame?.submit('platformer', score);
         }
+        if(window.HallOfFame) window.HallOfFame.submit('platformer', score);
         msgEl.textContent = '';
         return;
       }

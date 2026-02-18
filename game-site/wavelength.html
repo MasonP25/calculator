@@ -1381,6 +1381,7 @@ h1 {
         document.getElementById('play-again-btn').style.display = isHost ? '' : 'none';
 
         winnerOverlay.classList.add('visible');
+        if(window.HallOfFame) window.HallOfFame.submit('wavelength', scores[myUsername] || 0);
         if (window.SFX) {
             if (data.winner === myUsername) window.SFX.win();
             else window.SFX.fail();

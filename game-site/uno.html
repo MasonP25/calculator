@@ -1163,6 +1163,7 @@ h1 {
             }
             if (data.winner === myUsername) {
                 if (window.SFX) window.SFX.win();
+                if(window.HallOfFame) window.HallOfFame.submit('uno', 1);
             } else {
                 if (window.SFX) window.SFX.fail();
             }
