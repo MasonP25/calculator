@@ -588,21 +588,23 @@ function botMove() {
   dropPiece(col);
 }
 
-// Easy: win if can, block if must, otherwise random
+// Easy: mostly random, only takes obvious wins, blocks 30% of the time
 function botMoveEasy() {
-  // Win
+  // Take a win if available
   for (let c = 0; c < COLS; c++) {
     const r = getDropRow(c); if (r === -1) continue;
     board[r][c] = 2;
     if (checkWin(r, c, 2)) { board[r][c] = 0; return c; }
     board[r][c] = 0;
   }
-  // Block
-  for (let c = 0; c < COLS; c++) {
-    const r = getDropRow(c); if (r === -1) continue;
-    board[r][c] = 1;
-    if (checkWin(r, c, 1)) { board[r][c] = 0; return c; }
-    board[r][c] = 0;
+  // Only block 30% of the time
+  if (Math.random() < 0.3) {
+    for (let c = 0; c < COLS; c++) {
+      const r = getDropRow(c); if (r === -1) continue;
+      board[r][c] = 1;
+      if (checkWin(r, c, 1)) { board[r][c] = 0; return c; }
+      board[r][c] = 0;
+    }
   }
   // Random valid column
   const valid = [];
