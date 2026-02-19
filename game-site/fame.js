@@ -7,7 +7,7 @@ window.HallOfFame = {
     var list = JSON.parse(localStorage.getItem(key) || '[]');
     var name = this.getPlayerName();
     list.push({name: name, score: score, date: new Date().toLocaleDateString()});
-    var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram'];
+    var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram','maze'];
     if (lowerBetter.includes(gameId)) {
       list.sort(function(a, b) { return a.score - b.score; });
     } else {

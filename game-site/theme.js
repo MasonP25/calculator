@@ -67,6 +67,12 @@
       text:'#d0f0e8', dim:'#68a090', accent:'#00d9a0', accent2:'#80ffd4',
       glow:'rgba(0,217,160,0.3)', canvasBg:'#102a25', canvasBg2:'#0a1a18',
     },
+    aurora: {
+      name: 'Aurora', icon: '🌌',
+      bg1:'#050a18', bg2:'#0a1428', bg3:'#122040', border:'#1a3058',
+      text:'#d0e8f8', dim:'#5888b0', accent:'#22d1a0', accent2:'#7b5ef7',
+      glow:'rgba(34,209,160,0.3)', canvasBg:'#0a1428', canvasBg2:'#050a18',
+    },
     midnight_gold: {
       name: 'Royal', icon: '👑',
       bg1:'#0e0e18', bg2:'#16162a', bg3:'#22223a', border:'#3a3a50',

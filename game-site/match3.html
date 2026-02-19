@@ -287,7 +287,8 @@
     el.style.width = (CELL - 11) + 'px';
     el.style.height = (CELL - 11) + 'px';
     el.style.position = 'absolute';
-    el.addEventListener('click', () => onGemClick(row, col));
+    el.dataset.row = row;
+    el.dataset.col = col;
     boardEl.appendChild(el);
     return el;
   }
@@ -353,6 +354,13 @@
       }
     }
   }
+
+  // Delegated click handler on the board
+  boardEl.addEventListener('click', function(e) {
+    const gem = e.target.closest('.gem');
+    if (!gem || !gem.dataset.row) return;
+    onGemClick(parseInt(gem.dataset.row), parseInt(gem.dataset.col));
+  });
 
   function onGemClick(row, col) {
     if (processing || !gameActive) return;
@@ -606,9 +614,9 @@
               const el = grid[writeRow][c].el;
               el.classList.add('falling');
               el.style.top = pos.top + 'px';
-              // Update click handler
-              const newR = writeRow, newC = c;
-              el.onclick = () => onGemClick(newR, newC);
+              // Update data attributes for delegated handler
+              el.dataset.row = writeRow;
+              el.dataset.col = c;
               maxDrop = Math.max(maxDrop, writeRow - r);
             }
             writeRow--;
