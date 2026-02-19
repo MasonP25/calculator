@@ -30,7 +30,7 @@
     // Fallback: local-only
     var users = JSON.parse(localStorage.getItem('arcade_users') || '{}');
     if (users[username.toLowerCase()]) return { ok: false, msg: 'Username already taken' };
-    var data = new TextEncoder().encode(password + '_arcade_salt_2024');
+    var data = new TextEncoder().encode(password + '_arcade_firebase_salt');
     var buf = await crypto.subtle.digest('SHA-256', data);
     var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     users[username.toLowerCase()] = { display: username, hash: h };
@@ -53,7 +53,7 @@
     var users = JSON.parse(localStorage.getItem('arcade_users') || '{}');
     var u = users[username.toLowerCase()];
     if (!u) return { ok: false, msg: 'Username not found' };
-    var data = new TextEncoder().encode(password + '_arcade_salt_2024');
+    var data = new TextEncoder().encode(password + '_arcade_firebase_salt');
     var buf = await crypto.subtle.digest('SHA-256', data);
     var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     if (h !== u.hash) return { ok: false, msg: 'Wrong password' };
