@@ -1133,7 +1133,7 @@
       if (won) {
         gameOver = true;
         window.SFX?.win();
-        if(window.HallOfFame) window.HallOfFame.submit('wordle', 1);
+        if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('wordle'); window.HallOfFame.submit('wordle', sk ? sk.current : 1); }
         bounceRow(currentRow);
         const messages = ["Genius!", "Magnificent!", "Impressive!", "Splendid!", "Great!", "Phew!"];
         setTimeout(() => {
@@ -1144,6 +1144,7 @@
       } else if (currentRow === MAX_GUESSES - 1) {
         gameOver = true;
         window.SFX?.fail();
+        if (window.HallOfFame) window.HallOfFame.loseStreak('wordle');
         setTimeout(() => {
           showMessage(answer.toUpperCase(), true);
           saveResult(false, null);

@@ -796,7 +796,7 @@ function handleCorrectGuess(groupIdx) {
       gameOver = true;
       if(window.SFX) window.SFX.win();
       const ws = window.HallOfFame?.winStreak('connections');
-      if(window.HallOfFame) window.HallOfFame.submit('connections', 1);
+      if(window.HallOfFame) window.HallOfFame.submit('connections', ws ? ws.current : 1);
       setTimeout(() => {
         btnRow.style.display = "none";
         mistakesArea.style.display = "none";

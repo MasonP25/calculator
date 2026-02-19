@@ -909,7 +909,7 @@ function completeLevel() {
   if(window.SFX) window.SFX.win();
   const prev = parseInt(_gb(`gd_best_${currentLevel}`, '0'));
   if (100 > prev) _sb(`gd_best_${currentLevel}`, '100');
-  if(window.HallOfFame) window.HallOfFame.submit('geodash', 100);
+  if(window.HallOfFame) window.HallOfFame.submit('geodash', currentLevel + 1);
 
   setTimeout(() => {
     state = 'menu';

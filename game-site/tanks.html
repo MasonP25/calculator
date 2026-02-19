@@ -276,7 +276,12 @@ function endRound(msg) {
   gameOver = true;
   if (score1 >= 5 || score2 >= 5) {
     const winner = score1 >= 5 ? 'P1' : (botMode ? 'Bot' : 'P2');
-    if(score1 >= 5 && window.HallOfFame) window.HallOfFame.submit('tanks', 1);
+    if(score1 >= 5 && window.HallOfFame) {
+      var sk = window.HallOfFame.winStreak('tanks');
+      window.HallOfFame.submit('tanks', sk ? sk.current : 1);
+    } else if (botMode && window.HallOfFame) {
+      window.HallOfFame.loseStreak('tanks');
+    }
     if(window.SFX) window.SFX.win();
     msgEl.textContent = winner + ' wins the match! SPACE to restart';
     score1 = 0; score2 = 0;

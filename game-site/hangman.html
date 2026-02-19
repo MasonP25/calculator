@@ -516,7 +516,7 @@
       if (streak > bestStreak) bestStreak = streak;
       saveStats();
       updateScores();
-      if(window.HallOfFame) window.HallOfFame.submit('hangman', 1);
+      if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('hangman'); window.HallOfFame.submit('hangman', sk ? sk.current : 1); }
       showMessage('You Win! Streak: ' + streak, 'win');
       return;
     }
@@ -525,6 +525,7 @@
     if (wrongGuesses >= MAX_WRONG) {
       gameOver = true;
       if(window.SFX) window.SFX.fail();
+      if (window.HallOfFame) window.HallOfFame.loseStreak('hangman');
       streak = 0;
       saveStats();
       updateScores();

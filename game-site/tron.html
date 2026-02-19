@@ -198,13 +198,14 @@ function update() {
     p1.alive = false;
     if(window.SFX) window.SFX.death();
     score2++; s2El.textContent = score2;
+    if (botMode && window.HallOfFame) window.HallOfFame.loseStreak('tron');
     endRound(botMode ? 'Bot wins!' : 'P2 wins!');
   } else if (p2Dead) {
     p2.alive = false;
     if(window.SFX) window.SFX.death();
     score1++; s1El.textContent = score1;
     if(window.SFX) window.SFX.win();
-    if(window.HallOfFame) window.HallOfFame.submit('tron', 1);
+    if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('tron'); window.HallOfFame.submit('tron', sk ? sk.current : 1); }
     endRound('P1 wins!');
   } else {
     p1.x = nx1; p1.y = ny1; grid[ny1][nx1] = 1;

@@ -27,6 +27,16 @@
   }
   .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
   .mode-select button.active { background: #2a1a4e; color: #ffffff; }
+  .diff-select { display: none; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap; justify-content: center; }
+  .diff-select.show { display: flex; }
+  .diff-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.35rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .diff-select button:hover, .diff-select button.active { border-color: #7b2ff7; }
+  .diff-select button.active { background: #2a1a4e; color: #ffffff; }
   .board {
     background: #1a1a6e;
     padding: 10px;
@@ -255,6 +265,12 @@
   <button id="modeBot">vs Bot</button>
   <button id="modeOnline">Online</button>
 </div>
+<div class="diff-select" id="diff-select">
+  <button data-d="easy">Easy</button>
+  <button data-d="medium" class="active">Medium</button>
+  <button data-d="hard">Hard</button>
+  <button data-d="impossible">Impossible</button>
+</div>
 
 <!-- Online Panel -->
 <div class="online-panel" id="online-panel" style="display:none;">
@@ -310,8 +326,8 @@
 <script>
 (function() {
 const ROWS = 6, COLS = 7;
-let board, currentPlayer, gameOver, mode, thinking;
-mode = '2p'; thinking = false;
+let board, currentPlayer, gameOver, mode, thinking, botDifficulty;
+mode = '2p'; thinking = false; botDifficulty = 'medium';
 
 const boardEl = document.getElementById('board');
 const headersEl = document.getElementById('headers');
@@ -339,10 +355,22 @@ var onlineLeaveGameBtn = document.getElementById('online-leave-game-btn');
 // Mode buttons
 var gameArea = document.getElementById('game-area');
 
+var diffSelect = document.getElementById('diff-select');
+var diffBtns = diffSelect.querySelectorAll('button');
+diffBtns.forEach(function(b) {
+  b.addEventListener('click', function() {
+    botDifficulty = b.dataset.d;
+    diffBtns.forEach(function(x) { x.classList.toggle('active', x.dataset.d === botDifficulty); });
+    if (window.SFX) window.SFX.click();
+    init();
+  });
+});
+
 document.getElementById('mode2p').addEventListener('click', function() {
   if (mode === 'online') leaveOnlineRoom();
   mode = '2p';
   updateModeButtons();
+  diffSelect.classList.remove('show');
   onlinePanel.style.display = 'none';
   onlineInfo.style.display = 'none';
   gameArea.style.display = '';
@@ -352,6 +380,7 @@ document.getElementById('modeBot').addEventListener('click', function() {
   if (mode === 'online') leaveOnlineRoom();
   mode = 'bot';
   updateModeButtons();
+  diffSelect.classList.add('show');
   onlinePanel.style.display = 'none';
   onlineInfo.style.display = 'none';
   gameArea.style.display = '';
@@ -361,6 +390,7 @@ document.getElementById('modeOnline').addEventListener('click', function() {
   if (mode === 'online') return;
   mode = 'online';
   updateModeButtons();
+  diffSelect.classList.remove('show');
   onlinePanel.style.display = '';
   onlineInfo.style.display = 'none';
   gameArea.style.display = 'none';
@@ -454,9 +484,18 @@ function dropPiece(col) {
     const cls = currentPlayer === 1 ? 'p1t' : 'p2t';
     let streakHtml = '';
     if (mode === 'bot') {
-      const sk = (currentPlayer === 1) ? (window.HallOfFame ? window.HallOfFame.winStreak('connect4') : null) : (window.HallOfFame ? window.HallOfFame.loseStreak('connect4') : null);
-      if (sk) streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
-      if(currentPlayer === 1 && window.HallOfFame) window.HallOfFame.submit('connect4', 1);
+      if (currentPlayer === 1 && window.HallOfFame) {
+        var sk = window.HallOfFame.winStreak('connect4');
+        if (sk) {
+          streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
+          window.HallOfFame.submit('connect4', sk.current);
+        } else {
+          window.HallOfFame.submit('connect4', 1);
+        }
+      } else if (currentPlayer === 2 && window.HallOfFame) {
+        var sk = window.HallOfFame.loseStreak('connect4');
+        if (sk) streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
+      }
     }
     msgEl.innerHTML = '<span class="' + cls + '">' + name + ' wins!</span>' + streakHtml;
     gameOver = true;
@@ -537,30 +576,60 @@ function highlightWin(cells) {
   }
 }
 
-// Bot AI
+// Bot AI — difficulty levels
 function botMove() {
   if (gameOver) { thinking = false; return; }
-  // 1. Win if possible
+  var col;
+  if (botDifficulty === 'easy') col = botMoveEasy();
+  else if (botDifficulty === 'hard') col = botMoveMinimax(5);
+  else if (botDifficulty === 'impossible') col = botMoveMinimax(9);
+  else col = botMoveMedium();
+  thinking = false;
+  dropPiece(col);
+}
+
+// Easy: win if can, block if must, otherwise random
+function botMoveEasy() {
+  // Win
   for (let c = 0; c < COLS; c++) {
-    const r = getDropRow(c);
-    if (r === -1) continue;
+    const r = getDropRow(c); if (r === -1) continue;
     board[r][c] = 2;
-    if (checkWin(r, c, 2)) { board[r][c] = 0; thinking = false; dropPiece(c); return; }
+    if (checkWin(r, c, 2)) { board[r][c] = 0; return c; }
     board[r][c] = 0;
   }
-  // 2. Block opponent win
+  // Block
   for (let c = 0; c < COLS; c++) {
-    const r = getDropRow(c);
-    if (r === -1) continue;
+    const r = getDropRow(c); if (r === -1) continue;
     board[r][c] = 1;
-    if (checkWin(r, c, 1)) { board[r][c] = 0; thinking = false; dropPiece(c); return; }
+    if (checkWin(r, c, 1)) { board[r][c] = 0; return c; }
     board[r][c] = 0;
   }
-  // 3. Don't play a move that lets opponent win next turn
+  // Random valid column
+  const valid = [];
+  for (let c = 0; c < COLS; c++) if (getDropRow(c) !== -1) valid.push(c);
+  return valid[Math.floor(Math.random() * valid.length)];
+}
+
+// Medium: original heuristic
+function botMoveMedium() {
+  // Win
+  for (let c = 0; c < COLS; c++) {
+    const r = getDropRow(c); if (r === -1) continue;
+    board[r][c] = 2;
+    if (checkWin(r, c, 2)) { board[r][c] = 0; return c; }
+    board[r][c] = 0;
+  }
+  // Block
+  for (let c = 0; c < COLS; c++) {
+    const r = getDropRow(c); if (r === -1) continue;
+    board[r][c] = 1;
+    if (checkWin(r, c, 1)) { board[r][c] = 0; return c; }
+    board[r][c] = 0;
+  }
+  // Avoid giving opponent a win
   const safe = [];
   for (let c = 0; c < COLS; c++) {
-    const r = getDropRow(c);
-    if (r === -1) continue;
+    const r = getDropRow(c); if (r === -1) continue;
     board[r][c] = 2;
     let dangerous = false;
     if (r > 0) {
@@ -572,11 +641,9 @@ function botMove() {
     if (!dangerous) safe.push(c);
   }
   const candidates = safe.length > 0 ? safe : Array.from({length: COLS}, (_,i) => i).filter(c => getDropRow(c) !== -1);
-
-  // 4. Prefer center
+  // Score by center preference + adjacency
   const scored = candidates.map(c => {
-    let s = 0;
-    s += (3 - Math.abs(c - 3)) * 3;
+    let s = (3 - Math.abs(c - 3)) * 3;
     const r = getDropRow(c);
     board[r][c] = 2;
     for (const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]) {
@@ -593,14 +660,120 @@ function botMove() {
     board[r][c] = 0;
     return { c, s };
   });
-
   scored.sort((a, b) => b.s - a.s);
   const topScore = scored[0].s;
   const top = scored.filter(x => x.s >= topScore - 2);
-  const pick = top[Math.floor(Math.random() * top.length)].c;
+  return top[Math.floor(Math.random() * top.length)].c;
+}
 
-  thinking = false;
-  dropPiece(pick);
+// Hard & Impossible: minimax with alpha-beta pruning
+function botMoveMinimax(depth) {
+  var bestScore = -Infinity;
+  var bestCols = [];
+  // Try columns in center-first order for better pruning
+  var order = [3, 2, 4, 1, 5, 0, 6];
+  for (var i = 0; i < order.length; i++) {
+    var c = order[i];
+    var r = getDropRow(c);
+    if (r === -1) continue;
+    board[r][c] = 2;
+    var score = minimax(depth - 1, false, -Infinity, Infinity);
+    board[r][c] = 0;
+    if (score > bestScore) {
+      bestScore = score;
+      bestCols = [c];
+    } else if (score === bestScore) {
+      bestCols.push(c);
+    }
+  }
+  return bestCols[Math.floor(Math.random() * bestCols.length)];
+}
+
+function minimax(depth, isMaximizing, alpha, beta) {
+  // Check terminal states
+  // Check if last move created a win
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      if (board[r][c] !== 0) {
+        var w = checkWin(r, c, board[r][c]);
+        if (w) return board[r][c] === 2 ? 1000 + depth : -1000 - depth;
+      }
+    }
+  }
+  // Draw
+  var anyEmpty = false;
+  for (var c2 = 0; c2 < COLS; c2++) { if (getDropRow(c2) !== -1) { anyEmpty = true; break; } }
+  if (!anyEmpty) return 0;
+  if (depth === 0) return evaluateBoard();
+
+  var order = [3, 2, 4, 1, 5, 0, 6];
+  if (isMaximizing) {
+    var maxEval = -Infinity;
+    for (var i = 0; i < order.length; i++) {
+      var c = order[i];
+      var r = getDropRow(c);
+      if (r === -1) continue;
+      board[r][c] = 2;
+      var ev = minimax(depth - 1, false, alpha, beta);
+      board[r][c] = 0;
+      if (ev > maxEval) maxEval = ev;
+      if (ev > alpha) alpha = ev;
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  } else {
+    var minEval = Infinity;
+    for (var i = 0; i < order.length; i++) {
+      var c = order[i];
+      var r = getDropRow(c);
+      if (r === -1) continue;
+      board[r][c] = 1;
+      var ev = minimax(depth - 1, true, alpha, beta);
+      board[r][c] = 0;
+      if (ev < minEval) minEval = ev;
+      if (ev < beta) beta = ev;
+      if (beta <= alpha) break;
+    }
+    return minEval;
+  }
+}
+
+function evaluateBoard() {
+  var score = 0;
+  // Score all windows of 4
+  var dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      for (var d = 0; d < dirs.length; d++) {
+        var dr = dirs[d][0], dc = dirs[d][1];
+        var r2 = r + 3*dr, c2 = c + 3*dc;
+        if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) continue;
+        var p1 = 0, p2 = 0, empty = 0;
+        for (var k = 0; k < 4; k++) {
+          var v = board[r + k*dr][c + k*dc];
+          if (v === 1) p1++;
+          else if (v === 2) p2++;
+          else empty++;
+        }
+        if (p1 === 0) {
+          if (p2 === 3) score += 50;
+          else if (p2 === 2) score += 5;
+          else if (p2 === 1) score += 1;
+        }
+        if (p2 === 0) {
+          if (p1 === 3) score -= 50;
+          else if (p1 === 2) score -= 5;
+          else if (p1 === 1) score -= 1;
+        }
+      }
+    }
+  }
+  // Center column preference
+  for (var r = 0; r < ROWS; r++) {
+    if (board[r][3] === 2) score += 3;
+    if (board[r][3] === 1) score -= 3;
+  }
+  return score;
 }
 
 // --- Online Mode Helpers ---

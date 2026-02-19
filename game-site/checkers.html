@@ -728,7 +728,7 @@ function makeMove(move) {
     if (vsComputer) {
       const sk = (winner === RED) ? window.HallOfFame?.winStreak('checkers') : window.HallOfFame?.loseStreak('checkers');
       if (sk) streakHtml = ' <span style="font-size:0.85rem;font-weight:normal;">Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span></span>';
-      if(winner === RED && window.HallOfFame) window.HallOfFame.submit('checkers', 1);
+      if(winner === RED && window.HallOfFame) window.HallOfFame.submit('checkers', sk ? sk.current : 1);
     }
     gameMsg.innerHTML = `<div class="game-over-msg"><span class="turn-dot ${dot}" style="vertical-align:middle;margin-right:6px"></span>${winnerName} wins!${streakHtml}</div>`;
     if (vsComputer && winner === BLACK) {

@@ -680,7 +680,7 @@ a.back:hover { color: #e0e0e0; }
             if (mode === 'ai') {
                 var sk = (winner === 'X') ? (window.HallOfFame ? window.HallOfFame.winStreak('tictactoe') : null) : (window.HallOfFame ? window.HallOfFame.loseStreak('tictactoe') : null);
                 if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
-                if (winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', 1);
+                if (winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', sk ? sk.current : 1);
             }
 
             statusEl.className = 'status win-msg-' + winner.toLowerCase();
