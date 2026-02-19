@@ -209,7 +209,7 @@ canvas {
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
 
-    const GRAVITY = 0.22;
+    const GRAVITY = 0.16;
     const FRUIT_RADIUS = 30;
     const BOMB_CHANCE = 0.15;
     const MAX_MISSES = 3;
@@ -275,16 +275,16 @@ canvas {
             const side = Math.random();
             if (side < 0.15) {
                 x = randFloat(-20, 60);
-                vx = randFloat(2, 4);
+                vx = randFloat(1.5, 3);
             } else if (side < 0.30) {
                 x = randFloat(CANVAS_W - 60, CANVAS_W + 20);
-                vx = randFloat(-4, -2);
+                vx = randFloat(-3, -1.5);
             } else {
                 x = randFloat(80, CANVAS_W - 80);
-                vx = randFloat(-2, 2);
+                vx = randFloat(-1.5, 1.5);
             }
 
-            vy = randFloat(-13, -9);
+            vy = randFloat(-10, -7);
 
             fruits.push({
                 x: x,
