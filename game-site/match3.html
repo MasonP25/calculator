@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Match 3</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+  .back {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1rem;
+    z-index: 100;
+    transition: color 0.2s;
+  }
+  .back:hover { color: #7b2ff7; }
+  h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .info {
+    display: flex;
+    gap: 2.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  .info div { display: flex; align-items: center; gap: 0.4rem; }
+  .info .label { color: #888; }
+  .info .value { color: #00d4ff; font-weight: bold; font-size: 1.3rem; min-width: 50px; }
+  .info .time-warn { color: #ff4757; }
+  .board-wrapper {
+    position: relative;
+    margin-bottom: 1.2rem;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, 55px);
+    grid-template-rows: repeat(8, 55px);
+    gap: 4px;
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cell {
+    width: 55px;
+    height: 55px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.15s ease;
+    user-select: none;
+  }
+  .cell:hover { transform: scale(1.05); }
+  .gem {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    position: absolute;
+    transition: top 0.3s ease, left 0.3s ease, transform 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+  }
+  .gem.selected {
+    border-color: #fff;
+    box-shadow: 0 0 12px 4px rgba(255,255,255,0.5), 0 0 24px 8px rgba(123,47,247,0.4);
+    transform: scale(1.1);
+    z-index: 10;
+    animation: pulse-glow 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-glow {
+    from { box-shadow: 0 0 12px 4px rgba(255,255,255,0.5), 0 0 24px 8px rgba(123,47,247,0.4); }
+    to { box-shadow: 0 0 16px 6px rgba(255,255,255,0.7), 0 0 32px 12px rgba(0,212,255,0.5); }
+  }
+  .gem.matched {
+    animation: match-pop 0.35s ease forwards;
+  }
+  @keyframes match-pop {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  .gem.falling {
+    transition: top 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .gem.swapping {
+    transition: top 0.25s ease-in-out, left 0.25s ease-in-out;
+    z-index: 20;
+  }
+  .gem.new-gem {
+    animation: drop-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  @keyframes drop-in {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .gem-red { background: radial-gradient(circle at 35% 35%, #ff6b7a, #ff4757, #cc3a47); }
+  .gem-orange { background: radial-gradient(circle at 35% 35%, #ffbe4d, #ffa502, #cc8402); }
+  .gem-yellow { background: radial-gradient(circle at 35% 35%, #fff08a, #feca57, #cba245); }
+  .gem-green { background: radial-gradient(circle at 35% 35%, #5ddb9e, #2ecc71, #25a35a); }
+  .gem-blue { background: radial-gradient(circle at 35% 35%, #5dade2, #3498db, #2a7aaf); }
+  .gem-purple { background: radial-gradient(circle at 35% 35%, #b07cc8, #9b59b6, #7c4792); }
+
+  .floating-text {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #feca57;
+    pointer-events: none;
+    z-index: 50;
+    animation: float-up 0.9s ease-out forwards;
+    text-shadow: 0 0 8px rgba(254,202,87,0.6), 0 2px 4px rgba(0,0,0,0.5);
+    white-space: nowrap;
+  }
+  .floating-text.combo {
+    font-size: 1.4rem;
+    color: #00d4ff;
+    text-shadow: 0 0 12px rgba(0,212,255,0.8), 0 2px 4px rgba(0,0,0,0.5);
+  }
+  @keyframes float-up {
+    0% { transform: translateY(0) scale(0.8); opacity: 1; }
+    100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+  }
+  .controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  button {
+    padding: 0.6rem 1.5rem;
+    border: 2px solid #7b2ff7;
+    background: transparent;
+    color: #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  button:hover {
+    background: #7b2ff7;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(123,47,247,0.4);
+  }
+  .high-score {
+    color: #888;
+    font-size: 0.95rem;
+  }
+  .high-score span { color: #feca57; font-weight: bold; }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15,15,26,0.92);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .overlay .final-score {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #00d4ff;
+  }
+  .overlay .final-score span { font-weight: bold; font-size: 2rem; }
+  .overlay .new-hs {
+    color: #feca57;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    animation: pulse-glow 0.6s ease-in-out infinite alternate;
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<h1>Match 3</h1>
+
+<div class="info">
+  <div><span class="label">Score</span> <span class="value" id="score">0</span></div>
+  <div><span class="label">Time</span> <span class="value" id="timer">90</span></div>
+</div>
+
+<div class="board-wrapper">
+  <div class="board" id="board"></div>
+</div>
+
+<div class="controls">
+  <button id="newGameBtn">New Game</button>
+</div>
+
+<div class="high-score">High Score: <span id="highScore">0</span></div>
+
+<div class="overlay" id="overlay">
+  <h2>Game Over</h2>
+  <div class="final-score">Score: <span id="finalScore">0</span></div>
+  <div class="new-hs" id="newHsMsg" style="display:none">New High Score!</div>
+  <button id="playAgainBtn">Play Again</button>
+</div>
+
+<script>
+(function() {
+  const ROWS = 8, COLS = 8, CELL = 55, GAP = 4, PAD = 8;
+  const GEM_TYPES = [
+    { cls: 'gem-red',    symbol: '' },
+    { cls: 'gem-orange', symbol: '' },
+    { cls: 'gem-yellow', symbol: '' },
+    { cls: 'gem-green',  symbol: '' },
+    { cls: 'gem-blue',   symbol: '' },
+    { cls: 'gem-purple', symbol: '' },
+  ];
+
+  let grid = [];       // grid[row][col] = { type, el }
+  let selected = null; // { row, col }
+  let score = 0;
+  let timeLeft = 90;
+  let timerInterval = null;
+  let highScore = parseInt(localStorage.getItem('match3_hs') || '0');
+  let processing = false;
+  let gameActive = false;
+
+  const boardEl = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const timerEl = document.getElementById('timer');
+  const highScoreEl = document.getElementById('highScore');
+  const overlayEl = document.getElementById('overlay');
+  const finalScoreEl = document.getElementById('finalScore');
+  const newHsMsg = document.getElementById('newHsMsg');
+
+  highScoreEl.textContent = highScore;
+
+  function gemPos(row, col) {
+    return {
+      top: PAD + row * (CELL + GAP),
+      left: PAD + col * (CELL + GAP)
+    };
+  }
+
+  function randomType() {
+    return Math.floor(Math.random() * GEM_TYPES.length);
+  }
+
+  function createGemEl(type, row, col) {
+    const el = document.createElement('div');
+    el.className = 'gem ' + GEM_TYPES[type].cls;
+    const pos = gemPos(row, col);
+    el.style.top = pos.top + 'px';
+    el.style.left = pos.left + 'px';
+    el.style.width = (CELL - 11) + 'px';
+    el.style.height = (CELL - 11) + 'px';
+    el.style.position = 'absolute';
+    el.addEventListener('click', () => onGemClick(row, col));
+    boardEl.appendChild(el);
+    return el;
+  }
+
+  function hasMatch(grid) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c] === null) continue;
+        const t = typeof grid[r][c] === 'object' ? grid[r][c].type : grid[r][c];
+        // horizontal
+        if (c + 2 < COLS) {
+          const t1 = typeof grid[r][c+1] === 'object' ? grid[r][c+1]?.type : grid[r][c+1];
+          const t2 = typeof grid[r][c+2] === 'object' ? grid[r][c+2]?.type : grid[r][c+2];
+          if (t === t1 && t === t2) return true;
+        }
+        // vertical
+        if (r + 2 < ROWS) {
+          const t1 = typeof grid[r+1][c] === 'object' ? grid[r+1][c]?.type : grid[r+1][c];
+          const t2 = typeof grid[r+2][c] === 'object' ? grid[r+2][c]?.type : grid[r+2][c];
+          if (t === t1 && t === t2) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function generateBoard() {
+    // Generate types without initial matches
+    let types = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        let available = [...Array(GEM_TYPES.length).keys()];
+        // Prevent horizontal match
+        if (c >= 2 && types[r][c-1] === types[r][c-2]) {
+          available = available.filter(t => t !== types[r][c-1]);
+        }
+        // Prevent vertical match
+        if (r >= 2 && types[r-1][c] === types[r-2][c]) {
+          available = available.filter(t => t !== types[r-1][c]);
+        }
+        types[r][c] = available[Math.floor(Math.random() * available.length)];
+      }
+    }
+    return types;
+  }
+
+  function initBoard() {
+    boardEl.innerHTML = '';
+    const totalW = COLS * CELL + (COLS - 1) * GAP + PAD * 2;
+    const totalH = ROWS * CELL + (ROWS - 1) * GAP + PAD * 2;
+    boardEl.style.width = totalW + 'px';
+    boardEl.style.height = totalH + 'px';
+    boardEl.style.position = 'relative';
+
+    const types = generateBoard();
+    grid = [];
+    for (let r = 0; r < ROWS; r++) {
+      grid[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        const type = types[r][c];
+        const el = createGemEl(type, r, c);
+        grid[r][c] = { type, el };
+      }
+    }
+  }
+
+  function onGemClick(row, col) {
+    if (processing || !gameActive) return;
+    if (!grid[row][col]) return;
+
+    if (!selected) {
+      selected = { row, col };
+      grid[row][col].el.classList.add('selected');
+      if (window.SFX) window.SFX.click();
+      return;
+    }
+
+    const prev = selected;
+    grid[prev.row][prev.col].el.classList.remove('selected');
+
+    if (prev.row === row && prev.col === col) {
+      selected = null;
+      return;
+    }
+
+    // Check adjacency
+    const dr = Math.abs(prev.row - row);
+    const dc = Math.abs(prev.col - col);
+    if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+      selected = null;
+      trySwap(prev.row, prev.col, row, col);
+    } else {
+      // Select the new gem instead
+      selected = { row, col };
+      grid[row][col].el.classList.add('selected');
+      if (window.SFX) window.SFX.click();
+    }
+  }
+
+  async function trySwap(r1, c1, r2, c2) {
+    processing = true;
+    // Perform swap
+    swap(r1, c1, r2, c2);
+    await animateSwap(r1, c1, r2, c2);
+
+    // Check for matches
+    const matches = findMatches();
+    if (matches.length === 0) {
+      // Swap back
+      swap(r1, c1, r2, c2);
+      await animateSwap(r1, c1, r2, c2);
+      processing = false;
+      return;
+    }
+
+    // Process matches and cascades
+    await processMatches();
+    processing = false;
+  }
+
+  function swap(r1, c1, r2, c2) {
+    const temp = grid[r1][c1];
+    grid[r1][c1] = grid[r2][c2];
+    grid[r2][c2] = temp;
+  }
+
+  function animateSwap(r1, c1, r2, c2) {
+    return new Promise(resolve => {
+      const g1 = grid[r1][c1];
+      const g2 = grid[r2][c2];
+      if (g1 && g1.el) {
+        g1.el.classList.add('swapping');
+        const pos1 = gemPos(r1, c1);
+        g1.el.style.top = pos1.top + 'px';
+        g1.el.style.left = pos1.left + 'px';
+      }
+      if (g2 && g2.el) {
+        g2.el.classList.add('swapping');
+        const pos2 = gemPos(r2, c2);
+        g2.el.style.top = pos2.top + 'px';
+        g2.el.style.left = pos2.left + 'px';
+      }
+      setTimeout(() => {
+        if (g1 && g1.el) g1.el.classList.remove('swapping');
+        if (g2 && g2.el) g2.el.classList.remove('swapping');
+        resolve();
+      }, 260);
+    });
+  }
+
+  function findMatches() {
+    const matched = new Set();
+
+    // Horizontal
+    for (let r = 0; r < ROWS; r++) {
+      let c = 0;
+      while (c < COLS) {
+        if (!grid[r][c]) { c++; continue; }
+        const t = grid[r][c].type;
+        let end = c + 1;
+        while (end < COLS && grid[r][end] && grid[r][end].type === t) end++;
+        const len = end - c;
+        if (len >= 3) {
+          for (let i = c; i < end; i++) matched.add(r * COLS + i);
+        }
+        c = end;
+      }
+    }
+
+    // Vertical
+    for (let c = 0; c < COLS; c++) {
+      let r = 0;
+      while (r < ROWS) {
+        if (!grid[r][c]) { r++; continue; }
+        const t = grid[r][c].type;
+        let end = r + 1;
+        while (end < ROWS && grid[end][c] && grid[end][c].type === t) end++;
+        const len = end - r;
+        if (len >= 3) {
+          for (let i = r; i < end; i++) matched.add(i * COLS + c);
+        }
+        r = end;
+      }
+    }
+
+    return [...matched];
+  }
+
+  function getMatchGroups() {
+    const groups = [];
+
+    // Horizontal groups
+    for (let r = 0; r < ROWS; r++) {
+      let c = 0;
+      while (c < COLS) {
+        if (!grid[r][c]) { c++; continue; }
+        const t = grid[r][c].type;
+        let end = c + 1;
+        while (end < COLS && grid[r][end] && grid[r][end].type === t) end++;
+        if (end - c >= 3) {
+          groups.push({ length: end - c, cells: [] });
+          for (let i = c; i < end; i++) groups[groups.length-1].cells.push({ r, c: i });
+        }
+        c = end;
+      }
+    }
+
+    // Vertical groups
+    for (let c = 0; c < COLS; c++) {
+      let r = 0;
+      while (r < ROWS) {
+        if (!grid[r][c]) { r++; continue; }
+        const t = grid[r][c].type;
+        let end = r + 1;
+        while (end < ROWS && grid[end][c] && grid[end][c].type === t) end++;
+        if (end - r >= 3) {
+          groups.push({ length: end - r, cells: [] });
+          for (let i = r; i < end; i++) groups[groups.length-1].cells.push({ r: i, c });
+        }
+        r = end;
+      }
+    }
+
+    return groups;
+  }
+
+  function scoreForLength(len) {
+    if (len === 3) return 30;
+    if (len === 4) return 100;
+    if (len >= 5) return 300;
+    return 0;
+  }
+
+  function showFloatingText(text, row, col, isCombo) {
+    const wrapper = document.querySelector('.board-wrapper');
+    const ft = document.createElement('div');
+    ft.className = 'floating-text' + (isCombo ? ' combo' : '');
+    ft.textContent = text;
+    const pos = gemPos(row, col);
+    ft.style.left = (pos.left + 10) + 'px';
+    ft.style.top = (pos.top) + 'px';
+    wrapper.appendChild(ft);
+    setTimeout(() => ft.remove(), 900);
+  }
+
+  async function processMatches() {
+    let cascadeLevel = 0;
+
+    while (true) {
+      const groups = getMatchGroups();
+      if (groups.length === 0) break;
+
+      cascadeLevel++;
+      const multiplier = cascadeLevel;
+
+      // Calculate score and show floating text
+      const allMatched = new Set();
+      for (const g of groups) {
+        const pts = scoreForLength(g.length) * multiplier;
+        score += pts;
+        const midCell = g.cells[Math.floor(g.cells.length / 2)];
+        const label = multiplier > 1 ? `+${pts} (${multiplier}x!)` : `+${pts}`;
+        showFloatingText(label, midCell.r, midCell.c, cascadeLevel > 1);
+        for (const cell of g.cells) allMatched.add(cell.r * COLS + cell.c);
+      }
+      scoreEl.textContent = score;
+
+      // Sound
+      if (cascadeLevel === 1) {
+        if (window.SFX) window.SFX.correct();
+      } else {
+        if (window.SFX) window.SFX.combo();
+      }
+
+      // Animate matched gems
+      for (const idx of allMatched) {
+        const r = Math.floor(idx / COLS), c = idx % COLS;
+        if (grid[r][c] && grid[r][c].el) {
+          grid[r][c].el.classList.add('matched');
+        }
+      }
+
+      await delay(380);
+
+      // Remove matched gems
+      for (const idx of allMatched) {
+        const r = Math.floor(idx / COLS), c = idx % COLS;
+        if (grid[r][c] && grid[r][c].el) {
+          grid[r][c].el.remove();
+        }
+        grid[r][c] = null;
+      }
+
+      // Gravity: gems fall down
+      await applyGravity();
+
+      // Fill from top
+      await fillFromTop();
+
+      // Small delay before checking for cascading matches
+      await delay(200);
+    }
+  }
+
+  function applyGravity() {
+    return new Promise(resolve => {
+      let maxDrop = 0;
+      for (let c = 0; c < COLS; c++) {
+        let writeRow = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (grid[r][c] !== null) {
+            if (writeRow !== r) {
+              grid[writeRow][c] = grid[r][c];
+              grid[r][c] = null;
+              const pos = gemPos(writeRow, c);
+              const el = grid[writeRow][c].el;
+              el.classList.add('falling');
+              el.style.top = pos.top + 'px';
+              // Update click handler
+              const newR = writeRow, newC = c;
+              el.onclick = () => onGemClick(newR, newC);
+              maxDrop = Math.max(maxDrop, writeRow - r);
+            }
+            writeRow--;
+          }
+        }
+      }
+      setTimeout(() => {
+        // Remove falling class
+        document.querySelectorAll('.gem.falling').forEach(el => el.classList.remove('falling'));
+        resolve();
+      }, maxDrop > 0 ? 370 : 10);
+    });
+  }
+
+  function fillFromTop() {
+    return new Promise(resolve => {
+      let filled = false;
+      for (let c = 0; c < COLS; c++) {
+        let blanks = 0;
+        for (let r = 0; r < ROWS; r++) {
+          if (grid[r][c] === null) blanks++;
+          else break;
+        }
+        for (let i = 0; i < blanks; i++) {
+          const r = i;
+          const type = randomType();
+          const el = createGemEl(type, r, c);
+          // Start above the board for drop animation
+          el.style.top = (gemPos(r - blanks, c).top) + 'px';
+          el.classList.add('new-gem');
+          // Force reflow then animate to correct position
+          el.getBoundingClientRect();
+          el.classList.add('falling');
+          const pos = gemPos(r, c);
+          el.style.top = pos.top + 'px';
+          grid[r][c] = { type, el };
+          filled = true;
+        }
+      }
+      setTimeout(() => {
+        document.querySelectorAll('.gem.falling').forEach(el => el.classList.remove('falling'));
+        document.querySelectorAll('.gem.new-gem').forEach(el => el.classList.remove('new-gem'));
+        resolve();
+      }, filled ? 380 : 10);
+    });
+  }
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    timeLeft = 90;
+    timerEl.textContent = timeLeft;
+    timerEl.classList.remove('time-warn');
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+      if (timeLeft <= 10) timerEl.classList.add('time-warn');
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        endGame();
+      }
+    }, 1000);
+  }
+
+  function endGame() {
+    gameActive = false;
+    processing = true;
+    clearInterval(timerInterval);
+
+    finalScoreEl.textContent = score;
+    const isNewHigh = score > highScore;
+    if (isNewHigh && score > 0) {
+      highScore = score;
+      localStorage.setItem('match3_hs', highScore);
+      highScoreEl.textContent = highScore;
+      newHsMsg.style.display = 'block';
+      if (window.SFX) window.SFX.win();
+    } else {
+      newHsMsg.style.display = 'none';
+      if (window.SFX) window.SFX.fail();
+    }
+
+    if (window.HallOfFame) window.HallOfFame.submit('match3', score);
+
+    overlayEl.classList.add('show');
+  }
+
+  function newGame() {
+    overlayEl.classList.remove('show');
+    score = 0;
+    scoreEl.textContent = '0';
+    selected = null;
+    processing = false;
+    gameActive = true;
+    initBoard();
+    startTimer();
+  }
+
+  document.getElementById('newGameBtn').addEventListener('click', newGame);
+  document.getElementById('playAgainBtn').addEventListener('click', newGame);
+
+  // Start game on load
+  newGame();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=2"></script>
+<script type="module" src="firebase-lb.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>

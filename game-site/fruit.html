@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruit Slicer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+a.back {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    z-index: 100;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+a.back:hover { color: #7b2ff7; }
+
+.header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    margin-top: 8px;
+}
+.header h1 {
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.score-area {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 1.1rem;
+}
+.score-label { color: #aaa; }
+.score-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #00d4ff;
+}
+.best-value {
+    font-size: 1rem;
+    color: #7b2ff7;
+}
+.misses {
+    display: flex;
+    gap: 6px;
+}
+.miss-x {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #333;
+    transition: color 0.3s;
+}
+.miss-x.active { color: #ff3355; }
+
+.canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+}
+canvas {
+    display: block;
+    width: 100%;
+    background: #0f0f1a;
+    border-radius: 12px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(15, 15, 26, 0.88);
+    border-radius: 12px;
+    z-index: 10;
+    transition: opacity 0.3s;
+}
+.overlay.hidden { display: none; }
+.overlay h2 {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.overlay .final-score {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    color: #ccc;
+}
+.overlay .final-score span {
+    color: #00d4ff;
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+.overlay .best-line {
+    font-size: 1rem;
+    color: #7b2ff7;
+    margin-bottom: 24px;
+}
+.btn {
+    padding: 14px 48px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    color: #fff;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+.instructions {
+    margin-top: 20px;
+    color: #888;
+    font-size: 0.95rem;
+    text-align: center;
+    line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<div class="header">
+    <h1>Fruit Slicer</h1>
+    <div class="score-area">
+        <div>
+            <span class="score-label">Score </span>
+            <span class="score-value" id="scoreDisplay">0</span>
+        </div>
+        <div>
+            <span class="score-label">Best </span>
+            <span class="best-value" id="bestDisplay">0</span>
+        </div>
+        <div class="misses" id="missesDisplay">
+            <span class="miss-x" id="miss0">X</span>
+            <span class="miss-x" id="miss1">X</span>
+            <span class="miss-x" id="miss2">X</span>
+        </div>
+    </div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="overlay" id="startOverlay">
+        <h2>Fruit Slicer</h2>
+        <button class="btn" id="startBtn">Start Game</button>
+        <div class="instructions">
+            Swipe through fruits to slice them!<br>
+            Avoid bombs. Don't miss more than 3 fruits.
+        </div>
+    </div>
+
+    <div class="overlay hidden" id="gameOverOverlay">
+        <h2>Game Over</h2>
+        <div class="final-score">Score: <span id="finalScore">0</span></div>
+        <div class="best-line">Best: <span id="finalBest">0</span></div>
+        <button class="btn" id="restartBtn">Play Again</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrap = document.getElementById('canvasWrap');
+    const startOverlay = document.getElementById('startOverlay');
+    const gameOverOverlay = document.getElementById('gameOverOverlay');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const bestDisplay = document.getElementById('bestDisplay');
+    const finalScore = document.getElementById('finalScore');
+    const finalBest = document.getElementById('finalBest');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const CANVAS_W = 900;
+    const CANVAS_H = 580;
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+
+    const GRAVITY = 0.35;
+    const FRUIT_RADIUS = 30;
+    const BOMB_CHANCE = 0.15;
+    const MAX_MISSES = 3;
+
+    const FRUIT_TYPES = [
+        { emoji: '\u{1F34E}', color: '#ff3b3b' },
+        { emoji: '\u{1F34A}', color: '#ff9933' },
+        { emoji: '\u{1F34B}', color: '#ffe033' },
+        { emoji: '\u{1F349}', color: '#44cc44' },
+        { emoji: '\u{1F347}', color: '#9944cc' },
+        { emoji: '\u{1F353}', color: '#ff4466' },
+        { emoji: '\u{1F351}', color: '#ffaa77' },
+        { emoji: '\u{1F95D}', color: '#77aa33' },
+    ];
+
+    let score, bestScore, misses, fruits, particles, floatingTexts, bladeTrail;
+    let gameRunning, gameOver;
+    let spawnTimer, spawnInterval, waveSizeMin, waveSizeMax, elapsedTime;
+    let mouseDown, mouseX, mouseY, prevMouseX, prevMouseY;
+    let swipeHits;
+    let animFrame;
+
+    bestScore = parseInt(localStorage.getItem('fruitSlicerBest') || '0', 10);
+    bestDisplay.textContent = bestScore;
+
+    function resetGame() {
+        score = 0;
+        misses = 0;
+        fruits = [];
+        particles = [];
+        floatingTexts = [];
+        bladeTrail = [];
+        spawnTimer = 0;
+        spawnInterval = 90;
+        waveSizeMin = 1;
+        waveSizeMax = 3;
+        elapsedTime = 0;
+        mouseDown = false;
+        swipeHits = 0;
+        gameOver = false;
+        gameRunning = true;
+        updateScoreUI();
+        updateMissUI();
+    }
+
+    function updateScoreUI() {
+        scoreDisplay.textContent = score;
+    }
+
+    function updateMissUI() {
+        for (let i = 0; i < 3; i++) {
+            document.getElementById('miss' + i).classList.toggle('active', i < misses);
+        }
+    }
+
+    function spawnFruit() {
+        const count = randInt(waveSizeMin, waveSizeMax);
+        for (let i = 0; i < count; i++) {
+            const isBomb = Math.random() < BOMB_CHANCE;
+            const type = isBomb ? null : FRUIT_TYPES[randInt(0, FRUIT_TYPES.length - 1)];
+
+            let x, vx, vy;
+            const side = Math.random();
+            if (side < 0.15) {
+                x = randFloat(-20, 60);
+                vx = randFloat(3, 6);
+            } else if (side < 0.30) {
+                x = randFloat(CANVAS_W - 60, CANVAS_W + 20);
+                vx = randFloat(-6, -3);
+            } else {
+                x = randFloat(80, CANVAS_W - 80);
+                vx = randFloat(-3, 3);
+            }
+
+            vy = randFloat(-14, -10);
+
+            fruits.push({
+                x: x,
+                y: CANVAS_H + FRUIT_RADIUS + randFloat(0, 30),
+                vx: vx,
+                vy: vy,
+                radius: FRUIT_RADIUS,
+                rotation: randFloat(0, Math.PI * 2),
+                rotSpeed: randFloat(-0.1, 0.1),
+                sliced: false,
+                isBomb: isBomb,
+                type: type,
+                emoji: isBomb ? '\u{1F4A3}' : type.emoji,
+                color: isBomb ? '#222' : type.color,
+                missed: false,
+                sliceAnim: 0,
+            });
+        }
+    }
+
+    function addParticles(x, y, color, count, speed) {
+        for (let i = 0; i < count; i++) {
+            const angle = randFloat(0, Math.PI * 2);
+            const spd = randFloat(1, speed);
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd,
+                radius: randFloat(2, 6),
+                color: color,
+                life: 1,
+                decay: randFloat(0.015, 0.04),
+            });
+        }
+    }
+
+    function addFloatingText(x, y, text, color) {
+        floatingTexts.push({
+            x: x,
+            y: y,
+            text: text,
+            color: color || '#fff',
+            life: 1,
+            decay: 0.018,
+        });
+    }
+
+    function checkSlice(x1, y1, x2, y2) {
+        let hitThisFrame = 0;
+        for (const f of fruits) {
+            if (f.sliced || f.y > CANVAS_H + 50) continue;
+            if (lineCircleIntersect(x1, y1, x2, y2, f.x, f.y, f.radius + 5)) {
+                f.sliced = true;
+                f.sliceAnim = 1;
+
+                if (f.isBomb) {
+                    addParticles(f.x, f.y, '#ff4400', 40, 8);
+                    addParticles(f.x, f.y, '#ffaa00', 30, 6);
+                    addFloatingText(f.x, f.y, 'BOOM!', '#ff3333');
+                    if (window.SFX) window.SFX.death();
+                    endGame();
+                    return;
+                }
+
+                hitThisFrame++;
+                swipeHits++;
+                score++;
+                addParticles(f.x, f.y, f.color, 20, 6);
+                if (window.SFX) window.SFX.correct();
+
+                if (swipeHits >= 3) {
+                    const bonus = swipeHits;
+                    score += bonus;
+                    addFloatingText(f.x, f.y - 20, 'Combo x' + swipeHits + '! +' + bonus, '#00d4ff');
+                    if (window.SFX) window.SFX.combo();
+                } else {
+                    addFloatingText(f.x, f.y, '+1', '#fff');
+                }
+
+                updateScoreUI();
+            }
+        }
+        if (hitThisFrame > 0 && swipeHits <= hitThisFrame) {
+            if (window.SFX) window.SFX.swoosh();
+        }
+    }
+
+    function lineCircleIntersect(x1, y1, x2, y2, cx, cy, r) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const fx = x1 - cx;
+        const fy = y1 - cy;
+        const a = dx * dx + dy * dy;
+        const b = 2 * (fx * dx + fy * dy);
+        const c = fx * fx + fy * fy - r * r;
+
+        if (a < 0.001) {
+            return (fx * fx + fy * fy) <= r * r;
+        }
+
+        let disc = b * b - 4 * a * c;
+        if (disc < 0) return false;
+        disc = Math.sqrt(disc);
+        const t1 = (-b - disc) / (2 * a);
+        const t2 = (-b + disc) / (2 * a);
+        return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1) || (t1 < 0 && t2 > 1);
+    }
+
+    function endGame() {
+        gameRunning = false;
+        gameOver = true;
+        if (window.SFX) window.SFX.fail();
+
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('fruitSlicerBest', bestScore);
+            bestDisplay.textContent = bestScore;
+        }
+
+        finalScore.textContent = score;
+        finalBest.textContent = bestScore;
+
+        if (window.HallOfFame) window.HallOfFame.submit('fruit', score);
+
+        setTimeout(function() {
+            gameOverOverlay.classList.remove('hidden');
+        }, 600);
+    }
+
+    function update() {
+        if (!gameRunning) return;
+
+        elapsedTime++;
+
+        // Difficulty scaling
+        if (elapsedTime % 600 === 0) {
+            spawnInterval = Math.max(40, spawnInterval - 8);
+            waveSizeMax = Math.min(6, waveSizeMax + 1);
+            if (elapsedTime % 1200 === 0) {
+                waveSizeMin = Math.min(3, waveSizeMin + 1);
+            }
+        }
+
+        // Spawn
+        spawnTimer++;
+        if (spawnTimer >= spawnInterval + randInt(-15, 15)) {
+            spawnFruit();
+            spawnTimer = 0;
+        }
+
+        // Update fruits
+        for (let i = fruits.length - 1; i >= 0; i--) {
+            const f = fruits[i];
+            if (f.sliced) {
+                f.sliceAnim -= 0.04;
+                if (f.sliceAnim <= 0) {
+                    fruits.splice(i, 1);
+                }
+                continue;
+            }
+
+            f.x += f.vx;
+            f.y += f.vy;
+            f.vy += GRAVITY;
+            f.rotation += f.rotSpeed;
+
+            if (f.y > CANVAS_H + FRUIT_RADIUS * 2 + 40 && !f.missed) {
+                if (!f.isBomb) {
+                    f.missed = true;
+                    misses++;
+                    updateMissUI();
+                    if (misses >= MAX_MISSES) {
+                        endGame();
+                        return;
+                    }
+                }
+                fruits.splice(i, 1);
+            }
+        }
+
+        // Update particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1;
+            p.life -= p.decay;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        // Update floating texts
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            const t = floatingTexts[i];
+            t.y -= 1.2;
+            t.life -= t.decay;
+            if (t.life <= 0) floatingTexts.splice(i, 1);
+        }
+
+        // Update blade trail
+        for (let i = bladeTrail.length - 1; i >= 0; i--) {
+            bladeTrail[i].life -= 0.06;
+            if (bladeTrail[i].life <= 0) bladeTrail.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+        // Draw blade trail
+        if (bladeTrail.length > 1) {
+            for (let i = 1; i < bladeTrail.length; i++) {
+                const a = bladeTrail[i - 1];
+                const b = bladeTrail[i];
+                const alpha = Math.min(a.life, b.life);
+                if (alpha <= 0) continue;
+                ctx.save();
+                ctx.globalAlpha = alpha * 0.8;
+                ctx.strokeStyle = '#00d4ff';
+                ctx.lineWidth = 4 * alpha + 1;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = '#00d4ff';
+                ctx.shadowBlur = 12 * alpha;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+            // Inner white line
+            for (let i = 1; i < bladeTrail.length; i++) {
+                const a = bladeTrail[i - 1];
+                const b = bladeTrail[i];
+                const alpha = Math.min(a.life, b.life);
+                if (alpha <= 0) continue;
+                ctx.save();
+                ctx.globalAlpha = alpha * 0.6;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2 * alpha;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Draw fruits
+        for (const f of fruits) {
+            if (f.sliced) {
+                // Slice burst animation
+                ctx.save();
+                ctx.globalAlpha = f.sliceAnim;
+                ctx.translate(f.x, f.y);
+                const s = 1 + (1 - f.sliceAnim) * 1.5;
+                ctx.scale(s, s);
+                ctx.font = (f.radius * 1.6) + 'px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(f.emoji, 0, 0);
+                ctx.restore();
+                continue;
+            }
+
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            ctx.rotate(f.rotation);
+
+            // Circle background
+            ctx.beginPath();
+            ctx.arc(0, 0, f.radius, 0, Math.PI * 2);
+            ctx.fillStyle = f.isBomb ? '#1a1a1a' : f.color + '33';
+            ctx.fill();
+            ctx.strokeStyle = f.isBomb ? '#555' : f.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Emoji
+            ctx.rotate(-f.rotation);
+            ctx.font = (f.radius * 1.5) + 'px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(f.emoji, 0, 2);
+
+            ctx.restore();
+        }
+
+        // Draw particles
+        for (const p of particles) {
+            ctx.save();
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Draw floating texts
+        for (const t of floatingTexts) {
+            ctx.save();
+            ctx.globalAlpha = t.life;
+            ctx.fillStyle = t.color;
+            ctx.font = 'bold 24px Segoe UI, Tahoma, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = t.color;
+            ctx.shadowBlur = 8;
+            ctx.fillText(t.text, t.x, t.y);
+            ctx.restore();
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        animFrame = requestAnimationFrame(gameLoop);
+    }
+
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = CANVAS_W / rect.width;
+        const scaleY = CANVAS_H / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function onPointerDown(e) {
+        if (!gameRunning) return;
+        e.preventDefault();
+        const pos = getCanvasPos(e);
+        mouseDown = true;
+        mouseX = pos.x;
+        mouseY = pos.y;
+        prevMouseX = pos.x;
+        prevMouseY = pos.y;
+        swipeHits = 0;
+        bladeTrail.push({ x: pos.x, y: pos.y, life: 1 });
+    }
+
+    function onPointerMove(e) {
+        if (!mouseDown || !gameRunning) return;
+        e.preventDefault();
+        const pos = getCanvasPos(e);
+        prevMouseX = mouseX;
+        prevMouseY = mouseY;
+        mouseX = pos.x;
+        mouseY = pos.y;
+
+        bladeTrail.push({ x: pos.x, y: pos.y, life: 1 });
+
+        checkSlice(prevMouseX, prevMouseY, mouseX, mouseY);
+    }
+
+    function onPointerUp(e) {
+        mouseDown = false;
+        swipeHits = 0;
+    }
+
+    // Mouse events
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('mouseleave', onPointerUp);
+
+    // Touch events
+    canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+    canvas.addEventListener('touchend', onPointerUp);
+    canvas.addEventListener('touchcancel', onPointerUp);
+
+    function startGame() {
+        startOverlay.classList.add('hidden');
+        gameOverOverlay.classList.add('hidden');
+        resetGame();
+        if (animFrame) cancelAnimationFrame(animFrame);
+        gameLoop();
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    // Utility
+    function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    function randFloat(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    // Initial draw
+    draw();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=2"></script>
+<script type="module" src="firebase-lb.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nonogram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    user-select: none;
+  }
+
+  .back {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1rem;
+    z-index: 100;
+    transition: color 0.2s;
+  }
+  .back:hover { color: #7b2ff7; }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.6rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .difficulty-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .difficulty-selector button {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    color: #e0e0e0;
+    padding: 0.4rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .difficulty-selector button:hover {
+    border-color: #7b2ff7;
+    color: #7b2ff7;
+  }
+  .difficulty-selector button.active {
+    border-color: #7b2ff7;
+    color: #7b2ff7;
+  }
+
+  .timer {
+    font-size: 1.3rem;
+    color: #00d4ff;
+    font-weight: bold;
+    margin-bottom: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .puzzle-wrapper {
+    display: inline-grid;
+    gap: 0;
+    margin-bottom: 1rem;
+  }
+
+  .clue-corner {
+    /* empty top-left corner */
+  }
+
+  .col-clues-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 2px;
+    color: #aaa;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+  .col-clues-cell.completed {
+    color: #2ecc71;
+  }
+  .col-clues-cell span {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .row-clues-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 4px;
+    gap: 3px;
+    color: #aaa;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+  .row-clues-cell.completed {
+    color: #2ecc71;
+  }
+
+  .grid-cell {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+    position: relative;
+  }
+  .grid-cell:hover {
+    background: #252545;
+  }
+  .grid-cell.filled {
+    background: #7b2ff7;
+    box-shadow: 0 0 6px rgba(123, 47, 247, 0.4);
+  }
+  .grid-cell.filled:hover {
+    background: #8c4aff;
+  }
+  .grid-cell.marked {
+    color: #555;
+    font-weight: bold;
+  }
+  .grid-cell.marked::after {
+    content: '\00d7';
+    font-size: inherit;
+    color: #555;
+  }
+  .grid-cell.error {
+    background: #cc2e2e !important;
+    box-shadow: 0 0 8px rgba(204, 46, 46, 0.5);
+  }
+
+  .grid-cell.border-right-thick {
+    border-right: 2px solid #4a4a7a;
+  }
+  .grid-cell.border-bottom-thick {
+    border-bottom: 2px solid #4a4a7a;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+  }
+  .actions button {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    color: #e0e0e0;
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .actions button:hover {
+    border-color: #00d4ff;
+    color: #00d4ff;
+  }
+  .actions button.check-btn:hover {
+    border-color: #2ecc71;
+    color: #2ecc71;
+  }
+
+  .win-message {
+    font-size: 1.4rem;
+    color: #2ecc71;
+    font-weight: bold;
+    margin-top: 0.8rem;
+    display: none;
+  }
+  .win-message.show {
+    display: block;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<h1>Nonogram</h1>
+
+<div class="difficulty-selector">
+  <button data-size="5" class="active">Easy (5&times;5)</button>
+  <button data-size="10">Medium (10&times;10)</button>
+  <button data-size="15">Hard (15&times;15)</button>
+</div>
+
+<div class="timer" id="timer">0:00</div>
+
+<div class="game-area" id="gameArea"></div>
+
+<div class="actions">
+  <button class="check-btn" id="checkBtn">Check</button>
+  <button id="newBtn">New Puzzle</button>
+</div>
+
+<div class="win-message" id="winMsg">Puzzle Complete!</div>
+
+<script>
+(function() {
+  // --- State ---
+  let gridSize = 5;
+  let solution = [];   // 2D array: 1 = filled, 0 = empty
+  let playerGrid = []; // 2D array: 0 = empty, 1 = filled, 2 = marked-X
+  let rowClues = [];
+  let colClues = [];
+  let timerSeconds = 0;
+  let timerInterval = null;
+  let gameWon = false;
+
+  // --- Cell sizes ---
+  function cellSize() {
+    if (gridSize === 5) return 50;
+    if (gridSize === 10) return 35;
+    return 25;
+  }
+  function clueFontSize() {
+    if (gridSize === 5) return 14;
+    if (gridSize === 10) return 11;
+    return 9;
+  }
+  function markedFontSize() {
+    if (gridSize === 5) return 22;
+    if (gridSize === 10) return 16;
+    return 12;
+  }
+
+  // --- Puzzle generation ---
+  function generateSolution() {
+    const fillRate = 0.5 + Math.random() * 0.1; // 50-60%
+    solution = [];
+    for (let r = 0; r < gridSize; r++) {
+      const row = [];
+      for (let c = 0; c < gridSize; c++) {
+        row.push(Math.random() < fillRate ? 1 : 0);
+      }
+      solution.push(row);
+    }
+  }
+
+  function computeClues(line) {
+    const clues = [];
+    let count = 0;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === 1) {
+        count++;
+      } else {
+        if (count > 0) clues.push(count);
+        count = 0;
+      }
+    }
+    if (count > 0) clues.push(count);
+    if (clues.length === 0) clues.push(0);
+    return clues;
+  }
+
+  function computeAllClues() {
+    rowClues = [];
+    colClues = [];
+    for (let r = 0; r < gridSize; r++) {
+      rowClues.push(computeClues(solution[r]));
+    }
+    for (let c = 0; c < gridSize; c++) {
+      const col = [];
+      for (let r = 0; r < gridSize; r++) col.push(solution[r][c]);
+      colClues.push(computeClues(col));
+    }
+  }
+
+  // --- Timer ---
+  function startTimer() {
+    stopTimer();
+    timerSeconds = 0;
+    updateTimerDisplay();
+    timerInterval = setInterval(function() {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timerSeconds / 60);
+    const s = timerSeconds % 60;
+    document.getElementById('timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  // --- Check row/col completion ---
+  function getPlayerRowLine(r) {
+    return playerGrid[r].map(function(v) { return v === 1 ? 1 : 0; });
+  }
+  function getPlayerColLine(c) {
+    const col = [];
+    for (let r = 0; r < gridSize; r++) col.push(playerGrid[r][c] === 1 ? 1 : 0);
+    return col;
+  }
+
+  function cluesMatch(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
+  function isRowComplete(r) {
+    return cluesMatch(computeClues(getPlayerRowLine(r)), rowClues[r]);
+  }
+  function isColComplete(c) {
+    return cluesMatch(computeClues(getPlayerColLine(c)), colClues[c]);
+  }
+
+  function updateClueHighlights() {
+    for (let r = 0; r < gridSize; r++) {
+      const el = document.querySelector('.row-clue-' + r);
+      if (el) {
+        const complete = isRowComplete(r);
+        el.classList.toggle('completed', complete);
+      }
+    }
+    for (let c = 0; c < gridSize; c++) {
+      const el = document.querySelector('.col-clue-' + c);
+      if (el) {
+        const complete = isColComplete(c);
+        el.classList.toggle('completed', complete);
+      }
+    }
+  }
+
+  // Check if any row/col just became complete and play sound
+  let prevRowComplete = [];
+  let prevColComplete = [];
+
+  function checkCompletionSounds() {
+    let anyNew = false;
+    for (let r = 0; r < gridSize; r++) {
+      const complete = isRowComplete(r);
+      if (complete && !prevRowComplete[r]) anyNew = true;
+      prevRowComplete[r] = complete;
+    }
+    for (let c = 0; c < gridSize; c++) {
+      const complete = isColComplete(c);
+      if (complete && !prevColComplete[c]) anyNew = true;
+      prevColComplete[c] = complete;
+    }
+    if (anyNew) {
+      if (window.SFX) window.SFX.correct();
+    }
+  }
+
+  // --- Render ---
+  function render() {
+    const area = document.getElementById('gameArea');
+    area.innerHTML = '';
+
+    const cs = cellSize();
+    const fontSize = clueFontSize();
+    const mFontSize = markedFontSize();
+
+    // Compute max clue lengths for sizing
+    const maxRowClueLen = Math.max.apply(null, rowClues.map(function(c) { return c.length; }));
+    const maxColClueLen = Math.max.apply(null, colClues.map(function(c) { return c.length; }));
+
+    const rowClueWidth = maxRowClueLen * (fontSize + 4) + 8;
+    const colClueHeight = maxColClueLen * (fontSize + 2) + 8;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'puzzle-wrapper';
+    wrapper.style.gridTemplateColumns = rowClueWidth + 'px repeat(' + gridSize + ', ' + cs + 'px)';
+    wrapper.style.gridTemplateRows = colClueHeight + 'px repeat(' + gridSize + ', ' + cs + 'px)';
+
+    // Top-left corner
+    const corner = document.createElement('div');
+    corner.className = 'clue-corner';
+    wrapper.appendChild(corner);
+
+    // Column clues
+    for (let c = 0; c < gridSize; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'col-clues-cell col-clue-' + c;
+      cell.style.fontSize = fontSize + 'px';
+      if (isColComplete(c)) cell.classList.add('completed');
+      colClues[c].forEach(function(n) {
+        const s = document.createElement('span');
+        s.textContent = n;
+        cell.appendChild(s);
+      });
+      wrapper.appendChild(cell);
+    }
+
+    // Rows
+    for (let r = 0; r < gridSize; r++) {
+      // Row clue
+      const rc = document.createElement('div');
+      rc.className = 'row-clues-cell row-clue-' + r;
+      rc.style.fontSize = fontSize + 'px';
+      if (isRowComplete(r)) rc.classList.add('completed');
+      rc.textContent = rowClues[r].join(' ');
+      wrapper.appendChild(rc);
+
+      // Grid cells
+      for (let c = 0; c < gridSize; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.width = cs + 'px';
+        cell.style.height = cs + 'px';
+        cell.style.fontSize = mFontSize + 'px';
+
+        const val = playerGrid[r][c];
+        if (val === 1) cell.classList.add('filled');
+        else if (val === 2) cell.classList.add('marked');
+
+        // Thick borders every 5 cells (for 10x10 and 15x15)
+        if (gridSize > 5) {
+          if (c > 0 && c % 5 === 4 && c < gridSize - 1) {
+            cell.classList.add('border-right-thick');
+          }
+          if (r > 0 && r % 5 === 4 && r < gridSize - 1) {
+            cell.classList.add('border-bottom-thick');
+          }
+        }
+
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        // Left click
+        cell.addEventListener('click', function(e) {
+          if (gameWon) return;
+          const cr = parseInt(this.dataset.r);
+          const cc = parseInt(this.dataset.c);
+          if (window.SFX) window.SFX.click();
+          if (playerGrid[cr][cc] === 1) {
+            playerGrid[cr][cc] = 0;
+          } else if (playerGrid[cr][cc] === 0) {
+            playerGrid[cr][cc] = 1;
+          } else {
+            // was marked, clear it
+            playerGrid[cr][cc] = 0;
+          }
+          updateClueHighlights();
+          checkCompletionSounds();
+          renderCells();
+        });
+
+        // Right click
+        cell.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          if (gameWon) return;
+          const cr = parseInt(this.dataset.r);
+          const cc = parseInt(this.dataset.c);
+          if (window.SFX) window.SFX.click();
+          if (playerGrid[cr][cc] === 2) {
+            playerGrid[cr][cc] = 0;
+          } else if (playerGrid[cr][cc] === 0) {
+            playerGrid[cr][cc] = 2;
+          } else {
+            // was filled, clear it
+            playerGrid[cr][cc] = 0;
+          }
+          updateClueHighlights();
+          checkCompletionSounds();
+          renderCells();
+        });
+
+        wrapper.appendChild(cell);
+      }
+    }
+
+    area.appendChild(wrapper);
+  }
+
+  // Fast cell update without re-rendering entire grid
+  function renderCells() {
+    const cells = document.querySelectorAll('.grid-cell');
+    cells.forEach(function(cell) {
+      const r = parseInt(cell.dataset.r);
+      const c = parseInt(cell.dataset.c);
+      const val = playerGrid[r][c];
+      cell.classList.remove('filled', 'marked', 'error');
+      if (val === 1) cell.classList.add('filled');
+      else if (val === 2) cell.classList.add('marked');
+    });
+
+    // Update clue highlights
+    for (let r = 0; r < gridSize; r++) {
+      const el = document.querySelector('.row-clue-' + r);
+      if (el) el.classList.toggle('completed', isRowComplete(r));
+    }
+    for (let c = 0; c < gridSize; c++) {
+      const el = document.querySelector('.col-clue-' + c);
+      if (el) el.classList.toggle('completed', isColComplete(c));
+    }
+  }
+
+  // --- Check puzzle ---
+  function checkPuzzle() {
+    if (gameWon) return;
+
+    // Compare player filled cells to solution
+    let correct = true;
+    const errorCells = [];
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const playerFilled = playerGrid[r][c] === 1;
+        const solutionFilled = solution[r][c] === 1;
+        if (playerFilled !== solutionFilled) {
+          correct = false;
+          errorCells.push([r, c]);
+        }
+      }
+    }
+
+    if (correct) {
+      gameWon = true;
+      stopTimer();
+      if (window.SFX) window.SFX.win();
+      document.getElementById('winMsg').classList.add('show');
+      if (window.HallOfFame) window.HallOfFame.submit('nonogram', timerSeconds);
+    } else {
+      if (window.SFX) window.SFX.fail();
+      // Highlight errors briefly
+      const cells = document.querySelectorAll('.grid-cell');
+      cells.forEach(function(cell) {
+        const r = parseInt(cell.dataset.r);
+        const c = parseInt(cell.dataset.c);
+        for (let i = 0; i < errorCells.length; i++) {
+          if (errorCells[i][0] === r && errorCells[i][1] === c) {
+            cell.classList.add('error');
+            break;
+          }
+        }
+      });
+      setTimeout(function() {
+        document.querySelectorAll('.grid-cell.error').forEach(function(cell) {
+          cell.classList.remove('error');
+        });
+      }, 800);
+    }
+  }
+
+  // --- New game ---
+  function newGame(size) {
+    if (size) gridSize = size;
+    gameWon = false;
+    document.getElementById('winMsg').classList.remove('show');
+
+    generateSolution();
+    computeAllClues();
+
+    playerGrid = [];
+    for (let r = 0; r < gridSize; r++) {
+      const row = [];
+      for (let c = 0; c < gridSize; c++) row.push(0);
+      playerGrid.push(row);
+    }
+
+    prevRowComplete = new Array(gridSize).fill(false);
+    prevColComplete = new Array(gridSize).fill(false);
+
+    render();
+    startTimer();
+  }
+
+  // --- Difficulty buttons ---
+  document.querySelectorAll('.difficulty-selector button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.difficulty-selector button').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      this.classList.add('active');
+      newGame(parseInt(this.dataset.size));
+    });
+  });
+
+  // --- Action buttons ---
+  document.getElementById('checkBtn').addEventListener('click', checkPuzzle);
+  document.getElementById('newBtn').addEventListener('click', function() { newGame(); });
+
+  // --- Prevent context menu on game area ---
+  document.getElementById('gameArea').addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+  // --- Start ---
+  newGame(5);
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=2"></script>
+<script type="module" src="firebase-lb.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>
