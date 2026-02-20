@@ -79,6 +79,54 @@
       text:'#e8e0d0', dim:'#908878', accent:'#d4a520', accent2:'#ffd700',
       glow:'rgba(212,165,32,0.3)', canvasBg:'#16162a', canvasBg2:'#0e0e18',
     },
+    blood: {
+      name: 'Blood Moon', icon: '🩸',
+      bg1:'#120808', bg2:'#1e0e0e', bg3:'#301818', border:'#4a2020',
+      text:'#f0d0d0', dim:'#905050', accent:'#dc143c', accent2:'#ff6666',
+      glow:'rgba(220,20,60,0.3)', canvasBg:'#1e0e0e', canvasBg2:'#120808',
+    },
+    coffee: {
+      name: 'Coffee', icon: '☕',
+      bg1:'#1a1410', bg2:'#2a2018', bg3:'#3a2e22', border:'#4a3828',
+      text:'#e8dcd0', dim:'#9a8878', accent:'#c8956c', accent2:'#e8c8a0',
+      glow:'rgba(200,149,108,0.3)', canvasBg:'#2a2018', canvasBg2:'#1a1410',
+    },
+    neon: {
+      name: 'Neon', icon: '💡',
+      bg1:'#0a0a0a', bg2:'#141414', bg3:'#222222', border:'#333333',
+      text:'#ffffff', dim:'#888888', accent:'#39ff14', accent2:'#ff073a',
+      glow:'rgba(57,255,20,0.3)', canvasBg:'#141414', canvasBg2:'#0a0a0a',
+    },
+    lavender: {
+      name: 'Lavender', icon: '💜',
+      bg1:'#14101e', bg2:'#1e1830', bg3:'#2a2244', border:'#3a3058',
+      text:'#e0d8f0', dim:'#8878a8', accent:'#9b7bd4', accent2:'#c8a8f0',
+      glow:'rgba(155,123,212,0.3)', canvasBg:'#1e1830', canvasBg2:'#14101e',
+    },
+    candy: {
+      name: 'Candy', icon: '🍬',
+      bg1:'#180a18', bg2:'#281428', bg3:'#3a2040', border:'#4a2858',
+      text:'#f8e0f0', dim:'#a870a0', accent:'#ff69b4', accent2:'#69d2e7',
+      glow:'rgba(255,105,180,0.25)', canvasBg:'#281428', canvasBg2:'#180a18',
+    },
+    stealth: {
+      name: 'Stealth', icon: '🔲',
+      bg1:'#0c0c0c', bg2:'#161616', bg3:'#222222', border:'#303030',
+      text:'#b0b0b0', dim:'#606060', accent:'#505050', accent2:'#808080',
+      glow:'rgba(80,80,80,0.2)', canvasBg:'#161616', canvasBg2:'#0c0c0c',
+    },
+    tropical: {
+      name: 'Tropical', icon: '🌴',
+      bg1:'#0a1a10', bg2:'#122818', bg3:'#1e3a24', border:'#2a4a30',
+      text:'#d8f0d0', dim:'#68a870', accent:'#ff9f1c', accent2:'#2ec4b6',
+      glow:'rgba(255,159,28,0.3)', canvasBg:'#122818', canvasBg2:'#0a1a10',
+    },
+    ice: {
+      name: 'Ice', icon: '🧊',
+      bg1:'#0a1420', bg2:'#0f1e30', bg3:'#183048', border:'#204060',
+      text:'#d0e8ff', dim:'#6090c0', accent:'#88ccff', accent2:'#aae0ff',
+      glow:'rgba(136,204,255,0.25)', canvasBg:'#0f1e30', canvasBg2:'#0a1420',
+    },
   };
 
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';
@@ -225,6 +273,60 @@
 
       /* Sound button */
       #sfx-mute-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
+
+      /* Scrollbars */
+      ::-webkit-scrollbar { width:6px; height:6px; }
+      ::-webkit-scrollbar-track { background:${t.bg1}!important; }
+      ::-webkit-scrollbar-thumb { background:${t.bg3}!important; border-radius:3px; }
+      ::-webkit-scrollbar-thumb:hover { background:${t.border}!important; }
+      * { scrollbar-color:${t.bg3} ${t.bg1}; }
+
+      /* Placeholders */
+      ::placeholder { color:${t.dim}!important; opacity:0.6!important; }
+
+      /* Modals & overlays */
+      .modal-overlay,.overlay,.auth-overlay { background:${t.bg1}dd!important; }
+      .modal,.stats-popup,.popup { background:${t.bg2}!important; border-color:${t.accent}44!important; color:${t.text}!important; }
+
+      /* Game-specific containers */
+      .move-list,.log-area,.history,.guess-list {
+        background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important;
+      }
+      .host-badge { background:${t.accent2}!important; color:${t.bg1}!important; }
+      .player-list-item { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .join-error,.error-msg { color:#ff4757!important; }
+
+      /* Table hover */
+      .score-table tr:hover { background:${t.bg3}44!important; }
+
+      /* Wordle/word game tile states (keep game colors but tint bg) */
+      .tile.absent,.key.absent { background:${t.bg3}!important; }
+
+      /* Minesweeper */
+      .cell.hidden { background:${t.bg3}!important; }
+      .cell.hidden:hover { background:${t.border}!important; }
+      .cell.revealed { background:${t.bg1}!important; color:${t.text}!important; }
+
+      /* General selection */
+      ::selection { background:${t.accent}44; color:${t.text}; }
+
+      /* Focus outlines */
+      *:focus-visible { outline-color:${t.accent}!important; }
+      input,textarea,select {
+        background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important;
+        caret-color:${t.accent}!important;
+      }
+      input:focus,textarea:focus,select:focus { border-color:${t.accent}!important; }
+
+      /* Additional panels/containers */
+      .end-screen,.game-over,.result-panel,.win-overlay,.win-screen,
+      .stats-panel,.info-panel,.help-panel,.settings-panel {
+        background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
+      }
+
+      /* Generic buttons that might be missed */
+      button { color:${t.text}!important; }
+      .btn,.action-btn { border-color:${t.border}!important; }
     `;
 
     // Update picker active state

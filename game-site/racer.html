@@ -527,7 +527,7 @@ function triggerWin(player) {
   if(player === 1 && window.HallOfFame) {
     var sk = window.HallOfFame.winStreak('racer');
     window.HallOfFame.submit('racer', sk.current);
-  } else if (botMode && window.HallOfFame) {
+  } else if (window.HallOfFame) {
     window.HallOfFame.loseStreak('racer');
   }
   if(window.SFX) window.SFX.win();
@@ -947,6 +947,6 @@ loop();
 <script src="fame.js?v=3"></script>
 <script type="module" src="firebase-lb.js?v=2"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 </body>
 </html>

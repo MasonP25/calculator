@@ -132,7 +132,7 @@ function update() {
     if (lives <= 0) {
       gameOver = true;
       if (window.SFX) window.SFX.death();
-      if (window.HallOfFame) window.HallOfFame.submit('breakout', score);
+      if (score > 0 && window.HallOfFame) window.HallOfFame.submit('breakout', score);
       msgEl.textContent = 'Game Over! Score: ' + score + '. Press SPACE to restart.';
     } else {
       if (window.SFX) window.SFX.hit();
@@ -273,6 +273,6 @@ loop();
 <script src="fame.js?v=3"></script>
 <script type="module" src="firebase-lb.js?v=2"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 </body>
 </html>

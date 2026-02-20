@@ -1156,11 +1156,7 @@ h1 {
             winnerText.textContent = data.winner === myUsername ? 'You Win!' : data.winner + ' Wins!';
             winnerOverlay.classList.add('visible');
             var playAgainBtn = document.getElementById('play-again-btn');
-            if (data.host === myUsername) {
-                playAgainBtn.style.display = '';
-            } else {
-                playAgainBtn.style.display = 'none';
-            }
+            playAgainBtn.style.display = '';
             if (data.winner === myUsername) {
                 if (window.SFX) window.SFX.win();
                 if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('uno'); window.HallOfFame.submit('uno', sk.current); }
@@ -2140,6 +2136,6 @@ window._unoChatSend = async function(text) {
 <script src="fame.js?v=3"></script>
 <script type="module" src="firebase-lb.js?v=2"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=3"></script>
+<script src="theme.js?v=4"></script>
 </body>
 </html>
