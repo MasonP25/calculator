@@ -368,11 +368,11 @@
 
       /* Focus outlines */
       *:focus-visible { outline-color:${t.accent}!important; }
-      input,textarea,select {
+      input:not([type="color"]),textarea,select {
         background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important;
         caret-color:${t.accent}!important;
       }
-      input:focus,textarea:focus,select:focus { border-color:${t.accent}!important; }
+      input:not([type="color"]):focus,textarea:focus,select:focus { border-color:${t.accent}!important; }
 
       /* Additional panels/containers */
       .end-screen,.game-over,.result-panel,.win-overlay,.win-screen,
@@ -384,8 +384,15 @@
       button { color:${t.text}!important; }
       .btn,.action-btn { border-color:${t.border}!important; }
 
-      /* Custom theme color pickers - prevent theme from breaking the native pickers */
-      .custom-color-input { background:none!important; border-color:${t.border}!important; }
+      /* Custom theme color pickers - preserve native color picker */
+      input[type="color"] {
+        -webkit-appearance:auto!important; appearance:auto!important;
+        background:transparent!important; border:2px solid ${t.border}!important;
+        border-radius:6px!important; cursor:pointer!important; padding:2px!important;
+      }
+      input[type="color"]::-webkit-color-swatch-wrapper { padding:2px!important; }
+      input[type="color"]::-webkit-color-swatch { border:none!important; border-radius:3px!important; }
+      #custom-theme-editor { background:${t.bg3}!important; border-radius:8px!important; }
     `;
 
     // Update picker active state
@@ -484,25 +491,29 @@
     editor.id = 'custom-theme-editor';
     Object.assign(editor.style, {
       display: current === 'custom' ? 'flex' : 'none',
-      flexDirection:'column', gap:'8px', padding:'8px 6px',
-      borderRadius:'8px', width:'100%',
+      flexDirection:'column', gap:'10px', padding:'10px 8px',
+      borderRadius:'8px', width:'100%', marginTop:'2px',
     });
+
+    var editorTitle = document.createElement('div');
+    editorTitle.textContent = 'Pick your colors';
+    Object.assign(editorTitle.style, { fontSize:'0.75rem', opacity:'0.6', textAlign:'center' });
+    editor.appendChild(editorTitle);
 
     function makeColorRow(label, key, val) {
       var row = document.createElement('div');
       Object.assign(row.style, {
-        display:'flex', alignItems:'center', gap:'8px', width:'100%',
+        display:'flex', alignItems:'center', gap:'10px', width:'100%',
       });
       var lbl = document.createElement('span');
       lbl.textContent = label;
-      Object.assign(lbl.style, { fontSize:'0.72rem', width:'70px', opacity:'0.7' });
+      Object.assign(lbl.style, { fontSize:'0.75rem', width:'70px', fontWeight:'600' });
       var input = document.createElement('input');
       input.type = 'color';
-      input.className = 'custom-color-input';
       input.value = val;
       Object.assign(input.style, {
-        width:'36px', height:'28px', border:'2px solid', borderRadius:'6px',
-        cursor:'pointer', padding:'0',
+        width:'44px', height:'32px', border:'2px solid', borderRadius:'6px',
+        cursor:'pointer', padding:'2px', flex:'0 0 44px',
       });
       input.dataset.colorKey = key;
       input.addEventListener('input', function() {
