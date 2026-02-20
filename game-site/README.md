@@ -1,51 +1,48 @@
-# Mason's Arcade
+<div align="center">
 
-A collection of 55+ browser-based games built with vanilla HTML, CSS, and JavaScript. No frameworks, no dependencies — just pure web tech.
+# **Mason's Arcade**
 
-**Play it live:** [masonp25.github.io/calculator/game-site](https://masonp25.github.io/calculator/game-site/)
+### A collection of 55+ browser-based games — no frameworks, no dependencies, just pure HTML/CSS/JS.
 
-## Features
+[**Play Now**](https://masonp25.github.io/calculator/game-site/)
 
-- **55+ Games** — Solo, local multiplayer, and online multiplayer
-- **Online Multiplayer** — Real-time play via WebSocket rooms (Penguin Knockout, UNO, Imposter, Battleship, etc.)
-- **Global Leaderboards** — Firebase-powered leaderboards with per-player best scores
-- **Accounts** — Sign up / sign in to track scores across devices
-- **22 Themes** — Full theme system that applies across every game
-- **Sound Effects** — SFX across all games with mute toggle
-- **Hall of Fame** — Local + global score tracking for every game
+---
 
-## Game List
+</div>
 
-| Category | Games |
-|----------|-------|
-| **Classics** | Tetris, Breakout, Asteroids, Space Invaders, Minesweeper, Solitaire, 2048, Flappy Bird, Snake |
-| **Puzzle** | Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3 |
-| **Action** | Fruit Slicer, Geometry Dash, Doodle Jump, Crossy Road, Aim Trainer, Reaction Time, Typing Test |
-| **Strategy** | Chess, Checkers, Connect 4, Tic-Tac-Toe, Hangman, 20 Questions |
-| **Multiplayer** | Penguin Knockout, UNO, Imposter, Battleship, Pong, Space Race, Tanks, Word Bomb, Memory |
-| **Other** | Bubble Shooter, Simon Says, Maze, Gravity, Word Search |
+## What's Inside
 
-## Tech Stack
+- **55+ Games** across solo, local multiplayer, and online multiplayer
+- **Online Multiplayer** with real-time WebSocket rooms
+- **Global Leaderboards** powered by Firebase
+- **User Accounts** to track scores across devices
+- **22 Themes** that apply across every game
+- **Sound Effects** with mute toggle
 
-- **Frontend:** Vanilla HTML/CSS/JavaScript (single-file games)
-- **Backend:** Firebase Firestore (leaderboards + auth)
-- **Multiplayer:** WebSocket server for real-time online games
-- **Hosting:** GitHub Pages
+## Games
 
-## License
+**Classics** — Tetris, Breakout, Asteroids, Space Invaders, Minesweeper, Solitaire, 2048, Flappy Bird, Snake
 
-```
-Copyright (c) 2025-2026 Mason P. All Rights Reserved.
+**Puzzle** — Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3
 
-This source code and all associated files are the exclusive property of the
-copyright holder. No part of this codebase may be reproduced, distributed,
-modified, reverse-engineered, or used in any form without prior written
-permission from the copyright holder.
+**Action** — Fruit Slicer, Geometry Dash, Doodle Jump, Crossy Road, Aim Trainer, Reaction Time, Typing Test
 
-Unauthorized copying, redistribution, or use of this code, in whole or in
-part, is strictly prohibited and may result in legal action.
+**Strategy** — Chess, Checkers, Connect 4, Tic-Tac-Toe, Hangman, 20 Questions
 
-The hosted website is provided for personal, non-commercial use by end users
-only. Access to the website does not grant any rights to the underlying
-source code.
-```
+**Multiplayer** — Penguin Knockout, UNO, Imposter, Battleship, Pong, Space Race, Tanks, Word Bomb, Memory
+
+**Other** — Bubble Shooter, Simon Says, Maze, Gravity, Word Search
+
+## Built With
+
+HTML / CSS / JavaScript / Firebase / WebSockets / GitHub Pages
+
+---
+
+<div align="center">
+
+**Copyright (c) 2025-2026 Mason P. All Rights Reserved.**
+
+This source code may not be reproduced, distributed, modified, or used in any form without prior written permission from the copyright holder. Unauthorized copying or redistribution is strictly prohibited. The hosted website is provided for personal, non-commercial use only. Access to the website does not grant any rights to the underlying source code.
+
+</div>
