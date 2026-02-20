@@ -121,6 +121,7 @@ window.FirebaseLB = {
 // ─── Override HallOfFame to also push to Firebase ───
 (function() {
   if (!window.HallOfFame) return;
+  if (window.HallOfFame._firebaseWrapped) return; // prevent double-wrap
 
   var origSubmit = window.HallOfFame.submit.bind(window.HallOfFame);
 
@@ -131,6 +132,7 @@ window.FirebaseLB = {
     window.FirebaseLB.submit(gameId, score);
     return localResult;
   };
+  window.HallOfFame._firebaseWrapped = true;
 
   // Add global fetch method
   window.HallOfFame.getGlobalScores = function(gameId, max) {

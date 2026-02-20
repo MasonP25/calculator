@@ -15,23 +15,6 @@ window.HallOfFame = {
     }
     list = list.slice(0, 10);
     localStorage.setItem(key, JSON.stringify(list));
-    // Also push to Firebase global leaderboard if available
-    if (window.FirebaseLB) {
-      window.FirebaseLB.submit(gameId, score, name);
-    } else {
-      // Module may not have loaded yet — queue and retry
-      var pending = { gameId: gameId, score: score, name: name };
-      var attempts = 0;
-      var retry = setInterval(function() {
-        attempts++;
-        if (window.FirebaseLB) {
-          window.FirebaseLB.submit(pending.gameId, pending.score, pending.name);
-          clearInterval(retry);
-        } else if (attempts > 20) {
-          clearInterval(retry);
-        }
-      }, 500);
-    }
     return list;
   },
   getScores: function(gameId) {
