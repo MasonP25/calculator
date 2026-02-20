@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Switch</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  canvas {
+    border-radius: 8px;
+    cursor: pointer;
+    display: block;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// --- Constants ---
+const COLORS = ['#ff4757', '#feca57', '#2ed573', '#00d4ff'];
+const BG = '#0f0f1a';
+const GRAVITY = 0.38;
+const JUMP_VEL = -9;
+const BALL_RADIUS = 12;
+const BASE_OBSTACLE_GAP = 300;
+const MIN_OBSTACLE_GAP = 200;
+const BASE_ROT_SPEED = 0.014;
+const MAX_ROT_SPEED = 0.038;
+const OBSTACLE_TYPES = ['circle', 'cross', 'square', 'line'];
+
+let W, H;
+let ball, camera, obstacles, stars, colorSwitchers, particles;
+let score, highScore, gameState; // 'menu', 'playing', 'dead'
+let lastTime, deathTimer;
+
+function resize() {
+  W = Math.min(window.innerWidth, 420);
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Utility ---
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function randPick(arr) { return arr[randInt(0, arr.length - 1)]; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+function normAngle(a) { return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); }
+
+// --- Particles ---
+function spawnParticles(x, y, color, count, spread, multicolor) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * spread + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      life: 1,
+      decay: 0.012 + Math.random() * 0.02,
+      radius: 2 + Math.random() * 4,
+      color: multicolor ? randPick(COLORS) : color
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.06;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - camera.y, p.radius * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// --- Star ---
+function createStar(x, y) {
+  return { x, y, collected: false, pulse: Math.random() * Math.PI * 2 };
+}
+
+function drawStar(s) {
+  if (s.collected) return;
+  const sy = s.y - camera.y;
+  if (sy < -40 || sy > H + 40) return;
+  s.pulse += 0.04;
+  const scale = 1 + Math.sin(s.pulse) * 0.18;
+  const r = 9 * scale;
+  ctx.save();
+  ctx.translate(s.x, sy);
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * Math.PI) / 4 - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.35;
+    if (i === 0) ctx.moveTo(Math.cos(angle) * rad, Math.sin(angle) * rad);
+    else ctx.lineTo(Math.cos(angle) * rad, Math.sin(angle) * rad);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// --- Color Switcher ---
+function createColorSwitcher(x, y) {
+  return { x, y, collected: false, angle: 0 };
+}
+
+function drawColorSwitcher(cs) {
+  if (cs.collected) return;
+  const sy = cs.y - camera.y;
+  if (sy < -40 || sy > H + 40) return;
+  cs.angle += 0.025;
+  const r = 15;
+  ctx.save();
+  ctx.translate(cs.x, sy);
+  ctx.rotate(cs.angle);
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = COLORS[i];
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, (i * Math.PI) / 2, ((i + 1) * Math.PI) / 2);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// --- Obstacle dimensions ---
+const CIRCLE_R = 65;
+const CIRCLE_THICK = 15;
+const CROSS_ARM_LEN = 58;
+const CROSS_ARM_W = 15;
+const CROSS_GAP = 12;
+const SQUARE_SIZE = 130;
+const SQUARE_THICK = 15;
+const LINE_W = 170;
+const LINE_THICK = 15;
+
+// --- Obstacles ---
+function createObstacle(y, type, rotSpeed) {
+  return {
+    x: W / 2, y, type,
+    angle: Math.random() * Math.PI * 2,
+    rotSpeed: rotSpeed * (Math.random() < 0.5 ? 1 : -1),
+    passed: false
+  };
+}
+
+function getGap(idx) {
+  return Math.max(MIN_OBSTACLE_GAP, BASE_OBSTACLE_GAP - idx * 2.5);
+}
+
+function getRotSpeed(idx) {
+  return Math.min(MAX_ROT_SPEED, BASE_ROT_SPEED + idx * 0.0006);
+}
+
+function drawObstacle(obs) {
+  const sy = obs.y - camera.y;
+  if (sy < -200 || sy > H + 200) return;
+  ctx.save();
+  ctx.translate(obs.x, sy);
+  ctx.rotate(obs.angle);
+
+  if (obs.type === 'circle') {
+    const midR = CIRCLE_R - CIRCLE_THICK / 2;
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = COLORS[i];
+      ctx.lineWidth = CIRCLE_THICK;
+      ctx.lineCap = 'butt';
+      ctx.beginPath();
+      ctx.arc(0, 0, midR, (i * Math.PI) / 2 + 0.05, ((i + 1) * Math.PI) / 2 - 0.05);
+      ctx.stroke();
+    }
+  } else if (obs.type === 'cross') {
+    for (let i = 0; i < 4; i++) {
+      ctx.save();
+      ctx.rotate((i * Math.PI) / 2);
+      ctx.fillStyle = COLORS[i];
+      // Rounded rect arm
+      const x = -CROSS_ARM_W / 2;
+      const y = CROSS_GAP;
+      const w = CROSS_ARM_W;
+      const h = CROSS_ARM_LEN;
+      const rr = 4;
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.lineTo(x + w - rr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+      ctx.lineTo(x + w, y + h - rr);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+      ctx.lineTo(x + rr, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+      ctx.lineTo(x, y + rr);
+      ctx.quadraticCurveTo(x, y, x + rr, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  } else if (obs.type === 'square') {
+    const half = SQUARE_SIZE / 2;
+    const segs = [
+      { x1: -half, y1: -half, x2: half, y2: -half, ci: 0 },
+      { x1: half, y1: -half, x2: half, y2: half, ci: 1 },
+      { x1: half, y1: half, x2: -half, y2: half, ci: 2 },
+      { x1: -half, y1: half, x2: -half, y2: -half, ci: 3 }
+    ];
+    ctx.lineWidth = SQUARE_THICK;
+    ctx.lineCap = 'round';
+    for (const seg of segs) {
+      ctx.strokeStyle = COLORS[seg.ci];
+      ctx.beginPath();
+      ctx.moveTo(seg.x1, seg.y1);
+      ctx.lineTo(seg.x2, seg.y2);
+      ctx.stroke();
+    }
+  } else if (obs.type === 'line') {
+    const segW = LINE_W / 4;
+    ctx.lineWidth = LINE_THICK;
+    ctx.lineCap = 'butt';
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = COLORS[i];
+      ctx.beginPath();
+      ctx.moveTo(-LINE_W / 2 + i * segW + 1, 0);
+      ctx.lineTo(-LINE_W / 2 + (i + 1) * segW - 1, 0);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+// --- Collision Detection ---
+function pointToSegDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return dist(px, py, x1, y1);
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+  return dist(px, py, x1 + t * dx, y1 + t * dy);
+}
+
+function toLocal(bx, by, ox, oy, angle) {
+  const c = Math.cos(-angle), s = Math.sin(-angle);
+  return { x: (bx - ox) * c - (by - oy) * s, y: (bx - ox) * s + (by - oy) * c };
+}
+
+function checkCollision(obs) {
+  const bx = ball.x, by = ball.y, br = BALL_RADIUS;
+  const ox = obs.x, oy = obs.y;
+
+  if (obs.type === 'circle') {
+    const midR = CIRCLE_R - CIRCLE_THICK / 2;
+    const d = dist(bx, by, ox, oy);
+    if (d + br > midR - CIRCLE_THICK / 2 && d - br < midR + CIRCLE_THICK / 2) {
+      let angle = normAngle(Math.atan2(by - oy, bx - ox) - obs.angle);
+      const seg = Math.floor(angle / (Math.PI / 2)) % 4;
+      if (COLORS[seg] !== COLORS[ball.colorIndex]) return 'die';
+      return 'pass';
+    }
+    return null;
+  }
+
+  if (obs.type === 'cross') {
+    const loc = toLocal(bx, by, ox, oy, obs.angle);
+    for (let i = 0; i < 4; i++) {
+      const a = (-i * Math.PI) / 2;
+      const c = Math.cos(a), s = Math.sin(a);
+      const ax = loc.x * c - loc.y * s;
+      const ay = loc.x * s + loc.y * c;
+      // Arm rect from [-W/2, GAP] to [W/2, GAP+LEN]
+      const hw = CROSS_ARM_W / 2;
+      const nearX = Math.max(-hw, Math.min(ax, hw));
+      const nearY = Math.max(CROSS_GAP, Math.min(ay, CROSS_GAP + CROSS_ARM_LEN));
+      if (dist(ax, ay, nearX, nearY) < br) {
+        if (COLORS[i] !== COLORS[ball.colorIndex]) return 'die';
+        return 'pass';
+      }
+    }
+    return null;
+  }
+
+  if (obs.type === 'square') {
+    const half = SQUARE_SIZE / 2;
+    const loc = toLocal(bx, by, ox, oy, obs.angle);
+    const segs = [
+      { x1: -half, y1: -half, x2: half, y2: -half, ci: 0 },
+      { x1: half, y1: -half, x2: half, y2: half, ci: 1 },
+      { x1: half, y1: half, x2: -half, y2: half, ci: 2 },
+      { x1: -half, y1: half, x2: -half, y2: -half, ci: 3 }
+    ];
+    for (const seg of segs) {
+      if (pointToSegDist(loc.x, loc.y, seg.x1, seg.y1, seg.x2, seg.y2) < br + SQUARE_THICK / 2) {
+        if (COLORS[seg.ci] !== COLORS[ball.colorIndex]) return 'die';
+        return 'pass';
+      }
+    }
+    return null;
+  }
+
+  if (obs.type === 'line') {
+    const loc = toLocal(bx, by, ox, oy, obs.angle);
+    if (Math.abs(loc.y) < br + LINE_THICK / 2) {
+      const segW = LINE_W / 4;
+      for (let i = 0; i < 4; i++) {
+        const sx = -LINE_W / 2 + i * segW;
+        const ex = sx + segW;
+        if (loc.x + br > sx && loc.x - br < ex) {
+          if (COLORS[i] !== COLORS[ball.colorIndex]) return 'die';
+          return 'pass';
+        }
+      }
+    }
+    return null;
+  }
+
+  return null;
+}
+
+// Clearance size for "passed" detection per obstacle type
+function obsClearance(obs) {
+  if (obs.type === 'circle') return CIRCLE_R + 10;
+  if (obs.type === 'cross') return CROSS_GAP + CROSS_ARM_LEN + 10;
+  if (obs.type === 'square') return SQUARE_SIZE / 2 + 15;
+  if (obs.type === 'line') return LINE_THICK / 2 + 10;
+  return 80;
+}
+
+// --- Init / Reset ---
+highScore = parseInt(localStorage.getItem('colorswitch_hi') || '0');
+
+function init() {
+  ball = {
+    x: W / 2,
+    y: 0,
+    vy: 0,
+    colorIndex: randInt(0, 3),
+  };
+  camera = { y: 0, targetY: 0 };
+  obstacles = [];
+  stars = [];
+  colorSwitchers = [];
+  particles = [];
+  score = 0;
+  deathTimer = 0;
+  gameState = 'menu';
+  generateObstacles(12);
+}
+
+let lastObsType = '';
+function pickObsType() {
+  let t;
+  do { t = randPick(OBSTACLE_TYPES); } while (t === lastObsType);
+  lastObsType = t;
+  return t;
+}
+
+function generateObstacles(count) {
+  const startIdx = obstacles.length;
+  let lastY = obstacles.length > 0 ? obstacles[obstacles.length - 1].y : ball.y;
+  for (let i = 0; i < count; i++) {
+    const idx = startIdx + i;
+    const gap = getGap(idx);
+    lastY -= gap;
+    const type = pickObsType();
+    const rotSpeed = getRotSpeed(idx);
+    obstacles.push(createObstacle(lastY, type, rotSpeed));
+
+    // Star halfway between obstacles
+    stars.push(createStar(W / 2 + randInt(-30, 30), lastY + gap * 0.55));
+
+    // Color switcher between star and obstacle
+    colorSwitchers.push(createColorSwitcher(W / 2, lastY + gap * 0.28));
+  }
+}
+
+function jump() {
+  ball.vy = JUMP_VEL;
+  if (window.SFX) window.SFX.bounce();
+}
+
+// --- Main Loop ---
+function update() {
+  if (gameState === 'dead') {
+    updateParticles();
+    return;
+  }
+  if (gameState !== 'playing') return;
+
+  // Ball physics
+  ball.vy += GRAVITY;
+  ball.y += ball.vy;
+  ball.x = W / 2;
+
+  // Camera follow - smooth upward, snap downward
+  camera.targetY = ball.y - H * 0.65;
+  if (camera.targetY < camera.y) {
+    camera.y = lerp(camera.y, camera.targetY, 0.08);
+  } else {
+    camera.y = lerp(camera.y, camera.targetY, 0.12);
+  }
+
+  // Rotate obstacles
+  for (const obs of obstacles) {
+    obs.angle += obs.rotSpeed;
+  }
+
+  // Check star collection
+  for (const s of stars) {
+    if (!s.collected && dist(ball.x, ball.y, s.x, s.y) < BALL_RADIUS + 12) {
+      s.collected = true;
+      score++;
+      spawnParticles(s.x, s.y, '#fff', 14, 3.5, false);
+      if (window.SFX) window.SFX.coin();
+    }
+  }
+
+  // Check color switcher
+  for (const cs of colorSwitchers) {
+    if (!cs.collected && dist(ball.x, ball.y, cs.x, cs.y) < BALL_RADIUS + 16) {
+      cs.collected = true;
+      let newColor;
+      do { newColor = randInt(0, 3); } while (newColor === ball.colorIndex);
+      ball.colorIndex = newColor;
+      spawnParticles(cs.x, cs.y, null, 18, 4, true);
+      if (window.SFX) window.SFX.powerup();
+    }
+  }
+
+  // Check obstacle collision & passing
+  for (const obs of obstacles) {
+    const result = checkCollision(obs);
+    if (result === 'die') {
+      die();
+      return;
+    }
+    if (!obs.passed && ball.y < obs.y - obsClearance(obs)) {
+      obs.passed = true;
+      score++;
+    }
+  }
+
+  // Generate more obstacles ahead
+  const topObs = obstacles[obstacles.length - 1];
+  if (topObs && ball.y - topObs.y < 1000) {
+    generateObstacles(5);
+  }
+
+  // Fall off bottom
+  if (ball.y > camera.y + H + 50) {
+    die();
+  }
+
+  updateParticles();
+}
+
+function die() {
+  gameState = 'dead';
+  deathTimer = 0;
+  spawnParticles(ball.x, ball.y, null, 40, 7, true);
+  if (window.SFX) window.SFX.death();
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('colorswitch_hi', highScore);
+  }
+  if (window.HallOfFame) window.HallOfFame.submit('colorswitch', score);
+}
+
+// --- Drawing ---
+function draw() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle gradient at top/bottom edges
+  const grad = ctx.createLinearGradient(0, 0, 0, 60);
+  grad.addColorStop(0, 'rgba(0,0,0,0.4)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, 60);
+
+  for (const obs of obstacles) drawObstacle(obs);
+  for (const cs of colorSwitchers) drawColorSwitcher(cs);
+  for (const s of stars) drawStar(s);
+  drawParticles();
+
+  // Draw ball
+  if (gameState !== 'dead') {
+    const screenY = ball.y - camera.y;
+    const color = COLORS[ball.colorIndex];
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(ball.x, screenY, BALL_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Inner highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.beginPath();
+    ctx.arc(ball.x - 3, screenY - 3, BALL_RADIUS * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // HUD: score
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = 'bold 36px Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(score, W / 2, 16);
+  ctx.restore();
+
+  // High score indicator
+  if (gameState === 'playing' && highScore > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '13px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Best: ' + highScore, W / 2, 56);
+    ctx.restore();
+  }
+
+  if (gameState === 'menu') {
+    drawMenuOverlay();
+  } else if (gameState === 'dead') {
+    deathTimer++;
+    if (deathTimer > 30) drawDeathOverlay();
+  }
+}
+
+function drawMenuOverlay() {
+  ctx.fillStyle = 'rgba(15,15,26,0.8)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+
+  // Animated color ring as logo
+  const cx = W / 2, cy = H / 2 - 80;
+  const t = Date.now() / 1000;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(t * 0.5);
+  for (let i = 0; i < 4; i++) {
+    ctx.strokeStyle = COLORS[i];
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, (i * Math.PI) / 2 + 0.08, ((i + 1) * Math.PI) / 2 - 0.08);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 34px Segoe UI, sans-serif';
+  ctx.fillText('Color Switch', W / 2, H / 2 - 10);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '15px Segoe UI, sans-serif';
+  ctx.fillText('Tap or press Space to play', W / 2, H / 2 + 25);
+
+  if (highScore > 0) {
+    ctx.fillStyle = '#555';
+    ctx.font = '13px Segoe UI, sans-serif';
+    ctx.fillText('Best: ' + highScore, W / 2, H / 2 + 55);
+  }
+
+  ctx.fillStyle = '#444';
+  ctx.font = '12px Segoe UI, sans-serif';
+  ctx.fillText('Pass through your matching color', W / 2, H / 2 + 85);
+}
+
+function drawDeathOverlay() {
+  const alpha = Math.min(1, (deathTimer - 30) / 20);
+  ctx.fillStyle = `rgba(15,15,26,${0.75 * alpha})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = alpha;
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#ff4757';
+  ctx.font = 'bold 34px Segoe UI, sans-serif';
+  ctx.fillText('Game Over', W / 2, H / 2 - 50);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 48px Segoe UI, sans-serif';
+  ctx.fillText(score, W / 2, H / 2 + 10);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '15px Segoe UI, sans-serif';
+  ctx.fillText('Best: ' + highScore, W / 2, H / 2 + 40);
+
+  ctx.fillStyle = '#666';
+  ctx.font = '14px Segoe UI, sans-serif';
+  ctx.fillText('Tap or press Space to retry', W / 2, H / 2 + 75);
+
+  ctx.globalAlpha = 1;
+}
+
+function gameLoop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  lastTime = timestamp;
+
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// --- Input ---
+function handleInput() {
+  if (gameState === 'menu') {
+    gameState = 'playing';
+    ball.y = 0;
+    camera.y = ball.y - H * 0.65;
+    camera.targetY = camera.y;
+    if (window.SFX) window.SFX.click();
+    jump();
+  } else if (gameState === 'playing') {
+    jump();
+  } else if (gameState === 'dead') {
+    if (deathTimer < 30) return; // brief delay before restart
+    if (window.SFX) window.SFX.click();
+    lastObsType = '';
+    init();
+    gameState = 'playing';
+    ball.y = 0;
+    camera.y = ball.y - H * 0.65;
+    camera.targetY = camera.y;
+    jump();
+  }
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  handleInput();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    handleInput();
+  }
+});
+
+// Prevent scrolling on mobile
+document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+// --- Start ---
+init();
+requestAnimationFrame(gameLoop);
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

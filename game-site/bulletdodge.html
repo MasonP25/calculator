@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bullet Dodge</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.3rem;
+    background: linear-gradient(90deg, #00d4ff, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+  .hud {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 0.4rem;
+    font-size: 1.1rem;
+    align-items: center;
+  }
+  .hud .time { color: #00d4ff; font-weight: bold; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+  .hud .lives { color: #ff4466; font-size: 1.2rem; letter-spacing: 2px; }
+  .hud .status { color: #a855f7; font-size: 0.9rem; min-width: 120px; text-align: center; }
+  canvas {
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+  }
+  .msg {
+    margin-top: 0.6rem;
+    color: #888;
+    min-height: 1.5rem;
+    font-size: 0.95rem;
+  }
+  .controls {
+    color: #555;
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+  #overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #overlay.active { pointer-events: auto; }
+  #overlay .panel {
+    background: rgba(15, 15, 26, 0.92);
+    border: 1px solid #a855f7;
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
+    display: none;
+  }
+  #overlay.active .panel { display: block; }
+  #overlay .panel h2 { color: #00d4ff; margin-bottom: 0.5rem; font-size: 1.6rem; }
+  #overlay .panel p { color: #aaa; margin-bottom: 0.3rem; }
+  #overlay .panel .final-score { font-size: 2rem; color: #ff4466; font-weight: bold; margin: 0.5rem 0; }
+  #overlay .panel button {
+    margin-top: 1rem;
+    padding: 0.6rem 2rem;
+    font-size: 1rem;
+    background: linear-gradient(135deg, #a855f7, #00d4ff);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  #overlay .panel button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  }
+  .wrap { position: relative; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Bullet Dodge</h1>
+<div class="hud">
+  <span>Time: <span class="time" id="timer">0.0</span>s</span>
+  <span class="lives" id="lives"></span>
+  <span class="status" id="status"></span>
+</div>
+<div class="wrap">
+  <canvas id="c" width="600" height="600"></canvas>
+  <div id="overlay" class="active">
+    <div class="panel">
+      <h2 id="panelTitle">Bullet Dodge</h2>
+      <p id="panelSub">Dodge the bullets. Survive as long as you can.</p>
+      <p class="final-score" id="panelScore" style="display:none"></p>
+      <button id="startBtn">Start Game</button>
+    </div>
+  </div>
+</div>
+<div class="msg" id="msg">WASD or Arrow Keys to move</div>
+<div class="controls">WASD / Arrows: Move &nbsp;|&nbsp; Survive as long as possible</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 600, H = 600;
+const ARENA_PAD = 20;
+const AX = ARENA_PAD, AY = ARENA_PAD;
+const AW = W - ARENA_PAD * 2, AH = H - ARENA_PAD * 2;
+
+// DOM elements
+const timerEl = document.getElementById('timer');
+const livesEl = document.getElementById('lives');
+const statusEl = document.getElementById('status');
+const msgEl = document.getElementById('msg');
+const overlay = document.getElementById('overlay');
+const panelTitle = document.getElementById('panelTitle');
+const panelSub = document.getElementById('panelSub');
+const panelScore = document.getElementById('panelScore');
+const startBtn = document.getElementById('startBtn');
+
+// Game state
+let player, bullets, pickups, particles, trailParts;
+let score, lives, playing, gameOverFlag;
+let keys = {};
+let invincible, invTimer;
+let shieldActive, slowActive, slowTimer;
+let shakeX, shakeY, shakeTimer;
+let currentPattern, patternTimer, patternDuration, patternName, patternShowTimer;
+let difficulty, spawnAccum, lastMilestone;
+let activePatterns, patternQueue;
+let animFrame;
+
+const PLAYER_SPEED = 3.8;
+const PLAYER_RADIUS = 6;
+const HITBOX_RADIUS = 3;
+const BULLET_BASE_SPEED = 2.0;
+const INV_DURATION = 2000;
+const SLOW_DURATION = 3000;
+const PATTERN_MIN = 5000;
+const PATTERN_MAX = 10000;
+
+const PATTERNS = ['straight', 'spiral', 'ring', 'rain', 'aimed', 'cross', 'sinewave'];
+const PATTERN_LABELS = {
+  straight: 'Straight Shot', spiral: 'Spiral', ring: 'Expanding Ring',
+  rain: 'Bullet Rain', aimed: 'Aimed Shot', cross: 'Crossfire', sinewave: 'Sine Wave'
+};
+
+function init() {
+  player = { x: W / 2, y: H / 2, trail: [] };
+  bullets = [];
+  pickups = [];
+  particles = [];
+  trailParts = [];
+  score = 0;
+  lives = 3;
+  playing = false;
+  gameOverFlag = false;
+  invincible = false;
+  invTimer = 0;
+  shieldActive = false;
+  slowActive = false;
+  slowTimer = 0;
+  shakeX = 0; shakeY = 0; shakeTimer = 0;
+  difficulty = 1;
+  spawnAccum = 0;
+  lastMilestone = 0;
+  activePatterns = [];
+  patternQueue = [];
+  currentPattern = null;
+  patternTimer = 0;
+  patternDuration = 0;
+  patternName = '';
+  patternShowTimer = 0;
+  updateHUD();
+}
+
+function updateHUD() {
+  timerEl.textContent = score.toFixed(1);
+  let h = '';
+  for (let i = 0; i < lives; i++) h += '\u2764 ';
+  for (let i = lives; i < 3; i++) h += '\u2661 ';
+  livesEl.textContent = h.trim();
+}
+
+// Input
+document.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  keys[e.code] = true;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+  keys[e.code] = false;
+});
+
+startBtn.addEventListener('click', () => {
+  if (window.SFX) window.SFX.click();
+  startGame();
+});
+
+function startGame() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  init();
+  playing = true;
+  overlay.classList.remove('active');
+  panelScore.style.display = 'none';
+  msgEl.textContent = '';
+  lastTime = 0;
+  pickNextPattern();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function showGameOver() {
+  gameOverFlag = true;
+  playing = false;
+  if (window.SFX) window.SFX.fail();
+  overlay.classList.add('active');
+  panelTitle.textContent = 'Game Over';
+  panelSub.textContent = 'You survived for:';
+  panelScore.textContent = score.toFixed(1) + 's';
+  panelScore.style.display = 'block';
+  startBtn.textContent = 'Play Again';
+  if (window.HallOfFame) window.HallOfFame.submit('bulletdodge', parseFloat(score.toFixed(1)));
+}
+
+// Pattern management
+function pickNextPattern() {
+  let available = PATTERNS.filter(p => p !== currentPattern);
+  // At higher difficulty, allow simultaneous patterns
+  if (difficulty >= 3 && activePatterns.length < Math.min(Math.floor(difficulty / 2), 3)) {
+    // Add additional pattern
+  }
+  currentPattern = available[Math.floor(Math.random() * available.length)];
+  patternDuration = PATTERN_MIN + Math.random() * (PATTERN_MAX - PATTERN_MIN);
+  patternTimer = 0;
+  patternName = PATTERN_LABELS[currentPattern] || currentPattern;
+  patternShowTimer = 2000;
+  if (window.SFX) window.SFX.swoosh();
+  statusEl.textContent = patternName;
+}
+
+// Bullet spawning
+function spawnBullets(dt) {
+  const spd = BULLET_BASE_SPEED * (1 + difficulty * 0.12);
+  const rate = 0.8 + difficulty * 0.25; // bullets per frame-ish
+  spawnAccum += rate * (dt / 16.67);
+
+  while (spawnAccum >= 1) {
+    spawnAccum -= 1;
+    spawnPatternBullet(currentPattern, spd);
+  }
+
+  // Extra simultaneous pattern at high difficulty
+  if (difficulty >= 4) {
+    let extra = PATTERNS[(PATTERNS.indexOf(currentPattern) + 3) % PATTERNS.length];
+    if (Math.random() < 0.3 * (dt / 16.67)) {
+      spawnPatternBullet(extra, spd * 0.85);
+    }
+  }
+}
+
+function spawnPatternBullet(pattern, spd) {
+  const cx = AX + AW / 2, cy = AY + AH / 2;
+  let b;
+
+  switch (pattern) {
+    case 'straight': {
+      const wall = Math.floor(Math.random() * 4);
+      let x, y, vx, vy;
+      if (wall === 0) { x = AX; y = AY + Math.random() * AH; vx = spd; vy = (Math.random() - 0.5) * 0.5; }
+      else if (wall === 1) { x = AX + AW; y = AY + Math.random() * AH; vx = -spd; vy = (Math.random() - 0.5) * 0.5; }
+      else if (wall === 2) { x = AX + Math.random() * AW; y = AY; vx = (Math.random() - 0.5) * 0.5; vy = spd; }
+      else { x = AX + Math.random() * AW; y = AY + AH; vx = (Math.random() - 0.5) * 0.5; vy = -spd; }
+      bullets.push({ x, y, vx, vy, type: 'normal', age: 0 });
+      break;
+    }
+    case 'spiral': {
+      const t = Date.now() * 0.003;
+      const angle = t % (Math.PI * 2);
+      for (let i = 0; i < 2; i++) {
+        const a = angle + i * Math.PI;
+        bullets.push({
+          x: cx, y: cy,
+          vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          type: 'spiral', age: 0
+        });
+      }
+      break;
+    }
+    case 'ring': {
+      if (Math.random() < 0.08) {
+        const count = 16 + Math.floor(difficulty * 2);
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * Math.PI * 2;
+          bullets.push({
+            x: cx, y: cy,
+            vx: Math.cos(a) * spd * 0.8, vy: Math.sin(a) * spd * 0.8,
+            type: 'ring', age: 0
+          });
+        }
+      }
+      break;
+    }
+    case 'rain': {
+      const x = AX + Math.random() * AW;
+      bullets.push({
+        x, y: AY,
+        vx: (Math.random() - 0.5) * 0.3, vy: spd * (0.8 + Math.random() * 0.4),
+        type: 'rain', age: 0
+      });
+      break;
+    }
+    case 'aimed': {
+      const wall = Math.floor(Math.random() * 4);
+      let x, y;
+      if (wall === 0) { x = AX; y = AY + Math.random() * AH; }
+      else if (wall === 1) { x = AX + AW; y = AY + Math.random() * AH; }
+      else if (wall === 2) { x = AX + Math.random() * AW; y = AY; }
+      else { x = AX + Math.random() * AW; y = AY + AH; }
+      const angle = Math.atan2(player.y - y, player.x - x);
+      const spread = (Math.random() - 0.5) * 0.3;
+      bullets.push({
+        x, y,
+        vx: Math.cos(angle + spread) * spd, vy: Math.sin(angle + spread) * spd,
+        type: 'aimed', age: 0
+      });
+      break;
+    }
+    case 'cross': {
+      // From all 4 walls
+      const positions = [
+        { x: AX, y: AY + Math.random() * AH, vx: spd, vy: 0 },
+        { x: AX + AW, y: AY + Math.random() * AH, vx: -spd, vy: 0 },
+        { x: AX + Math.random() * AW, y: AY, vx: 0, vy: spd },
+        { x: AX + Math.random() * AW, y: AY + AH, vx: 0, vy: -spd }
+      ];
+      const pick = positions[Math.floor(Math.random() * 4)];
+      bullets.push({ ...pick, type: 'cross', age: 0 });
+      // Often add a second from opposite wall
+      if (Math.random() < 0.6) {
+        const opp = positions[(positions.indexOf(pick) + 2) % 4] || positions[Math.floor(Math.random() * 4)];
+        bullets.push({ x: opp.x, y: opp.y, vx: opp.vx, vy: opp.vy, type: 'cross', age: 0 });
+      }
+      break;
+    }
+    case 'sinewave': {
+      const wall = Math.random() < 0.5 ? 0 : 2;
+      let x, y, vx, vy, perpX, perpY;
+      if (wall === 0) {
+        x = AX; y = AY + Math.random() * AH;
+        vx = spd; vy = 0; perpX = 0; perpY = 1;
+      } else {
+        x = AX + Math.random() * AW; y = AY;
+        vx = 0; vy = spd; perpX = 1; perpY = 0;
+      }
+      bullets.push({
+        x, y, vx, vy, type: 'sine', age: 0,
+        baseX: x, baseY: y, perpX, perpY,
+        amplitude: 30 + Math.random() * 40,
+        frequency: 0.03 + Math.random() * 0.02
+      });
+      break;
+    }
+  }
+}
+
+// Pickup spawning
+function trySpawnPickup() {
+  if (pickups.length >= 2) return;
+  if (Math.random() > 0.001) return; // rare per frame
+  const type = Math.random() < 0.5 ? 'shield' : 'slowmo';
+  const x = AX + 40 + Math.random() * (AW - 80);
+  const y = AY + 40 + Math.random() * (AH - 80);
+  pickups.push({ x, y, type, age: 0, life: 8000 }); // disappears after 8s
+}
+
+// Particles
+function spawnParticles(x, y, color, count, spread) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = Math.random() * spread;
+    particles.push({
+      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: 0.5 + Math.random() * 0.5, maxLife: 0.5 + Math.random() * 0.5,
+      color, size: 1 + Math.random() * 3
+    });
+  }
+}
+
+function hitPlayer() {
+  if (invincible) return;
+
+  if (shieldActive) {
+    shieldActive = false;
+    spawnParticles(player.x, player.y, '#4488ff', 15, 3);
+    invincible = true;
+    invTimer = INV_DURATION / 2;
+    return;
+  }
+
+  lives--;
+  if (window.SFX) window.SFX.death();
+  spawnParticles(player.x, player.y, '#ff4466', 30, 5);
+  shakeTimer = 300;
+  invincible = true;
+  invTimer = INV_DURATION;
+  updateHUD();
+
+  if (lives <= 0) {
+    spawnParticles(player.x, player.y, '#ffaa00', 50, 6);
+    showGameOver();
+  }
+}
+
+// Main loop
+let lastTime = 0;
+function gameLoop(ts) {
+  if (!lastTime) lastTime = ts;
+  let dt = ts - lastTime;
+  lastTime = ts;
+  if (dt > 50) dt = 50; // cap
+
+  if (!playing) {
+    // Keep rendering particles on game over
+    if (gameOverFlag && particles.length > 0) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt / 1000;
+        p.x += p.vx * (dt / 16.67);
+        p.y += p.vy * (dt / 16.67);
+        p.vx *= 0.97; p.vy *= 0.97;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+    drawFrame();
+    if (gameOverFlag && particles.length > 0) {
+      animFrame = requestAnimationFrame(gameLoop);
+    }
+    return;
+  }
+
+  // Update score
+  score += dt / 1000;
+  difficulty = 1 + score / 15; // ramps over time
+  updateHUD();
+
+  // Milestone SFX
+  const milestone = Math.floor(score / 10);
+  if (milestone > lastMilestone) {
+    lastMilestone = milestone;
+    if (window.SFX) window.SFX.coin();
+  }
+
+  // Player movement
+  let dx = 0, dy = 0;
+  if (keys['arrowleft'] || keys['a'] || keys['ArrowLeft']) dx -= 1;
+  if (keys['arrowright'] || keys['d'] || keys['ArrowRight']) dx += 1;
+  if (keys['arrowup'] || keys['w'] || keys['ArrowUp']) dy -= 1;
+  if (keys['arrowdown'] || keys['s'] || keys['ArrowDown']) dy += 1;
+  if (dx !== 0 || dy !== 0) {
+    const len = Math.hypot(dx, dy);
+    dx /= len; dy /= len;
+    player.x += dx * PLAYER_SPEED * (dt / 16.67);
+    player.y += dy * PLAYER_SPEED * (dt / 16.67);
+  }
+  // Clamp to arena
+  player.x = Math.max(AX + PLAYER_RADIUS, Math.min(AX + AW - PLAYER_RADIUS, player.x));
+  player.y = Math.max(AY + PLAYER_RADIUS, Math.min(AY + AH - PLAYER_RADIUS, player.y));
+
+  // Player trail
+  player.trail.unshift({ x: player.x, y: player.y, age: 0 });
+  if (player.trail.length > 15) player.trail.pop();
+  player.trail.forEach(t => t.age += dt);
+
+  // Pattern timer
+  patternTimer += dt;
+  patternShowTimer -= dt;
+  if (patternTimer >= patternDuration) {
+    pickNextPattern();
+  }
+
+  // Spawn bullets
+  spawnBullets(dt);
+
+  // Spawn pickups
+  trySpawnPickup();
+
+  // Slow-mo
+  if (slowActive) {
+    slowTimer -= dt;
+    if (slowTimer <= 0) { slowActive = false; statusEl.textContent = patternName; }
+  }
+
+  const timeScale = slowActive ? 0.3 : 1;
+
+  // Update bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.age += dt;
+
+    if (b.type === 'sine') {
+      const travel = b.age * 0.06 * timeScale;
+      const baseMovedX = b.baseX + b.vx * travel;
+      const baseMovedY = b.baseY + b.vy * travel;
+      const wave = Math.sin(travel * b.frequency * 60) * b.amplitude;
+      b.x = baseMovedX + b.perpX * wave;
+      b.y = baseMovedY + b.perpY * wave;
+    } else {
+      b.x += b.vx * (dt / 16.67) * timeScale;
+      b.y += b.vy * (dt / 16.67) * timeScale;
+    }
+
+    // Remove if out of bounds (with margin)
+    if (b.x < AX - 50 || b.x > AX + AW + 50 || b.y < AY - 50 || b.y > AY + AH + 50) {
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    // Collision with player
+    if (!invincible && !gameOverFlag) {
+      const dist = Math.hypot(b.x - player.x, b.y - player.y);
+      if (dist < HITBOX_RADIUS + 3) {
+        bullets.splice(i, 1);
+        hitPlayer();
+      }
+    }
+  }
+
+  // Invincibility timer
+  if (invincible) {
+    invTimer -= dt;
+    if (invTimer <= 0) invincible = false;
+  }
+
+  // Shake timer
+  if (shakeTimer > 0) {
+    shakeTimer -= dt;
+    shakeX = (Math.random() - 0.5) * 8 * (shakeTimer / 300);
+    shakeY = (Math.random() - 0.5) * 8 * (shakeTimer / 300);
+  } else {
+    shakeX = 0; shakeY = 0;
+  }
+
+  // Update pickups
+  for (let i = pickups.length - 1; i >= 0; i--) {
+    const p = pickups[i];
+    p.age += dt;
+    if (p.age > p.life) { pickups.splice(i, 1); continue; }
+    const dist = Math.hypot(p.x - player.x, p.y - player.y);
+    if (dist < PLAYER_RADIUS + 12) {
+      if (p.type === 'shield') {
+        shieldActive = true;
+        spawnParticles(p.x, p.y, '#4488ff', 12, 3);
+      } else {
+        slowActive = true;
+        slowTimer = SLOW_DURATION;
+        statusEl.textContent = 'SLOW-MO!';
+        spawnParticles(p.x, p.y, '#a855f7', 12, 3);
+      }
+      if (window.SFX) window.SFX.powerup();
+      pickups.splice(i, 1);
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt / 1000;
+    p.x += p.vx * (dt / 16.67);
+    p.y += p.vy * (dt / 16.67);
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  drawFrame();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function drawFrame() {
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Background
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Arena
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(AX, AY, AW, AH);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  for (let gx = AX; gx <= AX + AW; gx += gridSize) {
+    ctx.beginPath(); ctx.moveTo(gx, AY); ctx.lineTo(gx, AY + AH); ctx.stroke();
+  }
+  for (let gy = AY; gy <= AY + AH; gy += gridSize) {
+    ctx.beginPath(); ctx.moveTo(AX, gy); ctx.lineTo(AX + AW, gy); ctx.stroke();
+  }
+
+  // Arena border glow
+  const pulse = 0.4 + 0.2 * Math.sin(Date.now() * 0.003);
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = `rgba(168, 85, 247, ${pulse})`;
+  ctx.strokeStyle = `rgba(168, 85, 247, ${0.5 + pulse * 0.3})`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(AX, AY, AW, AH);
+  ctx.shadowBlur = 0;
+
+  // Pickups
+  pickups.forEach(p => {
+    const blink = p.age > p.life - 2000 ? (Math.sin(p.age * 0.02) > 0 ? 1 : 0.3) : 1;
+    const bob = Math.sin(p.age * 0.004) * 3;
+    ctx.globalAlpha = blink;
+    if (p.type === 'shield') {
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#4488ff';
+      ctx.fillStyle = '#4488ff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y + bob, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#88bbff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y + bob, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#a855f7';
+      ctx.fillStyle = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y + bob, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#d4aaff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y + bob, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  });
+
+  // Bullets
+  bullets.forEach(b => {
+    const colors = {
+      normal: '#ff4466', spiral: '#ff8844', ring: '#ff66aa',
+      rain: '#ff6644', aimed: '#ff4488', cross: '#ff8866', sine: '#ff66cc'
+    };
+    const color = colors[b.type] || '#ff4466';
+
+    // Trail
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = color;
+    const tx = b.type === 'sine' ? 0 : -b.vx * 0.3;
+    const ty = b.type === 'sine' ? 0 : -b.vy * 0.3;
+    ctx.beginPath();
+    ctx.arc(b.x + tx, b.y + ty, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.12;
+    ctx.beginPath();
+    ctx.arc(b.x + tx * 2, b.y + ty * 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Bullet
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // Player trail
+  if (player) {
+    player.trail.forEach((t, i) => {
+      const alpha = 0.3 * (1 - i / player.trail.length);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#00d4ff';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, PLAYER_RADIUS * (1 - i * 0.04), 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Player - blink during invincibility
+    let showPlayer = true;
+    if (invincible) {
+      showPlayer = Math.sin(Date.now() * 0.015) > 0;
+    }
+
+    if (showPlayer) {
+      // Shield visual
+      if (shieldActive) {
+        ctx.strokeStyle = 'rgba(68, 136, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#4488ff';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, PLAYER_RADIUS + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Outer glow
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#00d4ff';
+      ctx.fillStyle = 'rgba(0, 212, 255, 0.3)';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_RADIUS + 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main orb
+      ctx.fillStyle = '#00d4ff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner bright core
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#ffffff';
+      ctx.fillStyle = '#aaeeff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, HITBOX_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  });
+  ctx.globalAlpha = 1;
+
+  // Pattern name flash
+  if (patternShowTimer > 0 && playing) {
+    const alpha = Math.min(1, patternShowTimer / 500);
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 22px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#a855f7';
+    ctx.fillText(patternName, W / 2, AY + 40);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  // Slow-mo indicator
+  if (slowActive) {
+    ctx.globalAlpha = 0.15 + 0.05 * Math.sin(Date.now() * 0.005);
+    ctx.fillStyle = '#a855f7';
+    ctx.fillRect(AX, AY, AW, AH);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+// Start
+init();
+drawFrame();
+// Show start screen on first load
+lastTime = 0;
+animFrame = requestAnimationFrame(gameLoop);
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
