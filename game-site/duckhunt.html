@@ -796,12 +796,14 @@ function startRound() {
 
 function spawnNext() {
   waitingForNext = false;
-  const count = (pairedMode && roundDucksSpawned + 1 < ducksPerRound - roundResults.length) ? 2 : 1;
-  for (let i = 0; i < count && roundDucksSpawned + roundResults.length < ducksPerRound; i++) {
+  const remaining = ducksPerRound - roundDucksSpawned;
+  if (remaining <= 0) return;
+  const count = (pairedMode && remaining >= 2) ? 2 : 1;
+  for (let i = 0; i < count; i++) {
     activeDucks.push(spawnDuck());
     roundDucksSpawned++;
   }
-  shotsLeft = 3 * Math.min(count, 2);
+  shotsLeft = 3 * count;
 }
 
 function showStartScreen() {
@@ -984,7 +986,7 @@ loop();
 </script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
-<script type="module" src="firebase-lb.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

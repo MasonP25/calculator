@@ -79,27 +79,23 @@ const LOWER_BETTER = ['reaction','minesweeper','memory','sudoku','nonogram','maz
 
 window.FirebaseLB = {
   submit: async function(gameId, score, name) {
-    try {
-      name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : 'Guest');
-      // Use deterministic doc ID so each player has one entry per game
-      var docId = gameId + '_' + name.toLowerCase();
-      var docRef = doc(db, 'scores', docId);
-      var existing = await getDoc(docRef);
-      if (existing.exists()) {
-        var old = existing.data().score;
-        var lower = LOWER_BETTER.includes(gameId);
-        var isBetter = lower ? score < old : score > old;
-        if (!isBetter) return; // already have a better score
-      }
-      await setDoc(docRef, {
-        gameId: gameId,
-        name: name,
-        score: score,
-        date: new Date().toLocaleDateString()
-      });
-    } catch (e) {
-      console.warn('Firebase submit failed:', e);
+    name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : localStorage.getItem('arcadePlayerName')) || 'Guest';
+    // Use deterministic doc ID so each player has one entry per game
+    var docId = gameId + '_' + name.toLowerCase();
+    var docRef = doc(db, 'scores', docId);
+    var existing = await getDoc(docRef);
+    if (existing.exists()) {
+      var old = existing.data().score;
+      var lower = LOWER_BETTER.includes(gameId);
+      var isBetter = lower ? score < old : score > old;
+      if (!isBetter) return; // already have a better score
     }
+    await setDoc(docRef, {
+      gameId: gameId,
+      name: name,
+      score: score,
+      date: new Date().toLocaleDateString()
+    });
   },
 
   getScores: async function(gameId, max) {
@@ -149,9 +145,9 @@ window.FirebaseLB = {
 })();
 
 // ─── Override HallOfFame to also push to Firebase ───
-(function() {
-  if (!window.HallOfFame) return;
-  if (window.HallOfFame._firebaseWrapped) return; // prevent double-wrap
+function wrapHallOfFame() {
+  if (!window.HallOfFame) return false;
+  if (window.HallOfFame._firebaseWrapped) return true;
 
   var origSubmit = window.HallOfFame.submit.bind(window.HallOfFame);
 
@@ -159,7 +155,11 @@ window.FirebaseLB = {
     // Still save locally
     var localResult = origSubmit(gameId, score);
     // Also push to Firebase
-    window.FirebaseLB.submit(gameId, score);
+    window.FirebaseLB.submit(gameId, score).then(function() {
+      console.log('[LB] Firebase submit OK:', gameId, score);
+    }).catch(function(e) {
+      console.warn('[LB] Firebase submit FAILED:', gameId, score, e);
+    });
     return localResult;
   };
   window.HallOfFame._firebaseWrapped = true;
@@ -168,4 +168,14 @@ window.FirebaseLB = {
   window.HallOfFame.getGlobalScores = function(gameId, max) {
     return window.FirebaseLB.getScores(gameId, max);
   };
-})();
+  console.log('[LB] Firebase wrapper installed');
+  return true;
+}
+
+// Try immediately, then retry if HallOfFame isn't ready yet
+if (!wrapHallOfFame()) {
+  var _wrapRetry = setInterval(function() {
+    if (wrapHallOfFame()) clearInterval(_wrapRetry);
+  }, 200);
+  setTimeout(function() { clearInterval(_wrapRetry); }, 5000);
+}

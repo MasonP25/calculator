@@ -86,6 +86,8 @@
   #startBtn:hover, #restartBtn:hover { background: #3a8a3a; }
   #restartBtn { display: none; background: #6a2a2a; border-color: #a44; }
   #restartBtn:hover { background: #8a3a3a; }
+  #quitBtn { background: #2a4a6a; border: 1px solid #4488aa; color: #aaddff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+  #quitBtn:hover { background: #3a5a7a; }
   #gameMsg {
     color: #888; min-height: 1.2rem; font-size: 0.85rem; margin-top: 2px;
     text-align: center;
@@ -107,7 +109,7 @@
 <a class="back" href="index.html">&#8592; Back</a>
 <h1>Tower Defense</h1>
 <div id="topBar">
-  <div class="stat">Wave: <span class="val wave" id="waveDisp">0/20</span></div>
+  <div class="stat">Wave: <span class="val wave" id="waveDisp">0/50</span></div>
   <div class="stat">Gold: <span class="val gold" id="goldDisp">200</span></div>
   <div class="stat">Lives: <span class="val lives" id="livesDisp">20</span></div>
   <div class="stat">Score: <span class="val" id="scoreDisp">0</span></div>
@@ -127,6 +129,7 @@
   <button class="speed-btn" data-speed="2">2x</button>
   <button class="speed-btn" data-speed="3">3x</button>
   <button id="startBtn" style="margin-left:12px;">Start Wave</button>
+  <button id="quitBtn" style="margin-left:8px;display:none;">Save &amp; Quit</button>
   <button id="restartBtn" style="margin-left:12px;">Restart</button>
 </div>
 <div id="gameMsg">Select a tower and click on grass to place it</div>
@@ -267,7 +270,7 @@ function updateShopUI() {
 function updateUI() {
   goldDisp.textContent = gold;
   livesDisp.textContent = lives;
-  waveDisp.textContent = `${wave}/20`;
+  waveDisp.textContent = `${wave}/50`;
   scoreDisp.textContent = score;
   updateShopUI();
 }
@@ -365,7 +368,7 @@ function getWaveDef(w) {
 function startWave() {
   if (waveActive || gameOver) return;
   wave++;
-  if (wave > 20) return;
+  if (wave > 50) return;
 
   waveActive = true;
   waveCleared = false;
@@ -486,6 +489,21 @@ startBtn.addEventListener('click', () => {
   startWave();
 });
 
+document.getElementById('quitBtn').addEventListener('click', () => {
+  const finalScore = wave * 100 + gold;
+  score = finalScore;
+  if (window.HallOfFame) window.HallOfFame.submit('td', finalScore);
+  if (window.SFX) window.SFX.win();
+  gameOver = true;
+  overlayTitle.textContent = 'Saved!';
+  overlayTitle.style.color = '#00d4ff';
+  overlayScore.textContent = `Score: ${finalScore} (Wave ${wave})`;
+  overlay.classList.add('show');
+  restartBtn.style.display = '';
+  startBtn.style.display = 'none';
+  document.getElementById('quitBtn').style.display = 'none';
+});
+
 restartBtn.addEventListener('click', () => {
   gold = 200; lives = 20; wave = 0; score = 0;
   towers = []; enemies = []; projectiles = []; particles = [];
@@ -495,6 +513,7 @@ restartBtn.addEventListener('click', () => {
   overlay.classList.remove('show');
   startBtn.style.display = '';
   restartBtn.style.display = 'none';
+  document.getElementById('quitBtn').style.display = 'none';
   hideActionPanel();
   updateUI();
   gameMsg.textContent = 'Select a tower and click on grass to place it';
@@ -645,10 +664,11 @@ function update(dt) {
     waveCleared = true;
     window.SFX?.win();
     score += wave * 50;
-    if (wave >= 20) {
+    if (wave >= 50) {
       endGame(true);
     } else {
       startBtn.style.display = '';
+      document.getElementById('quitBtn').style.display = '';
       gameMsg.textContent = `Wave ${wave} cleared! Prepare for wave ${wave + 1}.`;
     }
     updateUI();
@@ -1041,7 +1061,7 @@ animFrame = requestAnimationFrame(gameLoop);
 
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
-<script type="module" src="firebase-lb.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

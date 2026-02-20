@@ -853,12 +853,14 @@ function showResult(winner, humanLost) {
     document.getElementById('resultTitle').textContent = 'You Lose!';
     document.getElementById('resultTitle').style.color = '#ff4757';
     document.getElementById('resultSub').textContent = 'All your penguins were knocked off!';
-    if (mode === 'ai' && window.HallOfFame) window.HallOfFame.loseStreak('penguin');
+    if (window.HallOfFame) window.HallOfFame.loseStreak('penguin');
   } else if (winner) {
     document.getElementById('resultTitle').textContent = winner.name + ' Wins!';
     document.getElementById('resultTitle').style.color = winner.color;
     document.getElementById('resultSub').textContent = 'All other penguins knocked off!';
-    if (mode === 'ai' && !winner.isAI && window.HallOfFame) {
+    // Submit streak for human wins in any mode
+    var isHumanWin = (mode === 'ai' && !winner.isAI) || (mode === 'local') || (mode === 'online');
+    if (isHumanWin && window.HallOfFame) {
       var sk = window.HallOfFame.winStreak('penguin');
       window.HallOfFame.submit('penguin', sk.current);
     } else if (mode === 'ai' && winner.isAI && window.HallOfFame) {
@@ -1600,7 +1602,7 @@ updatePlayerNames();
 </script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
-<script type="module" src="firebase-lb.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>
