@@ -1,3 +1,19 @@
+// One-time migration: clear corrupted streak data from 2P bug (pong/tron/racer)
+(function() {
+  if (localStorage.getItem('_lb_streak_fix_v1')) return;
+  ['pong','tron','racer'].forEach(function(g) {
+    localStorage.removeItem('hallOfFame_' + g);
+    // Clear all user-specific and generic streak keys
+    var keys = Object.keys(localStorage);
+    keys.forEach(function(k) {
+      if (k.indexOf('streak_' + g) !== -1 || k.indexOf('bestStreak_' + g) !== -1) {
+        localStorage.removeItem(k);
+      }
+    });
+  });
+  localStorage.setItem('_lb_streak_fix_v1', '1');
+})();
+
 window.HallOfFame = {
   getPlayerName: function() {
     return localStorage.getItem('arcadePlayerName') || 'Guest';

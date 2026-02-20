@@ -414,8 +414,8 @@ function generateObstacles(count) {
     // Star halfway between obstacles
     stars.push(createStar(W / 2 + randInt(-30, 30), lastY + gap * 0.55));
 
-    // Color switcher between star and obstacle
-    colorSwitchers.push(createColorSwitcher(W / 2, lastY + gap * 0.28));
+    // Color switcher between star and obstacle (spaced away from obstacle)
+    colorSwitchers.push(createColorSwitcher(W / 2, lastY + gap * 0.50));
   }
 }
 
@@ -694,8 +694,8 @@ init();
 requestAnimationFrame(gameLoop);
 </script>
 <script src="sound.js?v=2"></script>
-<script src="fame.js?v=3"></script>
-<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=3"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

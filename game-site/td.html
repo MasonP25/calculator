@@ -183,6 +183,9 @@ const TOWER_DEFS = {
   ice:       { name: 'Ice',       cost: 75,  color: '#44ddee', range: 110, damage: 8,   rate: 0.6,  splash: 0, slow: 0.5, chain: 0, desc: 'Slows enemies' },
   sniper:    { name: 'Sniper',    cost: 150, color: '#aa44ee', range: 220, damage: 100, rate: 2.0,  splash: 0, slow: 0, chain: 0, desc: 'Long range, high dmg' },
   lightning: { name: 'Lightning', cost: 200, color: '#eedd44', range: 130, damage: 35,  rate: 0.8,  splash: 0, slow: 0, chain: 3, desc: 'Chains to 3 enemies' },
+  mortar:    { name: 'Mortar',    cost: 175, color: '#ff8844', range: 160, damage: 80,  rate: 2.5,  splash: 70, slow: 0, chain: 0, desc: 'Huge splash radius' },
+  tesla:     { name: 'Tesla',     cost: 250, color: '#88ffff', range: 100, damage: 25,  rate: 0.3,  splash: 0, slow: 0.3, chain: 5, desc: 'Chains + slows all' },
+  flame:     { name: 'Flame',     cost: 120, color: '#ff6600', range: 80,  damage: 12,  rate: 0.15, splash: 40, slow: 0, chain: 0, desc: 'Fast splash, short range' },
 };
 
 // === ENEMY DEFS ===
@@ -191,7 +194,9 @@ const ENEMY_DEFS = {
   fast:   { hp: 60,  speed: 2.2, color: '#40e0e0', radius: 6, gold: 8,  name: 'Fast' },
   tank:   { hp: 300, speed: 0.7, color: '#8888cc', radius: 11, gold: 20, name: 'Tank' },
   boss:   { hp: 1000, speed: 0.5, color: '#ff44ff', radius: 14, gold: 80, name: 'Boss' },
-  healer: { hp: 80,  speed: 1.0, color: '#44ff88', radius: 7, gold: 12, name: 'Healer' },
+  healer:  { hp: 80,  speed: 1.0, color: '#44ff88', radius: 7, gold: 12, name: 'Healer' },
+  stealth: { hp: 70,  speed: 1.8, color: '#666688', radius: 6, gold: 15, name: 'Stealth' },
+  swarm:   { hp: 30,  speed: 2.5, color: '#aaaa44', radius: 4, gold: 3,  name: 'Swarm' },
 };
 
 // === STATE ===
@@ -284,8 +289,8 @@ function showActionPanel(tower) {
   const mult = Math.pow(1.5, lvl);
   const dmg = Math.round(def.damage * mult);
   const rng = Math.round(def.range * Math.pow(1.15, lvl));
-  const canUpgrade = lvl < 2;
-  const upgradeCost = Math.round(def.cost * 0.6);
+  const canUpgrade = lvl < 4;
+  const upgradeCost = Math.round(def.cost * 0.6 * (lvl + 1));
   const sellValue = Math.round(def.cost * 0.6 * (1 + lvl * 0.6));
 
   let html = `<div class="title" style="color:${def.color}">${def.name} Lv.${lvl + 1}</div>`;
@@ -315,7 +320,7 @@ function showActionPanel(tower) {
   panel.style.display = 'block';
 
   document.getElementById('upgradeBtn')?.addEventListener('click', () => {
-    if (tower.level >= 2 || gold < upgradeCost) return;
+    if (tower.level >= 4 || gold < upgradeCost) return;
     gold -= upgradeCost;
     tower.level++;
     window.SFX?.powerup();
@@ -340,7 +345,7 @@ function hideActionPanel() {
 function getWaveDef(w) {
   const enemies = [];
   const isBoss = w % 5 === 0 && w > 0;
-  const baseCount = 5 + w * 2;
+  const baseCount = 3 + w;
 
   if (isBoss) {
     enemies.push({ type: 'boss', count: 1 + Math.floor(w / 10) });
@@ -349,8 +354,10 @@ function getWaveDef(w) {
   } else {
     enemies.push({ type: 'normal', count: baseCount });
     if (w >= 3) enemies.push({ type: 'fast', count: Math.floor(w * 0.8) });
+    if (w >= 4) enemies.push({ type: 'swarm', count: w * 3 });
     if (w >= 5) enemies.push({ type: 'tank', count: Math.floor(w * 0.4) });
     if (w >= 7) enemies.push({ type: 'healer', count: Math.floor(w * 0.2) });
+    if (w >= 8) enemies.push({ type: 'stealth', count: Math.floor(w * 0.3) });
   }
   return enemies;
 }
@@ -389,6 +396,7 @@ function startWave() {
         slowTimer: 0,
         alive: true,
         isHealer: group.type === 'healer',
+        isStealth: group.type === 'stealth',
         healTimer: 0,
       });
     }
@@ -861,13 +869,44 @@ function draw() {
       drawStar(x, y, 5, 10, 5);
       ctx.fillStyle = def.color;
       ctx.fill(); ctx.stroke();
+    } else if (t.type === 'mortar') {
+      // Square with dot
+      ctx.fillRect(x - 9, y - 9, 18, 18);
+      ctx.strokeRect(x - 9, y - 9, 18, 18);
+      ctx.fillStyle = '#331100';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (t.type === 'tesla') {
+      // Circle with lightning bolt
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 2, y - 7);
+      ctx.lineTo(x + 2, y - 1);
+      ctx.lineTo(x - 2, y + 1);
+      ctx.lineTo(x + 2, y + 7);
+      ctx.stroke();
+    } else if (t.type === 'flame') {
+      // Triangle pointing right
+      ctx.beginPath();
+      ctx.moveTo(x + 10, y);
+      ctx.lineTo(x - 8, y - 9);
+      ctx.lineTo(x - 8, y + 9);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
     }
 
     // Level pips
-    for (let i = 0; i < t.level; i++) {
+    const pipCount = t.level;
+    const pipStart = x - (pipCount - 1) * 4;
+    for (let i = 0; i < pipCount; i++) {
       ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.arc(x - 5 + i * 10, y + 14, 2.5, 0, Math.PI * 2);
+      ctx.arc(pipStart + i * 8, y + 14, 2, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -875,6 +914,16 @@ function draw() {
   // Draw enemies
   for (const e of enemies) {
     if (!e.alive) continue;
+
+    // Stealth transparency: visible only near towers
+    if (e.isStealth) {
+      let nearTower = false;
+      for (const t of towers) {
+        if (Math.hypot(t.x - e.x, t.y - e.y) <= 80) { nearTower = true; break; }
+      }
+      ctx.globalAlpha = nearTower ? 1 : 0.3;
+    }
+
     ctx.fillStyle = e.slowTimer > 0 ? '#88ccff' : e.color;
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
@@ -903,19 +952,26 @@ function draw() {
       ctx.textAlign = 'center';
       ctx.fillText('+', e.x, e.y + 4);
     }
+
+    // Reset alpha after stealth enemy
+    if (e.isStealth) ctx.globalAlpha = 1;
   }
 
   // Draw projectiles
   for (const p of projectiles) {
     if (!p.alive) continue;
     ctx.fillStyle = p.color;
-    if (p.type === 'lightning') {
+    if (p.type === 'lightning' || p.type === 'tesla') {
       ctx.fillStyle = '#ffee44';
       ctx.shadowColor = '#ffee44';
       ctx.shadowBlur = 6;
+    } else if (p.type === 'flame') {
+      ctx.fillStyle = '#ff6600';
+      ctx.shadowColor = '#ff6600';
+      ctx.shadowBlur = 4;
     }
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.type === 'cannon' ? 4 : p.type === 'sniper' ? 3 : 2.5, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, p.type === 'cannon' || p.type === 'mortar' ? 4 : p.type === 'sniper' ? 3 : p.type === 'flame' ? 3.5 : 2.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -984,8 +1040,8 @@ animFrame = requestAnimationFrame(gameLoop);
 </script>
 
 <script src="sound.js?v=2"></script>
-<script src="fame.js?v=3"></script>
-<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=3"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

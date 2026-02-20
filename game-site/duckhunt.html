@@ -176,7 +176,7 @@ function createFlightPattern(type, baseSpeed) {
 const flightTypes = ['diagonal', 'zigzag', 'sine', 'divebomb', 'hover'];
 
 function spawnDuck() {
-  const baseSpeed = 2 + round * 0.5;
+  const baseSpeed = 1.2 + round * 0.3;
   const sizeMult = Math.max(0.55, 1 - round * 0.05);
   const isGolden = Math.random() < 0.08;
   const color = isGolden ? goldenColor : duckColors[(round - 1) % duckColors.length];
@@ -614,15 +614,15 @@ function drawHUD() {
     ctx.fill();
   }
 
-  // Ducks escaped
+  // Ducks escaped (moved below shots to avoid overlap)
   ctx.fillStyle = '#e0e0e0';
   ctx.font = 'bold 14px Segoe UI, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('Escaped:', W - 15, 50);
+  ctx.fillText('Escaped:', W - 55, 50);
   for (let i = 0; i < 3; i++) {
     ctx.fillStyle = i < ducksEscaped ? '#ff4444' : '#333';
     ctx.font = '16px sans-serif';
-    ctx.fillText('✕', W - 70 + i * 20, 51);
+    ctx.fillText('✕', W - 45 + i * 18, 51);
   }
 
   // Duck progress bar
@@ -983,8 +983,8 @@ loop();
 
 </script>
 <script src="sound.js?v=2"></script>
-<script src="fame.js?v=3"></script>
-<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=3"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

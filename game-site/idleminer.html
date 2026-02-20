@@ -258,6 +258,8 @@
 </head>
 <body>
 
+<a class="back" href="index.html" style="position:fixed;top:12px;left:16px;color:#888;text-decoration:none;font-size:0.85rem;z-index:100;transition:color 0.2s;">&#8592; Back</a>
+
 <!-- Stats Bar -->
 <div id="stats-bar">
   <div class="stat">
@@ -354,6 +356,50 @@
       <div class="upgrade-cost" id="cost-depth">Cost: 500</div>
       <div class="progress-bar" id="prog-depth"></div>
     </div>
+
+    <div class="upgrade-card" id="card-explosives" onclick="buyUpgrade('explosives')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#128163; Explosives</span>
+        <span class="upgrade-level" id="lvl-explosives">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Chance to trigger an explosion on click for 5x gems</div>
+      <div class="upgrade-effect" id="eff-explosives">+3% explosion chance</div>
+      <div class="upgrade-cost" id="cost-explosives">Cost: 300</div>
+      <div class="progress-bar" id="prog-explosives"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-drill" onclick="buyUpgrade('drill')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#9881; Drill</span>
+        <span class="upgrade-level" id="lvl-drill">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Auto-mines faster</div>
+      <div class="upgrade-effect" id="eff-drill">+3 gems/sec bonus</div>
+      <div class="upgrade-cost" id="cost-drill">Cost: 400</div>
+      <div class="progress-bar" id="prog-drill"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-conveyor" onclick="buyUpgrade('conveyor')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#8644; Conveyor Belt</span>
+        <span class="upgrade-level" id="lvl-conveyor">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Multiplies auto-miner speed by 1.3x per level</div>
+      <div class="upgrade-effect" id="eff-conveyor">x1.3 auto-mine speed</div>
+      <div class="upgrade-cost" id="cost-conveyor">Cost: 600</div>
+      <div class="progress-bar" id="prog-conveyor"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-magnet" onclick="buyUpgrade('magnet')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#129522; Gem Magnet</span>
+        <span class="upgrade-level" id="lvl-magnet">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Attracts bonus gems every 30 seconds</div>
+      <div class="upgrade-effect" id="eff-magnet">+5 bonus gems per proc</div>
+      <div class="upgrade-cost" id="cost-magnet">Cost: 250</div>
+      <div class="progress-bar" id="prog-magnet"></div>
+    </div>
   </div>
 </div>
 
@@ -378,6 +424,10 @@ const UPGRADE_DEFS = {
   multiplier: { baseCost: 200, costScale: 5,   maxLevel: 20 },
   lucky:      { baseCost: 100, costScale: 4,   maxLevel: 15 },
   depth:      { baseCost: 500, costScale: 4,   maxLevel: GEM_TYPES.length - 1 },
+  explosives: { baseCost: 300, costScale: 3.5, maxLevel: 30 },
+  drill:      { baseCost: 400, costScale: 4,   maxLevel: 25 },
+  conveyor:   { baseCost: 600, costScale: 4.5, maxLevel: 15 },
+  magnet:     { baseCost: 250, costScale: 3,   maxLevel: 20 },
 };
 
 let state = getDefaultState();
@@ -392,6 +442,10 @@ function getDefaultState() {
     multiplierLevel: 0,
     luckyLevel: 0,
     depthLevel: 0,
+    explosivesLevel: 0,
+    drillLevel: 0,
+    conveyorLevel: 0,
+    magnetLevel: 0,
     prestigeCount: 0,
   };
 }
@@ -404,12 +458,17 @@ function gemsPerClick() {
   return Math.floor(base * depthMult * mult);
 }
 
+function explosivesChance() {
+  return state.explosivesLevel * 0.03;
+}
+
 function gemsPerSec() {
-  if (state.autominerLevel === 0) return 0;
-  const base = state.autominerLevel * 2;
+  if (state.autominerLevel === 0 && state.drillLevel === 0) return 0;
+  const base = state.autominerLevel * 2 + state.drillLevel * 3;
   const depthMult = 1 + state.depthLevel;
   const mult = getMultiplier();
-  return Math.floor(base * depthMult * mult) || 0;
+  const conveyorMult = state.conveyorLevel > 0 ? Math.pow(1.3, state.conveyorLevel) : 1;
+  return Math.floor(base * depthMult * mult * conveyorMult) || 0;
 }
 
 function getMultiplier() {
@@ -687,6 +746,7 @@ function onMineClick(e) {
 
   let earned = gemsPerClick();
   let lucky = false;
+  let exploded = false;
 
   if (Math.random() < luckyChance()) {
     earned *= 10;
@@ -696,7 +756,16 @@ function onMineClick(e) {
     flash.className = 'lucky-flash';
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 500);
-  } else {
+  }
+
+  if (Math.random() < explosivesChance()) {
+    earned *= 5;
+    exploded = true;
+    mineShake = 3;
+    if (!lucky) { if (window.SFX) window.SFX.combo(); }
+  }
+
+  if (!lucky && !exploded) {
     if (window.SFX) window.SFX.coin();
   }
 
@@ -709,16 +778,16 @@ function onMineClick(e) {
   mineGlow = 1;
 
   // Spawn particles
-  spawnGemParticles(px, py, lucky ? 20 : 8, lucky);
+  spawnGemParticles(px, py, lucky ? 20 : exploded ? 15 : 8, lucky || exploded);
 
   // Floating text
   const txt = document.createElement('div');
   txt.className = 'click-text';
   txt.style.left = (px - 20) + 'px';
   txt.style.top = (py - 20) + 'px';
-  txt.style.color = lucky ? '#ffd700' : (GEM_TYPES[state.depthLevel] || GEM_TYPES[0]).color;
-  txt.style.fontSize = lucky ? '1.6rem' : '1.1rem';
-  txt.textContent = '+' + fmt(earned) + (lucky ? ' LUCKY!' : '');
+  txt.style.color = lucky ? '#ffd700' : exploded ? '#ff4500' : (GEM_TYPES[state.depthLevel] || GEM_TYPES[0]).color;
+  txt.style.fontSize = (lucky || exploded) ? '1.6rem' : '1.1rem';
+  txt.textContent = '+' + fmt(earned) + (lucky ? ' LUCKY!' : '') + (exploded ? ' BOOM!' : '');
   document.body.appendChild(txt);
   setTimeout(() => txt.remove(), 1000);
 
@@ -816,6 +885,10 @@ function updateUI() {
   updateCard('multiplier', `x1.5 all earnings`);
   updateCard('lucky', `+5% lucky chance`);
   updateCard('depth', `Unlock next gem type (x2 value)`);
+  updateCard('explosives', `+3% explosion chance (${Math.round(explosivesChance() * 100)}% now)`);
+  updateCard('drill', `+3 gems/sec bonus (${state.drillLevel * 3} now)`);
+  updateCard('conveyor', `x1.3 auto-mine speed (x${state.conveyorLevel > 0 ? Math.pow(1.3, state.conveyorLevel).toFixed(2) : '1.00'} now)`);
+  updateCard('magnet', `+5 bonus gems per proc (${state.magnetLevel * 5} now)`);
 }
 
 function updateCard(type, effectText) {
@@ -878,6 +951,49 @@ loadGame();
 // Auto-save every 10 seconds
 setInterval(saveGame, 10000);
 
+// Gem Magnet proc every 30 seconds
+setInterval(function() {
+  if (state.magnetLevel <= 0) return;
+  const bonusBase = state.magnetLevel * 5;
+  const depthMult = 1 + state.depthLevel;
+  const mult = getMultiplier();
+  const earned = Math.floor(bonusBase * depthMult * mult);
+  if (earned <= 0) return;
+  state.gems += earned;
+  state.totalGems += earned;
+  state.lifetimeGems += earned;
+  // Visual feedback - spawn particles at center of mine canvas
+  const rect = mCanvas.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  spawnGemParticles(cx, cy, 10, false);
+  // Floating text
+  const txt = document.createElement('div');
+  txt.className = 'click-text';
+  txt.style.left = (cx - 30) + 'px';
+  txt.style.top = (cy - 20) + 'px';
+  txt.style.color = '#e040fb';
+  txt.style.fontSize = '1.3rem';
+  txt.textContent = '+' + fmt(earned) + ' MAGNET';
+  document.body.appendChild(txt);
+  setTimeout(() => txt.remove(), 1000);
+  if (window.SFX) window.SFX.coin();
+  updateUI();
+}, 30000);
+
+// Leaderboard submit every 10 minutes
+setInterval(function() {
+  if (state.lifetimeGems > 0 && window.HallOfFame) {
+    window.HallOfFame.submit('idleminer', Math.floor(state.lifetimeGems));
+  }
+}, 600000);
+// Also submit on page unload
+window.addEventListener('beforeunload', function() {
+  if (state.lifetimeGems > 0 && window.HallOfFame) {
+    window.HallOfFame.submit('idleminer', Math.floor(state.lifetimeGems));
+  }
+});
+
 // ======================== GAME LOOP ========================
 function gameLoop(time) {
   autoMinerTick(time);
@@ -893,8 +1009,8 @@ requestAnimationFrame(gameLoop);
 </script>
 
 <script src="sound.js?v=2"></script>
-<script src="fame.js?v=3"></script>
-<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=3"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>

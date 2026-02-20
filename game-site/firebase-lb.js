@@ -128,6 +128,26 @@ window.FirebaseLB = {
   }
 };
 
+// ─── One-time cleanup: delete corrupted Firebase streak entries (2P bug) ───
+(async function() {
+  if (localStorage.getItem('_fb_streak_fix_v1')) return;
+  try {
+    var name = (window.HallOfFame ? window.HallOfFame.getPlayerName() : localStorage.getItem('arcadePlayerName')) || 'Guest';
+    var key = name.toLowerCase();
+    var games = ['pong', 'tron', 'racer'];
+    for (var i = 0; i < games.length; i++) {
+      var docId = games[i] + '_' + key;
+      var ref = doc(db, 'scores', docId);
+      var snap = await getDoc(ref);
+      if (snap.exists() && snap.data().score > 20) {
+        // Score > 20 streak is almost certainly from the 2P bug
+        await setDoc(ref, { gameId: games[i], name: name, score: 0, date: new Date().toLocaleDateString() });
+      }
+    }
+  } catch (e) { console.warn('Firebase streak cleanup failed:', e); }
+  localStorage.setItem('_fb_streak_fix_v1', '1');
+})();
+
 // ─── Override HallOfFame to also push to Firebase ───
 (function() {
   if (!window.HallOfFame) return;
