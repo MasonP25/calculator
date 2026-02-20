@@ -531,8 +531,16 @@ function dismissBlocker() {
 function updateLockInState() {
   const aimIdx = (mode === 'online') ? onlineMyIndex : currentAimPlayer;
   const myPenguins = penguins.filter(p => p.player === aimIdx && p.alive);
-  const allAimed = myPenguins.every(p => p.aimed);
   const btn = document.getElementById('lockInBtn');
+  if (myPenguins.length === 0) {
+    // Player is eliminated — auto-submit empty shots in online mode
+    if (mode === 'online') {
+      btn.style.display = 'none';
+      submitOnlineShots();
+    }
+    return;
+  }
+  const allAimed = myPenguins.every(p => p.aimed);
   btn.disabled = !allAimed;
   btn.textContent = allAimed ? 'Lock In!' : 'Aim all penguins first';
 }
@@ -1297,21 +1305,38 @@ function handleOnlineUpdate(data) {
     onlineInitGame(data);
   }
 
+  // Sync penguin alive states from host
+  if (data.status === 'playing' && data.penguins && !onlineIsHost) {
+    data.penguins.forEach((sp, i) => {
+      if (penguins[i]) {
+        penguins[i].alive = sp.alive;
+        if (!sp.alive && !penguins[i].falling) {
+          penguins[i].falling = false;
+          penguins[i].fallScale = 0;
+        }
+      }
+    });
+    // Sync player alive status
+    players.forEach((p, i) => {
+      const alive = penguins.filter(pg => pg.player === i && pg.alive).length;
+      if (alive === 0) p.alive = false;
+    });
+    updateHUD();
+  }
+
   // Shots update
   if (data.status === 'playing' && data.shots) {
     const shotCount = Object.keys(data.shots).length;
-    const alivePlayers = data.players.filter((_, i) =>
-      penguins.some(p => p.player === i && p.alive)
-    ).length;
+    const alivePlayers = players.filter(p => p.alive).length;
 
-    if (shotCount >= alivePlayers && phase === 'aim') {
+    if (shotCount > 0 && shotCount >= alivePlayers && phase === 'aim') {
       // All players submitted - apply shots and launch
       applyOnlineShots(data.shots);
     }
   }
 
   // Round sync
-  if (data.round !== undefined && data.round > round && phase === 'roundEnd') {
+  if (data.round !== undefined && data.round > round && (phase === 'roundEnd' || phase === 'simulating')) {
     // Sync new round
     round = data.round;
     rinkSize = data.arenaSize || rinkSize;

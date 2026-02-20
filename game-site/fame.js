@@ -6,7 +6,7 @@ window.HallOfFame = {
     var key = 'hallOfFame_' + gameId;
     var list = JSON.parse(localStorage.getItem(key) || '[]');
     var name = this.getPlayerName();
-    var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram','maze','20q','huesort','lightsout','pipes','ballsort'];
+    var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram','maze','20q','huesort','lightsout','pipes','ballsort','wordsearch','sliding','aim_classic'];
     var lower = lowerBetter.includes(gameId);
     // Deduplicate: only keep best score per player
     var existing = null;
