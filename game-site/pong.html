@@ -63,8 +63,8 @@
   <div><span class="label" id="p2label">CPU: </span><span class="p2v" id="cScore">0</span></div>
 </div>
 <canvas id="c" width="600" height="400"></canvas>
-<div class="msg" id="msg">Click or press SPACE to serve — First to 5!</div>
-<div class="controls" id="controlsText">Mouse or W/S to move. Click/SPACE to serve. First to 5 wins.</div>
+<div class="msg" id="msg">Click or press SPACE to serve</div>
+<div class="controls" id="controlsText">Mouse or W/S to move. Click/SPACE to serve.</div>
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -228,6 +228,7 @@ function update() {
   if (ball.x < 0) {
     cScore++;
     cScoreEl.textContent = cScore;
+    console.log('[PONG] CPU scored:', cScore, '/ WIN_SCORE:', WIN_SCORE);
     if (window.SFX) window.SFX.correct();
     if (cScore >= WIN_SCORE) {
       if (window.SFX) window.SFX.fail();
@@ -239,14 +240,18 @@ function update() {
   if (ball.x > W) {
     pScore++;
     pScoreEl.textContent = pScore;
+    console.log('[PONG] Player scored:', pScore, '/ WIN_SCORE:', WIN_SCORE, '| HallOfFame:', !!window.HallOfFame);
     if (window.SFX) window.SFX.correct();
     if (pScore >= WIN_SCORE) {
       if (window.SFX) window.SFX.win();
       sessionWins++;
-      if (botMode && window.HallOfFame) {
+      if (window.HallOfFame) {
         window.HallOfFame.submit('pong', sessionWins);
+        console.log('[PONG] Submitted wins:', sessionWins);
+      } else {
+        console.warn('[PONG] HallOfFame not found!');
       }
-      msgEl.textContent = 'You win! Wins: ' + sessionWins + '  —  SPACE to play again';
+      msgEl.textContent = 'You win! Total wins: ' + sessionWins + ' (saved!)  —  SPACE to play again';
       playing = false; gameOverState = true; return;
     }
     resetBall(false);
