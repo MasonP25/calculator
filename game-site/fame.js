@@ -6,9 +6,20 @@ window.HallOfFame = {
     var key = 'hallOfFame_' + gameId;
     var list = JSON.parse(localStorage.getItem(key) || '[]');
     var name = this.getPlayerName();
-    list.push({name: name, score: score, date: new Date().toLocaleDateString()});
     var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram','maze'];
-    if (lowerBetter.includes(gameId)) {
+    var lower = lowerBetter.includes(gameId);
+    // Deduplicate: only keep best score per player
+    var existing = null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].name === name) { existing = list[i]; break; }
+    }
+    if (existing) {
+      var isBetter = lower ? score < existing.score : score > existing.score;
+      if (!isBetter) return list; // already have a better score
+      list = list.filter(function(e) { return e.name !== name; });
+    }
+    list.push({name: name, score: score, date: new Date().toLocaleDateString()});
+    if (lower) {
       list.sort(function(a, b) { return a.score - b.score; });
     } else {
       list.sort(function(a, b) { return b.score - a.score; });

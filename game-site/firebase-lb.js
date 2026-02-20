@@ -81,7 +81,17 @@ window.FirebaseLB = {
   submit: async function(gameId, score, name) {
     try {
       name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : 'Guest');
-      await addDoc(collection(db, 'scores'), {
+      // Use deterministic doc ID so each player has one entry per game
+      var docId = gameId + '_' + name.toLowerCase();
+      var docRef = doc(db, 'scores', docId);
+      var existing = await getDoc(docRef);
+      if (existing.exists()) {
+        var old = existing.data().score;
+        var lower = LOWER_BETTER.includes(gameId);
+        var isBetter = lower ? score < old : score > old;
+        if (!isBetter) return; // already have a better score
+      }
+      await setDoc(docRef, {
         gameId: gameId,
         name: name,
         score: score,
