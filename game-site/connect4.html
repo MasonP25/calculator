@@ -488,11 +488,10 @@ function dropPiece(col) {
         var sk = window.HallOfFame.winStreak('connect4');
         if (sk) {
           streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
-          window.HallOfFame.submit('connect4', sk.current);
-        } else {
-          window.HallOfFame.submit('connect4', 1);
         }
       } else if (currentPlayer === 2 && window.HallOfFame) {
+        var prev = window.HallOfFame.getStreak('connect4');
+        if (prev.current > 0) window.HallOfFame.submit('connect4', prev.current);
         var sk = window.HallOfFame.loseStreak('connect4');
         if (sk) streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
       }

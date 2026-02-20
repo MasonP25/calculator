@@ -306,7 +306,7 @@ function showMatchResult() {
     _sb('rps_wins', totalWins.toString());
     _sb('rps_streak', streak.toString());
     _sb('rps_best_streak', bestStreakVal.toString());
-    if(window.HallOfFame) { window.HallOfFame.winStreak('rps'); window.HallOfFame.submit('rps', streak); }
+    if(window.HallOfFame) window.HallOfFame.winStreak('rps');
     if(window.SFX) window.SFX.win();
     matchStreak.textContent = streak > 1 ? `Win streak: ${streak}!` : '';
   } else {
@@ -314,7 +314,7 @@ function showMatchResult() {
     matchTitle.className = 'lose';
     streak = 0;
     _sb('rps_streak', '0');
-    if(window.HallOfFame) window.HallOfFame.loseStreak('rps');
+    if(window.HallOfFame) { var prev = window.HallOfFame.getStreak('rps'); if (prev.current > 0) window.HallOfFame.submit('rps', prev.current); window.HallOfFame.loseStreak('rps'); }
     if(window.SFX) window.SFX.fail();
     matchStreak.textContent = '';
   }

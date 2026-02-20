@@ -795,8 +795,7 @@ function handleCorrectGuess(groupIdx) {
     if (solvedGroups.length === 4) {
       gameOver = true;
       if(window.SFX) window.SFX.win();
-      const ws = window.HallOfFame?.winStreak('connections');
-      if(window.HallOfFame) window.HallOfFame.submit('connections', ws ? ws.current : 1);
+      if(window.HallOfFame) window.HallOfFame.winStreak('connections');
       setTimeout(() => {
         btnRow.style.display = "none";
         mistakesArea.style.display = "none";
@@ -867,6 +866,7 @@ function revealAll() {
     delay += 500;
   });
 
+  if(window.HallOfFame) { var prev = window.HallOfFame.getStreak('connections'); if (prev.current > 0) window.HallOfFame.submit('connections', prev.current); }
   const ls = window.HallOfFame?.loseStreak('connections');
   setTimeout(() => {
     btnRow.style.display = "none";

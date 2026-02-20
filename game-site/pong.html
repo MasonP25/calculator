@@ -184,14 +184,14 @@ function update() {
     cScore++;
     cScoreEl.textContent = cScore;
     if (window.SFX) window.SFX.correct();
-    if (cScore >= 11) { if (window.SFX) window.SFX.fail(); if (window.HallOfFame) window.HallOfFame.loseStreak('pong'); msgEl.textContent = 'Game Over! Press SPACE to restart.'; playing = false; return; }
+    if (cScore >= 11) { if (window.SFX) window.SFX.fail(); if (window.HallOfFame) { var sk = window.HallOfFame.getStreak('pong'); if (sk.current > 0) window.HallOfFame.submit('pong', sk.current); window.HallOfFame.loseStreak('pong'); } msgEl.textContent = 'Game Over! Press SPACE to restart.'; playing = false; return; }
     resetBall(true);
   }
   if (ball.x > W) {
     pScore++;
     pScoreEl.textContent = pScore;
     if (window.SFX) window.SFX.correct();
-    if (pScore >= 11) { if (window.SFX) window.SFX.win(); if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('pong'); window.HallOfFame.submit('pong', sk ? sk.current : 1); } msgEl.textContent = 'You win! Press SPACE to restart.'; playing = false; return; }
+    if (pScore >= 11) { if (window.SFX) window.SFX.win(); if (window.HallOfFame) window.HallOfFame.winStreak('pong'); msgEl.textContent = 'You win! Press SPACE to restart.'; playing = false; return; }
     resetBall(false);
   }
 }

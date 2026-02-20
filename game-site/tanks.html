@@ -277,9 +277,9 @@ function endRound(msg) {
   if (score1 >= 5 || score2 >= 5) {
     const winner = score1 >= 5 ? 'P1' : (botMode ? 'Bot' : 'P2');
     if(score1 >= 5 && window.HallOfFame) {
-      var sk = window.HallOfFame.winStreak('tanks');
-      window.HallOfFame.submit('tanks', sk ? sk.current : 1);
+      window.HallOfFame.winStreak('tanks');
     } else if (botMode && window.HallOfFame) {
+      var sk = window.HallOfFame.getStreak('tanks'); if (sk.current > 0) window.HallOfFame.submit('tanks', sk.current);
       window.HallOfFame.loseStreak('tanks');
     }
     if(window.SFX) window.SFX.win();

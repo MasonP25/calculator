@@ -678,9 +678,14 @@ a.back:hover { color: #e0e0e0; }
 
             var streakText = '';
             if (mode === 'ai') {
-                var sk = (winner === 'X') ? (window.HallOfFame ? window.HallOfFame.winStreak('tictactoe') : null) : (window.HallOfFame ? window.HallOfFame.loseStreak('tictactoe') : null);
-                if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
-                if (winner === 'X' && window.HallOfFame) window.HallOfFame.submit('tictactoe', sk ? sk.current : 1);
+                if (winner === 'X') {
+                    var sk = window.HallOfFame ? window.HallOfFame.winStreak('tictactoe') : null;
+                    if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
+                } else {
+                    if (window.HallOfFame) { var prev = window.HallOfFame.getStreak('tictactoe'); if (prev.current > 0) window.HallOfFame.submit('tictactoe', prev.current); }
+                    var sk = window.HallOfFame ? window.HallOfFame.loseStreak('tictactoe') : null;
+                    if (sk) streakText = ' | Streak: ' + sk.current + ' | Best: ' + sk.best;
+                }
             }
 
             statusEl.className = 'status win-msg-' + winner.toLowerCase();

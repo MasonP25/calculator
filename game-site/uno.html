@@ -1163,10 +1163,10 @@ h1 {
             }
             if (data.winner === myUsername) {
                 if (window.SFX) window.SFX.win();
-                if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('uno'); window.HallOfFame.submit('uno', sk ? sk.current : 1); }
+                if (window.HallOfFame) window.HallOfFame.winStreak('uno');
             } else {
                 if (window.SFX) window.SFX.fail();
-                if (window.HallOfFame) window.HallOfFame.loseStreak('uno');
+                if (window.HallOfFame) { var prev = window.HallOfFame.getStreak('uno'); if (prev.current > 0) window.HallOfFame.submit('uno', prev.current); window.HallOfFame.loseStreak('uno'); }
             }
         } else {
             winnerOverlay.classList.remove('visible');

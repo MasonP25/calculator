@@ -767,11 +767,10 @@ function fireShot(r, c) {
       turnLocked = false;
       if (gameMode === 'ai' && currentTurn === 0) {
         if(window.SFX) window.SFX.win();
-        var sk = window.HallOfFame?.winStreak('battleship');
-        if(window.HallOfFame) window.HallOfFame.submit('battleship', sk ? sk.current : 1);
+        if(window.HallOfFame) window.HallOfFame.winStreak('battleship');
       } else if (gameMode === 'ai' && currentTurn === 1) {
         if(window.SFX) window.SFX.fail();
-        window.HallOfFame?.loseStreak('battleship');
+        if(window.HallOfFame) { var sk = window.HallOfFame.getStreak('battleship'); if (sk.current > 0) window.HallOfFame.submit('battleship', sk.current); window.HallOfFame.loseStreak('battleship'); }
       } else {
         if(window.SFX) window.SFX.win();
       }

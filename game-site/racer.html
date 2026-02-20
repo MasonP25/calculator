@@ -525,9 +525,9 @@ function triggerWin(player) {
   const color = player === 1 ? '#00d4ff' : '#ff4757';
   msgEl.innerHTML = '<span style="color:' + color + ';font-size:1.3rem;font-weight:bold">' + name + ' wins!</span> &mdash; Press SPACE to play again';
   if(player === 1 && window.HallOfFame) {
-    var sk = window.HallOfFame.winStreak('racer');
-    window.HallOfFame.submit('racer', sk ? sk.current : 1);
+    window.HallOfFame.winStreak('racer');
   } else if (botMode && window.HallOfFame) {
+    var sk = window.HallOfFame.getStreak('racer'); if (sk.current > 0) window.HallOfFame.submit('racer', sk.current);
     window.HallOfFame.loseStreak('racer');
   }
   if(window.SFX) window.SFX.win();
