@@ -205,8 +205,8 @@ function update() {
     if(window.SFX) window.SFX.death();
     score1++; s1El.textContent = score1;
     if(window.SFX) window.SFX.win();
-    if (window.HallOfFame) { var sk = window.HallOfFame.winStreak('tron'); window.HallOfFame.submit('tron', sk.current); }
-    endRound('P1 wins!');
+    if (botMode && window.HallOfFame) { var sk = window.HallOfFame.winStreak('tron'); window.HallOfFame.submit('tron', sk.current); }
+    endRound(botMode ? 'You win!' : 'P1 wins!');
   } else {
     p1.x = nx1; p1.y = ny1; grid[ny1][nx1] = 1;
     p2.x = nx2; p2.y = ny2; grid[ny2][nx2] = 2;

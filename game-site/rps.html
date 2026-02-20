@@ -306,7 +306,7 @@ function showMatchResult() {
     _sb('rps_wins', totalWins.toString());
     _sb('rps_streak', streak.toString());
     _sb('rps_best_streak', bestStreakVal.toString());
-    if(window.HallOfFame) { window.HallOfFame.winStreak('rps'); window.HallOfFame.submit('rps', streak); }
+    if(window.HallOfFame) { var sk = window.HallOfFame.winStreak('rps'); window.HallOfFame.submit('rps', sk.current); }
     if(window.SFX) window.SFX.win();
     matchStreak.textContent = streak > 1 ? `Win streak: ${streak}!` : '';
   } else {
