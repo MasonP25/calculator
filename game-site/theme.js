@@ -129,6 +129,62 @@
     },
   };
 
+  // ─── Custom theme builder ───
+  function hexToRgb(hex) {
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return {r:r, g:g, b:b};
+  }
+  function rgbToHex(r,g,b) {
+    return '#' + [r,g,b].map(function(v){ return Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0'); }).join('');
+  }
+  function luminance(hex) {
+    var c = hexToRgb(hex);
+    return (c.r * 0.299 + c.g * 0.587 + c.b * 0.114) / 255;
+  }
+  function lighten(hex, amt) {
+    var c = hexToRgb(hex);
+    return rgbToHex(c.r + (255-c.r)*amt, c.g + (255-c.g)*amt, c.b + (255-c.b)*amt);
+  }
+  function darken(hex, amt) {
+    var c = hexToRgb(hex);
+    return rgbToHex(c.r*(1-amt), c.g*(1-amt), c.b*(1-amt));
+  }
+
+  function buildCustomTheme(bg, acc1, acc2) {
+    var isLight = luminance(bg) > 0.5;
+    var bg1 = bg;
+    var bg2 = isLight ? darken(bg, 0.06) : lighten(bg, 0.08);
+    var bg3 = isLight ? darken(bg, 0.14) : lighten(bg, 0.18);
+    var border = isLight ? darken(bg, 0.2) : lighten(bg, 0.25);
+    var text = isLight ? '#1a1a2a' : '#e0e0e0';
+    var dim = isLight ? darken(bg, 0.45) : lighten(bg, 0.45);
+    var rgb1 = hexToRgb(acc1);
+    var glow = 'rgba(' + rgb1.r + ',' + rgb1.g + ',' + rgb1.b + ',0.3)';
+    var canvasBg = bg2;
+    var canvasBg2 = isLight ? lighten(bg, 0.04) : darken(bg, 0.15);
+    return {
+      name:'Custom', icon:'🎨',
+      bg1:bg1, bg2:bg2, bg3:bg3, border:border,
+      text:text, dim:dim, accent:acc1, accent2:acc2,
+      glow:glow, canvasBg:canvasBg, canvasBg2:canvasBg2,
+    };
+  }
+
+  function loadCustomColors() {
+    try {
+      var s = localStorage.getItem('arcadeCustomColors');
+      if (s) return JSON.parse(s);
+    } catch(e) {}
+    return { bg:'#0f0f1a', accent:'#7b2ff7', accent2:'#00d4ff' };
+  }
+  function saveCustomColors(colors) {
+    localStorage.setItem('arcadeCustomColors', JSON.stringify(colors));
+  }
+
+  // Build and register the custom theme from saved colors
+  var customColors = loadCustomColors();
+  THEMES.custom = buildCustomTheme(customColors.bg, customColors.accent, customColors.accent2);
+
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';
   let current = THEMES[saved] ? saved : 'midnight';
 
@@ -299,7 +355,7 @@
       /* Table hover */
       .score-table tr:hover { background:${t.bg3}44!important; }
 
-      /* Wordle/word game tile states (keep game colors but tint bg) */
+      /* Wordle/word game tile states */
       .tile.absent,.key.absent { background:${t.bg3}!important; }
 
       /* Minesweeper */
@@ -327,12 +383,19 @@
       /* Generic buttons that might be missed */
       button { color:${t.text}!important; }
       .btn,.action-btn { border-color:${t.border}!important; }
+
+      /* Custom theme color pickers - prevent theme from breaking the native pickers */
+      .custom-color-input { background:none!important; border-color:${t.border}!important; }
     `;
 
     // Update picker active state
     document.querySelectorAll('.theme-option').forEach(el => {
       el.classList.toggle('active', el.dataset.theme === id);
     });
+
+    // Show/hide custom editor
+    var customEditor = document.getElementById('custom-theme-editor');
+    if (customEditor) customEditor.style.display = (id === 'custom') ? 'flex' : 'none';
 
     // Expose theme to canvas-based games
     window.THEME = t;
@@ -365,6 +428,7 @@
     });
 
     for (const [id, t] of Object.entries(THEMES)) {
+      if (id === 'custom') continue; // custom gets special treatment
       const opt = document.createElement('div');
       opt.className = 'theme-option';
       opt.dataset.theme = id;
@@ -385,6 +449,82 @@
       opt.addEventListener('click', () => applyTheme(id));
       panel.appendChild(opt);
     }
+
+    // ─── Custom theme section ───
+    var separator = document.createElement('div');
+    Object.assign(separator.style, {
+      height:'1px', background:'currentColor', opacity:'0.15', margin:'4px 0',
+    });
+    panel.appendChild(separator);
+
+    // Custom theme option row (click to select)
+    var customOpt = document.createElement('div');
+    customOpt.className = 'theme-option';
+    customOpt.dataset.theme = 'custom';
+    Object.assign(customOpt.style, {
+      display:'flex', alignItems:'center', gap:'8px', padding:'6px 10px',
+      borderRadius:'8px', cursor:'pointer', border:'2px solid transparent',
+      width:'100%', transition:'border-color 0.2s',
+    });
+    var cc = loadCustomColors();
+    customOpt.innerHTML = `
+      <span style="font-size:1.1rem">🎨</span>
+      <div style="display:flex;gap:3px">
+        <div class="custom-preview-bg" style="width:14px;height:14px;border-radius:50%;background:${cc.bg};border:1px solid #555"></div>
+        <div class="custom-preview-a1" style="width:14px;height:14px;border-radius:50%;background:${cc.accent}"></div>
+        <div class="custom-preview-a2" style="width:14px;height:14px;border-radius:50%;background:${cc.accent2}"></div>
+      </div>
+      <span style="font-size:0.78rem;flex:1">Custom</span>
+    `;
+    customOpt.addEventListener('click', function() { applyTheme('custom'); });
+    panel.appendChild(customOpt);
+
+    // Custom color editor (3 color pickers)
+    var editor = document.createElement('div');
+    editor.id = 'custom-theme-editor';
+    Object.assign(editor.style, {
+      display: current === 'custom' ? 'flex' : 'none',
+      flexDirection:'column', gap:'8px', padding:'8px 6px',
+      borderRadius:'8px', width:'100%',
+    });
+
+    function makeColorRow(label, key, val) {
+      var row = document.createElement('div');
+      Object.assign(row.style, {
+        display:'flex', alignItems:'center', gap:'8px', width:'100%',
+      });
+      var lbl = document.createElement('span');
+      lbl.textContent = label;
+      Object.assign(lbl.style, { fontSize:'0.72rem', width:'70px', opacity:'0.7' });
+      var input = document.createElement('input');
+      input.type = 'color';
+      input.className = 'custom-color-input';
+      input.value = val;
+      Object.assign(input.style, {
+        width:'36px', height:'28px', border:'2px solid', borderRadius:'6px',
+        cursor:'pointer', padding:'0',
+      });
+      input.dataset.colorKey = key;
+      input.addEventListener('input', function() {
+        var colors = loadCustomColors();
+        colors[this.dataset.colorKey] = this.value;
+        saveCustomColors(colors);
+        THEMES.custom = buildCustomTheme(colors.bg, colors.accent, colors.accent2);
+        // Update preview dots
+        panel.querySelector('.custom-preview-bg').style.background = colors.bg;
+        panel.querySelector('.custom-preview-a1').style.background = colors.accent;
+        panel.querySelector('.custom-preview-a2').style.background = colors.accent2;
+        if (current === 'custom') applyTheme('custom');
+      });
+      row.appendChild(lbl);
+      row.appendChild(input);
+      return row;
+    }
+
+    editor.appendChild(makeColorRow('Background', 'bg', cc.bg));
+    editor.appendChild(makeColorRow('Accent', 'accent', cc.accent));
+    editor.appendChild(makeColorRow('Highlight', 'accent2', cc.accent2));
+    panel.appendChild(editor);
 
     let open = false;
     btn.addEventListener('click', () => {
