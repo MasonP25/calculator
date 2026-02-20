@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hole.io</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #0f0f1a;
+  color: #e0e0e0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+a.back {
+  position: fixed; top: 12px; left: 16px;
+  color: #888; text-decoration: none; font-size: 0.85rem;
+  z-index: 1000; transition: color 0.2s;
+}
+a.back:hover { color: #e0e0e0; }
+
+/* Menu */
+#menuScreen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 100; background: #0f0f1a;
+}
+#menuScreen h1 {
+  font-size: 4rem; margin-bottom: 0.3rem;
+  background: linear-gradient(135deg, #00d4ff, #a55eea);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+#menuScreen .subtitle {
+  color: #666; font-size: 1rem; margin-bottom: 2rem;
+}
+.menu-btn {
+  display: block; width: 260px; padding: 14px 0;
+  margin: 8px 0; border: 2px solid #2a2a4a;
+  background: #1a1a2e; color: #e0e0e0;
+  font-size: 1.1rem; border-radius: 10px;
+  cursor: pointer; transition: all 0.2s;
+  font-family: inherit;
+}
+.menu-btn:hover { border-color: #00d4ff; color: #00d4ff; transform: scale(1.03); }
+.menu-btn.active { border-color: #00d4ff; background: #1a1a3e; }
+.difficulty-row {
+  display: flex; gap: 10px; margin-top: 16px; margin-bottom: 8px;
+}
+.diff-btn {
+  padding: 8px 20px; border: 2px solid #2a2a4a;
+  background: #1a1a2e; color: #999; font-size: 0.9rem;
+  border-radius: 8px; cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.diff-btn:hover { border-color: #feca57; color: #feca57; }
+.diff-btn.sel { border-color: #feca57; color: #feca57; background: #2a2a2e; }
+.diff-label { color: #666; font-size: 0.85rem; margin-top: 12px; }
+
+/* Game HUD */
+#gameScreen { position: absolute; inset: 0; display: none; z-index: 50; }
+#gameCanvas { display: block; width: 100%; height: 100%; }
+#hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: center;
+  padding: 10px 20px; gap: 30px;
+  background: linear-gradient(180deg, rgba(15,15,26,0.9) 0%, transparent 100%);
+  pointer-events: none; z-index: 60;
+}
+#hud .hud-item {
+  font-size: 1.1rem; color: #ccc;
+}
+#hud .hud-item span { font-weight: bold; }
+#hud .hud-timer { font-size: 1.6rem; color: #ff4757; font-weight: bold; }
+#hud .hud-timer.low { animation: pulse 0.5s infinite alternate; }
+@keyframes pulse { to { color: #ff6b81; transform: scale(1.1); } }
+
+#sidebar {
+  position: absolute; top: 60px; right: 10px;
+  width: 180px; background: rgba(26,26,46,0.85);
+  border: 1px solid #2a2a4a; border-radius: 10px;
+  padding: 12px; z-index: 60; pointer-events: none;
+}
+#sidebar h3 { font-size: 0.85rem; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+#sidebar .rank-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; font-size: 0.9rem;
+}
+#sidebar .rank-row .rank-name { display: flex; align-items: center; gap: 6px; }
+#sidebar .rank-row .rank-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* Results */
+#resultScreen {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; background: rgba(15,15,26,0.95);
+}
+#resultScreen h2 { font-size: 2.5rem; margin-bottom: 6px; }
+#resultScreen .winner-text { font-size: 1.2rem; color: #feca57; margin-bottom: 20px; }
+#resultScreen .result-list { margin-bottom: 24px; text-align: center; }
+#resultScreen .result-row {
+  font-size: 1.1rem; padding: 6px 0; display: flex; gap: 12px; justify-content: center; align-items: center;
+}
+#resultScreen .result-row .rdot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+/* Online Lobby */
+#lobbyScreen {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; background: #0f0f1a;
+}
+#lobbyScreen h2 { font-size: 2rem; margin-bottom: 20px; color: #00d4ff; }
+.lobby-row { display: flex; gap: 10px; margin: 8px 0; align-items: center; }
+.lobby-input {
+  padding: 10px 14px; border: 2px solid #2a2a4a; background: #1a1a2e;
+  color: #e0e0e0; font-size: 1rem; border-radius: 8px; font-family: inherit;
+  outline: none; width: 180px; text-align: center; text-transform: uppercase;
+}
+.lobby-input:focus { border-color: #00d4ff; }
+.lobby-btn {
+  padding: 10px 20px; border: 2px solid #2a2a4a; background: #1a1a2e;
+  color: #e0e0e0; font-size: 1rem; border-radius: 8px; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.lobby-btn:hover { border-color: #00d4ff; color: #00d4ff; }
+.lobby-btn:disabled { opacity: 0.4; cursor: default; }
+.room-code-display {
+  font-size: 3rem; font-weight: bold; letter-spacing: 12px;
+  color: #feca57; margin: 10px 0;
+}
+#lobbyPlayers {
+  margin: 12px 0; font-size: 1rem;
+}
+#lobbyPlayers div { padding: 4px 0; }
+.lobby-back {
+  margin-top: 16px; color: #666; background: none; border: none;
+  cursor: pointer; font-family: inherit; font-size: 0.9rem;
+}
+.lobby-back:hover { color: #e0e0e0; }
+#lobbyChat {
+  width: 320px; max-height: 160px; overflow-y: auto;
+  background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px;
+  padding: 8px; margin: 10px 0; font-size: 0.85rem; color: #aaa;
+}
+#lobbyChat .chat-msg { padding: 2px 0; }
+#lobbyChat .chat-msg b { color: #00d4ff; }
+.chat-input-row { display: flex; gap: 6px; width: 320px; }
+.chat-input-row input {
+  flex: 1; padding: 8px 10px; border: 1px solid #2a2a4a; background: #12122a;
+  color: #e0e0e0; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none;
+}
+.chat-input-row button {
+  padding: 8px 14px; border: 1px solid #2a2a4a; background: #1a1a2e;
+  color: #e0e0e0; border-radius: 6px; cursor: pointer; font-family: inherit;
+}
+#lobbyStatus { color: #ff4757; font-size: 0.9rem; margin: 6px 0; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+
+<!-- MENU -->
+<div id="menuScreen">
+  <h1>Hole.io</h1>
+  <div class="subtitle">Consume everything. Grow bigger. Dominate.</div>
+  <button class="menu-btn" onclick="startTwoPlayer()">2 Player</button>
+  <button class="menu-btn" onclick="startAI()">vs AI</button>
+  <button class="menu-btn" onclick="showLobby()">Online</button>
+  <div class="diff-label">AI Difficulty</div>
+  <div class="difficulty-row">
+    <button class="diff-btn" data-d="easy" onclick="setDiff('easy',this)">Easy</button>
+    <button class="diff-btn sel" data-d="medium" onclick="setDiff('medium',this)">Medium</button>
+    <button class="diff-btn" data-d="hard" onclick="setDiff('hard',this)">Hard</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen">
+  <canvas id="gameCanvas"></canvas>
+  <div id="hud">
+    <div class="hud-item" id="hudP1"></div>
+    <div class="hud-timer" id="hudTimer">90</div>
+    <div class="hud-item" id="hudP2"></div>
+  </div>
+  <div id="sidebar">
+    <h3>Rankings</h3>
+    <div id="rankings"></div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="resultScreen">
+  <h2>Game Over!</h2>
+  <div class="winner-text" id="winnerText"></div>
+  <div class="result-list" id="resultList"></div>
+  <button class="menu-btn" onclick="backToMenu()">Play Again</button>
+</div>
+
+<!-- ONLINE LOBBY -->
+<div id="lobbyScreen">
+  <h2>Online Multiplayer</h2>
+  <div id="lobbyJoinCreate">
+    <div class="lobby-row">
+      <button class="lobby-btn" id="createBtn" onclick="createRoom()">Create Room</button>
+    </div>
+    <div class="lobby-row">
+      <input class="lobby-input" id="joinCodeInput" placeholder="CODE" maxlength="4">
+      <button class="lobby-btn" onclick="joinRoom()">Join</button>
+    </div>
+    <div id="lobbyStatus"></div>
+  </div>
+  <div id="lobbyRoom" style="display:none; text-align:center;">
+    <div style="color:#666;font-size:0.85rem;">Room Code</div>
+    <div class="room-code-display" id="roomCodeDisplay"></div>
+    <div id="lobbyPlayers"></div>
+    <button class="lobby-btn" id="startGameBtn" style="display:none;" onclick="onlineStart()">Start Game</button>
+    <div id="lobbyChat"></div>
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()">Send</button>
+    </div>
+    <button class="lobby-back" onclick="leaveRoom()">Leave Room</button>
+  </div>
+  <button class="lobby-back" id="lobbyBackBtn" onclick="backToMenu()">Back to Menu</button>
+</div>
+
+<script>
+// ============================================================
+// GLOBALS
+// ============================================================
+const ARENA_W = 1200, ARENA_H = 1200;
+const GAME_DURATION = 90;
+const COLORS = ['#00d4ff','#ff4757','#feca57','#2ed573','#ff6b81','#a55eea'];
+const OBJECT_TYPES = [
+  { tier: 1, name: 'bush',     color: '#2d5a27', w: 8,  h: 8,  shape: 'circle', score: 1 },
+  { tier: 1, name: 'trash',    color: '#555555', w: 7,  h: 10, shape: 'rect',   score: 1 },
+  { tier: 1, name: 'dot',      color: '#8a8a8a', w: 5,  h: 5,  shape: 'circle', score: 1 },
+  { tier: 2, name: 'bench',    color: '#8B4513', w: 18, h: 8,  shape: 'rect',   score: 2 },
+  { tier: 2, name: 'sign',     color: '#cc9900', w: 6,  h: 16, shape: 'rect',   score: 2 },
+  { tier: 2, name: 'mailbox',  color: '#2255cc', w: 8,  h: 12, shape: 'rect',   score: 2 },
+  { tier: 3, name: 'car',      color: '#cc3333', w: 24, h: 12, shape: 'rect',   score: 3 },
+  { tier: 3, name: 'tree',     color: '#1a7a1a', w: 16, h: 16, shape: 'circle', score: 3 },
+  { tier: 4, name: 'building', color: '#666688', w: 32, h: 32, shape: 'rect',   score: 4 },
+  { tier: 4, name: 'truck',    color: '#887744', w: 34, h: 14, shape: 'rect',   score: 4 },
+  { tier: 5, name: 'skyscraper', color: '#4455aa', w: 40, h: 50, shape: 'rect', score: 5 },
+  { tier: 5, name: 'monument',   color: '#aa8855', w: 30, h: 44, shape: 'rect', score: 5 },
+];
+
+let canvas, ctx;
+let gameMode = null; // 'two','ai','online'
+let aiDifficulty = 'medium';
+let gameRunning = false;
+let gameTimer = GAME_DURATION;
+let timerInterval = null;
+let holes = [];
+let objects = [];
+let keys = {};
+let animFrame = null;
+let lastTime = 0;
+let comboTimers = {}; // track combo per hole index
+const COMBO_WINDOW = 600; // ms
+
+// Online state
+let _firebaseFns = null;
+let onlineRoomId = null;
+let onlineUnsubscribe = null;
+let onlinePlayerIndex = -1;
+let isHost = false;
+let onlineHostLoop = null;
+
+function getMyUsername() {
+  return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(id) {
+  ['menuScreen','gameScreen','resultScreen','lobbyScreen'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.style.display = (id === 'resultScreen' || id === 'lobbyScreen') ? 'flex' : (id === 'menuScreen' ? 'flex' : 'block');
+}
+
+function setDiff(d, btn) {
+  window.SFX?.click();
+  aiDifficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function backToMenu() {
+  window.SFX?.click();
+  cleanup();
+  showScreen('menuScreen');
+}
+
+function cleanup() {
+  gameRunning = false;
+  if (timerInterval) clearInterval(timerInterval);
+  if (animFrame) cancelAnimationFrame(animFrame);
+  if (onlineHostLoop) clearInterval(onlineHostLoop);
+  if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; }
+  onlineRoomId = null;
+  onlinePlayerIndex = -1;
+  isHost = false;
+  timerInterval = null;
+  animFrame = null;
+  onlineHostLoop = null;
+}
+
+// ============================================================
+// TIER / SIZE HELPERS
+// ============================================================
+function getTier(score) {
+  if (score >= 50) return 5;
+  if (score >= 30) return 4;
+  if (score >= 15) return 3;
+  if (score >= 5)  return 2;
+  return 1;
+}
+
+function getRadius(score) {
+  return 20 + Math.floor(score / 5) * 3;
+}
+
+function getSpeed(score) {
+  // bigger holes move slightly slower
+  return Math.max(1.5, 3.2 - score * 0.012);
+}
+
+// ============================================================
+// OBJECT GENERATION
+// ============================================================
+function generateObjects(count) {
+  const objs = [];
+  // Distribution: lots of small, fewer big
+  const weights = [
+    { tiers: [1], w: 45 },
+    { tiers: [2], w: 25 },
+    { tiers: [3], w: 16 },
+    { tiers: [4], w: 10 },
+    { tiers: [5], w: 4 },
+  ];
+  const totalW = weights.reduce((s,w) => s+w.w, 0);
+  for (let i = 0; i < count; i++) {
+    let r = Math.random() * totalW, tier = 1;
+    let acc = 0;
+    for (const wt of weights) {
+      acc += wt.w;
+      if (r < acc) { tier = wt.tiers[0]; break; }
+    }
+    const types = OBJECT_TYPES.filter(t => t.tier === tier);
+    const type = types[Math.floor(Math.random() * types.length)];
+    objs.push({
+      x: 40 + Math.random() * (ARENA_W - 80),
+      y: 40 + Math.random() * (ARENA_H - 80),
+      type: type,
+      absorbed: false,
+      absorbAnim: 0, // 0 = normal, >0 = being absorbed (0..1)
+      absorbTarget: -1,
+    });
+  }
+  return objs;
+}
+
+// ============================================================
+// HOLE CREATION
+// ============================================================
+function createHole(name, color, x, y, isAI = false) {
+  return {
+    name, color, x, y,
+    score: 0, radius: 20,
+    isAI, alive: true,
+    respawnTimer: 0,
+    vx: 0, vy: 0,
+  };
+}
+
+// ============================================================
+// START MODES
+// ============================================================
+function startTwoPlayer() {
+  window.SFX?.click();
+  gameMode = 'two';
+  holes = [
+    createHole('Player 1', COLORS[0], ARENA_W * 0.3, ARENA_H * 0.5),
+    createHole('Player 2', COLORS[1], ARENA_W * 0.7, ARENA_H * 0.5),
+  ];
+  objects = generateObjects(150);
+  startGame();
+}
+
+function startAI() {
+  window.SFX?.click();
+  gameMode = 'ai';
+  const aiCount = aiDifficulty === 'easy' ? 3 : aiDifficulty === 'medium' ? 4 : 5;
+  holes = [createHole(getMyUsername(), COLORS[0], ARENA_W * 0.5, ARENA_H * 0.5)];
+  const aiNames = ['Chomper','Gulper','Nibbler','Muncher','Devourer'];
+  for (let i = 0; i < aiCount; i++) {
+    const angle = (Math.PI * 2 * i) / aiCount;
+    const cx = ARENA_W/2 + Math.cos(angle) * 300;
+    const cy = ARENA_H/2 + Math.sin(angle) * 300;
+    holes.push(createHole(aiNames[i], COLORS[(i+1) % COLORS.length], cx, cy, true));
+  }
+  objects = generateObjects(150);
+  startGame();
+}
+
+function startGame() {
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  gameTimer = GAME_DURATION;
+  gameRunning = true;
+  comboTimers = {};
+  showScreen('gameScreen');
+  updateHUD();
+
+  timerInterval = setInterval(() => {
+    if (!gameRunning) return;
+    gameTimer--;
+    updateHUD();
+    // Respawn some objects over time
+    if (gameTimer % 5 === 0 && objects.filter(o => !o.absorbed).length < 120) {
+      const newObjs = generateObjects(8);
+      objects.push(...newObjs);
+    }
+    if (gameTimer <= 0) {
+      endGame();
+    }
+  }, 1000);
+
+  lastTime = performance.now();
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', () => { if (canvas) resizeCanvas(); });
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+function gameLoop(ts) {
+  if (!gameRunning) return;
+  const dt = Math.min((ts - lastTime) / 16.667, 3); // normalize to ~60fps
+  lastTime = ts;
+
+  update(dt);
+  render();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  // Update hole positions
+  for (let i = 0; i < holes.length; i++) {
+    const h = holes[i];
+    if (!h.alive) {
+      h.respawnTimer -= dt * 16.667;
+      if (h.respawnTimer <= 0) {
+        h.alive = true;
+        h.x = 100 + Math.random() * (ARENA_W - 200);
+        h.y = 100 + Math.random() * (ARENA_H - 200);
+        h.radius = 20;
+        h.score = Math.max(0, h.score - 5);
+      }
+      continue;
+    }
+    h.radius = getRadius(h.score);
+    const speed = getSpeed(h.score) * dt;
+
+    if (h.isAI) {
+      updateAI(h, i, speed);
+    } else {
+      let dx = 0, dy = 0;
+      if (gameMode === 'two') {
+        if (i === 0) {
+          if (keys['w'] || keys['W']) dy = -1;
+          if (keys['s'] || keys['S']) dy = 1;
+          if (keys['a'] || keys['A']) dx = -1;
+          if (keys['d'] || keys['D']) dx = 1;
+        } else {
+          if (keys['ArrowUp']) dy = -1;
+          if (keys['ArrowDown']) dy = 1;
+          if (keys['ArrowLeft']) dx = -1;
+          if (keys['ArrowRight']) dx = 1;
+        }
+      } else {
+        if (keys['w'] || keys['W'] || keys['ArrowUp']) dy = -1;
+        if (keys['s'] || keys['S'] || keys['ArrowDown']) dy = 1;
+        if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx = -1;
+        if (keys['d'] || keys['D'] || keys['ArrowRight']) dx = 1;
+      }
+      if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+      h.vx = dx * speed;
+      h.vy = dy * speed;
+    }
+
+    h.x = Math.max(h.radius, Math.min(ARENA_W - h.radius, h.x + h.vx));
+    h.y = Math.max(h.radius, Math.min(ARENA_H - h.radius, h.y + h.vy));
+  }
+
+  // Absorb objects
+  for (let i = 0; i < holes.length; i++) {
+    const h = holes[i];
+    if (!h.alive) continue;
+    const hTier = getTier(h.score);
+    for (let j = 0; j < objects.length; j++) {
+      const o = objects[j];
+      if (o.absorbed) continue;
+      if (o.type.tier > hTier) continue;
+      const dx = o.x - h.x, dy = o.y - h.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < h.radius * 0.85) {
+        // Start absorb animation
+        o.absorbed = true;
+        o.absorbTarget = i;
+        o.absorbAnim = 1.0;
+        h.score += o.type.score;
+
+        // SFX
+        if (o.type.score >= 3) {
+          window.SFX?.powerup();
+        } else {
+          window.SFX?.coin();
+        }
+
+        // Combo check
+        const now = performance.now();
+        if (comboTimers[i] && now - comboTimers[i] < COMBO_WINDOW) {
+          window.SFX?.combo();
+        }
+        comboTimers[i] = now;
+
+        // Check tier-up
+        const oldTier = getTier(h.score - o.type.score);
+        const newTier = getTier(h.score);
+        if (newTier > oldTier) {
+          window.SFX?.powerup();
+        }
+      }
+    }
+  }
+
+  // Animate absorbing objects
+  for (const o of objects) {
+    if (o.absorbAnim > 0) {
+      o.absorbAnim -= 0.06 * dt;
+      if (o.absorbAnim <= 0) o.absorbAnim = 0;
+    }
+  }
+
+  // Hole vs Hole
+  for (let i = 0; i < holes.length; i++) {
+    if (!holes[i].alive) continue;
+    for (let j = i + 1; j < holes.length; j++) {
+      if (!holes[j].alive) continue;
+      const a = holes[i], b = holes[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (a.radius > b.radius * 1.3 && dist < a.radius * 0.7) {
+        // a absorbs b
+        b.alive = false;
+        b.respawnTimer = 3000;
+        a.score += 5;
+        window.SFX?.death();
+      } else if (b.radius > a.radius * 1.3 && dist < b.radius * 0.7) {
+        a.alive = false;
+        a.respawnTimer = 3000;
+        b.score += 5;
+        window.SFX?.death();
+      }
+    }
+  }
+
+  updateHUD();
+}
+
+// ============================================================
+// AI
+// ============================================================
+function updateAI(h, idx, speed) {
+  const tier = getTier(h.score);
+  let tx = h.x, ty = h.y;
+
+  if (aiDifficulty === 'easy') {
+    // Random wander
+    if (!h._aiTimer || h._aiTimer <= 0) {
+      h._aiDx = (Math.random() - 0.5) * 2;
+      h._aiDy = (Math.random() - 0.5) * 2;
+      h._aiTimer = 60 + Math.random() * 120;
+    }
+    h._aiTimer--;
+    h.vx = (h._aiDx || 0) * speed * 0.6;
+    h.vy = (h._aiDy || 0) * speed * 0.6;
+    return;
+  }
+
+  // Medium & Hard: seek nearest absorbable object
+  let bestDist = Infinity, bestObj = null;
+  for (const o of objects) {
+    if (o.absorbed) continue;
+    if (o.type.tier > tier) continue;
+    const dx = o.x - h.x, dy = o.y - h.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    // Hard AI prefers higher-value targets
+    const eff = aiDifficulty === 'hard' ? dist / (o.type.score + 1) : dist;
+    if (eff < bestDist) { bestDist = eff; bestObj = o; tx = o.x; ty = o.y; }
+  }
+
+  // Hard: also try to absorb smaller holes
+  if (aiDifficulty === 'hard') {
+    for (let j = 0; j < holes.length; j++) {
+      if (j === idx || !holes[j].alive) continue;
+      if (h.radius > holes[j].radius * 1.3) {
+        const dx = holes[j].x - h.x, dy = holes[j].y - h.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < bestDist * 0.6) {
+          tx = holes[j].x; ty = holes[j].y;
+          bestDist = dist;
+        }
+      }
+    }
+  }
+
+  const dx = tx - h.x, dy = ty - h.y;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const spMul = aiDifficulty === 'hard' ? 1.0 : 0.8;
+  h.vx = (dx / len) * speed * spMul;
+  h.vy = (dy / len) * speed * spMul;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Camera: follow first alive player hole (or first hole)
+  let camTarget = holes[0];
+  if (gameMode === 'two') {
+    // Split attention: center between both players
+    const h1 = holes[0], h2 = holes[1];
+    camTarget = { x: (h1.x + h2.x) / 2, y: (h1.y + h2.y) / 2 };
+  }
+
+  const camX = camTarget.x - W / 2;
+  const camY = camTarget.y - H / 2;
+
+  ctx.save();
+  ctx.translate(-camX, -camY);
+
+  // Draw arena background
+  drawArena();
+
+  // Draw objects
+  for (const o of objects) {
+    if (o.absorbed && o.absorbAnim <= 0) continue;
+    const scale = o.absorbed ? o.absorbAnim : 1;
+    const alpha = o.absorbed ? o.absorbAnim : 1;
+    ctx.globalAlpha = alpha;
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.scale(scale, scale);
+
+    if (o.type.shape === 'circle') {
+      ctx.beginPath();
+      ctx.arc(0, 0, o.type.w / 2, 0, Math.PI * 2);
+      ctx.fillStyle = o.type.color;
+      ctx.fill();
+      ctx.strokeStyle = lighten(o.type.color, 30);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = o.type.color;
+      const rr = Math.min(3, o.type.w * 0.15);
+      roundRect(ctx, -o.type.w/2, -o.type.h/2, o.type.w, o.type.h, rr);
+      ctx.fill();
+      ctx.strokeStyle = lighten(o.type.color, 25);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Tier indicator for bigger objects
+    if (o.type.tier >= 3) {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = `${Math.max(8, o.type.w * 0.3)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const labels = { car: '\u{1F697}', tree: '\u{1F333}', building: '\u{1F3E2}', truck: '\u{1F69A}', skyscraper: '\u{1F3D9}', monument: '\u{1F3DB}' };
+      // Use simple letter instead of emoji for compatibility
+      const letter = o.type.name[0].toUpperCase();
+      ctx.fillText(letter, 0, 0);
+    }
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw holes
+  for (let i = 0; i < holes.length; i++) {
+    const h = holes[i];
+    if (!h.alive) continue;
+
+    // Outer glow
+    const grad = ctx.createRadialGradient(h.x, h.y, h.radius * 0.5, h.x, h.y, h.radius * 1.4);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.6, hexToRgba(h.color, 0.15));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.radius * 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // The hole itself (dark void)
+    const holeGrad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, h.radius);
+    holeGrad.addColorStop(0, '#000000');
+    holeGrad.addColorStop(0.7, '#050510');
+    holeGrad.addColorStop(1, hexToRgba(h.color, 0.5));
+    ctx.fillStyle = holeGrad;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Color ring
+    ctx.strokeStyle = h.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Name label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(h.name, h.x, h.y - h.radius - 6);
+
+    // Score below name
+    ctx.font = '10px Segoe UI, sans-serif';
+    ctx.fillStyle = h.color;
+    ctx.textBaseline = 'top';
+    ctx.fillText(h.score, h.x, h.y + h.radius + 4);
+  }
+
+  ctx.restore();
+}
+
+function drawArena() {
+  // Arena background
+  ctx.fillStyle = '#12121e';
+  ctx.fillRect(0, 0, ARENA_W, ARENA_H);
+
+  // Grid / road pattern
+  ctx.strokeStyle = '#1e1e35';
+  ctx.lineWidth = 1;
+  const gridSize = 60;
+  for (let x = 0; x <= ARENA_W; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_H); ctx.stroke();
+  }
+  for (let y = 0; y <= ARENA_H; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_W, y); ctx.stroke();
+  }
+
+  // Roads (wider lines)
+  ctx.strokeStyle = '#1a1a30';
+  ctx.lineWidth = 18;
+  for (let x = 0; x <= ARENA_W; x += 240) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_H); ctx.stroke();
+  }
+  for (let y = 0; y <= ARENA_H; y += 240) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_W, y); ctx.stroke();
+  }
+  // Road center lines
+  ctx.strokeStyle = '#2a2a40';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([8, 12]);
+  for (let x = 0; x <= ARENA_W; x += 240) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ARENA_H); ctx.stroke();
+  }
+  for (let y = 0; y <= ARENA_H; y += 240) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_W, y); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Arena border
+  ctx.strokeStyle = '#3a3a5a';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, ARENA_W, ARENA_H);
+}
+
+// ============================================================
+// HUD
+// ============================================================
+function updateHUD() {
+  const timerEl = document.getElementById('hudTimer');
+  const p1El = document.getElementById('hudP1');
+  const p2El = document.getElementById('hudP2');
+  const rankEl = document.getElementById('rankings');
+
+  timerEl.textContent = Math.max(0, gameTimer);
+  timerEl.className = 'hud-timer' + (gameTimer <= 10 ? ' low' : '');
+
+  if (gameMode === 'two') {
+    p1El.innerHTML = `<span style="color:${holes[0].color}">${holes[0].name}</span>: <span>${holes[0].score}</span>`;
+    p2El.innerHTML = `<span style="color:${holes[1].color}">${holes[1].name}</span>: <span>${holes[1].score}</span>`;
+  } else if (holes.length > 0) {
+    p1El.innerHTML = `<span style="color:${holes[0].color}">${holes[0].name}</span>: <span>${holes[0].score}</span>`;
+    p2El.innerHTML = `Tier: <span>${getTier(holes[0].score)}</span>`;
+  }
+
+  // Rankings
+  const sorted = [...holes].sort((a,b) => b.score - a.score);
+  rankEl.innerHTML = sorted.map((h, i) =>
+    `<div class="rank-row"><span class="rank-name"><span class="rank-dot" style="background:${h.color}"></span>${i+1}. ${h.name}</span><span>${h.score}</span></div>`
+  ).join('');
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function endGame() {
+  gameRunning = false;
+  if (timerInterval) clearInterval(timerInterval);
+  if (animFrame) cancelAnimationFrame(animFrame);
+
+  const sorted = [...holes].sort((a,b) => b.score - a.score);
+  const winner = sorted[0];
+
+  // SFX
+  if (gameMode === 'ai' && winner === holes[0]) {
+    window.SFX?.win();
+  } else if (gameMode === 'two') {
+    window.SFX?.win();
+  }
+
+  document.getElementById('winnerText').textContent = `${winner.name} wins with ${winner.score} points!`;
+  document.getElementById('winnerText').style.color = winner.color;
+
+  const listEl = document.getElementById('resultList');
+  listEl.innerHTML = sorted.map((h, i) =>
+    `<div class="result-row"><span class="rdot" style="background:${h.color}"></span>#${i+1} ${h.name} — ${h.score} pts</div>`
+  ).join('');
+
+  showScreen('resultScreen');
+
+  // Submit score for AI mode
+  if (gameMode === 'ai') {
+    const myScore = holes[0].score;
+    if (window.HallOfFame) window.HallOfFame.submit('holeio', myScore);
+  }
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ============================================================
+// ONLINE MULTIPLAYER
+// ============================================================
+async function getFirebaseFns() {
+  if (_firebaseFns) return _firebaseFns;
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js");
+  const { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteDoc, arrayUnion } =
+    await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+  }, 'holeio-online');
+
+  const db = getFirestore(app);
+  _firebaseFns = { db, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteDoc, arrayUnion };
+  return _firebaseFns;
+}
+
+function showLobby() {
+  window.SFX?.click();
+  showScreen('lobbyScreen');
+  document.getElementById('lobbyJoinCreate').style.display = 'block';
+  document.getElementById('lobbyRoom').style.display = 'none';
+  document.getElementById('lobbyStatus').textContent = '';
+  document.getElementById('lobbyBackBtn').style.display = '';
+}
+
+function genRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function createRoom() {
+  window.SFX?.click();
+  const status = document.getElementById('lobbyStatus');
+  status.textContent = 'Creating room...';
+  try {
+    const fb = await getFirebaseFns();
+    const code = genRoomCode();
+    const me = getMyUsername();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', code);
+
+    const initialObjects = generateObjects(150).map(o => ({
+      x: o.x, y: o.y, size: o.type.tier, type: o.type.name,
+      tw: o.type.w, th: o.type.h, ts: o.type.shape, tc: o.type.color, tscore: o.type.score,
+      absorbed: false
+    }));
+
+    await fb.setDoc(roomRef, {
+      host: me,
+      players: [me],
+      maxPlayers: 6,
+      status: 'waiting',
+      holes: [{ x: ARENA_W/2, y: ARENA_H/2, radius: 20, score: 0, color: COLORS[0], name: me, alive: true }],
+      objects: initialObjects,
+      inputs: {},
+      timer: GAME_DURATION,
+      chat: [],
+      winner: ''
+    });
+
+    onlineRoomId = code;
+    onlinePlayerIndex = 0;
+    isHost = true;
+    enterRoomView(code);
+    listenToRoom(code);
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function joinRoom() {
+  window.SFX?.click();
+  const code = document.getElementById('joinCodeInput').value.toUpperCase().trim();
+  if (code.length !== 4) {
+    document.getElementById('lobbyStatus').textContent = 'Enter a 4-character code';
+    return;
+  }
+  const status = document.getElementById('lobbyStatus');
+  status.textContent = 'Joining...';
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', code);
+    const snap = await fb.getDoc(roomRef);
+    if (!snap.exists()) { status.textContent = 'Room not found'; return; }
+    const data = snap.data();
+    if (data.status !== 'waiting') { status.textContent = 'Game already in progress'; return; }
+    if (data.players.length >= data.maxPlayers) { status.textContent = 'Room is full'; return; }
+
+    const me = getMyUsername();
+    const idx = data.players.length;
+    const newPlayers = [...data.players, me];
+    const angle = (Math.PI * 2 * idx) / 6;
+    const newHole = { x: ARENA_W/2 + Math.cos(angle)*200, y: ARENA_H/2 + Math.sin(angle)*200, radius: 20, score: 0, color: COLORS[idx % COLORS.length], name: me, alive: true };
+    const newHoles = [...data.holes, newHole];
+
+    await fb.updateDoc(roomRef, { players: newPlayers, holes: newHoles });
+
+    onlineRoomId = code;
+    onlinePlayerIndex = idx;
+    isHost = false;
+    enterRoomView(code);
+    listenToRoom(code);
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+
+function enterRoomView(code) {
+  document.getElementById('lobbyJoinCreate').style.display = 'none';
+  document.getElementById('lobbyRoom').style.display = 'block';
+  document.getElementById('lobbyBackBtn').style.display = 'none';
+  document.getElementById('roomCodeDisplay').textContent = code;
+  document.getElementById('lobbyChat').innerHTML = '';
+}
+
+function listenToRoom(code) {
+  (async () => {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', code);
+    if (onlineUnsubscribe) onlineUnsubscribe();
+    onlineUnsubscribe = fb.onSnapshot(roomRef, snap => {
+      if (!snap.exists()) { backToMenu(); return; }
+      const data = snap.data();
+      // Update player list
+      const plEl = document.getElementById('lobbyPlayers');
+      plEl.innerHTML = data.players.map((p, i) =>
+        `<div><span style="color:${COLORS[i % COLORS.length]}">&#9679;</span> ${p} ${p === data.host ? '(Host)' : ''}</div>`
+      ).join('');
+
+      // Host start button
+      document.getElementById('startGameBtn').style.display =
+        (isHost && data.status === 'waiting' && data.players.length >= 2) ? 'inline-block' : 'none';
+
+      // Chat
+      const chatEl = document.getElementById('lobbyChat');
+      chatEl.innerHTML = (data.chat || []).map(m =>
+        `<div class="chat-msg"><b>${m.name}:</b> ${escapeHtml(m.text)}</div>`
+      ).join('');
+      chatEl.scrollTop = chatEl.scrollHeight;
+
+      // Game started
+      if (data.status === 'playing' && !gameRunning) {
+        startOnlineGame(data);
+      }
+
+      // Game state updates while playing
+      if (data.status === 'playing' && gameRunning && !isHost) {
+        // Non-host: update local state from host broadcast
+        if (data.holes) {
+          for (let i = 0; i < data.holes.length && i < holes.length; i++) {
+            holes[i].x = data.holes[i].x;
+            holes[i].y = data.holes[i].y;
+            holes[i].radius = data.holes[i].radius;
+            holes[i].score = data.holes[i].score;
+            holes[i].alive = data.holes[i].alive !== false;
+          }
+        }
+        if (data.objects) {
+          // Sync absorbed states
+          for (let i = 0; i < data.objects.length && i < objects.length; i++) {
+            if (data.objects[i].absorbed && !objects[i].absorbed) {
+              objects[i].absorbed = true;
+              objects[i].absorbAnim = 1.0;
+            }
+          }
+        }
+        gameTimer = data.timer || 0;
+      }
+
+      // Game finished
+      if (data.status === 'finished' && gameRunning) {
+        endOnlineGame(data);
+      }
+    });
+  })();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !onlineRoomId) return;
+  input.value = '';
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+    const snap = await fb.getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const chat = data.chat || [];
+    chat.push({ name: getMyUsername(), text, time: Date.now() });
+    // Keep last 50 messages
+    if (chat.length > 50) chat.splice(0, chat.length - 50);
+    await fb.updateDoc(roomRef, { chat });
+  } catch (e) { /* ignore */ }
+}
+
+async function onlineStart() {
+  window.SFX?.click();
+  if (!isHost || !onlineRoomId) return;
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+    await fb.updateDoc(roomRef, { status: 'playing', timer: GAME_DURATION });
+  } catch (e) { /* ignore */ }
+}
+
+function startOnlineGame(data) {
+  gameMode = 'online';
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+
+  holes = data.holes.map((h, i) => ({
+    name: h.name || data.players[i] || `Player ${i+1}`,
+    color: h.color || COLORS[i % COLORS.length],
+    x: h.x, y: h.y,
+    score: h.score || 0,
+    radius: h.radius || 20,
+    isAI: false, alive: h.alive !== false,
+    respawnTimer: 0, vx: 0, vy: 0,
+  }));
+
+  // Reconstruct objects from Firestore data
+  objects = (data.objects || []).map(o => {
+    const type = OBJECT_TYPES.find(t => t.name === o.type) || OBJECT_TYPES[0];
+    return {
+      x: o.x, y: o.y,
+      type: { ...type, w: o.tw || type.w, h: o.th || type.h, shape: o.ts || type.shape, color: o.tc || type.color, score: o.tscore || type.score },
+      absorbed: o.absorbed || false,
+      absorbAnim: 0,
+      absorbTarget: -1,
+    };
+  });
+
+  gameTimer = data.timer || GAME_DURATION;
+  gameRunning = true;
+  comboTimers = {};
+  showScreen('gameScreen');
+  updateHUD();
+
+  lastTime = performance.now();
+  animFrame = requestAnimationFrame(onlineGameLoop);
+
+  if (isHost) {
+    startHostSimulation();
+  }
+}
+
+function onlineGameLoop(ts) {
+  if (!gameRunning) return;
+  const dt = Math.min((ts - lastTime) / 16.667, 3);
+  lastTime = ts;
+
+  // Send our input to Firestore
+  sendInput();
+
+  // Animate absorptions locally
+  for (const o of objects) {
+    if (o.absorbAnim > 0) {
+      o.absorbAnim -= 0.06 * dt;
+      if (o.absorbAnim <= 0) o.absorbAnim = 0;
+    }
+  }
+
+  // Local movement prediction for smoothness (non-host)
+  if (!isHost) {
+    const h = holes[onlinePlayerIndex];
+    if (h && h.alive) {
+      let dx = 0, dy = 0;
+      if (keys['w'] || keys['W'] || keys['ArrowUp']) dy = -1;
+      if (keys['s'] || keys['S'] || keys['ArrowDown']) dy = 1;
+      if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx = -1;
+      if (keys['d'] || keys['D'] || keys['ArrowRight']) dx = 1;
+      if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+      const speed = getSpeed(h.score) * dt;
+      h.x = Math.max(h.radius, Math.min(ARENA_W - h.radius, h.x + dx * speed));
+      h.y = Math.max(h.radius, Math.min(ARENA_H - h.radius, h.y + dy * speed));
+    }
+  }
+
+  updateHUD();
+  render();
+  animFrame = requestAnimationFrame(onlineGameLoop);
+}
+
+let lastInputSend = 0;
+async function sendInput() {
+  const now = performance.now();
+  if (now - lastInputSend < 100) return; // throttle to 10hz
+  lastInputSend = now;
+  let dx = 0, dy = 0;
+  if (keys['w'] || keys['W'] || keys['ArrowUp']) dy = -1;
+  if (keys['s'] || keys['S'] || keys['ArrowDown']) dy = 1;
+  if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx = -1;
+  if (keys['d'] || keys['D'] || keys['ArrowRight']) dx = 1;
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+    const inputKey = `inputs.${onlinePlayerIndex}`;
+    await fb.updateDoc(roomRef, { [inputKey]: { dx, dy } });
+  } catch (e) { /* ignore */ }
+}
+
+function startHostSimulation() {
+  // Host runs game sim at ~10hz and broadcasts state
+  let hostTimer = gameTimer;
+  let lastTick = Date.now();
+
+  onlineHostLoop = setInterval(async () => {
+    if (!gameRunning) return;
+    const now = Date.now();
+    const elapsed = (now - lastTick) / 1000;
+    lastTick = now;
+    hostTimer -= elapsed;
+    gameTimer = Math.ceil(hostTimer);
+
+    if (hostTimer <= 0) {
+      // End game
+      gameRunning = false;
+      clearInterval(onlineHostLoop);
+      const sorted = [...holes].sort((a,b) => b.score - a.score);
+      try {
+        const fb = await getFirebaseFns();
+        const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+        await fb.updateDoc(roomRef, {
+          status: 'finished',
+          timer: 0,
+          winner: sorted[0].name,
+          holes: holes.map(h => ({ x: h.x, y: h.y, radius: h.radius, score: h.score, color: h.color, name: h.name, alive: h.alive })),
+        });
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    // Read inputs from Firestore & simulate
+    try {
+      const fb = await getFirebaseFns();
+      const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+      const snap = await fb.getDoc(roomRef);
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const inputs = data.inputs || {};
+
+      // Move holes based on inputs
+      for (let i = 0; i < holes.length; i++) {
+        const h = holes[i];
+        if (!h.alive) {
+          h.respawnTimer -= elapsed * 1000;
+          if (h.respawnTimer <= 0) {
+            h.alive = true;
+            h.x = 100 + Math.random() * (ARENA_W - 200);
+            h.y = 100 + Math.random() * (ARENA_H - 200);
+            h.radius = 20;
+            h.score = Math.max(0, h.score - 5);
+          }
+          continue;
+        }
+        h.radius = getRadius(h.score);
+        const speed = getSpeed(h.score) * 1.5; // scale for tick rate
+        const inp = inputs[i] || { dx: 0, dy: 0 };
+        let dx = inp.dx || 0, dy = inp.dy || 0;
+        if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+        h.x = Math.max(h.radius, Math.min(ARENA_W - h.radius, h.x + dx * speed));
+        h.y = Math.max(h.radius, Math.min(ARENA_H - h.radius, h.y + dy * speed));
+      }
+
+      // Absorb objects
+      const objData = data.objects || [];
+      for (let i = 0; i < holes.length; i++) {
+        const h = holes[i];
+        if (!h.alive) continue;
+        const hTier = getTier(h.score);
+        for (let j = 0; j < objects.length; j++) {
+          const o = objects[j];
+          if (o.absorbed) continue;
+          if (o.type.tier > hTier) continue;
+          const ddx = o.x - h.x, ddy = o.y - h.y;
+          const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+          if (dist < h.radius * 0.85) {
+            o.absorbed = true;
+            h.score += o.type.score;
+            if (j < objData.length) objData[j].absorbed = true;
+          }
+        }
+      }
+
+      // Hole vs hole
+      for (let i = 0; i < holes.length; i++) {
+        if (!holes[i].alive) continue;
+        for (let j = i+1; j < holes.length; j++) {
+          if (!holes[j].alive) continue;
+          const a = holes[i], b = holes[j];
+          const ddx = a.x - b.x, ddy = a.y - b.y;
+          const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+          if (a.radius > b.radius * 1.3 && dist < a.radius * 0.7) {
+            b.alive = false; b.respawnTimer = 3000; a.score += 5;
+          } else if (b.radius > a.radius * 1.3 && dist < b.radius * 0.7) {
+            a.alive = false; a.respawnTimer = 3000; b.score += 5;
+          }
+        }
+      }
+
+      // Broadcast state
+      await fb.updateDoc(roomRef, {
+        timer: Math.ceil(hostTimer),
+        holes: holes.map(h => ({ x: h.x, y: h.y, radius: h.radius, score: h.score, color: h.color, name: h.name, alive: h.alive })),
+        objects: objData,
+      });
+
+    } catch (e) { /* ignore */ }
+  }, 100); // 10hz
+}
+
+function endOnlineGame(data) {
+  gameRunning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  if (onlineHostLoop) clearInterval(onlineHostLoop);
+
+  const sorted = [...holes].sort((a,b) => b.score - a.score);
+  const winner = sorted[0];
+
+  if (winner.name === getMyUsername()) window.SFX?.win();
+
+  document.getElementById('winnerText').textContent = `${data.winner || winner.name} wins with ${winner.score} points!`;
+  document.getElementById('winnerText').style.color = winner.color;
+
+  const listEl = document.getElementById('resultList');
+  listEl.innerHTML = sorted.map((h, i) =>
+    `<div class="result-row"><span class="rdot" style="background:${h.color}"></span>#${i+1} ${h.name} - ${h.score} pts</div>`
+  ).join('');
+
+  showScreen('resultScreen');
+
+  // Submit score
+  const myHole = holes[onlinePlayerIndex];
+  if (myHole && window.HallOfFame) window.HallOfFame.submit('holeio', myHole.score);
+
+  // Cleanup
+  if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; }
+  onlineRoomId = null;
+}
+
+async function leaveRoom() {
+  window.SFX?.click();
+  if (onlineUnsubscribe) { onlineUnsubscribe(); onlineUnsubscribe = null; }
+  if (onlineRoomId) {
+    try {
+      const fb = await getFirebaseFns();
+      const roomRef = fb.doc(fb.db, 'holeio_rooms', onlineRoomId);
+      const snap = await fb.getDoc(roomRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const me = getMyUsername();
+        if (isHost && data.status === 'waiting') {
+          await fb.deleteDoc(roomRef);
+        } else {
+          const newPlayers = data.players.filter(p => p !== me);
+          const newHoles = data.holes.filter((h, i) => i !== onlinePlayerIndex);
+          await fb.updateDoc(roomRef, { players: newPlayers, holes: newHoles });
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+  onlineRoomId = null;
+  onlinePlayerIndex = -1;
+  isHost = false;
+  showLobby();
+}
+
+// ============================================================
+// UTILITY
+// ============================================================
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function lighten(hex, amount) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (num >> 16) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+  const b = Math.min(255, (num & 0xff) + amount);
+  return `rgb(${r},${g},${b})`;
+}
+
+function hexToRgba(hex, alpha) {
+  const num = parseInt(hex.replace('#',''), 16);
+  return `rgba(${num >> 16},${(num >> 8) & 0xff},${num & 0xff},${alpha})`;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// TOUCH CONTROLS (mobile support)
+// ============================================================
+(function setupTouch() {
+  let touchId = null, touchStartX = 0, touchStartY = 0;
+  const canvas = document.getElementById('gameCanvas');
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    touchId = t.identifier;
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.touches) {
+      if (t.identifier === touchId) {
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const deadzone = 10;
+        // Simulate keys
+        keys['ArrowLeft'] = dx < -deadzone;
+        keys['ArrowRight'] = dx > deadzone;
+        keys['ArrowUp'] = dy < -deadzone;
+        keys['ArrowDown'] = dy > deadzone;
+      }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', e => {
+    keys['ArrowLeft'] = keys['ArrowRight'] = keys['ArrowUp'] = keys['ArrowDown'] = false;
+    touchId = null;
+  });
+})();
+
+// Init
+showScreen('menuScreen');
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

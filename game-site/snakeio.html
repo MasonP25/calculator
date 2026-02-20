@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake.io</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 200; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+
+  /* Menu Screen */
+  #menu-screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    background: #0f0f1a;
+  }
+  #menu-screen h1 {
+    font-size: 3.5rem; font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7, #ff4757);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.3rem;
+    text-shadow: none;
+  }
+  #menu-screen .subtitle {
+    color: #666; font-size: 0.95rem; margin-bottom: 2rem;
+  }
+  .menu-modes {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: center;
+  }
+  .menu-btn {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 14px 32px; border-radius: 12px; cursor: pointer; font-size: 1.1rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: 600;
+    transition: border-color 0.25s, background 0.25s, transform 0.15s;
+    min-width: 150px;
+  }
+  .menu-btn:hover { border-color: #7b2ff7; background: #2a1a4e; transform: translateY(-2px); }
+  .menu-btn:active { transform: scale(0.97); }
+  .menu-btn.selected { border-color: #7b2ff7; background: #2a1a4e; }
+
+  .diff-row {
+    display: none; gap: 0.6rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: center;
+  }
+  .diff-row.show { display: flex; }
+  .diff-btn {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .diff-btn:hover, .diff-btn.active { border-color: #7b2ff7; }
+  .diff-btn.active { background: #2a1a4e; color: #fff; }
+
+  .start-btn {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white; border: none; padding: 14px 48px;
+    border-radius: 12px; font-size: 1.15rem; font-weight: 700;
+    cursor: pointer; font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .start-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .start-btn:active { transform: scale(0.97); }
+
+  /* Game Screen */
+  #game-screen {
+    position: absolute; inset: 0;
+    display: none;
+    z-index: 50;
+  }
+  #game-canvas {
+    width: 100%; height: 100%;
+    display: block;
+    background: #0a0a15;
+  }
+  #score-overlay {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 24px; z-index: 60;
+    background: rgba(15,15,26,0.85);
+    padding: 8px 24px; border-radius: 10px;
+    border: 1px solid #2a2a4a;
+    font-size: 1rem; font-weight: 600;
+  }
+  .score-item { display: flex; align-items: center; gap: 6px; }
+  .score-dot { width: 10px; height: 10px; border-radius: 50%; }
+  #game-msg {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 2rem; font-weight: 700; color: #fff;
+    text-shadow: 0 0 20px rgba(123,47,247,0.6);
+    z-index: 65; display: none;
+    text-align: center;
+    background: rgba(15,15,26,0.9);
+    padding: 24px 48px; border-radius: 16px;
+    border: 2px solid #2a2a4a;
+  }
+  #game-msg .sub { font-size: 1rem; color: #888; font-weight: 400; margin-top: 8px; }
+  #minimap-canvas {
+    position: fixed; bottom: 16px; right: 16px;
+    border: 2px solid #2a2a4a; border-radius: 8px;
+    z-index: 60;
+    background: rgba(15,15,26,0.85);
+  }
+  #boost-bar {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    width: 160px; height: 8px;
+    background: #1a1a2e; border-radius: 4px;
+    border: 1px solid #2a2a4a;
+    z-index: 60; overflow: hidden;
+    display: none;
+  }
+  #boost-fill {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, #feca57, #ff9f43);
+    border-radius: 4px;
+    transition: width 0.1s;
+  }
+  #back-menu-btn {
+    position: fixed; top: 12px; right: 16px;
+    background: #1a1a2e; border: 1px solid #2a2a4a; color: #888;
+    padding: 6px 16px; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-family: inherit; z-index: 65;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #back-menu-btn:hover { color: #e0e0e0; border-color: #7b2ff7; }
+
+  /* Online Lobby */
+  #online-lobby {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; background: #0f0f1a;
+  }
+  #online-lobby h2 { font-size: 2rem; margin-bottom: 1.5rem; color: #e0e0e0; }
+  .online-panel {
+    background: #1a1a2e; border: 2px solid #2a2a4a;
+    border-radius: 12px; padding: 24px; width: 100%; max-width: 480px;
+    text-align: center; margin-bottom: 1rem;
+  }
+  .online-lobby-btns { display: flex; gap: 12px; justify-content: center; }
+  .online-btn {
+    background: #7b2ff7; color: #fff; border: none;
+    padding: 12px 28px; font-size: 1rem; font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    border-radius: 8px; cursor: pointer;
+    transition: background 0.25s, transform 0.15s;
+  }
+  .online-btn:hover { background: #6a22e0; }
+  .online-btn:active { transform: scale(0.97); }
+  .online-btn.secondary { background: #2a2a4a; }
+  .online-btn.secondary:hover { background: #3a3a5a; }
+  .online-btn.danger { background: #ff4757; }
+  .online-btn.danger:hover { background: #e0333f; }
+  .room-code-display {
+    font-size: 2.5rem; font-weight: 700; color: #feca57;
+    letter-spacing: 8px; margin: 15px 0; font-family: monospace;
+  }
+  .join-input {
+    background: #0f0f1a; border: 2px solid #2a2a4a; color: #feca57;
+    font-size: 1.8rem; font-weight: 700; font-family: monospace;
+    letter-spacing: 6px; text-align: center;
+    padding: 8px 16px; border-radius: 8px; width: 160px;
+    text-transform: uppercase; outline: none;
+    transition: border-color 0.25s;
+  }
+  .join-input:focus { border-color: #7b2ff7; }
+  .join-input::placeholder { color: #444; letter-spacing: 2px; font-size: 1rem; }
+  .join-error { color: #ff4757; font-size: 0.85rem; margin-top: 8px; }
+  .waiting-msg {
+    color: #888; font-size: 0.9rem;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .player-list {
+    text-align: left; margin: 12px 0;
+    max-height: 200px; overflow-y: auto;
+  }
+  .player-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  .player-item .pdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .player-item .host-tag { color: #feca57; font-size: 0.75rem; font-weight: 700; }
+  .leave-btn {
+    background: none; border: 1px solid #ff475766; color: #ff4757;
+    padding: 6px 16px; font-size: 0.85rem; font-family: inherit;
+    border-radius: 6px; cursor: pointer; margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .leave-btn:hover { background: #ff475722; }
+
+  /* Chat */
+  #chat-toggle {
+    position: fixed; bottom: 120px; right: 16px;
+    width: 50px; height: 50px; border-radius: 50%;
+    background: #7b2ff7; border: none; color: #fff; font-size: 1.5rem;
+    cursor: pointer; z-index: 90;
+    box-shadow: 0 2px 12px rgba(123,47,247,0.4);
+    transition: transform 0.2s; display: none;
+  }
+  #chat-toggle:hover { transform: scale(1.1); }
+  #chat-badge {
+    position: absolute; top: -4px; right: -4px;
+    background: #ff4757; color: #fff; font-size: 0.7rem; font-weight: 700;
+    min-width: 18px; height: 18px; border-radius: 9px;
+    display: none; align-items: center; justify-content: center; padding: 0 4px;
+  }
+  #chat-panel {
+    position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
+    background: #1a1a2e; border-left: 2px solid #2a2a4a; z-index: 95;
+    display: flex; flex-direction: column; transition: right 0.3s;
+  }
+  #chat-panel.open { right: 0; }
+  #chat-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 2px solid #2a2a4a;
+  }
+  #chat-header span { font-weight: 700; color: #e0e0e0; font-size: 1rem; }
+  #chat-close { background: none; border: none; color: #888; font-size: 1.3rem; cursor: pointer; }
+  #chat-close:hover { color: #e0e0e0; }
+  #chat-messages {
+    flex: 1; overflow-y: auto; padding: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    scrollbar-width: thin; scrollbar-color: #2a2a4a #1a1a2e;
+  }
+  .chat-msg .chat-name { color: #feca57; font-weight: 700; font-size: 0.8rem; margin-right: 6px; }
+  .chat-msg .chat-text { color: #e0e0e0; font-size: 0.85rem; word-break: break-word; }
+  .chat-msg .chat-time { color: #555; font-size: 0.7rem; margin-left: 6px; }
+  #chat-input-area {
+    display: flex; gap: 6px; padding: 10px; border-top: 2px solid #2a2a4a;
+  }
+  #chat-input {
+    flex: 1; background: #0f0f1a; border: 2px solid #2a2a4a; color: #e0e0e0;
+    font-size: 0.85rem; font-family: inherit; padding: 8px 10px;
+    border-radius: 6px; outline: none;
+  }
+  #chat-input:focus { border-color: #7b2ff7; }
+  #chat-send {
+    background: #7b2ff7; border: none; color: #fff;
+    padding: 8px 12px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 0.85rem;
+  }
+  #chat-send:hover { background: #6a22e0; }
+
+  /* Spectator bar */
+  #spectate-bar {
+    position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,71,87,0.15); border: 1px solid #ff4757;
+    color: #ff4757; padding: 6px 20px; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 600; z-index: 65; display: none;
+  }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+
+<!-- Menu Screen -->
+<div id="menu-screen">
+  <h1>Snake.io</h1>
+  <p class="subtitle">Eat, grow, survive!</p>
+  <div class="menu-modes">
+    <button class="menu-btn" id="btn-2p">2 Player</button>
+    <button class="menu-btn" id="btn-ai">vs AI</button>
+    <button class="menu-btn" id="btn-online">Online</button>
+  </div>
+  <div class="diff-row" id="diff-row">
+    <button class="diff-btn active" data-d="easy">Easy</button>
+    <button class="diff-btn" data-d="medium">Medium</button>
+    <button class="diff-btn" data-d="hard">Hard</button>
+  </div>
+  <button class="start-btn" id="start-btn">Play</button>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen">
+  <canvas id="game-canvas"></canvas>
+  <div id="score-overlay"></div>
+  <div id="game-msg"></div>
+  <canvas id="minimap-canvas" width="150" height="150"></canvas>
+  <div id="boost-bar"><div id="boost-fill"></div></div>
+  <button id="back-menu-btn">Menu</button>
+  <div id="spectate-bar">You died! Spectating...</div>
+</div>
+
+<!-- Online Lobby -->
+<div id="online-lobby">
+  <h2>Snake.io Online</h2>
+  <div class="online-panel" id="ol-main-panel">
+    <div id="ol-lobby-btns" class="online-lobby-btns">
+      <button class="online-btn" id="ol-create-btn">Create Room</button>
+      <button class="online-btn secondary" id="ol-join-btn">Join Room</button>
+    </div>
+    <div id="ol-create-area" style="display:none;">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Share this code:</p>
+      <div class="room-code-display" id="ol-room-code">----</div>
+      <div class="player-list" id="ol-player-list"></div>
+      <p class="waiting-msg" id="ol-waiting">Waiting for players...</p>
+      <button class="online-btn" id="ol-start-game" style="display:none;margin-top:12px;">Start Game</button>
+      <button class="leave-btn" id="ol-cancel-create">Cancel</button>
+    </div>
+    <div id="ol-join-area" style="display:none;">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Enter room code:</p>
+      <input class="join-input" id="ol-join-input" type="text" maxlength="4" placeholder="CODE">
+      <div style="margin-top:12px;">
+        <button class="online-btn" id="ol-join-submit">Join</button>
+      </div>
+      <p class="join-error" id="ol-join-error" style="display:none;"></p>
+      <button class="leave-btn" id="ol-join-back">Back</button>
+    </div>
+    <div id="ol-waiting-room" style="display:none;">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Room: <span class="room-code-display" id="ol-joined-code" style="font-size:1.5rem;letter-spacing:4px;"></span></p>
+      <div class="player-list" id="ol-joined-player-list"></div>
+      <p class="waiting-msg">Waiting for host to start...</p>
+      <button class="leave-btn" id="ol-leave-room">Leave</button>
+    </div>
+  </div>
+  <button class="leave-btn" id="ol-back-menu" style="margin-top:8px;">Back to Menu</button>
+</div>
+
+<!-- Chat sidebar -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+  <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+  <div id="chat-messages"></div>
+  <div id="chat-input-area">
+    <input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off">
+    <button id="chat-send">Send</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ===== Constants =====
+const COLORS = ['#00d4ff','#ff4757','#feca57','#2ed573','#ff6b81','#a55eea','#ff9f43','#70a1ff'];
+const ARENA_W = 80, ARENA_H = 80;
+const CELL = 12;
+const BASE_TICK = 120;
+const FOOD_COUNT = 30;
+const FOOD_COLORS = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6ec7','#c8b6ff','#ff9f43','#70e1f5'];
+
+// ===== State =====
+let mode = '2p'; // '2p' | 'ai' | 'online'
+let difficulty = 'easy';
+let gameRunning = false;
+let gamePaused = false;
+let gameOverFlag = false;
+let snakes = [];
+let food = [];
+let tickTimer = null;
+let tickSpeed = BASE_TICK;
+let boostEnergy = 100;
+let maxBoostEnergy = 100;
+let boostActive = {};  // key: playerIndex, val: bool
+let cameraX = 0, cameraY = 0;
+let followSnakeIdx = 0;
+let canvas, ctx, minimapCanvas, minimapCtx;
+
+// DOM refs
+const menuScreen = document.getElementById('menu-screen');
+const gameScreen = document.getElementById('game-screen');
+const onlineLobby = document.getElementById('online-lobby');
+const scoreOverlay = document.getElementById('score-overlay');
+const gameMsg = document.getElementById('game-msg');
+const boostBar = document.getElementById('boost-bar');
+const boostFill = document.getElementById('boost-fill');
+const spectateBar = document.getElementById('spectate-bar');
+
+// ===== Utility =====
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function getMyUsername() {
+  return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+
+// ===== Menu Logic =====
+let selectedMode = null;
+
+document.getElementById('btn-2p').addEventListener('click', function() {
+  selectedMode = '2p';
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+  this.classList.add('selected');
+  document.getElementById('diff-row').classList.remove('show');
+  window.SFX?.click();
+});
+document.getElementById('btn-ai').addEventListener('click', function() {
+  selectedMode = 'ai';
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+  this.classList.add('selected');
+  document.getElementById('diff-row').classList.add('show');
+  window.SFX?.click();
+});
+document.getElementById('btn-online').addEventListener('click', function() {
+  selectedMode = 'online';
+  window.SFX?.click();
+  showOnlineLobby();
+});
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    difficulty = this.dataset.d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.toggle('active', b.dataset.d === difficulty));
+    window.SFX?.click();
+  });
+});
+
+document.getElementById('start-btn').addEventListener('click', function() {
+  if (!selectedMode || selectedMode === 'online') return;
+  mode = selectedMode;
+  window.SFX?.click();
+  startLocalGame();
+});
+
+document.getElementById('back-menu-btn').addEventListener('click', function() {
+  window.SFX?.click();
+  if (mode === 'online') {
+    leaveOnline();
+  }
+  stopGame();
+  showMenu();
+});
+
+// ===== Screen Management =====
+function showMenu() {
+  menuScreen.style.display = 'flex';
+  gameScreen.style.display = 'none';
+  onlineLobby.style.display = 'none';
+  document.getElementById('chat-toggle').style.display = 'none';
+  spectateBar.style.display = 'none';
+}
+
+function showGame() {
+  menuScreen.style.display = 'none';
+  gameScreen.style.display = 'block';
+  onlineLobby.style.display = 'none';
+}
+
+function showOnlineLobby() {
+  menuScreen.style.display = 'none';
+  gameScreen.style.display = 'none';
+  onlineLobby.style.display = 'flex';
+  document.getElementById('ol-lobby-btns').style.display = 'flex';
+  document.getElementById('ol-create-area').style.display = 'none';
+  document.getElementById('ol-join-area').style.display = 'none';
+  document.getElementById('ol-waiting-room').style.display = 'none';
+}
+
+// ===== Canvas Setup =====
+function initCanvas() {
+  canvas = document.getElementById('game-canvas');
+  ctx = canvas.getContext('2d');
+  minimapCanvas = document.getElementById('minimap-canvas');
+  minimapCtx = minimapCanvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+// ===== Snake Factory =====
+function createSnake(x, y, dir, color, name) {
+  const segments = [];
+  const dx = dir === 'left' ? 1 : dir === 'right' ? -1 : 0;
+  const dy = dir === 'up' ? 1 : dir === 'down' ? -1 : 0;
+  for (let i = 0; i < 3; i++) {
+    segments.push({ x: x + dx * i, y: y + dy * i });
+  }
+  return {
+    segments,
+    dir,
+    nextDir: dir,
+    alive: true,
+    score: 0,
+    color,
+    name: name || '',
+    boostEnergy: 100,
+    boosting: false,
+    shrinkAccum: 0
+  };
+}
+
+// ===== Food =====
+function spawnFood(count) {
+  for (let i = 0; i < count; i++) {
+    let x, y, attempts = 0;
+    do {
+      x = rand(1, ARENA_W - 2);
+      y = rand(1, ARENA_H - 2);
+      attempts++;
+    } while (isCellOccupied(x, y) && attempts < 50);
+    food.push({ x, y, color: FOOD_COLORS[rand(0, FOOD_COLORS.length - 1)] });
+  }
+}
+
+function isCellOccupied(x, y) {
+  for (const s of snakes) {
+    if (!s.alive) continue;
+    for (const seg of s.segments) {
+      if (seg.x === x && seg.y === y) return true;
+    }
+  }
+  for (const f of food) {
+    if (f.x === x && f.y === y) return true;
+  }
+  return false;
+}
+
+// ===== Game Start =====
+function startLocalGame() {
+  initCanvas();
+  showGame();
+  gameOverFlag = false;
+  gameRunning = true;
+  snakes = [];
+  food = [];
+  boostActive = {};
+
+  if (mode === '2p') {
+    snakes.push(createSnake(20, 40, 'right', COLORS[0], 'P1'));
+    snakes.push(createSnake(60, 40, 'left', COLORS[1], 'P2'));
+    followSnakeIdx = -1; // show full arena in 2P, camera centered
+    boostBar.style.display = 'none';
+  } else if (mode === 'ai') {
+    snakes.push(createSnake(40, 40, 'right', COLORS[0], getMyUsername()));
+    followSnakeIdx = 0;
+    const numAI = rand(5, 8);
+    for (let i = 0; i < numAI; i++) {
+      const ax = rand(5, ARENA_W - 6);
+      const ay = rand(5, ARENA_H - 6);
+      const dirs = ['up','down','left','right'];
+      snakes.push(createSnake(ax, ay, dirs[rand(0,3)], COLORS[(i+1) % COLORS.length], 'Bot ' + (i+1)));
+    }
+    boostBar.style.display = 'block';
+  }
+
+  spawnFood(FOOD_COUNT);
+  updateScoreOverlay();
+  gameMsg.style.display = 'none';
+  spectateBar.style.display = 'none';
+  tickSpeed = BASE_TICK;
+  startGameLoop();
+}
+
+function stopGame() {
+  gameRunning = false;
+  if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+}
+
+function startGameLoop() {
+  if (tickTimer) clearInterval(tickTimer);
+  tickTimer = setInterval(gameTick, tickSpeed);
+  requestAnimationFrame(renderLoop);
+}
+
+// ===== Input =====
+const keysDown = {};
+document.addEventListener('keydown', function(e) {
+  keysDown[e.code] = true;
+
+  if (mode === 'online') {
+    handleOnlineInput(e);
+    return;
+  }
+
+  // Player 1 - WASD (in 2P mode) or Arrows (in AI mode)
+  if (mode === '2p') {
+    const s1 = snakes[0];
+    if (s1 && s1.alive) {
+      if (e.code === 'KeyW' && s1.dir !== 'down') s1.nextDir = 'up';
+      if (e.code === 'KeyS' && s1.dir !== 'up') s1.nextDir = 'down';
+      if (e.code === 'KeyA' && s1.dir !== 'right') s1.nextDir = 'left';
+      if (e.code === 'KeyD' && s1.dir !== 'left') s1.nextDir = 'right';
+    }
+    // Player 2 - Arrow keys
+    const s2 = snakes[1];
+    if (s2 && s2.alive) {
+      if (e.code === 'ArrowUp' && s2.dir !== 'down') s2.nextDir = 'up';
+      if (e.code === 'ArrowDown' && s2.dir !== 'up') s2.nextDir = 'down';
+      if (e.code === 'ArrowLeft' && s2.dir !== 'right') s2.nextDir = 'left';
+      if (e.code === 'ArrowRight' && s2.dir !== 'left') s2.nextDir = 'right';
+    }
+    e.preventDefault();
+  } else if (mode === 'ai') {
+    const s = snakes[0];
+    if (s && s.alive) {
+      if (e.code === 'ArrowUp' && s.dir !== 'down') s.nextDir = 'up';
+      if (e.code === 'ArrowDown' && s.dir !== 'up') s.nextDir = 'down';
+      if (e.code === 'ArrowLeft' && s.dir !== 'right') s.nextDir = 'left';
+      if (e.code === 'ArrowRight' && s.dir !== 'left') s.nextDir = 'right';
+    }
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+  }
+});
+
+document.addEventListener('keyup', function(e) {
+  keysDown[e.code] = false;
+});
+
+// ===== Game Tick =====
+function gameTick() {
+  if (!gameRunning || gameOverFlag) return;
+
+  // Handle boost
+  if (mode === '2p') {
+    const was0 = snakes[0].boosting, was1 = snakes[1].boosting;
+    snakes[0].boosting = (!!keysDown['ShiftLeft'] || !!keysDown['ShiftRight']) && snakes[0].boostEnergy > 0;
+    snakes[1].boosting = !!keysDown['Space'] && snakes[1].boostEnergy > 0;
+    if (snakes[0].boosting && !was0) window.SFX?.powerup();
+    if (snakes[1].boosting && !was1) window.SFX?.powerup();
+  } else if (mode === 'ai') {
+    const was = snakes[0].boosting;
+    snakes[0].boosting = (!!keysDown['ShiftLeft'] || !!keysDown['ShiftRight'] || !!keysDown['Space']) && snakes[0].boostEnergy > 0;
+    if (snakes[0].boosting && !was) window.SFX?.powerup();
+  }
+
+  // AI movement
+  if (mode === 'ai') {
+    for (let i = 1; i < snakes.length; i++) {
+      if (snakes[i].alive) aiMove(snakes[i], i);
+    }
+  }
+
+  // Move snakes
+  for (let i = 0; i < snakes.length; i++) {
+    const s = snakes[i];
+    if (!s.alive) continue;
+
+    // Apply boost: move twice but drain energy
+    const moves = s.boosting && s.boostEnergy > 0 ? 2 : 1;
+
+    for (let m = 0; m < moves; m++) {
+      if (m === 0) s.dir = s.nextDir;
+
+      const head = s.segments[0];
+      let nx = head.x, ny = head.y;
+      if (s.dir === 'up') ny--;
+      else if (s.dir === 'down') ny++;
+      else if (s.dir === 'left') nx--;
+      else if (s.dir === 'right') nx++;
+
+      // Wall check
+      if (nx < 0 || nx >= ARENA_W || ny < 0 || ny >= ARENA_H) {
+        killSnake(i);
+        break;
+      }
+
+      // Self collision
+      for (let j = 0; j < s.segments.length - 1; j++) {
+        if (s.segments[j].x === nx && s.segments[j].y === ny) {
+          killSnake(i);
+          break;
+        }
+      }
+      if (!s.alive) break;
+
+      // Other snake collision
+      for (let j = 0; j < snakes.length; j++) {
+        if (j === i || !snakes[j].alive) continue;
+        for (const seg of snakes[j].segments) {
+          if (seg.x === nx && seg.y === ny) {
+            killSnake(i);
+            break;
+          }
+        }
+        if (!s.alive) break;
+      }
+      if (!s.alive) break;
+
+      // Move
+      s.segments.unshift({ x: nx, y: ny });
+
+      // Food check
+      let ate = false;
+      for (let f = food.length - 1; f >= 0; f--) {
+        if (food[f].x === nx && food[f].y === ny) {
+          food.splice(f, 1);
+          s.score++;
+          ate = true;
+          window.SFX?.coin();
+          break;
+        }
+      }
+
+      if (!ate) {
+        s.segments.pop();
+      }
+
+      // Boost energy drain
+      if (s.boosting && s.boostEnergy > 0) {
+        s.boostEnergy -= 1.5;
+        s.shrinkAccum += 0.15;
+        if (s.shrinkAccum >= 1 && s.segments.length > 3) {
+          s.shrinkAccum -= 1;
+          s.segments.pop();
+        }
+        if (s.boostEnergy <= 0) {
+          s.boostEnergy = 0;
+          s.boosting = false;
+        }
+      } else if (!s.boosting && s.boostEnergy < maxBoostEnergy) {
+        s.boostEnergy = Math.min(maxBoostEnergy, s.boostEnergy + 0.3);
+      }
+    }
+  }
+
+  // Refill food
+  while (food.length < FOOD_COUNT) {
+    spawnFood(1);
+  }
+
+  updateScoreOverlay();
+  checkGameOver();
+}
+
+function killSnake(idx) {
+  const s = snakes[idx];
+  if (!s.alive) return;
+  s.alive = false;
+  window.SFX?.death();
+
+  // Turn body into food
+  for (const seg of s.segments) {
+    if (rand(0, 2) === 0) { // ~33% of segments become food
+      food.push({ x: seg.x, y: seg.y, color: s.color });
+    }
+  }
+}
+
+function checkGameOver() {
+  if (gameOverFlag) return;
+
+  if (mode === '2p') {
+    const alive = snakes.filter(s => s.alive);
+    if (alive.length <= 1) {
+      gameOverFlag = true;
+      if (alive.length === 1) {
+        const winner = alive[0];
+        showGameMsg(winner.name + ' Wins!', 'Score: ' + winner.score + ' | Press ESC for menu');
+        window.SFX?.win();
+      } else {
+        showGameMsg('Draw!', 'Both snakes died! | Press ESC for menu');
+      }
+    }
+  } else if (mode === 'ai') {
+    if (!snakes[0].alive) {
+      gameOverFlag = true;
+      showGameMsg('Game Over!', 'Score: ' + snakes[0].score + ' | Press ESC for menu');
+      // Submit score
+      if (window.HallOfFame) window.HallOfFame.submit('snakeio', snakes[0].score);
+    } else {
+      // If all AI dead, player wins
+      const aiAlive = snakes.filter((s, i) => i > 0 && s.alive);
+      if (aiAlive.length === 0) {
+        gameOverFlag = true;
+        showGameMsg('You Win!', 'All bots eliminated! Score: ' + snakes[0].score + ' | Press ESC for menu');
+        window.SFX?.win();
+        if (window.HallOfFame) window.HallOfFame.submit('snakeio', snakes[0].score);
+      }
+    }
+  }
+}
+
+function showGameMsg(title, sub) {
+  gameMsg.innerHTML = title + (sub ? '<div class="sub">' + sub + '</div>' : '');
+  gameMsg.style.display = 'block';
+}
+
+// ESC to return to menu from game over
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Escape' && gameOverFlag) {
+    stopGame();
+    showMenu();
+  }
+});
+
+// ===== AI Logic =====
+function aiMove(snake, idx) {
+  const head = snake.segments[0];
+  const dirs = ['up', 'down', 'left', 'right'];
+  const opposite = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  const valid = dirs.filter(d => d !== opposite[snake.dir]);
+
+  function getNextPos(d) {
+    let nx = head.x, ny = head.y;
+    if (d === 'up') ny--;
+    else if (d === 'down') ny++;
+    else if (d === 'left') nx--;
+    else if (d === 'right') nx++;
+    return { x: nx, y: ny };
+  }
+
+  function isSafe(pos) {
+    if (pos.x < 0 || pos.x >= ARENA_W || pos.y < 0 || pos.y >= ARENA_H) return false;
+    for (const s of snakes) {
+      if (!s.alive) continue;
+      for (let j = 0; j < s.segments.length - 1; j++) {
+        if (s.segments[j].x === pos.x && s.segments[j].y === pos.y) return false;
+      }
+    }
+    return true;
+  }
+
+  function distTo(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  }
+
+  // Count safe cells reachable from a position (flood fill, limited depth)
+  function countSafe(pos, depth) {
+    if (depth <= 0) return 0;
+    const visited = new Set();
+    const queue = [{ x: pos.x, y: pos.y, d: 0 }];
+    let count = 0;
+    while (queue.length > 0) {
+      const cur = queue.shift();
+      const key = cur.x + ',' + cur.y;
+      if (visited.has(key)) continue;
+      if (cur.x < 0 || cur.x >= ARENA_W || cur.y < 0 || cur.y >= ARENA_H) continue;
+      let blocked = false;
+      for (const s of snakes) {
+        if (!s.alive) continue;
+        for (let j = 0; j < s.segments.length - 1; j++) {
+          if (s.segments[j].x === cur.x && s.segments[j].y === cur.y) { blocked = true; break; }
+        }
+        if (blocked) break;
+      }
+      if (blocked) continue;
+      visited.add(key);
+      count++;
+      if (cur.d < depth) {
+        queue.push({ x: cur.x+1, y: cur.y, d: cur.d+1 });
+        queue.push({ x: cur.x-1, y: cur.y, d: cur.d+1 });
+        queue.push({ x: cur.x, y: cur.y+1, d: cur.d+1 });
+        queue.push({ x: cur.x, y: cur.y-1, d: cur.d+1 });
+      }
+    }
+    return count;
+  }
+
+  if (difficulty === 'easy') {
+    // Random movement, occasionally changes direction
+    if (Math.random() < 0.15) {
+      const safeDirs = valid.filter(d => isSafe(getNextPos(d)));
+      if (safeDirs.length > 0) {
+        snake.nextDir = safeDirs[rand(0, safeDirs.length - 1)];
+      }
+    } else {
+      // Keep current if safe
+      if (!isSafe(getNextPos(snake.dir))) {
+        const safeDirs = valid.filter(d => isSafe(getNextPos(d)));
+        if (safeDirs.length > 0) snake.nextDir = safeDirs[rand(0, safeDirs.length - 1)];
+      }
+    }
+  } else if (difficulty === 'medium') {
+    // Seek nearest food, avoid collisions
+    const safeDirs = valid.filter(d => isSafe(getNextPos(d)));
+    if (safeDirs.length === 0) return;
+
+    // Find nearest food
+    let nearestFood = null, nearestDist = Infinity;
+    for (const f of food) {
+      const dist = distTo(head, f);
+      if (dist < nearestDist) { nearestDist = dist; nearestFood = f; }
+    }
+
+    if (nearestFood && Math.random() < 0.8) {
+      // Move toward food
+      let bestDir = safeDirs[0], bestDist = Infinity;
+      for (const d of safeDirs) {
+        const pos = getNextPos(d);
+        const dist = distTo(pos, nearestFood);
+        if (dist < bestDist) { bestDist = dist; bestDir = d; }
+      }
+      snake.nextDir = bestDir;
+    } else {
+      snake.nextDir = safeDirs[rand(0, safeDirs.length - 1)];
+    }
+  } else if (difficulty === 'hard') {
+    // Aggressive: seek food, avoid danger, prefer open space
+    const safeDirs = valid.filter(d => isSafe(getNextPos(d)));
+    if (safeDirs.length === 0) return;
+
+    // Find nearest food
+    let nearestFood = null, nearestDist = Infinity;
+    for (const f of food) {
+      const dist = distTo(head, f);
+      if (dist < nearestDist) { nearestDist = dist; nearestFood = f; }
+    }
+
+    // Score each direction
+    let bestDir = safeDirs[0], bestScore = -Infinity;
+    for (const d of safeDirs) {
+      const pos = getNextPos(d);
+      let score = 0;
+
+      // Food proximity
+      if (nearestFood) {
+        score -= distTo(pos, nearestFood) * 2;
+      }
+
+      // Open space (limited flood fill)
+      score += countSafe(pos, 6) * 0.5;
+
+      // Avoid walls
+      if (pos.x <= 2 || pos.x >= ARENA_W - 3) score -= 5;
+      if (pos.y <= 2 || pos.y >= ARENA_H - 3) score -= 5;
+
+      // Try to cut off player (get near player head)
+      const playerHead = snakes[0].segments[0];
+      const playerDist = distTo(pos, playerHead);
+      if (playerDist < 5 && Math.random() < 0.4) {
+        score += (5 - playerDist) * 3;
+      }
+
+      if (score > bestScore) { bestScore = score; bestDir = d; }
+    }
+    snake.nextDir = bestDir;
+  }
+}
+
+// ===== Score Overlay =====
+function updateScoreOverlay() {
+  let html = '';
+  for (let i = 0; i < snakes.length; i++) {
+    const s = snakes[i];
+    if (mode === 'ai' && i > 3) continue; // Only show top entries
+    const opacity = s.alive ? 1 : 0.4;
+    html += '<div class="score-item" style="opacity:' + opacity + '">';
+    html += '<div class="score-dot" style="background:' + s.color + '"></div>';
+    html += '<span>' + s.name + ': ' + s.score + '</span>';
+    html += '</div>';
+  }
+  if (mode === 'ai' && snakes.length > 4) {
+    const aliveCount = snakes.filter((s,i) => i > 0 && s.alive).length;
+    html += '<div class="score-item"><span style="color:#888">' + aliveCount + ' bots alive</span></div>';
+  }
+  scoreOverlay.innerHTML = html;
+
+  // Update boost bar
+  if (mode === 'ai' && snakes[0]) {
+    boostFill.style.width = (snakes[0].boostEnergy / maxBoostEnergy * 100) + '%';
+  }
+}
+
+// ===== Rendering =====
+let animFrame = null;
+function renderLoop() {
+  if (!gameRunning) { animFrame = null; return; }
+  render();
+  animFrame = requestAnimationFrame(renderLoop);
+}
+
+function render() {
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#0a0a15';
+  ctx.fillRect(0, 0, w, h);
+
+  // Camera
+  let camTargetX = 0, camTargetY = 0;
+  if (followSnakeIdx >= 0 && snakes[followSnakeIdx] && snakes[followSnakeIdx].alive) {
+    const head = snakes[followSnakeIdx].segments[0];
+    camTargetX = head.x * CELL - w / 2 + CELL / 2;
+    camTargetY = head.y * CELL - h / 2 + CELL / 2;
+  } else if (followSnakeIdx === -1) {
+    // Center on arena
+    camTargetX = (ARENA_W * CELL) / 2 - w / 2;
+    camTargetY = (ARENA_H * CELL) / 2 - h / 2;
+  } else {
+    // Spectate: follow first alive snake or center
+    const alive = snakes.filter(s => s.alive);
+    if (alive.length > 0) {
+      const head = alive[0].segments[0];
+      camTargetX = head.x * CELL - w / 2 + CELL / 2;
+      camTargetY = head.y * CELL - h / 2 + CELL / 2;
+    } else {
+      camTargetX = (ARENA_W * CELL) / 2 - w / 2;
+      camTargetY = (ARENA_H * CELL) / 2 - h / 2;
+    }
+  }
+  cameraX += (camTargetX - cameraX) * 0.15;
+  cameraY += (camTargetY - cameraY) * 0.15;
+
+  ctx.save();
+  ctx.translate(-cameraX, -cameraY);
+
+  // Grid lines
+  ctx.strokeStyle = '#151528';
+  ctx.lineWidth = 0.5;
+  const startCellX = Math.max(0, Math.floor(cameraX / CELL));
+  const endCellX = Math.min(ARENA_W, Math.ceil((cameraX + w) / CELL));
+  const startCellY = Math.max(0, Math.floor(cameraY / CELL));
+  const endCellY = Math.min(ARENA_H, Math.ceil((cameraY + h) / CELL));
+
+  for (let x = startCellX; x <= endCellX; x++) {
+    ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, ARENA_H * CELL); ctx.stroke();
+  }
+  for (let y = startCellY; y <= endCellY; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(ARENA_W * CELL, y * CELL); ctx.stroke();
+  }
+
+  // Arena boundary
+  ctx.strokeStyle = '#3a3a6a';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(0, 0, ARENA_W * CELL, ARENA_H * CELL);
+
+  // Boundary glow
+  ctx.shadowColor = '#7b2ff7';
+  ctx.shadowBlur = 15;
+  ctx.strokeRect(0, 0, ARENA_W * CELL, ARENA_H * CELL);
+  ctx.shadowBlur = 0;
+
+  // Food
+  for (const f of food) {
+    if (f.x < startCellX - 1 || f.x > endCellX + 1 || f.y < startCellY - 1 || f.y > endCellY + 1) continue;
+    ctx.fillStyle = f.color;
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(f.x * CELL + CELL / 2, f.y * CELL + CELL / 2, CELL * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Snakes
+  for (let i = 0; i < snakes.length; i++) {
+    const s = snakes[i];
+    if (!s.alive) continue;
+
+    const segs = s.segments;
+
+    // Body segments
+    for (let j = segs.length - 1; j >= 0; j--) {
+      const seg = segs[j];
+      if (seg.x < startCellX - 2 || seg.x > endCellX + 2 || seg.y < startCellY - 2 || seg.y > endCellY + 2) continue;
+
+      const t = 1 - (j / segs.length) * 0.5;
+      const radius = CELL * 0.45 * (0.6 + 0.4 * t);
+
+      if (j === 0) {
+        // Head - brighter, slightly larger
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(seg.x * CELL + CELL / 2, seg.y * CELL + CELL / 2, CELL * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Eyes
+        const eyeOffset = CELL * 0.2;
+        let ex1, ey1, ex2, ey2;
+        const cx = seg.x * CELL + CELL / 2;
+        const cy = seg.y * CELL + CELL / 2;
+        if (s.dir === 'up') { ex1 = cx - eyeOffset; ey1 = cy - eyeOffset; ex2 = cx + eyeOffset; ey2 = cy - eyeOffset; }
+        else if (s.dir === 'down') { ex1 = cx - eyeOffset; ey1 = cy + eyeOffset; ex2 = cx + eyeOffset; ey2 = cy + eyeOffset; }
+        else if (s.dir === 'left') { ex1 = cx - eyeOffset; ey1 = cy - eyeOffset; ex2 = cx - eyeOffset; ey2 = cy + eyeOffset; }
+        else { ex1 = cx + eyeOffset; ey1 = cy - eyeOffset; ex2 = cx + eyeOffset; ey2 = cy + eyeOffset; }
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(ex1, ey1, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex2, ey2, 2, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = 0.6 + 0.4 * t;
+        ctx.beginPath();
+        ctx.arc(seg.x * CELL + CELL / 2, seg.y * CELL + CELL / 2, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Name tag above head
+    if (segs.length > 0) {
+      const head = segs[0];
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText(s.name, head.x * CELL + CELL / 2, head.y * CELL - 6);
+    }
+  }
+
+  ctx.restore();
+
+  // Minimap
+  renderMinimap();
+}
+
+function renderMinimap() {
+  const mw = minimapCanvas.width, mh = minimapCanvas.height;
+  const scale = mw / ARENA_W;
+
+  minimapCtx.fillStyle = 'rgba(10,10,21,0.9)';
+  minimapCtx.fillRect(0, 0, mw, mh);
+
+  // Arena border
+  minimapCtx.strokeStyle = '#2a2a4a';
+  minimapCtx.lineWidth = 1;
+  minimapCtx.strokeRect(0, 0, mw, mh);
+
+  // Food (tiny dots)
+  for (const f of food) {
+    minimapCtx.fillStyle = '#444';
+    minimapCtx.fillRect(f.x * scale, f.y * scale, 1, 1);
+  }
+
+  // Snakes
+  for (let i = 0; i < snakes.length; i++) {
+    const s = snakes[i];
+    if (!s.alive) continue;
+    minimapCtx.fillStyle = s.color;
+    for (const seg of s.segments) {
+      minimapCtx.fillRect(seg.x * scale, seg.y * scale, Math.max(2, scale), Math.max(2, scale));
+    }
+    // Head highlight
+    const head = s.segments[0];
+    minimapCtx.fillStyle = '#fff';
+    minimapCtx.fillRect(head.x * scale - 0.5, head.y * scale - 0.5, 3, 3);
+  }
+
+  // Viewport rectangle
+  if (canvas) {
+    minimapCtx.strokeStyle = '#feca57';
+    minimapCtx.lineWidth = 1;
+    const vx = cameraX / CELL * scale;
+    const vy = cameraY / CELL * scale;
+    const vw = canvas.width / CELL * scale;
+    const vh = canvas.height / CELL * scale;
+    minimapCtx.strokeRect(vx, vy, vw, vh);
+  }
+}
+
+
+// =========================================================
+//  ONLINE MULTIPLAYER
+// =========================================================
+let onlineState = null;
+let onlineUnsub = null;
+let onlineTickTimer = null;
+
+// Online lobby DOM
+const olLobbyBtns = document.getElementById('ol-lobby-btns');
+const olCreateArea = document.getElementById('ol-create-area');
+const olJoinArea = document.getElementById('ol-join-area');
+const olWaitingRoom = document.getElementById('ol-waiting-room');
+const olRoomCode = document.getElementById('ol-room-code');
+const olPlayerList = document.getElementById('ol-player-list');
+const olWaiting = document.getElementById('ol-waiting');
+const olStartGame = document.getElementById('ol-start-game');
+const olJoinInput = document.getElementById('ol-join-input');
+const olJoinError = document.getElementById('ol-join-error');
+const olJoinedCode = document.getElementById('ol-joined-code');
+const olJoinedPlayerList = document.getElementById('ol-joined-player-list');
+const chatToggle = document.getElementById('chat-toggle');
+const chatPanel = document.getElementById('chat-panel');
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const chatBadge = document.getElementById('chat-badge');
+let chatOpen = false;
+let lastChatLen = 0;
+
+// Chat toggle
+document.getElementById('chat-toggle').addEventListener('click', function() {
+  chatOpen = !chatOpen;
+  chatPanel.classList.toggle('open', chatOpen);
+  if (chatOpen) { chatBadge.style.display = 'none'; }
+});
+document.getElementById('chat-close').addEventListener('click', function() {
+  chatOpen = false;
+  chatPanel.classList.remove('open');
+});
+document.getElementById('chat-send').addEventListener('click', sendChat);
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendChat();
+  e.stopPropagation();
+});
+
+async function sendChat() {
+  const text = chatInput.value.trim();
+  if (!text || !onlineState) return;
+  chatInput.value = '';
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+    const snap = await fb.getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const chat = (data.chat || []).slice();
+    const now = new Date();
+    chat.push({
+      name: getMyUsername(),
+      text: text,
+      time: ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2)
+    });
+    if (chat.length > 50) chat.splice(0, chat.length - 50);
+    await fb.updateDoc(roomRef, { chat });
+  } catch(e) { console.error('Chat error:', e); }
+}
+
+function renderChat(chatArr) {
+  if (!chatArr) return;
+  let html = '';
+  for (const msg of chatArr) {
+    html += '<div class="chat-msg"><span class="chat-name">' + escHtml(msg.name) + '</span><span class="chat-text">' + escHtml(msg.text) + '</span><span class="chat-time">' + escHtml(msg.time || '') + '</span></div>';
+  }
+  chatMessages.innerHTML = html;
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (chatArr.length > lastChatLen && !chatOpen) {
+    chatBadge.textContent = chatArr.length - lastChatLen;
+    chatBadge.style.display = 'flex';
+  }
+  lastChatLen = chatArr.length;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[rand(0, chars.length - 1)];
+  return code;
+}
+
+// Firebase lazy load
+let _firebaseFns = null;
+async function getFirebaseFns() {
+  if (_firebaseFns) return _firebaseFns;
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js");
+  const { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteField } =
+    await import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js");
+  const app = initializeApp({
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+  }, 'snakeio-online');
+  const db = getFirestore(app);
+  _firebaseFns = { doc, setDoc, getDoc, updateDoc, onSnapshot, deleteField, db };
+  return _firebaseFns;
+}
+
+// Lobby button handlers
+document.getElementById('ol-create-btn').addEventListener('click', createOnlineRoom);
+document.getElementById('ol-join-btn').addEventListener('click', function() {
+  window.SFX?.click();
+  olLobbyBtns.style.display = 'none';
+  olJoinArea.style.display = 'block';
+  olJoinError.style.display = 'none';
+  olJoinInput.value = '';
+  olJoinInput.focus();
+});
+document.getElementById('ol-join-submit').addEventListener('click', function() {
+  joinOnlineRoom(olJoinInput.value.trim().toUpperCase());
+});
+olJoinInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') joinOnlineRoom(olJoinInput.value.trim().toUpperCase());
+  e.stopPropagation();
+});
+document.getElementById('ol-join-back').addEventListener('click', function() {
+  window.SFX?.click();
+  olJoinArea.style.display = 'none';
+  olLobbyBtns.style.display = 'flex';
+});
+document.getElementById('ol-cancel-create').addEventListener('click', leaveOnline);
+document.getElementById('ol-leave-room').addEventListener('click', leaveOnline);
+document.getElementById('ol-back-menu').addEventListener('click', function() {
+  window.SFX?.click();
+  leaveOnline();
+  showMenu();
+});
+document.getElementById('ol-start-game').addEventListener('click', startOnlineGame);
+
+async function createOnlineRoom() {
+  window.SFX?.click();
+  const fb = await getFirebaseFns();
+  const code = generateRoomCode();
+  const username = getMyUsername();
+
+  olLobbyBtns.style.display = 'none';
+  olCreateArea.style.display = 'block';
+  olRoomCode.textContent = code;
+  olWaiting.textContent = 'Creating room...';
+  olStartGame.style.display = 'none';
+
+  try {
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', code);
+    const existing = await fb.getDoc(roomRef);
+    if (existing.exists() && existing.data().status !== 'finished') {
+      // Collision, retry
+      olCreateArea.style.display = 'none';
+      olLobbyBtns.style.display = 'flex';
+      createOnlineRoom();
+      return;
+    }
+
+    await fb.setDoc(roomRef, {
+      host: username,
+      players: [username],
+      maxPlayers: 8,
+      status: 'waiting',
+      snakes: [],
+      food: [],
+      directions: {},
+      chat: [],
+      winner: ''
+    });
+
+    onlineState = { roomId: code, isHost: true, myIndex: 0 };
+    olWaiting.textContent = 'Waiting for players...';
+    chatToggle.style.display = 'block';
+    lastChatLen = 0;
+
+    startOnlineListening(code);
+  } catch(e) {
+    console.error('Create error:', e);
+    olWaiting.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function joinOnlineRoom(code) {
+  window.SFX?.click();
+  olJoinError.style.display = 'none';
+  if (!code || code.length !== 4) {
+    olJoinError.textContent = 'Enter a 4-character code';
+    olJoinError.style.display = 'block';
+    return;
+  }
+
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', code);
+    const snap = await fb.getDoc(roomRef);
+
+    if (!snap.exists()) {
+      olJoinError.textContent = 'Room not found';
+      olJoinError.style.display = 'block';
+      return;
+    }
+
+    const data = snap.data();
+    if (data.status !== 'waiting') {
+      olJoinError.textContent = 'Game already in progress or finished';
+      olJoinError.style.display = 'block';
+      return;
+    }
+    if (data.players.length >= data.maxPlayers) {
+      olJoinError.textContent = 'Room is full';
+      olJoinError.style.display = 'block';
+      return;
+    }
+
+    const username = getMyUsername();
+    const players = data.players.slice();
+    if (!players.includes(username)) players.push(username);
+
+    await fb.updateDoc(roomRef, { players });
+
+    onlineState = { roomId: code, isHost: false, myIndex: players.indexOf(username) };
+
+    olJoinArea.style.display = 'none';
+    olWaitingRoom.style.display = 'block';
+    olJoinedCode.textContent = code;
+    chatToggle.style.display = 'block';
+    lastChatLen = 0;
+
+    startOnlineListening(code);
+  } catch(e) {
+    console.error('Join error:', e);
+    olJoinError.textContent = 'Error: ' + e.message;
+    olJoinError.style.display = 'block';
+  }
+}
+
+function startOnlineListening(roomId) {
+  if (onlineUnsub) { onlineUnsub(); onlineUnsub = null; }
+
+  getFirebaseFns().then(fb => {
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', roomId);
+    onlineUnsub = fb.onSnapshot(roomRef, snap => {
+      if (!snap.exists() || !onlineState) return;
+      const data = snap.data();
+
+      // Update my index
+      const username = getMyUsername();
+      onlineState.myIndex = data.players.indexOf(username);
+
+      // Render player list
+      renderPlayerList(data.players, data.host);
+
+      // Render chat
+      renderChat(data.chat || []);
+
+      // Show start button if host and 2+ players
+      if (onlineState.isHost && data.status === 'waiting') {
+        olStartGame.style.display = data.players.length >= 2 ? 'inline-block' : 'none';
+      }
+
+      // Game started
+      if (data.status === 'playing') {
+        if (gameScreen.style.display !== 'block') {
+          // Transition to game screen
+          initCanvas();
+          showGame();
+          mode = 'online';
+          gameRunning = true;
+          gameOverFlag = false;
+          spectateBar.style.display = 'none';
+          boostBar.style.display = 'block';
+          gameMsg.style.display = 'none';
+        }
+
+        // Update state from host
+        snakes = (data.snakes || []).map((sd, i) => ({
+          segments: sd.segments || [],
+          dir: sd.dir || 'right',
+          nextDir: sd.dir || 'right',
+          alive: sd.alive !== false,
+          score: sd.score || 0,
+          color: sd.color || COLORS[i % COLORS.length],
+          name: data.players[i] || ('Player ' + (i+1)),
+          boostEnergy: sd.boostEnergy || 100,
+          boosting: false,
+          shrinkAccum: 0
+        }));
+        food = data.food || [];
+
+        // Follow my snake
+        followSnakeIdx = onlineState.myIndex;
+        if (followSnakeIdx >= 0 && followSnakeIdx < snakes.length && !snakes[followSnakeIdx].alive) {
+          spectateBar.style.display = 'block';
+          // Follow first alive snake
+          const alive = snakes.findIndex(s => s.alive);
+          followSnakeIdx = alive >= 0 ? alive : 0;
+        }
+
+        // Update boost bar
+        if (onlineState.myIndex >= 0 && onlineState.myIndex < snakes.length) {
+          boostFill.style.width = (snakes[onlineState.myIndex].boostEnergy / maxBoostEnergy * 100) + '%';
+        }
+
+        updateScoreOverlay();
+        if (!animFrame) renderLoop();
+
+        // Host runs the simulation
+        if (onlineState.isHost && !onlineTickTimer) {
+          startOnlineHostLoop();
+        }
+      }
+
+      // Game finished
+      if (data.status === 'finished') {
+        gameOverFlag = true;
+        if (onlineTickTimer) { clearInterval(onlineTickTimer); onlineTickTimer = null; }
+        const winner = data.winner || 'Nobody';
+        showGameMsg(winner + ' Wins!', 'Press ESC for menu');
+        window.SFX?.win();
+      }
+    });
+  });
+}
+
+function renderPlayerList(players, hostName) {
+  let html = '';
+  for (let i = 0; i < players.length; i++) {
+    const isHost = players[i] === hostName;
+    html += '<div class="player-item">';
+    html += '<div class="pdot" style="background:' + COLORS[i % COLORS.length] + '"></div>';
+    html += '<span>' + escHtml(players[i]) + '</span>';
+    if (isHost) html += '<span class="host-tag">HOST</span>';
+    html += '</div>';
+  }
+  olPlayerList.innerHTML = html;
+  olJoinedPlayerList.innerHTML = html;
+}
+
+async function startOnlineGame() {
+  if (!onlineState || !onlineState.isHost) return;
+  window.SFX?.click();
+
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+    const snap = await fb.getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const playerCount = data.players.length;
+
+    // Create snakes for each player
+    const newSnakes = [];
+    const newFood = [];
+
+    for (let i = 0; i < playerCount; i++) {
+      const angle = (2 * Math.PI * i) / playerCount;
+      const cx = Math.floor(ARENA_W / 2 + Math.cos(angle) * 25);
+      const cy = Math.floor(ARENA_H / 2 + Math.sin(angle) * 25);
+      const dirs = ['up', 'down', 'left', 'right'];
+      // Face toward center
+      let dir;
+      const dx = ARENA_W / 2 - cx;
+      const dy = ARENA_H / 2 - cy;
+      if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? 'right' : 'left';
+      else dir = dy > 0 ? 'down' : 'up';
+
+      const segments = [];
+      const bx = dir === 'left' ? 1 : dir === 'right' ? -1 : 0;
+      const by = dir === 'up' ? 1 : dir === 'down' ? -1 : 0;
+      for (let j = 0; j < 3; j++) {
+        segments.push({ x: cx + bx * j, y: cy + by * j });
+      }
+
+      newSnakes.push({
+        segments,
+        dir,
+        alive: true,
+        score: 0,
+        color: COLORS[i % COLORS.length],
+        boostEnergy: 100
+      });
+    }
+
+    // Spawn food
+    for (let i = 0; i < FOOD_COUNT; i++) {
+      newFood.push({
+        x: rand(1, ARENA_W - 2),
+        y: rand(1, ARENA_H - 2),
+        color: FOOD_COLORS[rand(0, FOOD_COLORS.length - 1)]
+      });
+    }
+
+    await fb.updateDoc(roomRef, {
+      status: 'playing',
+      snakes: newSnakes,
+      food: newFood,
+      directions: {},
+      winner: ''
+    });
+  } catch(e) {
+    console.error('Start game error:', e);
+  }
+}
+
+function handleOnlineInput(e) {
+  if (!onlineState || onlineState.myIndex < 0) return;
+
+  let dir = null;
+  if (e.code === 'ArrowUp') dir = 'up';
+  else if (e.code === 'ArrowDown') dir = 'down';
+  else if (e.code === 'ArrowLeft') dir = 'left';
+  else if (e.code === 'ArrowRight') dir = 'right';
+
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight'].includes(e.code)) {
+    e.preventDefault();
+  }
+
+  if (dir) {
+    // Validate no reverse
+    const mySnake = snakes[onlineState.myIndex];
+    if (mySnake && mySnake.alive) {
+      const opp = { up:'down', down:'up', left:'right', right:'left' };
+      if (dir === opp[mySnake.dir]) return;
+    }
+    sendOnlineDirection(dir);
+  }
+
+  // Boost
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'Space') {
+    sendOnlineBoost(true);
+  }
+}
+
+// Send boost stop on keyup
+document.addEventListener('keyup', function(e) {
+  if (mode !== 'online' || !onlineState) return;
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'Space') {
+    sendOnlineBoost(false);
+  }
+});
+
+async function sendOnlineDirection(dir) {
+  if (!onlineState) return;
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+    const update = {};
+    update['directions.' + onlineState.myIndex] = dir;
+    await fb.updateDoc(roomRef, update);
+  } catch(e) { /* ignore */ }
+}
+
+async function sendOnlineBoost(active) {
+  if (!onlineState) return;
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+    const update = {};
+    update['boosts.' + onlineState.myIndex] = active;
+    await fb.updateDoc(roomRef, update);
+  } catch(e) { /* ignore */ }
+}
+
+// Host simulation loop
+function startOnlineHostLoop() {
+  if (onlineTickTimer) clearInterval(onlineTickTimer);
+  onlineTickTimer = setInterval(onlineHostTick, BASE_TICK);
+}
+
+async function onlineHostTick() {
+  if (!onlineState || !onlineState.isHost || gameOverFlag) return;
+
+  try {
+    const fb = await getFirebaseFns();
+    const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+    const snap = await fb.getDoc(roomRef);
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (data.status !== 'playing') return;
+
+    const sData = data.snakes || [];
+    const fData = (data.food || []).slice();
+    const dirs = data.directions || {};
+    const boosts = data.boosts || {};
+
+    // Apply directions
+    for (let i = 0; i < sData.length; i++) {
+      if (dirs[i]) {
+        const opp = { up:'down', down:'up', left:'right', right:'left' };
+        if (dirs[i] !== opp[sData[i].dir]) {
+          sData[i].dir = dirs[i];
+        }
+      }
+    }
+
+    // Move each snake
+    for (let i = 0; i < sData.length; i++) {
+      const s = sData[i];
+      if (!s.alive) continue;
+
+      const isBoosting = boosts[i] && (s.boostEnergy || 0) > 0;
+      const moves = isBoosting ? 2 : 1;
+
+      for (let m = 0; m < moves; m++) {
+        const head = s.segments[0];
+        let nx = head.x, ny = head.y;
+        if (s.dir === 'up') ny--;
+        else if (s.dir === 'down') ny++;
+        else if (s.dir === 'left') nx--;
+        else if (s.dir === 'right') nx++;
+
+        // Wall
+        if (nx < 0 || nx >= ARENA_W || ny < 0 || ny >= ARENA_H) {
+          s.alive = false; convertToFood(s, fData); break;
+        }
+
+        // Self collision
+        let dead = false;
+        for (let j = 0; j < s.segments.length - 1; j++) {
+          if (s.segments[j].x === nx && s.segments[j].y === ny) { dead = true; break; }
+        }
+        if (dead) { s.alive = false; convertToFood(s, fData); break; }
+
+        // Other snake collision
+        for (let j = 0; j < sData.length; j++) {
+          if (j === i || !sData[j].alive) continue;
+          for (const seg of sData[j].segments) {
+            if (seg.x === nx && seg.y === ny) { dead = true; break; }
+          }
+          if (dead) break;
+        }
+        if (dead) { s.alive = false; convertToFood(s, fData); break; }
+
+        s.segments.unshift({ x: nx, y: ny });
+
+        // Food
+        let ate = false;
+        for (let f = fData.length - 1; f >= 0; f--) {
+          if (fData[f].x === nx && fData[f].y === ny) {
+            fData.splice(f, 1);
+            s.score = (s.score || 0) + 1;
+            ate = true;
+            break;
+          }
+        }
+        if (!ate) s.segments.pop();
+
+        // Boost drain
+        if (isBoosting) {
+          s.boostEnergy = (s.boostEnergy || 100) - 1.5;
+          if (s.segments.length > 3 && Math.random() < 0.15) s.segments.pop();
+          if (s.boostEnergy <= 0) s.boostEnergy = 0;
+        } else {
+          s.boostEnergy = Math.min(100, (s.boostEnergy || 100) + 0.3);
+        }
+      }
+    }
+
+    // Refill food
+    while (fData.length < FOOD_COUNT) {
+      fData.push({
+        x: rand(1, ARENA_W - 2),
+        y: rand(1, ARENA_H - 2),
+        color: FOOD_COLORS[rand(0, FOOD_COLORS.length - 1)]
+      });
+    }
+
+    // Check game over
+    const aliveSnakes = sData.filter(s => s.alive);
+    let newStatus = 'playing';
+    let winner = '';
+    if (aliveSnakes.length <= 1 && sData.length > 1) {
+      newStatus = 'finished';
+      if (aliveSnakes.length === 1) {
+        const winIdx = sData.indexOf(aliveSnakes[0]);
+        winner = data.players[winIdx] || 'Player ' + (winIdx + 1);
+      } else {
+        winner = 'Nobody';
+      }
+    }
+
+    await fb.updateDoc(roomRef, {
+      snakes: sData,
+      food: fData,
+      status: newStatus,
+      winner
+    });
+
+    if (newStatus === 'finished') {
+      clearInterval(onlineTickTimer);
+      onlineTickTimer = null;
+    }
+  } catch(e) {
+    console.error('Host tick error:', e);
+  }
+}
+
+function convertToFood(snake, foodArr) {
+  for (const seg of snake.segments) {
+    if (Math.random() < 0.33) {
+      foodArr.push({ x: seg.x, y: seg.y, color: snake.color || '#888' });
+    }
+  }
+}
+
+async function leaveOnline() {
+  if (onlineUnsub) { onlineUnsub(); onlineUnsub = null; }
+  if (onlineTickTimer) { clearInterval(onlineTickTimer); onlineTickTimer = null; }
+
+  if (onlineState) {
+    try {
+      const fb = await getFirebaseFns();
+      const roomRef = fb.doc(fb.db, 'snakeio_rooms', onlineState.roomId);
+      const snap = await fb.getDoc(roomRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const username = getMyUsername();
+        const players = data.players.filter(p => p !== username);
+        if (players.length === 0 || onlineState.isHost) {
+          await fb.updateDoc(roomRef, { status: 'finished', players });
+        } else {
+          await fb.updateDoc(roomRef, { players });
+        }
+      }
+    } catch(e) { /* ignore */ }
+  }
+
+  onlineState = null;
+  gameRunning = false;
+  chatToggle.style.display = 'none';
+  chatPanel.classList.remove('open');
+  spectateBar.style.display = 'none';
+  showOnlineLobby();
+}
+
+// ESC from online game
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Escape' && mode === 'online' && gameOverFlag) {
+    leaveOnline();
+    showMenu();
+  }
+});
+
+// ===== Init =====
+showMenu();
+
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
