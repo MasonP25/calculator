@@ -86,6 +86,7 @@ let gameOverState = false;
 let botMode = true;
 let botDifficulty = 'medium';
 let keys = {};
+let sessionWins = 0;
 
 const BOT_CONFIG = {
   easy:   { speed: 2.2, deadzone: 20, errorRange: 30 },
@@ -230,8 +231,7 @@ function update() {
     if (window.SFX) window.SFX.correct();
     if (cScore >= WIN_SCORE) {
       if (window.SFX) window.SFX.fail();
-      if (botMode && window.HallOfFame) window.HallOfFame.loseStreak('pong');
-      msgEl.textContent = 'Game Over! Press SPACE to play again.';
+      msgEl.textContent = 'CPU wins this round. Wins: ' + sessionWins + '  —  SPACE to play again';
       playing = false; gameOverState = true; return;
     }
     resetBall(true);
@@ -242,13 +242,11 @@ function update() {
     if (window.SFX) window.SFX.correct();
     if (pScore >= WIN_SCORE) {
       if (window.SFX) window.SFX.win();
+      sessionWins++;
       if (botMode && window.HallOfFame) {
-        var sk = window.HallOfFame.winStreak('pong');
-        window.HallOfFame.submit('pong', sk.current);
-        msgEl.textContent = 'You win! Streak: ' + sk.current + ' (Best: ' + sk.best + ')  —  SPACE to play again';
-      } else {
-        msgEl.textContent = 'You win! Press SPACE to play again.';
+        window.HallOfFame.submit('pong', sessionWins);
       }
+      msgEl.textContent = 'You win! Wins: ' + sessionWins + '  —  SPACE to play again';
       playing = false; gameOverState = true; return;
     }
     resetBall(false);
