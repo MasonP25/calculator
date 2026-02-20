@@ -1,5 +1,6 @@
 Mason's Arcade
 
+
 A collection of 55+ browser-based games built with vanilla HTML, CSS, and JavaScript. No frameworks, no dependencies — just pure web tech.
 
 Play it live: masonp25.github.io/calculator/game-site
@@ -23,22 +24,25 @@ Hall of Fame — Local + global score tracking for every game
 Game List
 
 
-Category	Games
 
-Classics	Tetris, Breakout, Asteroids, Space Invaders, Minesweeper, Solitaire, 2048, Flappy Bird, Snake
+Games:
 
-Puzzle	Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3
+Classics:	Tetris, Breakout, Asteroids, Space Invaders, Minesweeper, Solitaire, 2048, Flappy Bird, Snake
 
-Action	Fruit Slicer, Geometry Dash, Doodle Jump, Crossy Road, Aim Trainer, Reaction Time, Typing Test
+Puzzle:	Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3
 
-Strategy	Chess, Checkers, Connect 4, Tic-Tac-Toe, Hangman, 20 Questions
+Action:	Fruit Slicer, Geometry Dash, Doodle Jump, Crossy Road, Aim Trainer, Reaction Time, Typing Test
 
-Multiplayer	Penguin Knockout, UNO, Imposter, Battleship, Pong, Space Race, Tanks, Word Bomb, Memory
+Strategy:	Chess, Checkers, Connect 4, Tic-Tac-Toe, Hangman, 20 Questions
 
-Other	Bubble Shooter, Simon Says, Maze, Gravity, Word Search
+Multiplayer:	Penguin Knockout, UNO, Imposter, Battleship, Pong, Space Race, Tanks, Word Bomb, Memory
 
-
-Tech Stack
+Other:	Bubble Shooter, Simon Says, Maze, Gravity, Word Search
+ 
+ 
+ 
+ 
+Tech Stack:
 
 Frontend: Vanilla HTML/CSS/JavaScript (single-file games)
 
