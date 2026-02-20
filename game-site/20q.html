@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20 Questions</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0f0f1a;color:#e0e0e0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;min-height:100vh;overflow-x:hidden}
+  a.back{position:fixed;top:16px;left:18px;color:#00d4ff;text-decoration:none;font-size:1.1rem;z-index:100;font-weight:600;transition:opacity .2s}
+  a.back:hover{opacity:.7}
+
+  .title{text-align:center;padding:28px 10px 8px;font-size:2.4rem;font-weight:900;background:linear-gradient(135deg,#7b2ff7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .subtitle{text-align:center;color:#888;font-size:.95rem;margin-bottom:18px}
+
+  /* Difficulty selector */
+  #diffScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:18px}
+  #diffScreen h2{font-size:1.5rem;color:#e0e0e0;margin-bottom:8px}
+  .diff-btn{padding:14px 48px;border:2px solid #2a2a4a;background:#1a1a2e;color:#e0e0e0;font-size:1.15rem;border-radius:12px;cursor:pointer;transition:all .2s;min-width:220px;text-align:center}
+  .diff-btn:hover{border-color:#7b2ff7;background:#22223a;transform:translateY(-2px)}
+  .diff-label{color:#888;font-size:.82rem;margin-top:2px}
+
+  /* Game area */
+  #gameArea{display:none;max-width:1200px;margin:0 auto;padding:10px 18px 40px}
+  .stats-bar{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;padding:8px 20px;font-size:.95rem;text-align:center}
+  .stat span{font-weight:700;color:#00d4ff}
+  .stat .red{color:#ff4757}
+  .stat .grn{color:#2ecc71}
+
+  .hint-bar{text-align:center;margin-bottom:12px;font-size:1.05rem;color:#7b2ff7;font-weight:600;min-height:24px}
+
+  .game-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:800px){.game-layout{grid-template-columns:1fr}}
+
+  .panel{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:14px;padding:16px}
+  .panel-title{font-size:1.1rem;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,#7b2ff7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+  .q-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:500px){.q-grid{grid-template-columns:1fr}}
+  .q-btn{background:#12122a;border:1px solid #2a2a4a;color:#e0e0e0;padding:10px 10px;border-radius:10px;cursor:pointer;font-size:.88rem;text-align:left;transition:all .18s;line-height:1.3}
+  .q-btn:hover:not(:disabled){border-color:#7b2ff7;background:#1e1e3a;transform:translateY(-1px);box-shadow:0 2px 12px rgba(123,47,247,.15)}
+  .q-btn:disabled{opacity:.35;cursor:default;border-color:#1a1a2e}
+
+  .log-area{max-height:340px;overflow-y:auto;margin-bottom:14px;display:flex;flex-direction:column;gap:6px}
+  .log-area::-webkit-scrollbar{width:6px}
+  .log-area::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px}
+  .log-entry{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#12122a;border-radius:8px;font-size:.88rem}
+  .log-entry .yes{color:#2ecc71;font-weight:700}
+  .log-entry .no{color:#ff4757;font-weight:700}
+
+  .guess-section{display:flex;gap:8px;margin-top:6px}
+  .guess-input{flex:1;background:#12122a;border:1px solid #2a2a4a;color:#e0e0e0;padding:10px 14px;border-radius:10px;font-size:1rem;outline:none;transition:border-color .2s}
+  .guess-input:focus{border-color:#7b2ff7}
+  .guess-btn{background:linear-gradient(135deg,#7b2ff7,#00d4ff);border:none;color:#fff;padding:10px 22px;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .guess-btn:hover{opacity:.85}
+  .guess-btn:disabled{opacity:.4;cursor:default}
+
+  /* Result overlay */
+  #resultOverlay{display:none;position:fixed;inset:0;background:rgba(15,15,26,.92);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  #resultOverlay.show{display:flex}
+  #resultOverlay h2{font-size:2.2rem;font-weight:900}
+  #resultOverlay .win-title{background:linear-gradient(135deg,#2ecc71,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  #resultOverlay .lose-title{color:#ff4757}
+  #resultOverlay p{color:#888;font-size:1.1rem;text-align:center;max-width:400px}
+  #resultOverlay .score-line{color:#00d4ff;font-size:1.3rem;font-weight:700}
+  .play-again-btn{margin-top:10px;padding:14px 44px;background:linear-gradient(135deg,#7b2ff7,#00d4ff);border:none;color:#fff;font-size:1.1rem;font-weight:700;border-radius:12px;cursor:pointer;transition:opacity .2s}
+  .play-again-btn:hover{opacity:.85}
+
+  /* Celebration particles */
+  .confetti-container{position:fixed;inset:0;pointer-events:none;z-index:201;overflow:hidden}
+  .confetti{position:absolute;width:10px;height:10px;border-radius:2px;animation:confettiFall 2.5s ease-in forwards}
+  @keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back</a>
+<h1 class="title">20 Questions</h1>
+<p class="subtitle">Think of nothing — I've already picked something. Ask yes/no questions to figure it out!</p>
+
+<!-- Difficulty screen -->
+<div id="diffScreen">
+  <h2>Choose Difficulty</h2>
+  <button class="diff-btn" onclick="startGame('easy')">Easy<div class="diff-label">Category revealed &middot; 20 questions</div></button>
+  <button class="diff-btn" onclick="startGame('medium')">Medium<div class="diff-label">No hints &middot; 20 questions</div></button>
+  <button class="diff-btn" onclick="startGame('hard')">Hard<div class="diff-label">No hints &middot; Only 10 questions</div></button>
+</div>
+
+<!-- Game area -->
+<div id="gameArea">
+  <div class="stats-bar">
+    <div class="stat">Questions Left: <span id="qLeft">20</span></div>
+    <div class="stat">Questions Used: <span id="qUsed" class="red">0</span></div>
+    <div class="stat">Items Remaining: <span id="itemsLeft" class="grn">?</span></div>
+  </div>
+  <div class="hint-bar" id="hintBar"></div>
+  <div class="game-layout">
+    <div class="panel">
+      <div class="panel-title">Ask a Question</div>
+      <div class="q-grid" id="qGrid"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Answer Log</div>
+      <div class="log-area" id="logArea"></div>
+      <div class="panel-title" style="margin-top:10px">Make a Guess</div>
+      <div class="guess-section">
+        <input class="guess-input" id="guessInput" placeholder="Type your guess..." autocomplete="off">
+        <button class="guess-btn" id="guessBtn" onclick="makeGuess()">Guess</button>
+      </div>
+      <p style="color:#888;font-size:.78rem;margin-top:8px">Wrong guesses cost 1 question.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div id="resultOverlay">
+  <div class="confetti-container" id="confettiContainer"></div>
+  <h2 id="resultTitle"></h2>
+  <p id="resultMsg"></p>
+  <p class="score-line" id="scoreLine"></p>
+  <button class="play-again-btn" onclick="resetToMenu()">Play Again</button>
+</div>
+
+<script>
+// ====== ITEM DATABASE ======
+const ITEMS = [
+  // ANIMALS
+  {name:"Dog",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_outdoors:true,is_soft:true,found_in_nature:true,bigger_than_bread:true}},
+  {name:"Cat",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_indoors:true,found_outdoors:true,is_soft:true,found_in_nature:true}},
+  {name:"Eagle",category:"Animals",tags:{alive:true,animal:true,can_fly:true,found_outdoors:true,found_in_nature:true,has_legs:true,bigger_than_bread:true}},
+  {name:"Goldfish",category:"Animals",tags:{alive:true,animal:true,lives_in_water:true,found_indoors:true,is_colorful:true}},
+  {name:"Elephant",category:"Animals",tags:{alive:true,animal:true,has_legs:true,bigger_than_person:true,found_outdoors:true,found_in_nature:true,bigger_than_bread:true,is_hard:true}},
+  {name:"Snake",category:"Animals",tags:{alive:true,animal:true,found_outdoors:true,found_in_nature:true,is_soft:true}},
+  {name:"Penguin",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_outdoors:true,is_cold:true,found_in_nature:true,lives_in_water:true,bigger_than_bread:true}},
+  {name:"Dolphin",category:"Animals",tags:{alive:true,animal:true,lives_in_water:true,found_outdoors:true,found_in_nature:true,bigger_than_person:true,bigger_than_bread:true}},
+  {name:"Spider",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_indoors:true,found_outdoors:true,found_in_nature:true}},
+  {name:"Horse",category:"Animals",tags:{alive:true,animal:true,has_legs:true,bigger_than_person:true,found_outdoors:true,found_in_nature:true,bigger_than_bread:true}},
+  {name:"Parrot",category:"Animals",tags:{alive:true,animal:true,can_fly:true,has_legs:true,is_colorful:true,found_in_nature:true,found_outdoors:true,bigger_than_bread:true}},
+  {name:"Shark",category:"Animals",tags:{alive:true,animal:true,lives_in_water:true,bigger_than_person:true,found_in_nature:true,found_outdoors:true,bigger_than_bread:true}},
+  {name:"Frog",category:"Animals",tags:{alive:true,animal:true,has_legs:true,lives_in_water:true,found_outdoors:true,found_in_nature:true,is_colorful:true}},
+  {name:"Butterfly",category:"Animals",tags:{alive:true,animal:true,can_fly:true,has_legs:true,is_colorful:true,found_outdoors:true,found_in_nature:true}},
+  {name:"Cow",category:"Animals",tags:{alive:true,animal:true,has_legs:true,bigger_than_person:true,found_outdoors:true,found_in_nature:true,bigger_than_bread:true}},
+  {name:"Chicken",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_outdoors:true,found_in_nature:true,is_edible:true,bigger_than_bread:true}},
+  {name:"Whale",category:"Animals",tags:{alive:true,animal:true,lives_in_water:true,bigger_than_person:true,found_in_nature:true,found_outdoors:true,bigger_than_bread:true}},
+  {name:"Ant",category:"Animals",tags:{alive:true,animal:true,has_legs:true,found_outdoors:true,found_in_nature:true}},
+  {name:"Turtle",category:"Animals",tags:{alive:true,animal:true,has_legs:true,is_hard:true,lives_in_water:true,found_outdoors:true,found_in_nature:true}},
+  {name:"Owl",category:"Animals",tags:{alive:true,animal:true,can_fly:true,has_legs:true,found_outdoors:true,found_in_nature:true,bigger_than_bread:true}},
+  {name:"Bear",category:"Animals",tags:{alive:true,animal:true,has_legs:true,bigger_than_person:true,found_outdoors:true,found_in_nature:true,bigger_than_bread:true}},
+  {name:"Bee",category:"Animals",tags:{alive:true,animal:true,can_fly:true,has_legs:true,found_outdoors:true,found_in_nature:true,is_colorful:true}},
+
+  // FOODS
+  {name:"Pizza",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_hot:true,found_indoors:true,found_in_kitchen:true,is_round:true,is_soft:true,is_colorful:true,bigger_than_bread:true}},
+  {name:"Apple",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_round:true,found_in_kitchen:true,found_indoors:true,found_in_nature:true,is_colorful:true,is_hard:true}},
+  {name:"Ice Cream",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_cold:true,is_soft:true,found_in_kitchen:true,found_indoors:true,is_colorful:true}},
+  {name:"Banana",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_colorful:true,found_in_kitchen:true,found_indoors:true,found_in_nature:true,is_soft:true}},
+  {name:"Bread",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_soft:true,found_in_kitchen:true,found_indoors:true}},
+  {name:"Sushi",category:"Foods",tags:{food:true,man_made:true,is_edible:true,found_in_kitchen:true,found_indoors:true,is_colorful:true}},
+  {name:"Watermelon",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_round:true,found_in_kitchen:true,is_colorful:true,bigger_than_bread:true,found_in_nature:true}},
+  {name:"Chocolate",category:"Foods",tags:{food:true,man_made:true,is_edible:true,found_in_kitchen:true,found_indoors:true,is_soft:true}},
+  {name:"Egg",category:"Foods",tags:{food:true,is_edible:true,is_round:true,found_in_kitchen:true,found_indoors:true,found_in_nature:true}},
+  {name:"Carrot",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,found_in_kitchen:true,found_in_nature:true,is_colorful:true,is_hard:true}},
+  {name:"Hamburger",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_round:true,is_soft:true,found_in_kitchen:true,found_indoors:true,bigger_than_bread:true}},
+  {name:"Popcorn",category:"Foods",tags:{food:true,man_made:true,is_edible:true,found_in_kitchen:true,found_indoors:true,is_soft:true}},
+  {name:"Orange",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_round:true,is_colorful:true,found_in_kitchen:true,found_in_nature:true}},
+  {name:"Cake",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_soft:true,is_colorful:true,found_in_kitchen:true,found_indoors:true,bigger_than_bread:true}},
+  {name:"Hot Dog",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_hot:true,is_soft:true,found_in_kitchen:true,found_indoors:true}},
+  {name:"Pumpkin",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_round:true,is_colorful:true,bigger_than_bread:true,found_in_nature:true,found_outdoors:true,is_hard:true}},
+  {name:"Strawberry",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_colorful:true,found_in_nature:true,found_in_kitchen:true,is_soft:true}},
+  {name:"Cheese",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_soft:true,is_colorful:true,found_in_kitchen:true,found_indoors:true}},
+  {name:"Soup",category:"Foods",tags:{food:true,man_made:true,is_edible:true,is_hot:true,found_in_kitchen:true,found_indoors:true,is_soft:true}},
+  {name:"Coconut",category:"Foods",tags:{alive:true,plant:true,food:true,is_edible:true,is_round:true,is_hard:true,found_in_nature:true,found_outdoors:true}},
+
+  // OBJECTS
+  {name:"Book",category:"Objects",tags:{man_made:true,found_indoors:true,is_colorful:true}},
+  {name:"Lamp",category:"Objects",tags:{man_made:true,found_indoors:true,is_electronic:true,is_hot:true}},
+  {name:"Television",category:"Objects",tags:{man_made:true,found_indoors:true,is_electronic:true,is_hard:true,bigger_than_bread:true,is_colorful:true}},
+  {name:"Pillow",category:"Objects",tags:{man_made:true,found_indoors:true,is_soft:true}},
+  {name:"Clock",category:"Objects",tags:{man_made:true,found_indoors:true,is_round:true,is_hard:true}},
+  {name:"Guitar",category:"Objects",tags:{man_made:true,found_indoors:true,is_hard:true,bigger_than_bread:true,is_colorful:true}},
+  {name:"Umbrella",category:"Objects",tags:{man_made:true,found_indoors:true,found_outdoors:true,is_colorful:true}},
+  {name:"Mirror",category:"Objects",tags:{man_made:true,found_indoors:true,is_hard:true,bigger_than_bread:true}},
+  {name:"Soccer Ball",category:"Objects",tags:{man_made:true,is_round:true,found_outdoors:true,is_colorful:true,bigger_than_bread:true}},
+  {name:"Candle",category:"Objects",tags:{man_made:true,found_indoors:true,is_hot:true,is_colorful:true}},
+  {name:"Scissors",category:"Objects",tags:{man_made:true,found_indoors:true,is_metal:true,is_hard:true}},
+  {name:"Backpack",category:"Objects",tags:{man_made:true,found_indoors:true,found_outdoors:true,is_colorful:true,is_soft:true,bigger_than_bread:true}},
+  {name:"Sunglasses",category:"Objects",tags:{man_made:true,found_indoors:true,found_outdoors:true,is_hard:true}},
+  {name:"Toothbrush",category:"Objects",tags:{man_made:true,found_indoors:true,is_colorful:true,is_hard:true}},
+  {name:"Diamond",category:"Objects",tags:{found_in_nature:true,is_hard:true,is_colorful:true}},
+  {name:"Balloon",category:"Objects",tags:{man_made:true,is_round:true,is_soft:true,is_colorful:true,can_fly:true,found_indoors:true,found_outdoors:true}},
+  {name:"Key",category:"Objects",tags:{man_made:true,is_metal:true,is_hard:true,found_indoors:true}},
+  {name:"Pencil",category:"Objects",tags:{man_made:true,found_indoors:true,is_hard:true,is_colorful:true}},
+  {name:"Teddy Bear",category:"Objects",tags:{man_made:true,found_indoors:true,is_soft:true,is_colorful:true,has_legs:true}},
+  {name:"Drum",category:"Objects",tags:{man_made:true,found_indoors:true,is_round:true,is_hard:true,bigger_than_bread:true}},
+  {name:"Sword",category:"Objects",tags:{man_made:true,is_metal:true,is_hard:true,bigger_than_bread:true}},
+  {name:"Crown",category:"Objects",tags:{man_made:true,is_metal:true,is_hard:true,is_colorful:true}},
+  {name:"Tent",category:"Objects",tags:{man_made:true,found_outdoors:true,is_soft:true,bigger_than_person:true,bigger_than_bread:true,is_colorful:true}},
+  {name:"Skateboard",category:"Objects",tags:{man_made:true,found_outdoors:true,has_wheels:true,is_hard:true,bigger_than_bread:true}},
+  {name:"Flashlight",category:"Objects",tags:{man_made:true,is_electronic:true,is_hard:true,found_indoors:true,found_outdoors:true}},
+  {name:"Rope",category:"Objects",tags:{man_made:true,found_outdoors:true,is_soft:true,bigger_than_bread:true}},
+  {name:"Coin",category:"Objects",tags:{man_made:true,is_metal:true,is_round:true,is_hard:true,found_indoors:true}},
+
+  // PLACES
+  {name:"Volcano",category:"Places",tags:{found_in_nature:true,is_hot:true,bigger_than_person:true,found_outdoors:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Beach",category:"Places",tags:{found_in_nature:true,found_outdoors:true,bigger_than_person:true,lives_in_water:true,is_colorful:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Library",category:"Places",tags:{man_made:true,found_indoors:true,bigger_than_person:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Moon",category:"Places",tags:{found_in_nature:true,is_round:true,is_cold:true,bigger_than_person:true,found_outdoors:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Castle",category:"Places",tags:{man_made:true,bigger_than_person:true,found_outdoors:true,is_hard:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Desert",category:"Places",tags:{found_in_nature:true,is_hot:true,bigger_than_person:true,found_outdoors:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Hospital",category:"Places",tags:{man_made:true,bigger_than_person:true,found_indoors:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Cave",category:"Places",tags:{found_in_nature:true,is_cold:true,is_hard:true,bigger_than_person:true,found_outdoors:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Lighthouse",category:"Places",tags:{man_made:true,bigger_than_person:true,found_outdoors:true,lives_in_water:true,is_hard:true,bigger_than_bread:true,is_a_place:true}},
+  {name:"Pyramid",category:"Places",tags:{man_made:true,bigger_than_person:true,found_outdoors:true,is_hard:true,bigger_than_bread:true,is_a_place:true}},
+
+  // VEHICLES
+  {name:"Bicycle",category:"Vehicles",tags:{man_made:true,has_wheels:true,is_metal:true,is_hard:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Airplane",category:"Vehicles",tags:{man_made:true,can_fly:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Submarine",category:"Vehicles",tags:{man_made:true,lives_in_water:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Car",category:"Vehicles",tags:{man_made:true,has_wheels:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Motorcycle",category:"Vehicles",tags:{man_made:true,has_wheels:true,is_metal:true,is_hard:true,is_electronic:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Hot Air Balloon",category:"Vehicles",tags:{man_made:true,can_fly:true,is_colorful:true,bigger_than_person:true,found_outdoors:true,is_round:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Train",category:"Vehicles",tags:{man_made:true,has_wheels:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Sailboat",category:"Vehicles",tags:{man_made:true,lives_in_water:true,bigger_than_person:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Helicopter",category:"Vehicles",tags:{man_made:true,can_fly:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,found_outdoors:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Rocket",category:"Vehicles",tags:{man_made:true,can_fly:true,is_metal:true,is_hard:true,bigger_than_person:true,is_electronic:true,found_outdoors:true,is_hot:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Skateboard",category:"Vehicles",tags:{man_made:true,has_wheels:true,found_outdoors:true,is_hard:true,bigger_than_bread:true,is_a_vehicle:true}},
+  {name:"Canoe",category:"Vehicles",tags:{man_made:true,lives_in_water:true,found_outdoors:true,bigger_than_person:true,bigger_than_bread:true,is_a_vehicle:true}},
+
+  // MORE OBJECTS (electronics, kitchen, etc.)
+  {name:"Microwave",category:"Objects",tags:{man_made:true,is_electronic:true,found_indoors:true,found_in_kitchen:true,is_hard:true,is_hot:true,bigger_than_bread:true}},
+  {name:"Refrigerator",category:"Objects",tags:{man_made:true,is_electronic:true,found_indoors:true,found_in_kitchen:true,is_hard:true,is_cold:true,bigger_than_person:true,is_metal:true,bigger_than_bread:true}},
+  {name:"Laptop",category:"Objects",tags:{man_made:true,is_electronic:true,found_indoors:true,is_hard:true,bigger_than_bread:true}},
+  {name:"Smartphone",category:"Objects",tags:{man_made:true,is_electronic:true,found_indoors:true,is_hard:true}},
+  {name:"Piano",category:"Objects",tags:{man_made:true,found_indoors:true,is_hard:true,bigger_than_person:true,bigger_than_bread:true}},
+  {name:"Washing Machine",category:"Objects",tags:{man_made:true,is_electronic:true,found_indoors:true,is_hard:true,is_metal:true,bigger_than_bread:true,is_round:true}},
+  {name:"Frying Pan",category:"Objects",tags:{man_made:true,found_in_kitchen:true,found_indoors:true,is_metal:true,is_hard:true,is_round:true,is_hot:true}},
+  {name:"Snow Globe",category:"Objects",tags:{man_made:true,found_indoors:true,is_round:true,is_hard:true,is_cold:true,is_colorful:true}},
+  {name:"Trampoline",category:"Objects",tags:{man_made:true,found_outdoors:true,is_round:true,is_soft:true,bigger_than_person:true,bigger_than_bread:true,is_metal:true}},
+  {name:"Cactus",category:"Objects",tags:{alive:true,plant:true,found_outdoors:true,found_in_nature:true,is_hard:true,is_colorful:true}},
+  {name:"Sunflower",category:"Objects",tags:{alive:true,plant:true,found_outdoors:true,found_in_nature:true,is_colorful:true,is_round:true,bigger_than_bread:true}},
+  {name:"Rose",category:"Objects",tags:{alive:true,plant:true,found_outdoors:true,found_in_nature:true,is_colorful:true,is_soft:true}},
+  {name:"Snowflake",category:"Objects",tags:{found_in_nature:true,is_cold:true,found_outdoors:true}},
+  {name:"Lightning",category:"Objects",tags:{found_in_nature:true,is_hot:true,found_outdoors:true,is_colorful:true,is_electronic:true}},
+  {name:"Rainbow",category:"Objects",tags:{found_in_nature:true,found_outdoors:true,is_colorful:true,bigger_than_person:true,bigger_than_bread:true}},
+  {name:"Anchor",category:"Objects",tags:{man_made:true,is_metal:true,is_hard:true,lives_in_water:true,bigger_than_bread:true}},
+  {name:"Compass",category:"Objects",tags:{man_made:true,is_round:true,is_hard:true,is_metal:true,found_indoors:true,found_outdoors:true}},
+];
+
+// De-duplicate by name
+const seen = new Set();
+const UNIQUE_ITEMS = ITEMS.filter(it => {
+  if (seen.has(it.name)) return false;
+  seen.add(it.name);
+  return true;
+});
+
+// ====== QUESTIONS ======
+const QUESTIONS = [
+  {text:"Is it alive?", tag:"alive"},
+  {text:"Is it an animal?", tag:"animal"},
+  {text:"Is it a plant?", tag:"plant"},
+  {text:"Is it a food?", tag:"food"},
+  {text:"Is it man-made?", tag:"man_made"},
+  {text:"Is it bigger than a person?", tag:"bigger_than_person"},
+  {text:"Is it bigger than a loaf of bread?", tag:"bigger_than_bread"},
+  {text:"Can you eat it?", tag:"is_edible"},
+  {text:"Does it have legs?", tag:"has_legs"},
+  {text:"Can it fly?", tag:"can_fly"},
+  {text:"Does it live in or near water?", tag:"lives_in_water"},
+  {text:"Is it found indoors?", tag:"found_indoors"},
+  {text:"Is it found outdoors?", tag:"found_outdoors"},
+  {text:"Is it electronic?", tag:"is_electronic"},
+  {text:"Does it have wheels?", tag:"has_wheels"},
+  {text:"Is it round?", tag:"is_round"},
+  {text:"Is it soft?", tag:"is_soft"},
+  {text:"Is it hard?", tag:"is_hard"},
+  {text:"Is it metal?", tag:"is_metal"},
+  {text:"Is it found in nature?", tag:"found_in_nature"},
+  {text:"Is it found in a kitchen?", tag:"found_in_kitchen"},
+  {text:"Is it hot or associated with heat?", tag:"is_hot"},
+  {text:"Is it cold or associated with cold?", tag:"is_cold"},
+  {text:"Is it colorful?", tag:"is_colorful"},
+  {text:"Is it a place or location?", tag:"is_a_place"},
+  {text:"Is it a vehicle?", tag:"is_a_vehicle"},
+];
+
+// ====== GAME STATE ======
+let mysteryItem = null;
+let maxQuestions = 20;
+let questionsUsed = 0;
+let gameOver = false;
+let difficulty = 'medium';
+let possibleItems = [];
+
+function startGame(diff) {
+  difficulty = diff;
+  maxQuestions = diff === 'hard' ? 10 : 20;
+  questionsUsed = 0;
+  gameOver = false;
+
+  // Pick random item
+  mysteryItem = UNIQUE_ITEMS[Math.floor(Math.random() * UNIQUE_ITEMS.length)];
+  possibleItems = [...UNIQUE_ITEMS];
+
+  document.getElementById('diffScreen').style.display = 'none';
+  document.getElementById('gameArea').style.display = 'block';
+
+  // Hint
+  const hintBar = document.getElementById('hintBar');
+  if (diff === 'easy') {
+    hintBar.textContent = 'Hint: It\'s in the "' + mysteryItem.category + '" category';
+  } else {
+    hintBar.textContent = '';
+  }
+
+  updateStats();
+  buildQuestionGrid();
+  document.getElementById('logArea').innerHTML = '';
+  document.getElementById('guessInput').value = '';
+  document.getElementById('guessInput').disabled = false;
+  document.getElementById('guessBtn').disabled = false;
+
+  // Enter key for guessing
+  document.getElementById('guessInput').onkeydown = function(e) {
+    if (e.key === 'Enter') makeGuess();
+  };
+}
+
+function updateStats() {
+  document.getElementById('qLeft').textContent = maxQuestions - questionsUsed;
+  document.getElementById('qUsed').textContent = questionsUsed;
+  document.getElementById('itemsLeft').textContent = possibleItems.length;
+}
+
+function buildQuestionGrid() {
+  const grid = document.getElementById('qGrid');
+  grid.innerHTML = '';
+  QUESTIONS.forEach((q, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'q-btn';
+    btn.textContent = q.text;
+    btn.id = 'qbtn-' + i;
+    btn.onclick = () => askQuestion(i);
+    grid.appendChild(btn);
+  });
+}
+
+function askQuestion(idx) {
+  if (gameOver) return;
+  const q = QUESTIONS[idx];
+  const btn = document.getElementById('qbtn-' + idx);
+  if (btn.disabled) return;
+
+  if (window.SFX) SFX.click();
+
+  questionsUsed++;
+  btn.disabled = true;
+
+  const answer = !!mysteryItem.tags[q.tag];
+
+  // Filter possible items
+  possibleItems = possibleItems.filter(it => !!it.tags[q.tag] === answer);
+
+  // Log
+  addLogEntry(q.text, answer);
+
+  if (answer && window.SFX) SFX.correct();
+  if (!answer && window.SFX) SFX.fail();
+
+  updateStats();
+
+  if (questionsUsed >= maxQuestions) {
+    endGame(false);
+  }
+}
+
+function addLogEntry(text, answer) {
+  const log = document.getElementById('logArea');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = '<span>' + escHtml(text) + '</span><span class="' + (answer ? 'yes' : 'no') + '">' + (answer ? 'YES' : 'NO') + '</span>';
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function makeGuess() {
+  if (gameOver) return;
+  const input = document.getElementById('guessInput');
+  const guess = input.value.trim();
+  if (!guess) return;
+
+  input.value = '';
+
+  const correct = guess.toLowerCase() === mysteryItem.name.toLowerCase();
+
+  if (correct) {
+    endGame(true);
+  } else {
+    questionsUsed++;
+    addLogEntry('Guessed: "' + guess + '"', false);
+    if (window.SFX) SFX.fail();
+    updateStats();
+    if (questionsUsed >= maxQuestions) {
+      endGame(false);
+    }
+  }
+}
+
+function endGame(won) {
+  gameOver = true;
+  document.getElementById('guessInput').disabled = true;
+  document.getElementById('guessBtn').disabled = true;
+
+  // Disable all question buttons
+  QUESTIONS.forEach((_, i) => {
+    const btn = document.getElementById('qbtn-' + i);
+    if (btn) btn.disabled = true;
+  });
+
+  const overlay = document.getElementById('resultOverlay');
+  const title = document.getElementById('resultTitle');
+  const msg = document.getElementById('resultMsg');
+  const score = document.getElementById('scoreLine');
+
+  if (won) {
+    if (window.SFX) SFX.win();
+    title.className = 'win-title';
+    title.textContent = 'You Got It!';
+    msg.innerHTML = 'The answer was <strong style="color:#00d4ff">' + escHtml(mysteryItem.name) + '</strong>';
+    score.textContent = 'Score: ' + questionsUsed + ' question' + (questionsUsed !== 1 ? 's' : '') + ' used';
+    spawnConfetti();
+    if (window.HallOfFame) window.HallOfFame.submit('20q', questionsUsed);
+  } else {
+    if (window.SFX) SFX.death();
+    title.className = 'lose-title';
+    title.textContent = 'Out of Questions!';
+    msg.innerHTML = 'The answer was <strong style="color:#ff4757">' + escHtml(mysteryItem.name) + '</strong>';
+    score.textContent = '';
+  }
+
+  overlay.classList.add('show');
+}
+
+function resetToMenu() {
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('confettiContainer').innerHTML = '';
+  document.getElementById('gameArea').style.display = 'none';
+  document.getElementById('diffScreen').style.display = 'flex';
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function spawnConfetti() {
+  const container = document.getElementById('confettiContainer');
+  container.innerHTML = '';
+  const colors = ['#7b2ff7','#00d4ff','#2ecc71','#ff4757','#f39c12','#e84393','#00cec9'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDelay = Math.random() * 1.5 + 's';
+    c.style.width = (6 + Math.random() * 8) + 'px';
+    c.style.height = (6 + Math.random() * 8) + 'px';
+    container.appendChild(c);
+  }
+}
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>

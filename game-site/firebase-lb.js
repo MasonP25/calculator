@@ -75,7 +75,7 @@ window.FirebaseAuth = {
 // Notify auth.js that Firebase is ready
 window.dispatchEvent(new CustomEvent('firebase-auth-ready'));
 
-const LOWER_BETTER = ['reaction','minesweeper','memory','sudoku','nonogram','maze'];
+const LOWER_BETTER = ['reaction','minesweeper','memory','sudoku','nonogram','maze','20q','huesort','lightsout','pipes','ballsort'];
 
 window.FirebaseLB = {
   submit: async function(gameId, score, name) {

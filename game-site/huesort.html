@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hue Sort</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  a.back {
+    position: fixed;
+    top: 16px;
+    left: 18px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    z-index: 100;
+    transition: opacity .2s;
+  }
+  a.back:hover { opacity: .7; }
+
+  .title {
+    margin-top: 48px;
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: .95rem;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 28px;
+    margin-top: 18px;
+    font-size: 1.15rem;
+    color: #e0e0e0;
+  }
+  .stats-bar span { color: #888; }
+  .stats-bar .val { color: #e0e0e0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .controls button {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .controls button:hover { border-color: #7b2ff7; }
+  .controls button.active {
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 600;
+  }
+
+  .new-btn {
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff) !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 600 !important;
+  }
+  .new-btn:hover { opacity: .85; }
+
+  #grid-container {
+    margin-top: 22px;
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 14px;
+  }
+
+  .tile {
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+    aspect-ratio: 1;
+  }
+
+  .tile.fixed { cursor: default; }
+
+  .tile.fixed::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 7px; height: 7px;
+    background: rgba(255,255,255,.55);
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+
+  .tile.selected {
+    box-shadow: 0 0 0 3px #fff, 0 0 14px 2px rgba(255,255,255,.4);
+    transform: scale(1.06);
+    z-index: 2;
+  }
+
+  .tile.swap-out {
+    animation: swapPop .32s ease;
+  }
+  @keyframes swapPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(.82); }
+    100% { transform: scale(1); }
+  }
+
+  /* Win overlay */
+  #win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,15,26,.88);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  #win-overlay.show { display: flex; }
+
+  .win-card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 18px;
+    padding: 40px 48px;
+    text-align: center;
+    animation: popIn .4s ease;
+  }
+  @keyframes popIn {
+    0% { transform: scale(.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .win-card h2 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .win-card p { color: #888; margin: 6px 0; font-size: 1.1rem; }
+  .win-card .big { color: #e0e0e0; font-size: 1.6rem; font-weight: 700; margin: 10px 0 18px; }
+  .win-card button {
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .win-card button:hover { opacity: .85; }
+
+  @media (max-width: 520px) {
+    .title { font-size: 1.7rem; margin-top: 40px; }
+    #grid-container { padding: 6px; gap: 3px; border-radius: 10px; }
+    .win-card { padding: 28px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<div class="title">Hue Sort</div>
+<div class="subtitle">Swap tiles to restore the smooth gradient</div>
+
+<div class="stats-bar">
+  <div><span>Time </span><span class="val" id="timer">0:00</span></div>
+  <div><span>Moves </span><span class="val" id="moves">0</span></div>
+</div>
+
+<div class="controls">
+  <button class="diff-btn active" data-size="5">Easy</button>
+  <button class="diff-btn" data-size="7">Medium</button>
+  <button class="diff-btn" data-size="9">Hard</button>
+  <button class="new-btn" id="new-btn">New Puzzle</button>
+</div>
+
+<div id="grid-container"></div>
+
+<div id="win-overlay">
+  <div class="win-card">
+    <h2>Sorted!</h2>
+    <p>You restored the gradient in</p>
+    <div class="big" id="win-time">0:00</div>
+    <p id="win-moves">0 moves</p>
+    <button id="play-again">Play Again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ---- State ---- */
+  let gridSize = 5;
+  let solution = [];   // flat array of {h,s,l} — the correct color per cell
+  let tiles = [];       // current arrangement: {h,s,l,fixed,solIdx}
+  let selected = null;  // index of currently selected tile
+  let moveCount = 0;
+  let timerSeconds = 0;
+  let timerInterval = null;
+  let won = false;
+
+  /* ---- DOM refs ---- */
+  const gridEl = document.getElementById('grid-container');
+  const timerEl = document.getElementById('timer');
+  const movesEl = document.getElementById('moves');
+  const winOverlay = document.getElementById('win-overlay');
+  const winTimeEl = document.getElementById('win-time');
+  const winMovesEl = document.getElementById('win-moves');
+
+  /* ---- Helpers ---- */
+  function hslStr(c) {
+    return `hsl(${c.h.toFixed(1)}, ${c.s.toFixed(1)}%, ${c.l.toFixed(1)}%)`;
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // Shortest-path hue lerp (handles wrap-around)
+  function lerpHue(a, b, t) {
+    let diff = b - a;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    let h = a + diff * t;
+    if (h < 0) h += 360;
+    if (h >= 360) h -= 360;
+    return h;
+  }
+
+  function lerpColor(c1, c2, t) {
+    return { h: lerpHue(c1.h, c2.h, t), s: lerp(c1.s, c2.s, t), l: lerp(c1.l, c2.l, t) };
+  }
+
+  function randRange(lo, hi) { return lo + Math.random() * (hi - lo); }
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  /* ---- Gradient Generation ---- */
+  function randomVibrantColor() {
+    return { h: Math.random() * 360, s: randRange(60, 95), l: randRange(40, 65) };
+  }
+
+  function generateSolution(n) {
+    // Pick 4 corner colors
+    const tl = randomVibrantColor();
+    const tr = randomVibrantColor();
+    const bl = randomVibrantColor();
+    const br = randomVibrantColor();
+
+    const grid = [];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const tx = c / (n - 1);
+        const ty = r / (n - 1);
+        // Bilinear interpolation in HSL
+        const top = lerpColor(tl, tr, tx);
+        const bot = lerpColor(bl, br, tx);
+        const color = lerpColor(top, bot, ty);
+        grid.push({ h: color.h, s: color.s, l: color.l });
+      }
+    }
+    return grid;
+  }
+
+  /* ---- Puzzle Setup ---- */
+  function newPuzzle() {
+    won = false;
+    selected = null;
+    moveCount = 0;
+    movesEl.textContent = '0';
+    stopTimer();
+    timerSeconds = 0;
+    timerEl.textContent = '0:00';
+    winOverlay.classList.remove('show');
+
+    const n = gridSize;
+    solution = generateSolution(n);
+
+    // Build tiles
+    tiles = solution.map((c, i) => ({ h: c.h, s: c.s, l: c.l, fixed: false, solIdx: i }));
+
+    // Mark ~35% as fixed, always include corners
+    const totalTiles = n * n;
+    const fixedCount = Math.round(totalTiles * randRange(0.30, 0.40));
+    const fixedSet = new Set();
+
+    // Always fix the 4 corners
+    fixedSet.add(0);
+    fixedSet.add(n - 1);
+    fixedSet.add(totalTiles - n);
+    fixedSet.add(totalTiles - 1);
+
+    // Randomly fix more
+    while (fixedSet.size < fixedCount) {
+      fixedSet.add(Math.floor(Math.random() * totalTiles));
+    }
+
+    fixedSet.forEach(i => { tiles[i].fixed = true; });
+
+    // Collect moveable indices and shuffle them
+    const moveableIndices = [];
+    for (let i = 0; i < totalTiles; i++) {
+      if (!tiles[i].fixed) moveableIndices.push(i);
+    }
+
+    // Fisher-Yates shuffle of moveable tile colors
+    const moveableColors = moveableIndices.map(i => ({ h: tiles[i].h, s: tiles[i].s, l: tiles[i].l, solIdx: tiles[i].solIdx }));
+    for (let i = moveableColors.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [moveableColors[i], moveableColors[j]] = [moveableColors[j], moveableColors[i]];
+    }
+
+    // Make sure at least something moved (avoid pre-solved)
+    let allSame = moveableColors.every((c, idx) => c.solIdx === moveableIndices[idx]);
+    if (allSame && moveableColors.length >= 2) {
+      [moveableColors[0], moveableColors[1]] = [moveableColors[1], moveableColors[0]];
+    }
+
+    moveableIndices.forEach((ti, idx) => {
+      tiles[ti].h = moveableColors[idx].h;
+      tiles[ti].s = moveableColors[idx].s;
+      tiles[ti].l = moveableColors[idx].l;
+      tiles[ti].solIdx = moveableColors[idx].solIdx;
+    });
+
+    renderGrid();
+    startTimer();
+  }
+
+  /* ---- Rendering ---- */
+  function renderGrid() {
+    const n = gridSize;
+    // Determine tile size
+    const maxGridPx = Math.min(window.innerWidth - 40, 480);
+    const gap = n <= 5 ? 4 : 3;
+    const padding = n <= 5 ? 10 : 6;
+    const tileSize = Math.floor((maxGridPx - padding * 2 - gap * (n - 1)) / n);
+
+    gridEl.style.gridTemplateColumns = `repeat(${n}, ${tileSize}px)`;
+    gridEl.style.gridTemplateRows = `repeat(${n}, ${tileSize}px)`;
+    gridEl.style.gap = gap + 'px';
+    gridEl.style.padding = padding + 'px';
+    gridEl.innerHTML = '';
+
+    tiles.forEach((t, i) => {
+      const el = document.createElement('div');
+      el.className = 'tile' + (t.fixed ? ' fixed' : '') + (selected === i ? ' selected' : '');
+      el.style.backgroundColor = hslStr(t);
+      el.style.width = tileSize + 'px';
+      el.style.height = tileSize + 'px';
+      el.dataset.idx = i;
+      el.addEventListener('click', () => onTileClick(i));
+      gridEl.appendChild(el);
+    });
+  }
+
+  /* ---- Interaction ---- */
+  function onTileClick(idx) {
+    if (won) return;
+    const tile = tiles[idx];
+
+    if (tile.fixed) return;
+
+    if (selected === null) {
+      // Select
+      selected = idx;
+      if (window.SFX) SFX.click();
+      updateTileClasses();
+    } else if (selected === idx) {
+      // Deselect
+      selected = null;
+      if (window.SFX) SFX.click();
+      updateTileClasses();
+    } else {
+      // Swap
+      swapTiles(selected, idx);
+    }
+  }
+
+  function swapTiles(a, b) {
+    if (window.SFX) SFX.swoosh();
+
+    // Swap data
+    const tmp = { h: tiles[a].h, s: tiles[a].s, l: tiles[a].l, solIdx: tiles[a].solIdx };
+    tiles[a].h = tiles[b].h; tiles[a].s = tiles[b].s; tiles[a].l = tiles[b].l; tiles[a].solIdx = tiles[b].solIdx;
+    tiles[b].h = tmp.h; tiles[b].s = tmp.s; tiles[b].l = tmp.l; tiles[b].solIdx = tmp.solIdx;
+
+    moveCount++;
+    movesEl.textContent = moveCount;
+    selected = null;
+
+    // Animate
+    const tileEls = gridEl.querySelectorAll('.tile');
+    tileEls[a].classList.add('swap-out');
+    tileEls[b].classList.add('swap-out');
+
+    // Update colors immediately
+    tileEls[a].style.backgroundColor = hslStr(tiles[a]);
+    tileEls[b].style.backgroundColor = hslStr(tiles[b]);
+    tileEls[a].classList.remove('selected');
+    tileEls[b].classList.remove('selected');
+
+    setTimeout(() => {
+      tileEls[a].classList.remove('swap-out');
+      tileEls[b].classList.remove('swap-out');
+    }, 320);
+
+    // Check if swapped tiles are now correct
+    const aCorrect = tiles[a].solIdx === a;
+    const bCorrect = tiles[b].solIdx === b;
+    if (aCorrect || bCorrect) {
+      if (window.SFX) SFX.correct();
+    }
+
+    // Win check
+    checkWin();
+  }
+
+  function updateTileClasses() {
+    const tileEls = gridEl.querySelectorAll('.tile');
+    tileEls.forEach((el, i) => {
+      el.classList.toggle('selected', selected === i);
+    });
+  }
+
+  /* ---- Win ---- */
+  function checkWin() {
+    for (let i = 0; i < tiles.length; i++) {
+      if (tiles[i].solIdx !== i) return;
+    }
+    // Won!
+    won = true;
+    stopTimer();
+    if (window.SFX) SFX.win();
+
+    winTimeEl.textContent = formatTime(timerSeconds);
+    winMovesEl.textContent = moveCount + ' move' + (moveCount !== 1 ? 's' : '');
+    winOverlay.classList.add('show');
+
+    if (window.HallOfFame) {
+      window.HallOfFame.submit('huesort', timerSeconds);
+    }
+  }
+
+  /* ---- Timer ---- */
+  function startTimer() {
+    stopTimer();
+    timerSeconds = 0;
+    timerEl.textContent = '0:00';
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      timerEl.textContent = formatTime(timerSeconds);
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  /* ---- Controls ---- */
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      gridSize = parseInt(btn.dataset.size);
+      newPuzzle();
+    });
+  });
+
+  document.getElementById('new-btn').addEventListener('click', newPuzzle);
+  document.getElementById('play-again').addEventListener('click', () => {
+    winOverlay.classList.remove('show');
+    newPuzzle();
+  });
+
+  // Responsive resize
+  window.addEventListener('resize', () => { if (!won) renderGrid(); });
+
+  // Start
+  newPuzzle();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>

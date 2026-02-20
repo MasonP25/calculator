@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lights Out — Arcade</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f0f1a;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+  user-select: none;
+}
+a.back {
+  position: fixed; top: 12px; left: 16px;
+  color: #00d4ff; text-decoration: none; font-size: 0.85rem;
+  z-index: 100; transition: color 0.2s;
+}
+a.back:hover { color: #e0e0e0; }
+
+h1 {
+  font-size: 2rem;
+  margin: 0.8rem 0 0.2rem;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sub { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stat {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.stat span {
+  color: #00d4ff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.diff-btns {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.diff-btn {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  color: #888;
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.diff-btn:hover { border-color: #7b2ff7; color: #e0e0e0; }
+.diff-btn.active { background: #7b2ff7; border-color: #7b2ff7; color: #fff; font-weight: 600; }
+
+.new-btn {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  color: #00d4ff;
+  padding: 0.4rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+.new-btn:hover { border-color: #00d4ff; background: #00d4ff22; }
+
+#board {
+  display: grid;
+  gap: 4px;
+  padding: 4px;
+  background: #0a0a15;
+  border: 2px solid #2a2a4a;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.cell {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 2px solid #2a2a4a;
+  background: #1a1a2e;
+}
+.cell.on {
+  background: #7b2ff7;
+  border-color: #9b5fff;
+  box-shadow: 0 0 12px #7b2ff7aa, 0 0 24px #7b2ff744;
+}
+.cell.on:hover {
+  box-shadow: 0 0 18px #7b2ff7cc, 0 0 32px #7b2ff766;
+}
+.cell.off {
+  background: #1a1a2e;
+  border-color: #2a2a4a;
+  box-shadow: none;
+}
+.cell.off:hover {
+  border-color: #444;
+}
+.cell.pulse {
+  animation: pulse 0.3s ease;
+}
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.best-row {
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.best-row span {
+  color: #00d4ff;
+  font-weight: 600;
+}
+
+/* Win overlay */
+.overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(10, 10, 20, 0.88);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+.overlay.show { display: flex; }
+.overlay-box {
+  background: #1a1a2e;
+  border: 2px solid #7b2ff7;
+  border-radius: 16px;
+  padding: 2.5rem 3rem;
+  text-align: center;
+  box-shadow: 0 0 40px #7b2ff744;
+  animation: popIn 0.4s ease;
+}
+@keyframes popIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.overlay-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.overlay-box p {
+  color: #aaa;
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+}
+.overlay-box .score-val {
+  color: #00d4ff;
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+.overlay-box .new-best {
+  color: #7b2ff7;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+.overlay-box button {
+  margin-top: 1.2rem;
+  background: #7b2ff7;
+  border: none;
+  color: #fff;
+  padding: 0.6rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.overlay-box button:hover { background: #6a1fe6; }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<h1>Lights Out</h1>
+<p class="sub">Turn all the lights off to win</p>
+
+<div class="top-bar">
+  <div class="stat">Moves: <span id="moves">0</span></div>
+</div>
+
+<div class="diff-btns">
+  <button class="diff-btn active" data-size="3">Easy 3&times;3</button>
+  <button class="diff-btn" data-size="5">Medium 5&times;5</button>
+  <button class="diff-btn" data-size="7">Hard 7&times;7</button>
+</div>
+
+<div class="best-row" id="bestRow">Best: <span id="bestVal">—</span></div>
+
+<button class="new-btn" id="newBtn">New Puzzle</button>
+
+<div id="board"></div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2>Lights Out!</h2>
+    <p>You solved it in</p>
+    <div class="score-val" id="winMoves">0</div>
+    <p>moves</p>
+    <div class="new-best" id="newBestMsg" style="display:none;">New Best!</div>
+    <button id="playAgainBtn">Play Again</button>
+  </div>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+
+<script>
+(function() {
+  const boardEl = document.getElementById('board');
+  const movesEl = document.getElementById('moves');
+  const bestValEl = document.getElementById('bestVal');
+  const overlay = document.getElementById('overlay');
+  const winMovesEl = document.getElementById('winMoves');
+  const newBestMsg = document.getElementById('newBestMsg');
+  const newBtn = document.getElementById('newBtn');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const diffBtns = document.querySelectorAll('.diff-btn');
+
+  let gridSize = 3;
+  let grid = [];
+  let moves = 0;
+  let won = false;
+
+  const diffConfig = { 3: { min: 5, max: 8 }, 5: { min: 7, max: 12 }, 7: { min: 10, max: 15 } };
+
+  function lsKey() { return 'lightsout-best-' + gridSize; }
+
+  function loadBest() {
+    const b = localStorage.getItem(lsKey());
+    bestValEl.textContent = b ? b + ' moves' : '\u2014';
+  }
+
+  function saveBest(m) {
+    const prev = localStorage.getItem(lsKey());
+    if (!prev || m < parseInt(prev)) {
+      localStorage.setItem(lsKey(), m);
+      return true;
+    }
+    return false;
+  }
+
+  function toggle(r, c) {
+    if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
+      grid[r][c] = !grid[r][c];
+    }
+  }
+
+  function applyClick(r, c) {
+    toggle(r, c);
+    toggle(r - 1, c);
+    toggle(r + 1, c);
+    toggle(r, c - 1);
+    toggle(r, c + 1);
+  }
+
+  function isSolved() {
+    for (let r = 0; r < gridSize; r++)
+      for (let c = 0; c < gridSize; c++)
+        if (grid[r][c]) return false;
+    return true;
+  }
+
+  function generatePuzzle() {
+    grid = [];
+    for (let r = 0; r < gridSize; r++) {
+      grid.push(new Array(gridSize).fill(false));
+    }
+    const cfg = diffConfig[gridSize];
+    const numClicks = cfg.min + Math.floor(Math.random() * (cfg.max - cfg.min + 1));
+
+    // Apply random clicks from all-off state to guarantee solvability
+    for (let i = 0; i < numClicks; i++) {
+      const rr = Math.floor(Math.random() * gridSize);
+      const cc = Math.floor(Math.random() * gridSize);
+      applyClick(rr, cc);
+    }
+
+    // Make sure puzzle isn't already solved
+    if (isSolved()) {
+      applyClick(Math.floor(Math.random() * gridSize), Math.floor(Math.random() * gridSize));
+    }
+  }
+
+  function cellSize() {
+    const maxBoard = Math.min(400, window.innerWidth - 40);
+    return Math.floor((maxBoard - (gridSize + 1) * 4) / gridSize);
+  }
+
+  function renderBoard() {
+    const size = cellSize();
+    boardEl.style.gridTemplateColumns = `repeat(${gridSize}, ${size}px)`;
+    boardEl.innerHTML = '';
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell ' + (grid[r][c] ? 'on' : 'off');
+        cell.style.width = size + 'px';
+        cell.style.height = size + 'px';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.addEventListener('click', onCellClick);
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function updateCell(r, c) {
+    const idx = r * gridSize + c;
+    const cell = boardEl.children[idx];
+    if (!cell) return;
+    const isOn = grid[r][c];
+    cell.className = 'cell ' + (isOn ? 'on' : 'off') + ' pulse';
+    setTimeout(() => cell.classList.remove('pulse'), 300);
+  }
+
+  function onCellClick(e) {
+    if (won) return;
+    const r = parseInt(e.target.dataset.r);
+    const c = parseInt(e.target.dataset.c);
+
+    applyClick(r, c);
+    moves++;
+    movesEl.textContent = moves;
+
+    if (window.SFX) SFX.click();
+
+    // Update toggled cells visually
+    const affected = [[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    affected.forEach(([ar, ac]) => {
+      if (ar >= 0 && ar < gridSize && ac >= 0 && ac < gridSize) {
+        updateCell(ar, ac);
+      }
+    });
+
+    if (isSolved()) {
+      won = true;
+      setTimeout(showWin, 350);
+    }
+  }
+
+  function showWin() {
+    if (window.SFX) SFX.win();
+
+    winMovesEl.textContent = moves;
+    const isNew = saveBest(moves);
+    if (isNew) {
+      newBestMsg.style.display = 'block';
+      if (window.SFX) SFX.correct();
+    } else {
+      newBestMsg.style.display = 'none';
+    }
+    loadBest();
+    overlay.classList.add('show');
+
+    if (window.HallOfFame) window.HallOfFame.submit('lightsout', moves);
+  }
+
+  function newGame() {
+    overlay.classList.remove('show');
+    moves = 0;
+    won = false;
+    movesEl.textContent = '0';
+    generatePuzzle();
+    renderBoard();
+    loadBest();
+  }
+
+  // Difficulty buttons
+  diffBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      diffBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      gridSize = parseInt(btn.dataset.size);
+      newGame();
+    });
+  });
+
+  newBtn.addEventListener('click', newGame);
+  playAgainBtn.addEventListener('click', newGame);
+
+  // Resize handler
+  window.addEventListener('resize', () => {
+    if (!won) renderBoard();
+  });
+
+  // Init
+  newGame();
+})();
+</script>
+</body>
+</html>

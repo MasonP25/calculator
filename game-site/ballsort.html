@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ball Sort Puzzle</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  a.back {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 600;
+    z-index: 1000;
+    transition: opacity .2s;
+  }
+  a.back:hover { opacity: .7; }
+
+  h1 {
+    margin-top: 28px;
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    user-select: none;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0 8px;
+  }
+
+  .controls button, .controls select {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  .controls button:hover, .controls select:hover {
+    background: #2a2a4a;
+    border-color: #7b2ff7;
+  }
+  .controls select { padding: 8px 12px; }
+
+  .stats {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    margin: 8px 0 18px;
+    font-size: 1.05rem;
+  }
+  .stats span { color: #aaa; }
+  .stats strong { color: #00d4ff; }
+
+  #game-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+    max-width: 900px;
+  }
+
+  .tube-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform .15s;
+  }
+  .tube-wrapper:hover { transform: translateY(-3px); }
+
+  .floating-ball {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    position: absolute;
+    top: -52px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    transition: top .25s ease, opacity .25s;
+  }
+  .floating-ball.hidden { opacity: 0; top: 0; }
+
+  .tube {
+    width: 60px;
+    height: 200px;
+    border: 2px solid rgba(122, 47, 247, .35);
+    border-top: none;
+    border-radius: 0 0 18px 18px;
+    background: rgba(15, 15, 26, .85);
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    padding: 6px 0;
+    gap: 4px;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0,0,0,.5), 0 4px 15px rgba(0,0,0,.3);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .tube::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -8px;
+    right: -8px;
+    height: 6px;
+    background: rgba(122, 47, 247, .35);
+    border-radius: 3px;
+  }
+  .tube-wrapper.selected .tube {
+    border-color: #00d4ff;
+    box-shadow: inset 0 0 20px rgba(0,0,0,.5), 0 0 20px rgba(0, 212, 255, .35);
+  }
+  .tube-wrapper.selected .tube::before {
+    background: #00d4ff;
+  }
+
+  .ball {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform .2s ease, opacity .2s;
+  }
+
+  .ball-red    { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
+  .ball-blue   { background: radial-gradient(circle at 35% 35%, #74b9ff, #2980b9); }
+  .ball-green  { background: radial-gradient(circle at 35% 35%, #55efc4, #00b894); }
+  .ball-yellow { background: radial-gradient(circle at 35% 35%, #ffeaa7, #fdcb6e); }
+  .ball-purple { background: radial-gradient(circle at 35% 35%, #a29bfe, #6c5ce7); }
+  .ball-orange { background: radial-gradient(circle at 35% 35%, #fab1a0, #e17055); }
+  .ball-pink   { background: radial-gradient(circle at 35% 35%, #fd79a8, #e84393); }
+  .ball-cyan   { background: radial-gradient(circle at 35% 35%, #81ecec, #00cec9); }
+
+  .ball::after {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 10px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,.55), transparent);
+    border-radius: 50%;
+    margin: 8px auto 0;
+  }
+
+  .floating-ball.ball-red    { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
+  .floating-ball.ball-blue   { background: radial-gradient(circle at 35% 35%, #74b9ff, #2980b9); }
+  .floating-ball.ball-green  { background: radial-gradient(circle at 35% 35%, #55efc4, #00b894); }
+  .floating-ball.ball-yellow { background: radial-gradient(circle at 35% 35%, #ffeaa7, #fdcb6e); }
+  .floating-ball.ball-purple { background: radial-gradient(circle at 35% 35%, #a29bfe, #6c5ce7); }
+  .floating-ball.ball-orange { background: radial-gradient(circle at 35% 35%, #fab1a0, #e17055); }
+  .floating-ball.ball-pink   { background: radial-gradient(circle at 35% 35%, #fd79a8, #e84393); }
+  .floating-ball.ball-cyan   { background: radial-gradient(circle at 35% 35%, #81ecec, #00cec9); }
+  .floating-ball::after {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 10px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,.55), transparent);
+    border-radius: 50%;
+    margin: 8px auto 0;
+  }
+
+  /* Win overlay */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 26, .92);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  #overlay.show { display: flex; }
+
+  #overlay .panel {
+    background: #1a1a2e;
+    border: 2px solid #7b2ff7;
+    border-radius: 18px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(123, 47, 247, .3);
+  }
+  #overlay .panel h2 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  #overlay .panel p {
+    font-size: 1.15rem;
+    color: #ccc;
+    margin-bottom: 24px;
+  }
+  #overlay .panel p strong { color: #00d4ff; }
+  #overlay .panel button {
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity .2s;
+  }
+  #overlay .panel button:hover { opacity: .85; }
+
+  @keyframes bounce-back {
+    0% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+    60% { transform: translateY(4px); }
+    100% { transform: translateY(0); }
+  }
+  .tube-wrapper.shake {
+    animation: bounce-back .35s ease;
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<h1>Ball Sort Puzzle</h1>
+
+<div class="controls">
+  <select id="difficulty">
+    <option value="easy">Easy (4 colors)</option>
+    <option value="medium" selected>Medium (6 colors)</option>
+    <option value="hard">Hard (8 colors)</option>
+  </select>
+  <button id="btn-new">New Puzzle</button>
+  <button id="btn-undo">Undo</button>
+</div>
+
+<div class="stats">
+  <span>Moves: <strong id="move-count">0</strong></span>
+  <span>Best: <strong id="best-count">-</strong></span>
+</div>
+
+<div id="game-area"></div>
+
+<div id="overlay">
+  <div class="panel">
+    <h2>Puzzle Solved!</h2>
+    <p>Completed in <strong id="win-moves">0</strong> moves</p>
+    <button id="btn-play-again">Play Again</button>
+  </div>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+
+<script>
+(function() {
+  const COLORS = ['red','blue','green','yellow','purple','orange','pink','cyan'];
+  const DIFFICULTIES = {
+    easy:   { colors: 4, tubes: 6 },
+    medium: { colors: 6, tubes: 8 },
+    hard:   { colors: 8, tubes: 10 }
+  };
+  const MAX_BALLS = 4;
+
+  let tubes = [];
+  let selectedTube = null;
+  let moves = 0;
+  let bestMoves = {};
+  let history = [];
+  let animating = false;
+
+  const gameArea = document.getElementById('game-area');
+  const moveCountEl = document.getElementById('move-count');
+  const bestCountEl = document.getElementById('best-count');
+  const difficultyEl = document.getElementById('difficulty');
+  const overlay = document.getElementById('overlay');
+  const winMovesEl = document.getElementById('win-moves');
+
+  // Load best scores
+  try {
+    const saved = localStorage.getItem('ballsort-best');
+    if (saved) bestMoves = JSON.parse(saved);
+  } catch(e) {}
+
+  function saveBest() {
+    try { localStorage.setItem('ballsort-best', JSON.stringify(bestMoves)); } catch(e) {}
+  }
+
+  function getDifficulty() {
+    return DIFFICULTIES[difficultyEl.value];
+  }
+
+  function generatePuzzle() {
+    const diff = getDifficulty();
+    const numColors = diff.colors;
+    const numTubes = diff.tubes;
+
+    // Create all balls: 4 of each color
+    const allBalls = [];
+    for (let i = 0; i < numColors; i++) {
+      for (let j = 0; j < MAX_BALLS; j++) {
+        allBalls.push(COLORS[i]);
+      }
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = allBalls.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allBalls[i], allBalls[j]] = [allBalls[j], allBalls[i]];
+    }
+
+    // Distribute into filled tubes
+    tubes = [];
+    for (let i = 0; i < numColors; i++) {
+      tubes.push(allBalls.slice(i * MAX_BALLS, (i + 1) * MAX_BALLS));
+    }
+
+    // Add empty tubes
+    const emptyCount = numTubes - numColors;
+    for (let i = 0; i < emptyCount; i++) {
+      tubes.push([]);
+    }
+  }
+
+  function render() {
+    gameArea.innerHTML = '';
+    tubes.forEach((tube, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'tube-wrapper';
+      if (selectedTube === idx) wrapper.classList.add('selected');
+      wrapper.dataset.index = idx;
+
+      // Floating ball for selected tube
+      const floater = document.createElement('div');
+      floater.className = 'floating-ball hidden';
+      if (selectedTube === idx && tube.length > 0) {
+        // Show top ball floating
+        const topColor = tube[tube.length - 1];
+        floater.className = 'floating-ball ball-' + topColor;
+      }
+      wrapper.appendChild(floater);
+
+      const tubeEl = document.createElement('div');
+      tubeEl.className = 'tube';
+
+      // Render balls (bottom to top), but skip top ball if this tube is selected
+      const renderCount = (selectedTube === idx) ? tube.length - 1 : tube.length;
+      for (let i = 0; i < renderCount; i++) {
+        const ballEl = document.createElement('div');
+        ballEl.className = 'ball ball-' + tube[i];
+        tubeEl.appendChild(ballEl);
+      }
+
+      wrapper.appendChild(tubeEl);
+      wrapper.addEventListener('click', () => onTubeClick(idx));
+      gameArea.appendChild(wrapper);
+    });
+  }
+
+  function onTubeClick(idx) {
+    if (animating) return;
+
+    if (selectedTube === null) {
+      // Pick up
+      if (tubes[idx].length === 0) return;
+      selectedTube = idx;
+      if (window.SFX) SFX.click();
+      render();
+    } else if (selectedTube === idx) {
+      // Put back
+      selectedTube = null;
+      render();
+    } else {
+      // Try to place
+      const fromTube = tubes[selectedTube];
+      const toTube = tubes[idx];
+      const ball = fromTube[fromTube.length - 1];
+
+      if (toTube.length >= MAX_BALLS) {
+        // Tube full - invalid
+        if (window.SFX) SFX.fail();
+        shakeWrapper(idx);
+        selectedTube = null;
+        render();
+        return;
+      }
+
+      if (toTube.length > 0 && toTube[toTube.length - 1] !== ball) {
+        // Color mismatch - invalid
+        if (window.SFX) SFX.fail();
+        shakeWrapper(idx);
+        selectedTube = null;
+        render();
+        return;
+      }
+
+      // Valid move
+      const fromIdx = selectedTube;
+      fromTube.pop();
+      toTube.push(ball);
+      history.push({ from: fromIdx, to: idx, ball: ball });
+      moves++;
+      moveCountEl.textContent = moves;
+      selectedTube = null;
+
+      if (window.SFX) SFX.swoosh();
+
+      // Check if target tube is now complete
+      if (isTubeComplete(idx)) {
+        if (window.SFX) SFX.correct();
+      }
+
+      render();
+
+      // Check win
+      if (checkWin()) {
+        handleWin();
+      }
+    }
+  }
+
+  function shakeWrapper(idx) {
+    const wrappers = gameArea.querySelectorAll('.tube-wrapper');
+    if (wrappers[idx]) {
+      wrappers[idx].classList.add('shake');
+      setTimeout(() => wrappers[idx].classList.remove('shake'), 400);
+    }
+  }
+
+  function isTubeComplete(idx) {
+    const tube = tubes[idx];
+    if (tube.length !== MAX_BALLS) return false;
+    return tube.every(b => b === tube[0]);
+  }
+
+  function checkWin() {
+    for (let i = 0; i < tubes.length; i++) {
+      if (tubes[i].length === 0) continue;
+      if (!isTubeComplete(i)) return false;
+    }
+    return true;
+  }
+
+  function handleWin() {
+    if (window.SFX) SFX.win();
+
+    const diff = difficultyEl.value;
+    if (!bestMoves[diff] || moves < bestMoves[diff]) {
+      bestMoves[diff] = moves;
+      saveBest();
+    }
+    updateBest();
+
+    winMovesEl.textContent = moves;
+    overlay.classList.add('show');
+
+    if (window.HallOfFame) window.HallOfFame.submit('ballsort', moves);
+  }
+
+  function updateBest() {
+    const diff = difficultyEl.value;
+    bestCountEl.textContent = bestMoves[diff] ? bestMoves[diff] : '-';
+  }
+
+  function undo() {
+    if (history.length === 0 || animating) return;
+    const last = history.pop();
+    const ball = tubes[last.to].pop();
+    tubes[last.from].push(ball);
+    moves--;
+    moveCountEl.textContent = moves;
+    selectedTube = null;
+    render();
+  }
+
+  function newGame() {
+    overlay.classList.remove('show');
+    selectedTube = null;
+    moves = 0;
+    history = [];
+    moveCountEl.textContent = '0';
+    updateBest();
+    generatePuzzle();
+    render();
+  }
+
+  document.getElementById('btn-new').addEventListener('click', newGame);
+  document.getElementById('btn-undo').addEventListener('click', undo);
+  document.getElementById('btn-play-again').addEventListener('click', newGame);
+  difficultyEl.addEventListener('change', newGame);
+
+  newGame();
+})();
+</script>
+</body>
+</html>

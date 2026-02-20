@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipe Puzzle — Arcade</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f0f1a;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+  user-select: none;
+}
+a.back {
+  position: fixed; top: 12px; left: 16px;
+  color: #00d4ff; text-decoration: none; font-size: 0.85rem;
+  z-index: 100; transition: color 0.2s;
+}
+a.back:hover { color: #e0e0e0; }
+
+h1 {
+  font-size: 2rem;
+  margin: 0.8rem 0 0.2rem;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sub { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stat {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+.stat span {
+  color: #00d4ff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.diff-btns {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.diff-btn {
+  background: #1a1a2e;
+  border: 2px solid #2a2a4a;
+  color: #888;
+  padding: 0.3rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.diff-btn:hover { border-color: #7b2ff7; color: #e0e0e0; }
+.diff-btn.active { background: #7b2ff7; border-color: #7b2ff7; color: #fff; font-weight: 600; }
+
+.new-btn {
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  border: none;
+  color: #fff;
+  padding: 0.4rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.new-btn:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(0,212,255,0.3); }
+
+#grid-container {
+  display: grid;
+  gap: 2px;
+  background: #0a0a15;
+  border: 2px solid #2a2a4a;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 2px;
+  margin-top: 0.5rem;
+}
+
+.cell {
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+.cell.fixed { cursor: default; }
+
+.cell canvas {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Win overlay */
+#win-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 26, 0.92);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+#win-overlay.show { display: flex; }
+#win-overlay h2 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#win-overlay .win-time {
+  font-size: 1.3rem;
+  color: #aaa;
+}
+#win-overlay .win-time span {
+  color: #00d4ff;
+  font-weight: 700;
+}
+#win-overlay button {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  border: none;
+  color: #fff;
+  padding: 0.6rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+
+<h1>Pipe Puzzle</h1>
+<p class="sub">Connect the flow from source to drain</p>
+
+<div class="top-bar">
+  <div class="stat">Time: <span id="timer">0s</span></div>
+  <button class="new-btn" onclick="newGame()">New Puzzle</button>
+</div>
+
+<div class="diff-btns">
+  <button class="diff-btn active" data-size="5" onclick="setDifficulty(5,this)">Easy 5×5</button>
+  <button class="diff-btn" data-size="7" onclick="setDifficulty(7,this)">Medium 7×7</button>
+  <button class="diff-btn" data-size="9" onclick="setDifficulty(9,this)">Hard 9×9</button>
+</div>
+
+<div id="grid-container"></div>
+
+<div id="win-overlay">
+  <h2>Puzzle Solved!</h2>
+  <p class="win-time">Time: <span id="win-seconds">0</span> seconds</p>
+  <button onclick="closeWin()">Play Again</button>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=3"></script>
+<script type="module" src="firebase-lb.js?v=2"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+<script>
+(() => {
+  // Directions: 0=top, 1=right, 2=bottom, 3=left
+  const DIR = { TOP: 0, RIGHT: 1, BOTTOM: 2, LEFT: 3 };
+  const DX = [0, 1, 0, -1];
+  const DY = [-1, 0, 1, 0];
+  const OPP = [2, 3, 0, 1];
+
+  let gridSize = 5;
+  let grid = []; // grid[row][col] = { type, connections (Set of dirs), rotation, fixed, connected }
+  let timerInterval = null;
+  let startTime = 0;
+  let elapsed = 0;
+  let started = false;
+  let solved = false;
+  let prevConnectedCount = 0;
+
+  const container = document.getElementById('grid-container');
+  const timerEl = document.getElementById('timer');
+  const winOverlay = document.getElementById('win-overlay');
+  const winSeconds = document.getElementById('win-seconds');
+
+  window.setDifficulty = function(size, btn) {
+    gridSize = size;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    newGame();
+  };
+
+  window.newGame = function() {
+    clearInterval(timerInterval);
+    started = false;
+    solved = false;
+    elapsed = 0;
+    prevConnectedCount = 0;
+    timerEl.textContent = '0s';
+    winOverlay.classList.remove('show');
+    generatePuzzle();
+    render();
+    checkFlow();
+  };
+
+  window.closeWin = function() {
+    winOverlay.classList.remove('show');
+    newGame();
+  };
+
+  function generatePuzzle() {
+    // Build a spanning tree using randomized DFS to connect all cells
+    const rows = gridSize, cols = gridSize;
+    const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+    // edges[r][c] = Set of direction indices that connect to neighbors
+    const edges = Array.from({ length: rows }, () => Array.from({ length: cols }, () => new Set()));
+
+    // DFS from (0,0)
+    const stack = [[0, 0]];
+    visited[0][0] = true;
+    const order = [[0, 0]];
+
+    while (stack.length > 0) {
+      const [r, c] = stack[stack.length - 1];
+      const neighbors = [];
+      for (let d = 0; d < 4; d++) {
+        const nr = r + DY[d], nc = c + DX[d];
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[nr][nc]) {
+          neighbors.push({ d, r: nr, c: nc });
+        }
+      }
+      if (neighbors.length === 0) {
+        stack.pop();
+        continue;
+      }
+      // Pick random neighbor
+      const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+      edges[r][c].add(pick.d);
+      edges[pick.r][pick.c].add(OPP[pick.d]);
+      visited[pick.r][pick.c] = true;
+      stack.push([pick.r, pick.c]);
+      order.push([pick.r, pick.c]);
+    }
+
+    // Add some extra edges to create more interesting puzzles (T and Cross pieces)
+    const extraEdges = Math.floor(rows * cols * 0.15);
+    for (let i = 0; i < extraEdges; i++) {
+      const r = Math.floor(Math.random() * rows);
+      const c = Math.floor(Math.random() * cols);
+      const d = Math.floor(Math.random() * 4);
+      const nr = r + DY[d], nc = c + DX[d];
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+        if (!edges[r][c].has(d)) {
+          edges[r][c].add(d);
+          edges[nr][nc].add(OPP[d]);
+        }
+      }
+    }
+
+    // Build grid from edges
+    grid = [];
+    for (let r = 0; r < rows; r++) {
+      grid[r] = [];
+      for (let c = 0; c < cols; c++) {
+        const conns = edges[r][c];
+        const cell = classifyPipe(conns);
+        // Source at (0,0), Drain at (rows-1, cols-1)
+        const isSource = (r === 0 && c === 0);
+        const isDrain = (r === rows - 1 && c === cols - 1);
+
+        if (isSource) {
+          cell.type = 'source';
+          cell.fixed = true;
+        } else if (isDrain) {
+          cell.type = 'drain';
+          cell.fixed = true;
+        } else {
+          cell.fixed = false;
+        }
+
+        cell.solvedRotation = cell.rotation;
+        cell.connections = conns;
+        cell.connected = false;
+        grid[r][c] = cell;
+      }
+    }
+
+    // Now scramble rotations for non-fixed pipes
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!grid[r][c].fixed) {
+          const turns = Math.floor(Math.random() * 3) + 1; // 1-3 turns to ensure scrambled
+          for (let t = 0; t < turns; t++) {
+            rotateCellData(r, c);
+          }
+        }
+      }
+    }
+  }
+
+  function classifyPipe(conns) {
+    const dirs = Array.from(conns).sort();
+    const n = dirs.length;
+
+    if (n === 0) {
+      // Dead end - shouldn't happen with spanning tree but handle it
+      return { type: 'straight', rotation: 0 };
+    }
+    if (n === 1) {
+      // End piece - treat as straight with one open end
+      // We use straight but it connects only one direction - handle as special
+      // For simplicity, make it a straight that has the connection
+      const d = dirs[0];
+      return { type: 'end', rotation: d };
+    }
+    if (n === 2) {
+      // Check if opposite (straight) or adjacent (bend)
+      if (Math.abs(dirs[0] - dirs[1]) === 2) {
+        // Straight: 0,2 (vertical) or 1,3 (horizontal)
+        const rotation = dirs[0] === 0 ? 0 : 1; // 0=vertical, 1=horizontal
+        return { type: 'straight', rotation };
+      } else {
+        // Bend - find the rotation
+        // Connections at top+right=0, right+bottom=1, bottom+left=2, left+top=3
+        if (conns.has(0) && conns.has(1)) return { type: 'bend', rotation: 0 };
+        if (conns.has(1) && conns.has(2)) return { type: 'bend', rotation: 1 };
+        if (conns.has(2) && conns.has(3)) return { type: 'bend', rotation: 2 };
+        if (conns.has(3) && conns.has(0)) return { type: 'bend', rotation: 3 };
+      }
+    }
+    if (n === 3) {
+      // T-junction: missing direction determines rotation
+      for (let d = 0; d < 4; d++) {
+        if (!conns.has(d)) {
+          // missing d: rotation = opposite of missing = the "stem" direction
+          // T with missing top (0) -> opens right, bottom, left -> rotation 2
+          // T with missing right (1) -> opens top, bottom, left -> rotation 3
+          // T with missing bottom (2) -> opens top, right, left -> rotation 0
+          // T with missing left (3) -> opens top, right, bottom -> rotation 1
+          return { type: 'tee', rotation: (d + 2) % 4 };
+        }
+      }
+    }
+    if (n === 4) {
+      return { type: 'cross', rotation: 0 };
+    }
+    return { type: 'straight', rotation: 0 };
+  }
+
+  function getOpenDirs(cell) {
+    // Returns the set of directions this cell currently opens to based on type and rotation
+    const { type, rotation } = cell;
+    let base = [];
+    switch (type) {
+      case 'end':
+        base = [0]; // opens top
+        break;
+      case 'straight':
+        base = [0, 2]; // opens top and bottom
+        break;
+      case 'bend':
+        base = [0, 1]; // opens top and right
+        break;
+      case 'tee':
+        base = [0, 1, 2]; // opens top, right, bottom (missing left)
+        // Actually: T base opens right, bottom, left (missing top -> rotation 0 means missing top)
+        // Let me redefine: base T has connections at 1,2,3 (right, bottom, left) with rotation 0
+        // No, let me use: base connections before rotation
+        // For tee rotation=0: opens top, right, left -> dirs 0,1,3
+        // Hmm, let me re-think this to be consistent with classifyPipe
+        // classifyPipe: tee rotation 0 means missing bottom (d=2, rotation=(2+2)%4=0)
+        // So tee rotation 0 = has top(0), right(1), left(3)
+        base = [0, 1, 3];
+        break;
+      case 'cross':
+        return new Set([0, 1, 2, 3]);
+      case 'source':
+      case 'drain':
+        return cell.connections;
+    }
+    // Apply rotation
+    const dirs = new Set();
+    for (const d of base) {
+      dirs.add((d + rotation) % 4);
+    }
+    return dirs;
+  }
+
+  function rotateCellData(r, c) {
+    const cell = grid[r][c];
+    if (cell.fixed) return;
+    cell.rotation = (cell.rotation + 1) % 4;
+  }
+
+  function checkFlow() {
+    const rows = gridSize, cols = gridSize;
+    // Reset connectivity
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        grid[r][c].connected = false;
+      }
+    }
+
+    // BFS from source
+    const queue = [[0, 0]];
+    grid[0][0].connected = true;
+    let connectedCount = 0;
+
+    while (queue.length > 0) {
+      const [r, c] = queue.shift();
+      connectedCount++;
+      const openDirs = getOpenDirs(grid[r][c]);
+      for (const d of openDirs) {
+        const nr = r + DY[d], nc = c + DX[d];
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !grid[nr][nc].connected) {
+          const neighborDirs = getOpenDirs(grid[nr][nc]);
+          if (neighborDirs.has(OPP[d])) {
+            grid[nr][nc].connected = true;
+            queue.push([nr, nc]);
+          }
+        }
+      }
+    }
+
+    // Play sound if new connections were made
+    if (started && connectedCount > prevConnectedCount && prevConnectedCount > 0) {
+      if (window.SFX) SFX.correct();
+    }
+    prevConnectedCount = connectedCount;
+
+    // Update visuals
+    updateVisuals();
+
+    // Check win: all cells connected AND no leaks (every open direction connects to matching neighbor)
+    if (connectedCount === rows * cols) {
+      // Verify no leaks: every open end connects properly
+      let noLeaks = true;
+      for (let r = 0; r < rows && noLeaks; r++) {
+        for (let c = 0; c < cols && noLeaks; c++) {
+          const openDirs = getOpenDirs(grid[r][c]);
+          for (const d of openDirs) {
+            const nr = r + DY[d], nc = c + DX[d];
+            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
+              // Opens to outside = leak
+              noLeaks = false;
+              break;
+            }
+            const neighborDirs = getOpenDirs(grid[nr][nc]);
+            if (!neighborDirs.has(OPP[d])) {
+              noLeaks = false;
+              break;
+            }
+          }
+        }
+      }
+      if (noLeaks) {
+        winGame();
+      }
+    }
+  }
+
+  function winGame() {
+    if (solved) return;
+    solved = true;
+    clearInterval(timerInterval);
+    const seconds = elapsed;
+    winSeconds.textContent = seconds;
+    winOverlay.classList.add('show');
+    if (window.SFX) SFX.win();
+    if (window.HallOfFame) window.HallOfFame.submit('pipes', seconds);
+  }
+
+  function startTimer() {
+    if (started) return;
+    started = true;
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+      elapsed = Math.floor((Date.now() - startTime) / 1000);
+      timerEl.textContent = elapsed + 's';
+    }, 200);
+  }
+
+  function render() {
+    container.innerHTML = '';
+    const cellSize = Math.min(Math.floor((Math.min(window.innerWidth - 40, 560)) / gridSize), 70);
+    container.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const cell = grid[r][c];
+        const div = document.createElement('div');
+        div.className = 'cell' + (cell.fixed ? ' fixed' : '');
+        const canvas = document.createElement('canvas');
+        const res = 2; // resolution multiplier
+        canvas.width = cellSize * res;
+        canvas.height = cellSize * res;
+        canvas.style.width = cellSize + 'px';
+        canvas.style.height = cellSize + 'px';
+        canvas.dataset.row = r;
+        canvas.dataset.col = c;
+        div.appendChild(canvas);
+
+        if (!cell.fixed) {
+          div.addEventListener('click', () => {
+            if (solved) return;
+            startTimer();
+            if (window.SFX) SFX.click();
+            rotateCellData(r, c);
+            // Animate rotation
+            const currentTransform = canvas.style.transform || '';
+            const match = currentTransform.match(/rotate\((\d+)deg\)/);
+            const currentDeg = match ? parseInt(match[1]) : 0;
+            canvas.style.transform = `rotate(${currentDeg + 90}deg)`;
+            // Redraw after a tick (the CSS transform handles visual rotation)
+            // We actually redraw at 0 rotation and let CSS rotate
+            // So we need to draw the "base" orientation and CSS rotates it
+            // Actually simpler: just redraw at actual rotation, no CSS transform needed
+            // Let's use a hybrid: animate with CSS, then snap
+            setTimeout(() => {
+              canvas.style.transition = 'none';
+              canvas.style.transform = '';
+              drawPipe(canvas, cell);
+              // Re-enable transition
+              requestAnimationFrame(() => {
+                canvas.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+              });
+              checkFlow();
+            }, 250);
+          });
+        }
+
+        container.appendChild(div);
+        drawPipe(canvas, cell);
+      }
+    }
+  }
+
+  function updateVisuals() {
+    const canvases = container.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+      const r = parseInt(canvas.dataset.row);
+      const c = parseInt(canvas.dataset.col);
+      drawPipe(canvas, grid[r][c]);
+    });
+  }
+
+  function drawPipe(canvas, cell) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const lineWidth = w * 0.22;
+    const pipeRadius = lineWidth / 2;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    const color = cell.connected ? '#00d4ff' : '#444';
+    const glowColor = cell.connected ? 'rgba(0, 212, 255, 0.15)' : 'transparent';
+
+    // Draw glow background for connected cells
+    if (cell.connected) {
+      ctx.fillStyle = glowColor;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (cell.connected) {
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = w * 0.08;
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+
+    const openDirs = getOpenDirs(cell);
+
+    // Draw pipe segments from center to each open edge
+    for (const d of openDirs) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      switch (d) {
+        case 0: ctx.lineTo(cx, 0); break;        // top
+        case 1: ctx.lineTo(w, cy); break;         // right
+        case 2: ctx.lineTo(cx, h); break;         // bottom
+        case 3: ctx.lineTo(0, cy); break;         // left
+      }
+      ctx.stroke();
+    }
+
+    // Draw center circle/joint
+    if (openDirs.size > 1) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, pipeRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw inner pipe (darker core for 3D effect)
+    const innerWidth = lineWidth * 0.4;
+    const innerColor = cell.connected ? 'rgba(0, 180, 220, 0.4)' : 'rgba(60, 60, 60, 0.3)';
+    ctx.strokeStyle = innerColor;
+    ctx.lineWidth = innerWidth;
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    for (const d of openDirs) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      switch (d) {
+        case 0: ctx.lineTo(cx, 0); break;
+        case 1: ctx.lineTo(w, cy); break;
+        case 2: ctx.lineTo(cx, h); break;
+        case 3: ctx.lineTo(0, cy); break;
+      }
+      ctx.stroke();
+    }
+
+    // Draw source/drain markers
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    if (cell.type === 'source') {
+      // Green circle
+      ctx.fillStyle = '#00ff88';
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = w * 0.12;
+      ctx.beginPath();
+      ctx.arc(cx, cy, pipeRadius * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // S letter
+      ctx.fillStyle = '#0f0f1a';
+      ctx.font = `bold ${Math.floor(w * 0.25)}px 'Segoe UI', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('S', cx, cy + 1);
+    } else if (cell.type === 'drain') {
+      // Orange/red circle
+      ctx.fillStyle = '#ff6b35';
+      ctx.shadowColor = '#ff6b35';
+      ctx.shadowBlur = w * 0.12;
+      ctx.beginPath();
+      ctx.arc(cx, cy, pipeRadius * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // D letter
+      ctx.fillStyle = '#0f0f1a';
+      ctx.font = `bold ${Math.floor(w * 0.25)}px 'Segoe UI', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('D', cx, cy + 1);
+    }
+  }
+
+  // Handle resize
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (grid.length) render();
+      checkFlow();
+    }, 150);
+  });
+
+  // Init
+  newGame();
+})();
+</script>
+</body>
+</html>

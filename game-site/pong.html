@@ -23,6 +23,12 @@
     padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
   }
   .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
+  .diff-select { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .diff-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #888;
+    padding: 0.3rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+  }
+  .diff-select button:hover, .diff-select button.active { border-color: #7b2ff7; color: #e0e0e0; }
   .scores {
     display: flex; gap: 3rem; margin-bottom: 0.5rem; font-size: 1.2rem;
   }
@@ -46,6 +52,11 @@
 <div class="mode-select">
   <button id="mode2p">2 Players</button>
   <button id="modeBot" class="active">vs Bot</button>
+</div>
+<div class="diff-select" id="diffSelect">
+  <button class="diff-btn" data-diff="easy">Easy</button>
+  <button class="diff-btn active" data-diff="medium">Medium</button>
+  <button class="diff-btn" data-diff="hard">Hard</button>
 </div>
 <div class="scores">
   <div><span class="label" id="p1label">You: </span><span class="p1v" id="pScore">0</span></div>
@@ -71,12 +82,20 @@ let ball = { x: W/2, y: H/2, vx: 0, vy: 0 };
 let pScore = 0, cScore = 0;
 let playing = false;
 let botMode = true;
+let botDifficulty = 'medium';
 let keys = {};
+
+const BOT_CONFIG = {
+  easy:   { speed: 2.2, deadzone: 20, errorRange: 30 },
+  medium: { speed: 3.5, deadzone: 5,  errorRange: 0  },
+  hard:   { speed: 5.5, deadzone: 2,  errorRange: 0  }
+};
 
 document.getElementById('mode2p').addEventListener('click', function() {
   this.classList.add('active');
   document.getElementById('modeBot').classList.remove('active');
   botMode = false;
+  document.getElementById('diffSelect').style.display = 'none';
   document.getElementById('p1label').textContent = 'P1 (W/S): ';
   document.getElementById('p2label').textContent = 'P2 (Arrows): ';
   document.getElementById('controlsText').textContent = 'P1: W/S  |  P2: Arrow Up/Down  |  SPACE to serve';
@@ -89,6 +108,7 @@ document.getElementById('modeBot').addEventListener('click', function() {
   this.classList.add('active');
   document.getElementById('mode2p').classList.remove('active');
   botMode = true;
+  document.getElementById('diffSelect').style.display = 'flex';
   document.getElementById('p1label').textContent = 'You: ';
   document.getElementById('p2label').textContent = 'CPU: ';
   document.getElementById('controlsText').textContent = 'Mouse or W/S to move. Click/SPACE to serve.';
@@ -96,6 +116,16 @@ document.getElementById('modeBot').addEventListener('click', function() {
   pScore = 0; cScore = 0;
   pScoreEl.textContent = '0'; cScoreEl.textContent = '0';
   resetBall(Math.random() > 0.5);
+});
+document.querySelectorAll('.diff-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.diff-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    botDifficulty = btn.dataset.diff;
+    pScore = 0; cScore = 0;
+    pScoreEl.textContent = '0'; cScoreEl.textContent = '0';
+    resetBall(Math.random() > 0.5);
+  });
 });
 
 function resetBall(serveRight) {
@@ -124,12 +154,19 @@ function update() {
 
   // P2 / Bot (right paddle)
   if (botMode) {
-    // Bot AI
+    // Bot AI with difficulty
     if (playing) {
-      const cpuTarget = ball.y - PADDLE_H / 2;
-      const cpuSpeed = 3.5;
-      if (cpu.y < cpuTarget - 5) cpu.y += cpuSpeed;
-      else if (cpu.y > cpuTarget + 5) cpu.y -= cpuSpeed;
+      const cfg = BOT_CONFIG[botDifficulty];
+      let targetY = ball.y - PADDLE_H / 2;
+      if (cfg.errorRange > 0) {
+        // Easy mode: add some wobble so bot misses sometimes
+        if (!cpu._errorOffset || Math.random() < 0.02) {
+          cpu._errorOffset = (Math.random() - 0.5) * cfg.errorRange * 2;
+        }
+        targetY += cpu._errorOffset;
+      }
+      if (cpu.y < targetY - cfg.deadzone) cpu.y += cfg.speed;
+      else if (cpu.y > targetY + cfg.deadzone) cpu.y -= cfg.speed;
     }
   } else {
     // P2 arrow keys
