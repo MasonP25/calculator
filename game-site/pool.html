@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8-Ball Pool</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+.container{display:flex;flex-direction:column;align-items:center;padding:20px 10px;gap:12px;width:100%;max-width:820px;}
+h1{font-size:1.8rem;margin-top:10px;}
+
+/* Mode selectors */
+.mode-select{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.mode-select button{background:#1a1a2e;border:2px solid #2a2a4a;color:#e0e0e0;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.95rem;font-family:inherit;transition:border-color .25s,background .25s;}
+.mode-select button:hover,.mode-select button.active{border-color:#7b2ff7;}
+.mode-select button.active{background:#2a1a4e;color:#fff;}
+
+/* Player panels */
+.players-bar{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:780px;gap:8px;}
+.player-panel{display:flex;align-items:center;gap:8px;background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:8px 14px;flex:1;min-width:0;}
+.player-panel.active-turn{border-color:#7b2ff7;box-shadow:0 0 12px rgba(123,47,247,0.3);}
+.player-avatar{width:48px;height:48px;flex-shrink:0;}
+.player-details{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.player-name{font-weight:700;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.player-type{font-size:0.75rem;color:#888;}
+.player-balls{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px;}
+.player-balls .mini-ball{width:14px;height:14px;border-radius:50%;border:1px solid #555;}
+.player-balls .mini-ball.potted{opacity:0.25;}
+.vs-label{color:#555;font-weight:700;font-size:0.9rem;flex-shrink:0;}
+
+/* Table wrapper */
+.table-wrapper{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.6);}
+canvas{display:block;}
+
+/* Power bar */
+.power-bar-container{width:100%;max-width:780px;height:24px;background:#1a1a2e;border:2px solid #2a2a4a;border-radius:8px;overflow:hidden;position:relative;}
+.power-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,#2ecc71,#f1c40f,#e74c3c);border-radius:6px;transition:width 0.05s;}
+.power-bar-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.75rem;color:#fff;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+
+/* Status message */
+.msg{font-size:1.1rem;min-height:1.6em;text-align:center;font-weight:600;}
+
+/* Buttons */
+button.restart{background:linear-gradient(135deg,#7b2ff7,#5b1fd7);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:1rem;cursor:pointer;font-family:inherit;font-weight:600;}
+button.restart:hover{opacity:0.85;}
+
+a.back{position:fixed;top:12px;left:16px;color:#888;text-decoration:none;font-size:0.85rem;z-index:100;transition:color .2s;}
+a.back:hover{color:#e0e0e0;}
+
+/* Online panel styles */
+.online-panel{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:12px;padding:20px;width:100%;text-align:center;}
+.online-panel h3{margin-bottom:15px;color:#e0e0e0;font-size:1rem;}
+.online-lobby-btns{display:flex;gap:12px;justify-content:center;}
+.online-btn{background:#7b2ff7;color:#fff;border:none;padding:10px 24px;font-size:0.95rem;font-weight:600;font-family:inherit;border-radius:8px;cursor:pointer;transition:background .25s,transform .15s;}
+.online-btn:hover{background:#6a22e0;}
+.online-btn:active{transform:scale(0.97);}
+.online-btn.secondary{background:#2a2a4a;}
+.online-btn.secondary:hover{background:#3a3a5a;}
+.room-code-display{font-size:2.5rem;font-weight:700;color:#feca57;letter-spacing:8px;margin:15px 0;font-family:monospace;}
+.waiting-msg{color:#888;font-size:0.9rem;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.join-area{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.join-input{background:#0f0f1a;border:2px solid #2a2a4a;color:#feca57;font-size:1.8rem;font-weight:700;font-family:monospace;letter-spacing:6px;text-align:center;padding:8px 16px;border-radius:8px;width:160px;text-transform:uppercase;outline:none;transition:border-color .25s;}
+.join-input:focus{border-color:#7b2ff7;}
+.join-input::placeholder{color:#444;letter-spacing:2px;font-size:1rem;}
+.join-error{color:#ff4757;font-size:0.85rem;}
+.online-info{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:12px;padding:12px 20px;width:100%;text-align:center;font-size:0.85rem;color:#888;}
+.online-info .room-label{color:#feca57;font-weight:700;font-family:monospace;letter-spacing:3px;}
+.online-info .player-info{margin:6px 0;}
+.leave-btn{background:none;border:1px solid #ff475766;color:#ff4757;padding:4px 14px;font-size:0.8rem;font-family:inherit;border-radius:6px;cursor:pointer;margin-top:6px;transition:background .2s;}
+.leave-btn:hover{background:#ff475722;}
+.lobby-avatar{display:inline-flex;align-items:center;vertical-align:middle;}
+
+/* Cue ball placement indicator */
+.placement-hint{color:#feca57;font-size:0.9rem;animation:pulse 1.5s ease-in-out infinite;}
+
+/* Chat Sidebar */
+#chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:9999;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform .2s;display:none;}
+#chat-toggle:hover{transform:scale(1.1);}
+#chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+#chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:10000;display:flex;flex-direction:column;transition:right .3s;}
+#chat-panel.open{right:0;}
+#chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #2a2a4a;}
+#chat-header span{font-weight:700;color:#e0e0e0;font-size:1rem;}
+#chat-close{background:#2a2a4a;border:none;color:#e0e0e0;font-size:1.1rem;cursor:pointer;padding:4px 10px;border-radius:6px;transition:all .2s;}
+#chat-close:hover{background:#3a3a5a;color:#fff;}
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:#2a2a4a #1a1a2e;}
+#chat-messages::-webkit-scrollbar{width:6px;}
+#chat-messages::-webkit-scrollbar-track{background:#1a1a2e;}
+#chat-messages::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+.chat-msg .chat-name{color:#feca57;font-weight:700;font-size:0.8rem;margin-right:6px;}
+.chat-msg .chat-text{color:#e0e0e0;font-size:0.85rem;word-break:break-word;}
+.chat-msg .chat-time{color:#555;font-size:0.7rem;margin-left:6px;}
+#chat-input-area{display:flex;gap:6px;padding:10px;border-top:2px solid #2a2a4a;}
+#chat-input{flex:1;background:#0f0f1a;border:2px solid #2a2a4a;color:#e0e0e0;font-size:0.85rem;font-family:inherit;padding:8px 10px;border-radius:6px;outline:none;}
+#chat-input:focus{border-color:#7b2ff7;}
+#chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
+#chat-send:hover{background:#6a22e0;}
+
+@media(max-width:800px){
+  .table-wrapper{width:100%;overflow-x:auto;}
+  .players-bar{flex-direction:column;}
+  .player-panel{width:100%;}
+}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+
+<div class="container">
+<h1>8-Ball Pool</h1>
+
+<div class="mode-select">
+  <button id="mode2p" class="active">2 Player</button>
+  <button id="modeAI">vs AI</button>
+  <button id="modeOnline">Online</button>
+</div>
+
+<!-- Online Panel -->
+<div class="online-panel" id="online-panel" style="display:none;">
+  <h3>Online Multiplayer</h3>
+  <div id="online-lobby-btns" class="online-lobby-btns">
+    <button class="online-btn" id="create-game-btn">Create Game</button>
+    <button class="online-btn secondary" id="join-game-btn">Join Game</button>
+  </div>
+  <div id="online-create-area" style="display:none;">
+    <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Share this code with your friend:</p>
+    <div class="room-code-display" id="room-code-display">----</div>
+    <p class="waiting-msg" id="waiting-msg">Waiting for opponent to join...</p>
+  </div>
+  <div id="online-join-area" class="join-area" style="display:none;">
+    <p style="color:#888;font-size:0.85rem;">Enter room code:</p>
+    <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="CODE">
+    <button class="online-btn" id="join-submit-btn">Join</button>
+    <button class="leave-btn" id="join-back-btn" style="margin-top:4px;">Back</button>
+    <p class="join-error" id="join-error" style="display:none;"></p>
+  </div>
+  <button class="leave-btn" id="online-leave-btn" style="display:none;">Cancel</button>
+</div>
+
+<!-- Online Info -->
+<div class="online-info" id="online-info" style="display:none;">
+  <span>Room: <span class="room-label" id="game-room-code"></span></span>
+  <div class="player-info" id="game-player-info"></div>
+  <button class="leave-btn" id="online-leave-game-btn">Leave Game</button>
+</div>
+
+<!-- Chat -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+  <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+  <div id="chat-messages"></div>
+  <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
+</div>
+
+<div id="game-area" style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;">
+
+<!-- Player panels -->
+<div class="players-bar" id="players-bar">
+  <div class="player-panel active-turn" id="p1-panel">
+    <div class="player-avatar" id="p1-avatar"></div>
+    <div class="player-details">
+      <div class="player-name" id="p1-name">Player 1</div>
+      <div class="player-type" id="p1-type"></div>
+      <div class="player-balls" id="p1-balls"></div>
+    </div>
+  </div>
+  <div class="vs-label">VS</div>
+  <div class="player-panel" id="p2-panel">
+    <div class="player-avatar" id="p2-avatar"></div>
+    <div class="player-details">
+      <div class="player-name" id="p2-name">Player 2</div>
+      <div class="player-type" id="p2-type"></div>
+      <div class="player-balls" id="p2-balls"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Canvas -->
+<div class="table-wrapper">
+  <canvas id="pool-canvas" width="780" height="440"></canvas>
+</div>
+
+<!-- Power bar -->
+<div class="power-bar-container" id="power-bar-container" style="visibility:hidden;">
+  <div class="power-bar-fill" id="power-bar-fill"></div>
+  <div class="power-bar-label" id="power-bar-label">Power</div>
+</div>
+
+<div class="msg" id="msg">Player 1's turn</div>
+<button class="restart" id="restart">New Game</button>
+</div>
+</div>
+
+<script>
+(function(){
+// ==================== CONSTANTS ====================
+var CANVAS_W = 780, CANVAS_H = 440;
+var RAIL = 40; // rail thickness
+var TW = CANVAS_W - RAIL*2, TH = CANVAS_H - RAIL*2; // felt area
+var FELT_X = RAIL, FELT_Y = RAIL;
+var BR = 11; // ball radius
+var POCKET_R = 20; // pocket radius
+var FRICTION = 0.985;
+var MIN_SPEED = 0.15;
+var MAX_POWER = 22;
+var CUE_LENGTH = 200;
+
+// Pocket positions (on the felt boundary)
+var POCKETS = [
+  {x: FELT_X + 4, y: FELT_Y + 4},            // top-left
+  {x: CANVAS_W/2, y: FELT_Y - 2},             // top-mid
+  {x: CANVAS_W - FELT_X - 4, y: FELT_Y + 4},  // top-right
+  {x: FELT_X + 4, y: CANVAS_H - FELT_Y - 4},  // bot-left
+  {x: CANVAS_W/2, y: CANVAS_H - FELT_Y + 2},   // bot-mid
+  {x: CANVAS_W - FELT_X - 4, y: CANVAS_H - FELT_Y - 4} // bot-right
+];
+
+// Ball colors
+var BALL_COLORS = {
+  1:'#f4d03f',2:'#3498db',3:'#e74c3c',4:'#8e44ad',5:'#e67e22',6:'#27ae60',7:'#922b21',
+  8:'#111',
+  9:'#f4d03f',10:'#3498db',11:'#e74c3c',12:'#8e44ad',13:'#e67e22',14:'#27ae60',15:'#922b21'
+};
+
+// ==================== STATE ====================
+var canvas = document.getElementById('pool-canvas');
+var ctx = canvas.getContext('2d');
+var mode = '2p'; // '2p', 'ai', 'online'
+var balls = [];
+var cueBall = null;
+var gameOver = false;
+var currentPlayer = 1; // 1 or 2
+var playerAssign = {1: null, 2: null}; // 'solids' or 'stripes' or null
+var pottedBalls = {1:[], 2:[]}; // balls potted by each player
+var turnPotted = []; // balls potted this turn
+var foul = false;
+var firstContact = null;
+var placingCueBall = false;
+var placingAnywhere = false; // after scratch, place anywhere behind headstring or full table
+var aiThinking = false;
+var animating = false;
+var shotInProgress = false;
+
+// Aiming state
+var aiming = false;
+var aimStart = null; // where mouse pressed (should be on cue ball)
+var aimCurrent = null;
+var showCue = false;
+
+// ==================== DOM REFS ====================
+var msgEl = document.getElementById('msg');
+var powerFill = document.getElementById('power-bar-fill');
+var powerLabel = document.getElementById('power-bar-label');
+var powerContainer = document.getElementById('power-bar-container');
+var p1Panel = document.getElementById('p1-panel');
+var p2Panel = document.getElementById('p2-panel');
+var p1Name = document.getElementById('p1-name');
+var p2Name = document.getElementById('p2-name');
+var p1Type = document.getElementById('p1-type');
+var p2Type = document.getElementById('p2-type');
+var p1Balls = document.getElementById('p1-balls');
+var p2Balls = document.getElementById('p2-balls');
+var p1Avatar = document.getElementById('p1-avatar');
+var p2Avatar = document.getElementById('p2-avatar');
+
+// ==================== BALL CREATION ====================
+function createBalls(){
+  balls = [];
+  // Cue ball
+  cueBall = {x: FELT_X + TW*0.25, y: FELT_Y + TH/2, vx:0, vy:0, num:0, potted:false};
+  balls.push(cueBall);
+
+  // Rack position
+  var startX = FELT_X + TW*0.73;
+  var startY = FELT_Y + TH/2;
+  var d = BR*2 + 1;
+
+  // Standard 8-ball rack: 5 rows
+  // Row arrangement: 1, 2, 3, 4, 5 balls
+  // 8-ball must be in center (row 2, pos 1 i.e. 3rd row middle)
+  var rackOrder = [
+    [1],
+    [9, 2],
+    [3, 8, 10],
+    [11, 4, 12, 5],
+    [6, 13, 14, 7, 15]
+  ];
+
+  for(var row=0; row<rackOrder.length; row++){
+    var rowBalls = rackOrder[row];
+    var rowX = startX + row * d * Math.cos(Math.PI/6);
+    var rowStartY = startY - (rowBalls.length - 1) * d / 2;
+    for(var i=0; i<rowBalls.length; i++){
+      var num = rowBalls[i];
+      balls.push({
+        x: rowX + (Math.random()-0.5)*0.5,
+        y: rowStartY + i*d + (Math.random()-0.5)*0.5,
+        vx:0, vy:0, num: num, potted: false
+      });
+    }
+  }
+}
+
+// ==================== DRAWING ====================
+function draw(){
+  ctx.clearRect(0,0,CANVAS_W,CANVAS_H);
+
+  // Outer wood rail
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+
+  // Inner rail edge (cushion)
+  ctx.fillStyle = '#3d6b35';
+  ctx.beginPath();
+  ctx.rect(RAIL-8, RAIL-8, TW+16, TH+16);
+  ctx.fill();
+
+  // Green felt
+  ctx.fillStyle = '#2d8a4e';
+  ctx.fillRect(FELT_X, FELT_Y, TW, TH);
+
+  // Felt texture lines (subtle)
+  ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+  ctx.lineWidth = 1;
+  for(var fy=FELT_Y; fy<FELT_Y+TH; fy+=6){
+    ctx.beginPath();
+    ctx.moveTo(FELT_X, fy);
+    ctx.lineTo(FELT_X+TW, fy);
+    ctx.stroke();
+  }
+
+  // Head string line (1/4 mark)
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  var headX = FELT_X + TW*0.25;
+  ctx.moveTo(headX, FELT_Y);
+  ctx.lineTo(headX, FELT_Y+TH);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Foot spot
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.beginPath();
+  ctx.arc(FELT_X+TW*0.73, FELT_Y+TH/2, 3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Rail decorations (diamond markers)
+  ctx.fillStyle = '#c4a35a';
+  var diamondSize = 4;
+  // Top rail diamonds
+  for(var di=1; di<=3; di++){
+    drawDiamond(FELT_X + TW*di/4, RAIL/2, diamondSize);
+    drawDiamond(FELT_X + TW*di/4, CANVAS_H - RAIL/2, diamondSize);
+  }
+  for(var di=1; di<=1; di++){
+    drawDiamond(RAIL/2, FELT_Y + TH*di/2, diamondSize);
+    drawDiamond(CANVAS_W - RAIL/2, FELT_Y + TH*di/2, diamondSize);
+  }
+
+  // Pockets
+  for(var p=0; p<POCKETS.length; p++){
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(POCKETS[p].x, POCKETS[p].y, POCKET_R, 0, Math.PI*2);
+    ctx.fill();
+    // pocket rim
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Draw balls
+  for(var bi=0; bi<balls.length; bi++){
+    var b = balls[bi];
+    if(b.potted) continue;
+    drawBall(b);
+  }
+
+  // Aim line & cue stick
+  if(showCue && aiming && aimCurrent && cueBall && !cueBall.potted){
+    var dx = cueBall.x - aimCurrent.x;
+    var dy = cueBall.y - aimCurrent.y;
+    var dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist > 5){
+      var dirX = dx/dist;
+      var dirY = dy/dist;
+
+      // Dotted aim line
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6,6]);
+      ctx.beginPath();
+      ctx.moveTo(cueBall.x, cueBall.y);
+      // Extend aim line until it hits something
+      var aimLen = 600;
+      var aimEndX = cueBall.x + dirX * aimLen;
+      var aimEndY = cueBall.y + dirY * aimLen;
+      // Clip to table bounds
+      clipAimLine(cueBall.x, cueBall.y, dirX, dirY, aimLen, function(ex,ey){
+        aimEndX = ex; aimEndY = ey;
+      });
+      ctx.lineTo(aimEndX, aimEndY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Ghost ball - show where cue ball will hit first ball
+      var hitResult = findFirstBallHit(cueBall.x, cueBall.y, dirX, dirY);
+      if(hitResult){
+        // Draw ghost cue ball position
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(hitResult.hx, hitResult.hy, BR, 0, Math.PI*2);
+        ctx.stroke();
+
+        // Draw predicted target ball direction
+        var tdx = hitResult.ball.x - hitResult.hx;
+        var tdy = hitResult.ball.y - hitResult.hy;
+        var td = Math.sqrt(tdx*tdx+tdy*tdy);
+        if(td > 0){
+          tdx/=td; tdy/=td;
+          ctx.strokeStyle = 'rgba(255,255,200,0.3)';
+          ctx.setLineDash([4,4]);
+          ctx.beginPath();
+          ctx.moveTo(hitResult.ball.x, hitResult.ball.y);
+          ctx.lineTo(hitResult.ball.x + tdx*80, hitResult.ball.y + tdy*80);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      // Cue stick
+      var power = Math.min(dist, 200);
+      var cueBackDist = BR + 10 + power * 0.5;
+      var cueStartX = cueBall.x - dirX * cueBackDist;
+      var cueStartY = cueBall.y - dirY * cueBackDist;
+      var cueEndX = cueStartX - dirX * CUE_LENGTH;
+      var cueEndY = cueStartY - dirY * CUE_LENGTH;
+
+      // Cue shadow
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cueStartX+2, cueStartY+2);
+      ctx.lineTo(cueEndX+2, cueEndY+2);
+      ctx.stroke();
+
+      // Cue stick body
+      var cueGrad = ctx.createLinearGradient(cueStartX, cueStartY, cueEndX, cueEndY);
+      cueGrad.addColorStop(0, '#f5deb3');
+      cueGrad.addColorStop(0.05, '#f5deb3');
+      cueGrad.addColorStop(0.06, '#222');
+      cueGrad.addColorStop(0.08, '#c8a45a');
+      cueGrad.addColorStop(1, '#8B4513');
+      ctx.strokeStyle = cueGrad;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cueStartX, cueStartY);
+      ctx.lineTo(cueEndX, cueEndY);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+  }
+
+  // Cue ball placement indicator
+  if(placingCueBall && cueBall){
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.arc(cueBall.x, cueBall.y, BR+4, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function drawDiamond(x,y,s){
+  ctx.beginPath();
+  ctx.moveTo(x,y-s);
+  ctx.lineTo(x+s,y);
+  ctx.lineTo(x,y+s);
+  ctx.lineTo(x-s,y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawBall(b){
+  var x = b.x, y = b.y, num = b.num;
+
+  if(num === 0){
+    // Cue ball
+    ctx.fillStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.arc(x,y,BR,0,Math.PI*2);
+    ctx.fill();
+    // Shine
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath();
+    ctx.arc(x-3,y-3,BR*0.35,0,Math.PI*2);
+    ctx.fill();
+    // Edge
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x,y,BR,0,Math.PI*2);
+    ctx.stroke();
+    return;
+  }
+
+  var color = BALL_COLORS[num] || '#888';
+  var isStripe = num >= 9;
+
+  if(isStripe){
+    // Stripe ball: white base with colored stripe
+    ctx.fillStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.arc(x,y,BR,0,Math.PI*2);
+    ctx.fill();
+    // Colored stripe (middle band)
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x,y,BR,0,Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle = color;
+    ctx.fillRect(x-BR, y-BR*0.55, BR*2, BR*1.1);
+    ctx.restore();
+  } else {
+    // Solid ball
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x,y,BR,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // Number circle
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x,y,BR*0.42,0,Math.PI*2);
+  ctx.fill();
+
+  // Number text
+  ctx.fillStyle = '#111';
+  ctx.font = 'bold ' + (BR*0.55) + 'px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(num, x, y+0.5);
+
+  // Shine
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath();
+  ctx.arc(x-BR*0.25, y-BR*0.3, BR*0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Edge
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x,y,BR,0,Math.PI*2);
+  ctx.stroke();
+}
+
+function clipAimLine(sx,sy,dx,dy,maxLen,cb){
+  var t = maxLen;
+  // Check wall collisions
+  if(dx>0){ var tt=(FELT_X+TW-BR-sx)/dx; if(tt>0&&tt<t)t=tt; }
+  if(dx<0){ var tt=(FELT_X+BR-sx)/dx; if(tt>0&&tt<t)t=tt; }
+  if(dy>0){ var tt=(FELT_Y+TH-BR-sy)/dy; if(tt>0&&tt<t)t=tt; }
+  if(dy<0){ var tt=(FELT_Y+BR-sy)/dy; if(tt>0&&tt<t)t=tt; }
+  // Check ball collisions
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted||b.num===0)continue;
+    var bx=b.x-sx, by=b.y-sy;
+    var dot=bx*dx+by*dy;
+    if(dot<=0)continue;
+    var closestX=sx+dx*dot, closestY=sy+dy*dot;
+    var distSq=(b.x-closestX)*(b.x-closestX)+(b.y-closestY)*(b.y-closestY);
+    var minD=BR*2;
+    if(distSq<minD*minD){
+      var halfChord=Math.sqrt(minD*minD-distSq);
+      var tt2=dot-halfChord;
+      if(tt2>0&&tt2<t)t=tt2;
+    }
+  }
+  cb(sx+dx*t, sy+dy*t);
+}
+
+function findFirstBallHit(sx,sy,dx,dy){
+  var closest=null, closestT=Infinity;
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted||b.num===0)continue;
+    var bx=b.x-sx, by=b.y-sy;
+    var dot=bx*dx+by*dy;
+    if(dot<=0)continue;
+    var closestX=sx+dx*dot, closestY=sy+dy*dot;
+    var distSq=(b.x-closestX)*(b.x-closestX)+(b.y-closestY)*(b.y-closestY);
+    var minD=BR*2;
+    if(distSq<minD*minD){
+      var halfChord=Math.sqrt(minD*minD-distSq);
+      var t=dot-halfChord;
+      if(t>0&&t<closestT){
+        closestT=t;
+        closest={ball:b, hx:sx+dx*t, hy:sy+dy*t};
+      }
+    }
+  }
+  return closest;
+}
+
+// ==================== PHYSICS ====================
+function stepPhysics(){
+  var moving = false;
+
+  // Move balls
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted)continue;
+    if(Math.abs(b.vx)<MIN_SPEED && Math.abs(b.vy)<MIN_SPEED){
+      b.vx=0; b.vy=0;
+      continue;
+    }
+    moving=true;
+    b.x+=b.vx;
+    b.y+=b.vy;
+    b.vx*=FRICTION;
+    b.vy*=FRICTION;
+  }
+
+  // Ball-ball collisions
+  for(var i=0;i<balls.length;i++){
+    for(var j=i+1;j<balls.length;j++){
+      var a=balls[i], b=balls[j];
+      if(a.potted||b.potted)continue;
+      var dx=b.x-a.x, dy=b.y-a.y;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      var minD=BR*2;
+      if(dist<minD && dist>0){
+        // Track first contact
+        if(a.num===0 && firstContact===null) firstContact=b.num;
+        if(b.num===0 && firstContact===null) firstContact=a.num;
+
+        // Separate
+        var overlap=(minD-dist)/2;
+        var nx=dx/dist, ny=dy/dist;
+        a.x-=nx*overlap;
+        a.y-=ny*overlap;
+        b.x+=nx*overlap;
+        b.y+=ny*overlap;
+
+        // Elastic collision
+        var dvx=a.vx-b.vx, dvy=a.vy-b.vy;
+        var dvDotN=dvx*nx+dvy*ny;
+        if(dvDotN>0){
+          a.vx-=dvDotN*nx;
+          a.vy-=dvDotN*ny;
+          b.vx+=dvDotN*nx;
+          b.vy+=dvDotN*ny;
+          if(window.SFX) window.SFX.place();
+        }
+      }
+    }
+  }
+
+  // Wall collisions
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted)continue;
+    if(b.x-BR < FELT_X){ b.x=FELT_X+BR; b.vx=Math.abs(b.vx)*0.85; }
+    if(b.x+BR > FELT_X+TW){ b.x=FELT_X+TW-BR; b.vx=-Math.abs(b.vx)*0.85; }
+    if(b.y-BR < FELT_Y){ b.y=FELT_Y+BR; b.vy=Math.abs(b.vy)*0.85; }
+    if(b.y+BR > FELT_Y+TH){ b.y=FELT_Y+TH-BR; b.vy=-Math.abs(b.vy)*0.85; }
+  }
+
+  // Pocket detection
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted)continue;
+    for(var p=0;p<POCKETS.length;p++){
+      var dx=b.x-POCKETS[p].x, dy=b.y-POCKETS[p].y;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist < POCKET_R - 2){
+        b.potted=true;
+        b.vx=0;b.vy=0;
+        if(b.num===0){
+          // Cue ball potted = scratch
+          foul=true;
+        } else {
+          turnPotted.push(b.num);
+          if(window.SFX) window.SFX.coin();
+        }
+        break;
+      }
+    }
+  }
+
+  return moving;
+}
+
+function allStopped(){
+  for(var i=0;i<balls.length;i++){
+    if(balls[i].potted)continue;
+    if(Math.abs(balls[i].vx)>MIN_SPEED*0.5 || Math.abs(balls[i].vy)>MIN_SPEED*0.5) return false;
+  }
+  return true;
+}
+
+// ==================== GAME LOGIC ====================
+function initGame(){
+  createBalls();
+  gameOver=false;
+  currentPlayer=1;
+  playerAssign={1:null, 2:null};
+  pottedBalls={1:[],2:[]};
+  turnPotted=[];
+  foul=false;
+  firstContact=null;
+  placingCueBall=false;
+  placingAnywhere=false;
+  aiming=false;
+  showCue=false;
+  aiThinking=false;
+  animating=false;
+  shotInProgress=false;
+  updateUI();
+  draw();
+}
+
+function shoot(dirX, dirY, power){
+  if(!cueBall || cueBall.potted || shotInProgress) return;
+  shotInProgress=true;
+  turnPotted=[];
+  foul=false;
+  firstContact=null;
+  cueBall.vx = dirX * power;
+  cueBall.vy = dirY * power;
+  aiming=false;
+  showCue=false;
+  powerContainer.style.visibility='hidden';
+  animateBalls();
+}
+
+function animateBalls(){
+  animating=true;
+  function step(){
+    var moving = stepPhysics();
+    draw();
+    if(moving || !allStopped()){
+      requestAnimationFrame(step);
+    } else {
+      animating=false;
+      shotInProgress=false;
+      afterShot();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function afterShot(){
+  // Handle assignment
+  if(playerAssign[1]===null && turnPotted.length>0){
+    // First potted ball after break determines assignment
+    var firstPotted = turnPotted[0];
+    if(firstPotted!==8){
+      if(firstPotted>=1 && firstPotted<=7){
+        playerAssign[currentPlayer]='solids';
+        playerAssign[currentPlayer===1?2:1]='stripes';
+      } else if(firstPotted>=9 && firstPotted<=15){
+        playerAssign[currentPlayer]='stripes';
+        playerAssign[currentPlayer===1?2:1]='solids';
+      }
+    }
+  }
+
+  // Categorize potted balls
+  for(var i=0;i<turnPotted.length;i++){
+    var num=turnPotted[i];
+    if(num===8) continue;
+    pottedBalls[currentPlayer].push(num);
+  }
+
+  // Check for 8-ball potted
+  var eightPotted = turnPotted.indexOf(8)!==-1;
+  if(eightPotted){
+    var myBallsCleared = areMyBallsCleared(currentPlayer);
+    if(!myBallsCleared || foul){
+      // Potted 8 ball early or with foul = lose
+      endGame(currentPlayer===1?2:1, currentPlayer===1?'Player 2':'Player 1');
+      return;
+    } else {
+      // Won!
+      endGame(currentPlayer, currentPlayer===1?'Player 1':'Player 2');
+      return;
+    }
+  }
+
+  // Check foul: first contact must be own ball (if assigned)
+  if(playerAssign[currentPlayer] && firstContact!==null && firstContact!==8){
+    var contactIsSolid = firstContact>=1&&firstContact<=7;
+    var contactIsStripe = firstContact>=9&&firstContact<=15;
+    if(playerAssign[currentPlayer]==='solids' && !contactIsSolid) foul=true;
+    if(playerAssign[currentPlayer]==='stripes' && !contactIsStripe) foul=true;
+  }
+  // No contact at all = foul
+  if(firstContact===null && !cueBall.potted) foul=true;
+
+  // Did player pot one of their own balls?
+  var pottedOwn = false;
+  if(playerAssign[currentPlayer]){
+    for(var i=0;i<turnPotted.length;i++){
+      var num=turnPotted[i];
+      if(playerAssign[currentPlayer]==='solids' && num>=1&&num<=7) pottedOwn=true;
+      if(playerAssign[currentPlayer]==='stripes' && num>=9&&num<=15) pottedOwn=true;
+    }
+  } else if(turnPotted.length>0 && turnPotted[0]!==8){
+    pottedOwn=true;
+  }
+
+  // Handle scratch
+  if(foul || cueBall.potted){
+    foul=true;
+    // Reset cue ball for opponent to place
+    cueBall.potted=false;
+    cueBall.x = FELT_X + TW*0.25;
+    cueBall.y = FELT_Y + TH/2;
+    cueBall.vx=0; cueBall.vy=0;
+    // Make sure it doesn't overlap
+    resolveOverlap(cueBall);
+    currentPlayer = currentPlayer===1?2:1;
+    placingCueBall=true;
+    placingAnywhere=true;
+    msgEl.textContent = (mode==='ai'&&currentPlayer===2?'AI':'Player '+currentPlayer) + ' — place the cue ball (foul)';
+    msgEl.className = 'msg placement-hint';
+    updateUI();
+    draw();
+    if(mode==='ai'&&currentPlayer===2){
+      setTimeout(aiPlaceCueBall, 600);
+    }
+    return;
+  }
+
+  // Switch turns if didn't pot own ball
+  if(!pottedOwn){
+    currentPlayer = currentPlayer===1?2:1;
+  }
+
+  updateUI();
+  draw();
+
+  if(mode==='ai' && currentPlayer===2 && !gameOver){
+    aiThinking=true;
+    setTimeout(aiTurn, 800);
+  }
+}
+
+function areMyBallsCleared(player){
+  var assign = playerAssign[player];
+  if(!assign) return false;
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.num===0||b.num===8) continue;
+    if(b.potted) continue;
+    if(assign==='solids' && b.num>=1&&b.num<=7) return false;
+    if(assign==='stripes' && b.num>=9&&b.num<=15) return false;
+  }
+  return true;
+}
+
+function endGame(winner, winnerName){
+  gameOver=true;
+  if(mode==='ai'){
+    if(winner===1){
+      msgEl.textContent='You win!';
+      if(window.HallOfFame){
+        var sk=window.HallOfFame.winStreak('pool');
+        if(sk) window.HallOfFame.submit('pool', sk.current);
+      }
+      if(window.SFX) window.SFX.win();
+    } else {
+      msgEl.textContent='AI wins!';
+      if(window.SFX) window.SFX.fail();
+    }
+  } else {
+    msgEl.textContent=winnerName+' wins!';
+    if(window.SFX) window.SFX.win();
+  }
+  updateUI();
+  draw();
+}
+
+function resolveOverlap(ball){
+  var tries=0;
+  while(tries<100){
+    var overlap=false;
+    for(var i=0;i<balls.length;i++){
+      var b=balls[i];
+      if(b===ball||b.potted)continue;
+      var dx=b.x-ball.x,dy=b.y-ball.y;
+      if(Math.sqrt(dx*dx+dy*dy)<BR*2+2){overlap=true;break;}
+    }
+    if(!overlap)break;
+    ball.x+=Math.random()*10-5;
+    ball.y+=Math.random()*10-5;
+    // Keep in bounds
+    ball.x=Math.max(FELT_X+BR,Math.min(FELT_X+TW-BR,ball.x));
+    ball.y=Math.max(FELT_Y+BR,Math.min(FELT_Y+TH-BR,ball.y));
+    tries++;
+  }
+}
+
+function updateUI(){
+  // Player panel highlight
+  p1Panel.classList.toggle('active-turn', currentPlayer===1 && !gameOver);
+  p2Panel.classList.toggle('active-turn', currentPlayer===2 && !gameOver);
+
+  // Names
+  if(mode==='ai'){
+    p1Name.textContent='You';
+    p2Name.textContent='AI';
+  } else if(mode==='2p'){
+    p1Name.textContent='Player 1';
+    p2Name.textContent='Player 2';
+  }
+
+  // Type labels
+  p1Type.textContent = playerAssign[1] ? (playerAssign[1]==='solids'?'Solids (1-7)':'Stripes (9-15)') : '';
+  p2Type.textContent = playerAssign[2] ? (playerAssign[2]==='solids'?'Solids (1-7)':'Stripes (9-15)') : '';
+
+  // Ball indicators
+  renderBallIndicators(1, p1Balls);
+  renderBallIndicators(2, p2Balls);
+
+  // Message
+  if(!gameOver && !placingCueBall){
+    var name = mode==='ai'&&currentPlayer===2 ? 'AI' : 'Player '+currentPlayer;
+    if(mode==='ai'&&currentPlayer===1) name='Your';
+    msgEl.textContent = name + (name==='Your'?"'":'\'s') + ' turn';
+    msgEl.className='msg';
+  }
+
+  // Render avatars
+  renderPlayerAvatar('p1-avatar', 1);
+  renderPlayerAvatar('p2-avatar', 2);
+}
+
+function renderBallIndicators(player, container){
+  container.innerHTML='';
+  var assign=playerAssign[player];
+  if(!assign)return;
+  var start=assign==='solids'?1:9;
+  var end=assign==='solids'?7:15;
+  for(var n=start;n<=end;n++){
+    var div=document.createElement('div');
+    div.className='mini-ball';
+    div.style.background=BALL_COLORS[n];
+    // Check if potted
+    var isPotted=false;
+    for(var i=0;i<balls.length;i++){
+      if(balls[i].num===n&&balls[i].potted){isPotted=true;break;}
+    }
+    if(isPotted) div.classList.add('potted');
+    container.appendChild(div);
+  }
+}
+
+function renderPlayerAvatar(containerId, playerNum){
+  var container=document.getElementById(containerId);
+  if(!container||!window.ArcadeAvatar)return;
+  if(container.dataset.rendered)return; // only render once
+  var equipped={};
+  try{
+    var user=localStorage.getItem('arcade_currentUser');
+    if(user && window.ArcadeCoins && window.ArcadeCoins.getProfile){
+      if(playerNum===1){
+        window.ArcadeCoins.getProfile(user).then(function(profile){
+          if(profile){
+            ArcadeAvatar.render(container,profile,48);
+            container.dataset.rendered='1';
+          }
+        });
+      }
+    }
+  }catch(e){}
+  if(!container.dataset.rendered){
+    ArcadeAvatar.render(container,equipped,48);
+    container.dataset.rendered='1';
+  }
+}
+
+// ==================== INPUT HANDLING ====================
+function getCanvasPos(e){
+  var rect=canvas.getBoundingClientRect();
+  var scaleX=CANVAS_W/rect.width;
+  var scaleY=CANVAS_H/rect.height;
+  var clientX, clientY;
+  if(e.touches){
+    clientX=e.touches[0].clientX;
+    clientY=e.touches[0].clientY;
+  } else {
+    clientX=e.clientX;
+    clientY=e.clientY;
+  }
+  return {
+    x:(clientX-rect.left)*scaleX,
+    y:(clientY-rect.top)*scaleY
+  };
+}
+
+function isOnCueBall(pos){
+  if(!cueBall||cueBall.potted)return false;
+  var dx=pos.x-cueBall.x,dy=pos.y-cueBall.y;
+  return Math.sqrt(dx*dx+dy*dy)<BR*3; // generous hit area
+}
+
+function isInsideFelt(x,y){
+  return x>=FELT_X+BR && x<=FELT_X+TW-BR && y>=FELT_Y+BR && y<=FELT_Y+TH-BR;
+}
+
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('touchstart', function(e){e.preventDefault();onPointerDown(e);}, {passive:false});
+
+function onPointerDown(e){
+  if(gameOver||animating||aiThinking)return;
+  if(mode==='ai'&&currentPlayer===2)return;
+  var pos=getCanvasPos(e);
+
+  if(placingCueBall){
+    // Place cue ball
+    if(isInsideFelt(pos.x,pos.y)){
+      var valid=true;
+      // Check no overlap with other balls
+      for(var i=0;i<balls.length;i++){
+        var b=balls[i];
+        if(b.potted||b.num===0)continue;
+        var dx=b.x-pos.x,dy=b.y-pos.y;
+        if(Math.sqrt(dx*dx+dy*dy)<BR*2+2){valid=false;break;}
+      }
+      if(valid){
+        cueBall.x=pos.x;
+        cueBall.y=pos.y;
+        placingCueBall=false;
+        placingAnywhere=false;
+        updateUI();
+        draw();
+        return;
+      }
+    }
+    return;
+  }
+
+  if(isOnCueBall(pos)){
+    aiming=true;
+    aimStart={x:pos.x,y:pos.y};
+    aimCurrent={x:pos.x,y:pos.y};
+    showCue=true;
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('touchmove', onPointerMove, {passive:false});
+    canvas.addEventListener('touchend', onPointerUp);
+  }
+}
+
+function onPointerMove(e){
+  if(e.touches)e.preventDefault();
+  if(!aiming)return;
+  var pos=getCanvasPos(e);
+  aimCurrent=pos;
+
+  // Update power bar
+  var dx=cueBall.x-pos.x, dy=cueBall.y-pos.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  var power=Math.min(dist/200, 1);
+  powerContainer.style.visibility='visible';
+  powerFill.style.width=(power*100)+'%';
+  powerLabel.textContent=Math.round(power*100)+'%';
+
+  draw();
+}
+
+function onPointerUp(e){
+  canvas.removeEventListener('mousemove', onPointerMove);
+  canvas.removeEventListener('mouseup', onPointerUp);
+  canvas.removeEventListener('touchmove', onPointerMove);
+  canvas.removeEventListener('touchend', onPointerUp);
+
+  if(!aiming)return;
+  var pos;
+  if(e.changedTouches){
+    var rect=canvas.getBoundingClientRect();
+    var scaleX=CANVAS_W/rect.width;
+    var scaleY=CANVAS_H/rect.height;
+    pos={x:(e.changedTouches[0].clientX-rect.left)*scaleX, y:(e.changedTouches[0].clientY-rect.top)*scaleY};
+  } else {
+    pos=getCanvasPos(e);
+  }
+
+  var dx=cueBall.x-pos.x, dy=cueBall.y-pos.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+
+  if(dist<10){
+    // Too small, cancel
+    aiming=false;
+    showCue=false;
+    powerContainer.style.visibility='hidden';
+    draw();
+    return;
+  }
+
+  var power=Math.min(dist/200, 1) * MAX_POWER;
+  var dirX=dx/dist, dirY=dy/dist;
+  shoot(dirX, dirY, power);
+}
+
+// Mouse move for cue ball placement
+canvas.addEventListener('mousemove', function(e){
+  if(placingCueBall && !aiming){
+    var pos=getCanvasPos(e);
+    if(isInsideFelt(pos.x,pos.y)){
+      cueBall.x=pos.x;
+      cueBall.y=pos.y;
+      draw();
+    }
+  }
+});
+
+canvas.addEventListener('touchmove', function(e){
+  if(placingCueBall && !aiming){
+    e.preventDefault();
+    var pos=getCanvasPos(e);
+    if(isInsideFelt(pos.x,pos.y)){
+      cueBall.x=pos.x;
+      cueBall.y=pos.y;
+      draw();
+    }
+  }
+}, {passive:false});
+
+// ==================== AI ====================
+function aiPlaceCueBall(){
+  // AI places cue ball in a reasonable spot
+  cueBall.x = FELT_X + TW*0.25;
+  cueBall.y = FELT_Y + TH/2;
+  resolveOverlap(cueBall);
+  placingCueBall=false;
+  placingAnywhere=false;
+  updateUI();
+  draw();
+  setTimeout(aiTurn, 500);
+}
+
+function aiTurn(){
+  if(gameOver||currentPlayer!==2)return;
+
+  var bestShot=null;
+  var bestScore=-Infinity;
+  var myAssign=playerAssign[2];
+
+  // Gather target balls
+  var targets=[];
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted||b.num===0)continue;
+    if(myAssign==='solids'&&b.num>=1&&b.num<=7) targets.push(b);
+    else if(myAssign==='stripes'&&b.num>=9&&b.num<=15) targets.push(b);
+    else if(!myAssign&&b.num!==8) targets.push(b);
+  }
+
+  // If all own balls cleared, target 8
+  if(myAssign && targets.length===0){
+    for(var i=0;i<balls.length;i++){
+      if(balls[i].num===8&&!balls[i].potted) targets.push(balls[i]);
+    }
+  }
+
+  // Try each target ball -> each pocket
+  for(var ti=0;ti<targets.length;ti++){
+    var target=targets[ti];
+    for(var pi=0;pi<POCKETS.length;pi++){
+      var pocket=POCKETS[pi];
+      // Direction from target to pocket
+      var tpx=pocket.x-target.x, tpy=pocket.y-target.y;
+      var tpd=Math.sqrt(tpx*tpx+tpy*tpy);
+      if(tpd<10)continue;
+      tpx/=tpd; tpy/=tpd;
+
+      // Aim point: where cue ball needs to hit target ball
+      var aimX=target.x-tpx*BR*2;
+      var aimY=target.y-tpy*BR*2;
+
+      // Direction from cue ball to aim point
+      var dx=aimX-cueBall.x, dy=aimY-cueBall.y;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if(d<BR*2)continue;
+      dx/=d; dy/=d;
+
+      // Check if path is clear
+      var blocked=false;
+      for(var bi=0;bi<balls.length;bi++){
+        var ob=balls[bi];
+        if(ob.potted||ob.num===0||ob===target)continue;
+        var ox=ob.x-cueBall.x, oy=ob.y-cueBall.y;
+        var dot=ox*dx+oy*dy;
+        if(dot<=0||dot>=d)continue;
+        var perpX=cueBall.x+dx*dot, perpY=cueBall.y+dy*dot;
+        var pd=Math.sqrt((ob.x-perpX)*(ob.x-perpX)+(ob.y-perpY)*(ob.y-perpY));
+        if(pd<BR*2.2){blocked=true;break;}
+      }
+      if(blocked)continue;
+
+      // Score this shot
+      var score=100;
+      score-=tpd*0.3; // Prefer closer pockets
+      score-=d*0.1; // Prefer closer targets
+      // Angle quality
+      var angle=Math.abs(dx*tpx+dy*tpy);
+      score+=angle*50;
+
+      // Add randomness
+      score+=(Math.random()-0.5)*30;
+
+      if(score>bestScore){
+        bestScore=score;
+        bestShot={dirX:dx, dirY:dy, power:Math.min(d*0.08+5, MAX_POWER*0.75)};
+      }
+    }
+  }
+
+  // Fallback: shoot in a random valid direction
+  if(!bestShot){
+    var angle=Math.random()*Math.PI*2;
+    bestShot={dirX:Math.cos(angle), dirY:Math.sin(angle), power:MAX_POWER*0.4};
+  }
+
+  // Add slight inaccuracy
+  var inaccuracy=(Math.random()-0.5)*0.08;
+  var cos=Math.cos(inaccuracy), sin=Math.sin(inaccuracy);
+  var newDx=bestShot.dirX*cos-bestShot.dirY*sin;
+  var newDy=bestShot.dirX*sin+bestShot.dirY*cos;
+  bestShot.dirX=newDx;
+  bestShot.dirY=newDy;
+
+  // Show AI aiming briefly
+  aiming=true;
+  showCue=true;
+  aimCurrent={
+    x:cueBall.x-bestShot.dirX*100,
+    y:cueBall.y-bestShot.dirY*100
+  };
+  draw();
+
+  setTimeout(function(){
+    aiming=false;
+    showCue=false;
+    aiThinking=false;
+    shoot(bestShot.dirX, bestShot.dirY, bestShot.power);
+  }, 600);
+}
+
+// ==================== MODE SWITCHING ====================
+document.getElementById('mode2p').addEventListener('click', function(){
+  if(mode==='online') leaveOnlineRoom();
+  mode='2p';
+  updateModeButtons();
+  document.getElementById('online-panel').style.display='none';
+  document.getElementById('online-info').style.display='none';
+  document.getElementById('game-area').style.display='';
+  initGame();
+});
+document.getElementById('modeAI').addEventListener('click', function(){
+  if(mode==='online') leaveOnlineRoom();
+  mode='ai';
+  updateModeButtons();
+  document.getElementById('online-panel').style.display='none';
+  document.getElementById('online-info').style.display='none';
+  document.getElementById('game-area').style.display='';
+  initGame();
+});
+document.getElementById('modeOnline').addEventListener('click', function(){
+  if(mode==='online') return;
+  mode='online';
+  updateModeButtons();
+  document.getElementById('online-panel').style.display='';
+  document.getElementById('online-info').style.display='none';
+  document.getElementById('game-area').style.display='none';
+  showOnlineLobby();
+});
+
+function updateModeButtons(){
+  document.getElementById('mode2p').classList.toggle('active', mode==='2p');
+  document.getElementById('modeAI').classList.toggle('active', mode==='ai');
+  document.getElementById('modeOnline').classList.toggle('active', mode==='online');
+  if(window.SFX) window.SFX.click();
+}
+
+document.getElementById('restart').addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  if(mode==='online' && window._poolOnlineState && window._poolOnlineState.roomId){
+    if(window._poolOnlineNewGameHandler) window._poolOnlineNewGameHandler();
+  } else {
+    initGame();
+  }
+});
+
+// ==================== ONLINE HELPERS ====================
+function getMyUsername(){
+  return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+
+function generateRoomCode(){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var code='';
+  for(var i=0;i<4;i++) code+=chars.charAt(Math.floor(Math.random()*chars.length));
+  return code;
+}
+
+var onlinePanel=document.getElementById('online-panel');
+var onlineLobbyBtns=document.getElementById('online-lobby-btns');
+var onlineCreateArea=document.getElementById('online-create-area');
+var onlineJoinArea=document.getElementById('online-join-area');
+var roomCodeDisplay=document.getElementById('room-code-display');
+var waitingMsg=document.getElementById('waiting-msg');
+var joinCodeInput=document.getElementById('join-code-input');
+var joinError=document.getElementById('join-error');
+var onlineLeaveBtn=document.getElementById('online-leave-btn');
+var joinBackBtn=document.getElementById('join-back-btn');
+var onlineInfo=document.getElementById('online-info');
+var gameRoomCode=document.getElementById('game-room-code');
+var gamePlayerInfo=document.getElementById('game-player-info');
+
+function showOnlineLobby(){
+  onlineLobbyBtns.style.display='';
+  onlineCreateArea.style.display='none';
+  onlineJoinArea.style.display='none';
+  onlineLeaveBtn.style.display='none';
+  onlineInfo.style.display='none';
+  joinError.style.display='none';
+  joinCodeInput.value='';
+}
+
+function leaveOnlineRoom(){
+  if(window._poolOnlineUnsubscribe){
+    window._poolOnlineUnsubscribe();
+    window._poolOnlineUnsubscribe=null;
+  }
+  window._poolOnlineState=null;
+  onlineInfo.style.display='none';
+  onlinePanel.style.display=mode==='online'?'':'none';
+  document.getElementById('game-area').style.display=mode==='online'?'none':'';
+  showOnlineLobby();
+}
+
+// Online UI buttons
+document.getElementById('create-game-btn').addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  if(window._poolOnlineCreateGame) window._poolOnlineCreateGame();
+});
+document.getElementById('join-game-btn').addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  onlineLobbyBtns.style.display='none';
+  onlineJoinArea.style.display='';
+  joinCodeInput.focus();
+});
+document.getElementById('join-submit-btn').addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  if(window._poolOnlineJoinGame) window._poolOnlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+});
+joinCodeInput.addEventListener('keydown', function(e){
+  if(e.key==='Enter'){
+    if(window.SFX) window.SFX.click();
+    if(window._poolOnlineJoinGame) window._poolOnlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+  }
+});
+joinBackBtn.addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  showOnlineLobby();
+});
+onlineLeaveBtn.addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  leaveOnlineRoom();
+  initGame();
+});
+document.getElementById('online-leave-game-btn').addEventListener('click', function(){
+  if(window.SFX) window.SFX.click();
+  leaveOnlineRoom();
+  initGame();
+});
+
+// ==================== CHAT ====================
+var chatPanel_=document.getElementById('chat-panel');
+var chatToggle_=document.getElementById('chat-toggle');
+var chatClose_=document.getElementById('chat-close');
+var chatMessagesEl_=document.getElementById('chat-messages');
+var chatInputEl_=document.getElementById('chat-input');
+var chatSendBtn_=document.getElementById('chat-send');
+var chatBadgeEl_=document.getElementById('chat-badge');
+var chatIsOpen_=false, chatUnread_=0, chatPrevCount_=0;
+
+chatToggle_.addEventListener('click', function(){
+  chatIsOpen_=!chatIsOpen_;
+  chatPanel_.classList.toggle('open', chatIsOpen_);
+  if(chatIsOpen_){chatUnread_=0;chatBadgeEl_.style.display='none';chatInputEl_.focus();requestAnimationFrame(function(){chatMessagesEl_.scrollTop=chatMessagesEl_.scrollHeight;});}
+});
+chatClose_.addEventListener('click', function(){chatIsOpen_=false;chatPanel_.classList.remove('open');});
+chatSendBtn_.addEventListener('click', function(){doSendChat();});
+chatInputEl_.addEventListener('keydown', function(e){if(e.key==='Enter')doSendChat();});
+
+function doSendChat(){
+  var text=chatInputEl_.value.trim();
+  if(!text)return;
+  chatInputEl_.value='';
+  if(window._poolChatSend) window._poolChatSend(text);
+}
+
+function renderChat(msgs){
+  if(!msgs)msgs=[];
+  var inRoom=!!(window._poolOnlineState&&window._poolOnlineState.roomId);
+  chatToggle_.style.display=inRoom?'block':'none';
+  if(!inRoom){chatPanel_.classList.remove('open');chatIsOpen_=false;return;}
+  if(msgs.length>chatPrevCount_&&!chatIsOpen_){
+    chatUnread_+=msgs.length-chatPrevCount_;
+    chatBadgeEl_.textContent=chatUnread_>99?'99+':chatUnread_;
+    chatBadgeEl_.style.display='flex';
+    if(chatPrevCount_>0&&window.SFX)window.SFX.coin();
+  }
+  chatPrevCount_=msgs.length;
+  chatMessagesEl_.innerHTML='';
+  for(var i=0;i<msgs.length;i++){
+    var m=msgs[i];
+    var div=document.createElement('div');div.className='chat-msg';
+    var nameEl=document.createElement('span');nameEl.className='chat-name';nameEl.setAttribute('data-chat-user',m.name);nameEl.textContent=m.name;
+    var textEl=document.createElement('span');textEl.className='chat-text';textEl.textContent=m.text;
+    var timeEl=document.createElement('span');timeEl.className='chat-time';timeEl.textContent=m.time||'';
+    div.appendChild(nameEl);div.appendChild(textEl);div.appendChild(timeEl);
+    chatMessagesEl_.appendChild(div);
+  }
+  if(window.ArcadeAvatar&&window.ArcadeCoins){
+    chatMessagesEl_.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el){
+      var name=el.dataset.chatUser;
+      if(name&&window.ArcadeCoins.getProfile){
+        window.ArcadeCoins.getProfile(name).then(function(profile){
+          if(profile)window.ArcadeAvatar.styleName(el,profile);
+        });
+      }
+    });
+  }
+  requestAnimationFrame(function(){chatMessagesEl_.scrollTop=chatMessagesEl_.scrollHeight;});
+}
+
+function resetChat(){
+  chatPrevCount_=0;chatUnread_=0;chatBadgeEl_.style.display='none';
+  chatMessagesEl_.innerHTML='';chatToggle_.style.display='none';
+  chatPanel_.classList.remove('open');chatIsOpen_=false;
+}
+
+var origLeaveOnline_=leaveOnlineRoom;
+leaveOnlineRoom=function(){resetChat();origLeaveOnline_();};
+
+// ==================== SERIALIZE FOR ONLINE ====================
+function serializeState(){
+  var ballData=[];
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    ballData.push({num:b.num,x:Math.round(b.x*10)/10,y:Math.round(b.y*10)/10,potted:b.potted});
+  }
+  return {
+    balls:JSON.stringify(ballData),
+    currentPlayer:currentPlayer,
+    playerAssign1:playerAssign[1]||'',
+    playerAssign2:playerAssign[2]||'',
+    pottedBalls1:JSON.stringify(pottedBalls[1]),
+    pottedBalls2:JSON.stringify(pottedBalls[2]),
+    gameOver:gameOver,
+    winner:gameOver?(currentPlayer===1?'p1':'p2'):'',
+    placingCueBall:placingCueBall
+  };
+}
+
+function deserializeState(data){
+  var ballData=JSON.parse(data.balls);
+  balls=[];
+  cueBall=null;
+  for(var i=0;i<ballData.length;i++){
+    var bd=ballData[i];
+    var b={num:bd.num,x:bd.x,y:bd.y,vx:0,vy:0,potted:bd.potted};
+    balls.push(b);
+    if(b.num===0)cueBall=b;
+  }
+  currentPlayer=data.currentPlayer;
+  playerAssign[1]=data.playerAssign1||null;
+  playerAssign[2]=data.playerAssign2||null;
+  pottedBalls[1]=JSON.parse(data.pottedBalls1||'[]');
+  pottedBalls[2]=JSON.parse(data.pottedBalls2||'[]');
+  gameOver=data.gameOver||false;
+  placingCueBall=data.placingCueBall||false;
+  updateUI();
+  draw();
+
+  if(gameOver){
+    var st=window._poolOnlineState;
+    if(data.winner){
+      var winRole=data.winner==='p1'?1:2;
+      var isMe=winRole===st.myRole;
+      if(isMe){
+        msgEl.textContent='You win!';
+        if(window.SFX)window.SFX.win();
+      } else {
+        var winnerName=winRole===1?(st.hostName||'Player 1'):(st.guestName||'Player 2');
+        msgEl.textContent=winnerName+' wins!';
+        if(window.SFX)window.SFX.fail();
+      }
+    }
+  } else if(placingCueBall){
+    var st2=window._poolOnlineState;
+    var isMyTurn=currentPlayer===st2.myRole;
+    msgEl.textContent=isMyTurn?'Place the cue ball (foul)':((currentPlayer===1?(st2.hostName||'Player 1'):(st2.guestName||'Player 2'))+' is placing cue ball');
+    msgEl.className='msg placement-hint';
+  } else {
+    var st3=window._poolOnlineState;
+    var isMyTurn2=currentPlayer===st3.myRole;
+    if(isMyTurn2){
+      msgEl.textContent='Your turn';
+    } else {
+      var turnName=currentPlayer===1?(st3.hostName||'Player 1'):(st3.guestName||'Player 2');
+      msgEl.textContent=turnName+'\'s turn';
+    }
+  }
+}
+
+// ==================== EXPOSE FOR ONLINE MODULE ====================
+window._poolGame={
+  getMyUsername:getMyUsername,
+  generateRoomCode:generateRoomCode,
+  showOnlineLobby:showOnlineLobby,
+  leaveOnlineRoom:leaveOnlineRoom,
+  initGame:initGame,
+  serializeState:serializeState,
+  deserializeState:deserializeState,
+  renderChat:renderChat,
+  resetChat:resetChat,
+  get mode(){return mode;},
+  get gameOver(){return gameOver;},
+  get currentPlayer(){return currentPlayer;},
+  get balls(){return balls;},
+  get cueBall(){return cueBall;},
+  shoot:shoot,
+  get shotInProgress(){return shotInProgress;},
+  get animating(){return animating;},
+  get placingCueBall(){return placingCueBall;},
+  set placingCueBall(v){placingCueBall=v;},
+  updateUI:updateUI,
+  draw:draw,
+  resolveOverlap:resolveOverlap,
+  FELT_X:FELT_X,FELT_Y:FELT_Y,TW:TW,TH:TH,BR:BR
+};
+
+initGame();
+})();
+</script>
+
+<!-- Online multiplayer Firebase module -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+};
+
+var app = initializeApp(firebaseConfig, 'pool-online');
+var db = getFirestore(app);
+
+var pool = window._poolGame;
+
+var onlinePanel = document.getElementById('online-panel');
+var onlineLobbyBtns = document.getElementById('online-lobby-btns');
+var onlineCreateArea = document.getElementById('online-create-area');
+var roomCodeDisplay = document.getElementById('room-code-display');
+var waitingMsg = document.getElementById('waiting-msg');
+var joinError = document.getElementById('join-error');
+var onlineLeaveBtn = document.getElementById('online-leave-btn');
+var onlineInfo = document.getElementById('online-info');
+var gameRoomCode = document.getElementById('game-room-code');
+var gamePlayerInfo = document.getElementById('game-player-info');
+
+function startListening(roomId) {
+    if (window._poolOnlineUnsubscribe) {
+        window._poolOnlineUnsubscribe();
+    }
+    var roomRef = doc(db, 'pool_rooms', roomId);
+    window._poolOnlineUnsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var st = window._poolOnlineState;
+        if (!st || st.roomId !== roomId) return;
+
+        st.hostName = data.hostPlayer || 'Player 1';
+        st.guestName = data.guestPlayer || 'Player 2';
+
+        pool.renderChat(data.chat || []);
+
+        if (data.status === 'playing' && !st.playing) {
+            st.playing = true;
+            onlinePanel.style.display = 'none';
+            onlineInfo.style.display = '';
+            document.getElementById('game-area').style.display = '';
+            gameRoomCode.textContent = roomId;
+
+            var opponentName = st.myRole === 1 ? st.guestName : st.hostName;
+            var myColor = st.myRole === 1 ? 'Player 1' : 'Player 2';
+            gamePlayerInfo.innerHTML = 'You are ' + myColor +
+                ' (<span class="lobby-avatar" data-player="' + pool.getMyUsername() + '"></span><span class="lobby-name" data-player-name="' + pool.getMyUsername() + '">' + pool.getMyUsername() + '</span>) vs ' +
+                '<span class="lobby-avatar" data-player="' + opponentName + '"></span><span class="lobby-name" data-player-name="' + opponentName + '">' + opponentName + '</span>';
+
+            if (window.ArcadeAvatar && window.ArcadeCoins) {
+                gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                    var name = el.dataset.player;
+                    if (name && window.ArcadeCoins.getProfile) {
+                        window.ArcadeCoins.getProfile(name).then(function(profile) {
+                            if (profile) {
+                                window.ArcadeAvatar.renderMini(el, profile);
+                                var nameEl2 = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                                if (nameEl2) window.ArcadeAvatar.styleName(nameEl2, profile);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        if (data.status === 'playing' || data.status === 'done') {
+            if (data.gameState) {
+                pool.deserializeState(data.gameState);
+            }
+        }
+    });
+}
+
+function makeInitialState() {
+    pool.initGame();
+    return pool.serializeState();
+}
+
+window._poolOnlineCreateGame = async function() {
+    var username = pool.getMyUsername();
+    var roomCode = pool.generateRoomCode();
+
+    onlineLobbyBtns.style.display = 'none';
+    onlineCreateArea.style.display = '';
+    onlineLeaveBtn.style.display = '';
+    roomCodeDisplay.textContent = roomCode;
+    waitingMsg.textContent = 'Creating room...';
+    waitingMsg.style.display = '';
+
+    try {
+        var roomRef = doc(db, 'pool_rooms', roomCode);
+        var existing = await getDoc(roomRef);
+        if (existing.exists() && existing.data().status !== 'done') {
+            window._poolOnlineCreateGame();
+            return;
+        }
+
+        await setDoc(roomRef, {
+            gameState: makeInitialState(),
+            hostPlayer: username,
+            guestPlayer: '',
+            status: 'waiting',
+            chat: []
+        });
+
+        window._poolOnlineState = {
+            roomId: roomCode,
+            myRole: 1,
+            playing: false,
+            hostName: username,
+            guestName: ''
+        };
+
+        waitingMsg.textContent = 'Waiting for opponent to join...';
+        startListening(roomCode);
+    } catch (err) {
+        console.error('Create game error:', err);
+        waitingMsg.textContent = 'Error: ' + err.message;
+        waitingMsg.style.color = '#ff4757';
+    }
+};
+
+window._poolOnlineJoinGame = async function(code) {
+    joinError.style.display = 'none';
+    if (!code || code.length !== 4) {
+        joinError.textContent = 'Enter a 4-character room code';
+        joinError.style.display = '';
+        return;
+    }
+
+    try {
+        var roomRef = doc(db, 'pool_rooms', code);
+        var snapshot = await getDoc(roomRef);
+
+        if (!snapshot.exists()) {
+            joinError.textContent = 'Room not found';
+            joinError.style.display = '';
+            return;
+        }
+
+        var data = snapshot.data();
+        if (data.status !== 'waiting') {
+            joinError.textContent = 'Room is full or game already ended';
+            joinError.style.display = '';
+            return;
+        }
+
+        var username = pool.getMyUsername();
+        await updateDoc(roomRef, {
+            guestPlayer: username,
+            status: 'playing'
+        });
+
+        window._poolOnlineState = {
+            roomId: code,
+            myRole: 2,
+            playing: true,
+            hostName: data.hostPlayer,
+            guestName: username
+        };
+
+        onlinePanel.style.display = 'none';
+        onlineInfo.style.display = '';
+        document.getElementById('game-area').style.display = '';
+        gameRoomCode.textContent = code;
+        gamePlayerInfo.innerHTML = 'You are Player 2 (<span class="lobby-avatar" data-player="' + username + '"></span><span class="lobby-name" data-player-name="' + username + '">' + username + '</span>) vs <span class="lobby-avatar" data-player="' + data.hostPlayer + '"></span><span class="lobby-name" data-player-name="' + data.hostPlayer + '">' + data.hostPlayer + '</span>';
+
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                var name = el.dataset.player;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) {
+                            window.ArcadeAvatar.renderMini(el, profile);
+                            var nameEl2 = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                            if (nameEl2) window.ArcadeAvatar.styleName(nameEl2, profile);
+                        }
+                    });
+                }
+            });
+        }
+
+        startListening(code);
+    } catch (err) {
+        console.error('Join game error:', err);
+        joinError.textContent = 'Error: ' + err.message;
+        joinError.style.display = '';
+    }
+};
+
+// Override shoot for online mode - after shot completes, sync state to Firebase
+var origAfterShot = null;
+// We need to intercept the afterShot call. We do this by polling for shot completion.
+var onlineShotWatcher = null;
+
+function watchForShotEnd() {
+    if (onlineShotWatcher) clearInterval(onlineShotWatcher);
+    onlineShotWatcher = setInterval(function() {
+        if (!pool.animating && !pool.shotInProgress) {
+            clearInterval(onlineShotWatcher);
+            onlineShotWatcher = null;
+            syncStateToFirebase();
+        }
+    }, 100);
+}
+
+async function syncStateToFirebase() {
+    var st = window._poolOnlineState;
+    if (!st || !st.roomId) return;
+    try {
+        var roomRef = doc(db, 'pool_rooms', st.roomId);
+        var state = pool.serializeState();
+        var status = pool.gameOver ? 'done' : 'playing';
+        await updateDoc(roomRef, {
+            gameState: state,
+            status: status
+        });
+    } catch (err) {
+        console.error('Sync error:', err);
+    }
+}
+
+// Intercept canvas events for online mode
+var origCanvas = document.getElementById('pool-canvas');
+
+// We need to intercept the shoot function for online
+var origShoot = pool.shoot;
+var wrappedShoot = function(dirX, dirY, power) {
+    origShoot(dirX, dirY, power);
+    if (pool.mode === 'online') {
+        watchForShotEnd();
+    }
+};
+// Can't easily override, so we'll handle in the pointer event level
+
+// For online mode: intercept pointer events
+origCanvas.addEventListener('mouseup', function(e) {
+    if (pool.mode === 'online' && window._poolOnlineState) {
+        // After any shot, watch for completion
+        setTimeout(function() {
+            if (pool.animating || pool.shotInProgress) {
+                watchForShotEnd();
+            }
+        }, 50);
+    }
+}, true);
+
+origCanvas.addEventListener('touchend', function(e) {
+    if (pool.mode === 'online' && window._poolOnlineState) {
+        setTimeout(function() {
+            if (pool.animating || pool.shotInProgress) {
+                watchForShotEnd();
+            }
+        }, 50);
+    }
+}, true);
+
+// Also handle cue ball placement in online mode
+origCanvas.addEventListener('mousedown', function(e) {
+    if (pool.mode === 'online' && pool.placingCueBall && window._poolOnlineState) {
+        var st = window._poolOnlineState;
+        if (pool.currentPlayer !== st.myRole) {
+            e.stopImmediatePropagation();
+            return;
+        }
+        // After placement, sync
+        setTimeout(function() {
+            if (!pool.placingCueBall) {
+                syncStateToFirebase();
+            }
+        }, 100);
+    }
+    // Block actions if not my turn in online mode
+    if (pool.mode === 'online' && window._poolOnlineState) {
+        var st2 = window._poolOnlineState;
+        if (pool.currentPlayer !== st2.myRole && !pool.placingCueBall) {
+            e.stopImmediatePropagation();
+        }
+    }
+}, true);
+
+window._poolOnlineNewGameHandler = async function() {
+    var st = window._poolOnlineState;
+    if (!st || !st.roomId) return;
+    try {
+        var roomRef = doc(db, 'pool_rooms', st.roomId);
+        pool.initGame();
+        await updateDoc(roomRef, {
+            gameState: pool.serializeState(),
+            status: 'playing'
+        });
+    } catch (err) {
+        console.error('New game error:', err);
+    }
+};
+
+// Chat
+window._poolChatSend = async function(text) {
+    var st = window._poolOnlineState;
+    if (!st || !st.roomId || !text) return;
+    try {
+        var roomRef = doc(db, 'pool_rooms', st.roomId);
+        var snapshot = await getDoc(roomRef);
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var chat = (data.chat || []).slice();
+        var username = pool.getMyUsername();
+        var now = new Date();
+        chat.push({ name: username, text: text, time: ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) });
+        if (chat.length > 50) chat = chat.slice(chat.length - 50);
+        await updateDoc(roomRef, { chat: chat });
+    } catch (e) { console.error('Chat error:', e); }
+};
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

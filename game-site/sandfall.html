@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandfall - Powder Toy</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 12px;
+    color: #aaa; text-decoration: none; font-size: 1.1rem;
+    z-index: 100; background: rgba(15,15,26,0.7);
+    padding: 4px 10px; border-radius: 6px;
+    transition: color 0.2s;
+  }
+  a.back:hover { color: #fff; }
+  h1 {
+    text-align: center; font-size: 1.3rem; padding: 10px 0 4px;
+    color: #ccc; letter-spacing: 1px;
+  }
+  #canvas-wrap {
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    padding: 4px 8px;
+    min-height: 0;
+  }
+  canvas {
+    display: block;
+    background: #1a1a2e;
+    border-radius: 6px;
+    cursor: crosshair;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #toolbar {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+    gap: 6px; padding: 8px 10px 10px;
+    background: #12121f;
+    border-top: 1px solid #2a2a3a;
+  }
+  .mat-btn {
+    width: 44px; height: 44px; border: 2px solid transparent;
+    border-radius: 8px; cursor: pointer; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    font-size: 0.55rem; font-weight: 600; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .mat-btn:hover { transform: scale(1.1); }
+  .mat-btn.active { border-color: #fff; transform: scale(1.12); box-shadow: 0 0 8px rgba(255,255,255,0.3); }
+  .sep {
+    width: 1px; height: 32px; background: #2a2a3a; margin: 0 2px;
+  }
+  .ctrl-btn {
+    height: 36px; padding: 0 12px; border: none; border-radius: 6px;
+    background: #2a2a3a; color: #ccc; font-size: 0.75rem;
+    cursor: pointer; font-weight: 600; transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: #3a3a4f; }
+  .ctrl-btn.active { background: #4a4a6a; color: #fff; }
+  #brush-label { font-size: 0.7rem; color: #888; margin-right: 2px; }
+  #particle-count { position: fixed; top: 12px; right: 12px; font-size: 0.75rem; color: #555; z-index: 100; }
+  @media (max-width: 600px) {
+    .mat-btn { width: 38px; height: 38px; font-size: 0.5rem; }
+    .ctrl-btn { height: 32px; padding: 0 8px; font-size: 0.65rem; }
+    h1 { font-size: 1rem; padding: 6px 0 2px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&larr; Back</a>
+<h1>Sandfall</h1>
+<div id="particle-count"></div>
+
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+
+<div id="toolbar">
+  <button class="mat-btn active" data-mat="sand" style="background:#d2b48c;" title="Sand">Sand</button>
+  <button class="mat-btn" data-mat="water" style="background:#3a8fd6;" title="Water">Water</button>
+  <button class="mat-btn" data-mat="fire" style="background:linear-gradient(#ff6600,#cc2200);" title="Fire">Fire</button>
+  <button class="mat-btn" data-mat="wood" style="background:#8B5E3C;" title="Wood">Wood</button>
+  <button class="mat-btn" data-mat="stone" style="background:#777;" title="Stone">Stone</button>
+  <button class="mat-btn" data-mat="lava" style="background:linear-gradient(#ff4400,#cc3300);" title="Lava">Lava</button>
+  <button class="mat-btn" data-mat="oil" style="background:#8B7D00;" title="Oil">Oil</button>
+  <button class="mat-btn" data-mat="acid" style="background:#44cc44;" title="Acid">Acid</button>
+  <button class="mat-btn" data-mat="steam" style="background:#aaddee;" title="Steam"><span style="color:#335">Steam</span></button>
+  <button class="mat-btn" data-mat="glass" style="background:#aaeedd;" title="Glass"><span style="color:#335">Glass</span></button>
+  <button class="mat-btn" data-mat="eraser" style="background:#1a1a2e;border:2px dashed #555;" title="Eraser">Erase</button>
+
+  <div class="sep"></div>
+
+  <span id="brush-label">Brush:</span>
+  <button class="ctrl-btn" data-brush="1">S</button>
+  <button class="ctrl-btn active" data-brush="3">M</button>
+  <button class="ctrl-btn" data-brush="6">L</button>
+
+  <div class="sep"></div>
+
+  <button class="ctrl-btn" id="clear-btn">Clear</button>
+  <button class="ctrl-btn" id="pause-btn">Pause</button>
+</div>
+
+<script>
+(function() {
+  // --- Constants ---
+  const COLS = 240;
+  const ROWS = 160;
+  const EMPTY = 0;
+  const SAND = 1;
+  const WATER = 2;
+  const FIRE = 3;
+  const WOOD = 4;
+  const STONE = 5;
+  const LAVA = 6;
+  const STEAM = 7;
+  const GLASS = 8;
+  const ACID = 9;
+  const OIL = 10;
+
+  const MAT_MAP = {
+    sand: SAND, water: WATER, fire: FIRE, wood: WOOD,
+    stone: STONE, lava: LAVA, steam: STEAM, glass: GLASS,
+    acid: ACID, oil: OIL, eraser: EMPTY
+  };
+
+  // --- Color palettes (multiple shades for visual variety) ---
+  const COLORS = {
+    [EMPTY]: null,
+    [SAND]:  ['#d2b48c','#c8a97a','#dcc49e','#bfa06e'],
+    [WATER]: ['#3a8fd6','#3080c8','#4498e0','#2878b8'],
+    [FIRE]:  ['#ff6600','#ff4400','#ff8800','#cc2200','#ffaa00'],
+    [WOOD]:  ['#8B5E3C','#7A5234','#9C6A44','#6E4830'],
+    [STONE]: ['#777','#6a6a6a','#848484','#5e5e5e'],
+    [LAVA]:  ['#ff4400','#dd3300','#ff6600','#cc2200'],
+    [STEAM]: ['#c8e8f4','#b8dce8','#d8f0fc','#a8d0e0'],
+    [GLASS]: ['#aaeedd','#99ddcc','#bbffee'],
+    [ACID]:  ['#44cc44','#33bb33','#55dd55','#22aa22'],
+    [OIL]:   ['#8B7D00','#7A6E00','#9C8E10','#6B5E00']
+  };
+
+  // --- State ---
+  let grid = new Uint8Array(COLS * ROWS);
+  let updated = new Uint8Array(COLS * ROWS); // flag to avoid double-processing
+  let tick = 0;
+  let selectedMat = SAND;
+  let brushSize = 3;
+  let paused = false;
+  let drawing = false;
+  let lastDrawX = -1, lastDrawY = -1;
+
+  // --- Canvas setup ---
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  canvas.width = COLS;
+  canvas.height = ROWS;
+
+  function resizeCanvas() {
+    const wrap = document.getElementById('canvas-wrap');
+    const maxW = wrap.clientWidth - 16;
+    const maxH = wrap.clientHeight - 8;
+    const scale = Math.min(maxW / COLS, maxH / ROWS);
+    canvas.style.width = Math.floor(COLS * scale) + 'px';
+    canvas.style.height = Math.floor(ROWS * scale) + 'px';
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // --- Helpers ---
+  function idx(x, y) { return y * COLS + x; }
+  function inBounds(x, y) { return x >= 0 && x < COLS && y >= 0 && y < ROWS; }
+  function get(x, y) { return inBounds(x, y) ? grid[idx(x, y)] : -1; }
+  function set(x, y, v) { if (inBounds(x, y)) grid[idx(x, y)] = v; }
+  function isEmpty(x, y) { return get(x, y) === EMPTY; }
+  function swap(x1, y1, x2, y2) {
+    if (!inBounds(x1, y1) || !inBounds(x2, y2)) return;
+    const i1 = idx(x1, y1), i2 = idx(x2, y2);
+    const tmp = grid[i1]; grid[i1] = grid[i2]; grid[i2] = tmp;
+    updated[i2] = 1;
+  }
+  function randDir() { return Math.random() < 0.5 ? -1 : 1; }
+
+  // --- Simulation ---
+  function simulate() {
+    tick++;
+    updated.fill(0);
+
+    // Process bottom to top so falling works correctly
+    for (let y = ROWS - 1; y >= 0; y--) {
+      // Alternate left-right scan direction each row for less bias
+      const leftToRight = (y + tick) % 2 === 0;
+      for (let i = 0; i < COLS; i++) {
+        const x = leftToRight ? i : COLS - 1 - i;
+        const ci = idx(x, y);
+        if (updated[ci]) continue;
+        const mat = grid[ci];
+        if (mat === EMPTY) continue;
+
+        switch (mat) {
+          case SAND: simSand(x, y); break;
+          case WATER: simWater(x, y); break;
+          case FIRE: simFire(x, y); break;
+          case LAVA: simLava(x, y); break;
+          case STEAM: simSteam(x, y); break;
+          case ACID: simAcid(x, y); break;
+          case OIL: simOil(x, y); break;
+          // WOOD, STONE, GLASS are static
+        }
+      }
+    }
+  }
+
+  function simSand(x, y) {
+    if (isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    // Fall through water/oil
+    const below = get(x, y + 1);
+    if (below === WATER || below === OIL) { swap(x, y, x, y + 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Slide through water diagonally
+    if (get(x + d, y + 1) === WATER) { swap(x, y, x + d, y + 1); return; }
+    if (get(x - d, y + 1) === WATER) { swap(x, y, x - d, y + 1); return; }
+  }
+
+  function simWater(x, y) {
+    if (isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    // Sink below oil
+    if (get(x, y + 1) === OIL) { swap(x, y, x, y + 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Flow sideways
+    if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+  }
+
+  function simFire(x, y) {
+    // Fire has a limited lifetime
+    if (Math.random() < 0.08) { set(x, y, EMPTY); return; }
+    // Spread to adjacent wood/oil
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nb = get(x + dx, y + dy);
+        if (nb === WOOD && Math.random() < 0.04) {
+          set(x + dx, y + dy, FIRE);
+        }
+        if (nb === OIL && Math.random() < 0.15) {
+          set(x + dx, y + dy, FIRE);
+        }
+      }
+    }
+    // Rise
+    if (isEmpty(x, y - 1)) { swap(x, y, x, y - 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y - 1)) { swap(x, y, x + d, y - 1); return; }
+    if (isEmpty(x - d, y - 1)) { swap(x, y, x - d, y - 1); return; }
+    // Sideways drift
+    if (Math.random() < 0.4) {
+      if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    }
+  }
+
+  function simLava(x, y) {
+    // Falls slowly
+    if (Math.random() < 0.7 && isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Flow sideways slowly
+    if (Math.random() < 0.3) {
+      if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+      if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+    }
+    // Interactions with neighbors
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nb = get(x + dx, y + dy);
+        if (nb === SAND && Math.random() < 0.05) {
+          set(x + dx, y + dy, GLASS);
+        }
+        if (nb === WATER && Math.random() < 0.1) {
+          set(x + dx, y + dy, STEAM);
+        }
+        if (nb === WOOD && Math.random() < 0.06) {
+          set(x + dx, y + dy, FIRE);
+        }
+        if (nb === OIL && Math.random() < 0.12) {
+          set(x + dx, y + dy, FIRE);
+        }
+      }
+    }
+  }
+
+  function simSteam(x, y) {
+    // Condenses back to water eventually
+    if (Math.random() < 0.005) { set(x, y, WATER); return; }
+    // Rise
+    if (isEmpty(x, y - 1)) { swap(x, y, x, y - 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y - 1)) { swap(x, y, x + d, y - 1); return; }
+    if (isEmpty(x - d, y - 1)) { swap(x, y, x - d, y - 1); return; }
+    // Drift sideways
+    if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+  }
+
+  function simAcid(x, y) {
+    // Falls like water
+    if (isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    // Dissolve neighbors (not stone or glass — acid is weaker against those)
+    let dissolved = false;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nb = get(x + dx, y + dy);
+        if (nb !== EMPTY && nb !== ACID && nb !== GLASS) {
+          const chance = (nb === STONE) ? 0.005 : 0.02;
+          if (Math.random() < chance) {
+            set(x + dx, y + dy, EMPTY);
+            if (Math.random() < 0.3) { set(x, y, EMPTY); dissolved = true; }
+          }
+        }
+      }
+    }
+    if (dissolved) return;
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+  }
+
+  function simOil(x, y) {
+    // Falls but floats on water
+    if (isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    // Float on water: if water is below, swap up
+    if (get(x, y + 1) === WATER) {
+      // Don't swap — oil sits on water. But water sim handles sinking.
+    }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Flow sideways
+    if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+  }
+
+  // --- Rendering ---
+  const imgData = ctx.createImageData(COLS, ROWS);
+  const pixels = imgData.data;
+  const BG = [26, 26, 46]; // #1a1a2e
+
+  // Pre-parse hex colors to RGB
+  const COLOR_RGB = {};
+  for (const [mat, arr] of Object.entries(COLORS)) {
+    if (!arr) continue;
+    COLOR_RGB[mat] = arr.map(hex => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    });
+  }
+
+  function render() {
+    let count = 0;
+    for (let i = 0; i < COLS * ROWS; i++) {
+      const pi = i * 4;
+      const mat = grid[i];
+      if (mat === EMPTY) {
+        pixels[pi] = BG[0]; pixels[pi + 1] = BG[1]; pixels[pi + 2] = BG[2]; pixels[pi + 3] = 255;
+      } else {
+        count++;
+        const palette = COLOR_RGB[mat];
+        // Use position-based hash for stable color variation
+        const ci = (i * 7 + (i >> 3)) % palette.length;
+        let rgb = palette[ci];
+        // Fire/lava flicker
+        if (mat === FIRE || mat === LAVA) {
+          const fi = (i * 3 + tick) % palette.length;
+          rgb = palette[fi];
+        }
+        pixels[pi] = rgb[0]; pixels[pi + 1] = rgb[1]; pixels[pi + 2] = rgb[2]; pixels[pi + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    document.getElementById('particle-count').textContent = count + ' particles';
+  }
+
+  // --- Drawing ---
+  function getGridPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = COLS / rect.width;
+    const scaleY = ROWS / rect.height;
+    let clientX, clientY;
+    if (e.touches) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    const gx = Math.floor((clientX - rect.left) * scaleX);
+    const gy = Math.floor((clientY - rect.top) * scaleY);
+    return [gx, gy];
+  }
+
+  function placeMaterial(gx, gy) {
+    const r = brushSize;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (dx * dx + dy * dy > r * r) continue;
+        const px = gx + dx, py = gy + dy;
+        if (!inBounds(px, py)) continue;
+        if (selectedMat === EMPTY) {
+          set(px, py, EMPTY);
+        } else if (isEmpty(px, py)) {
+          // Add slight randomness for natural feel
+          if (Math.random() < 0.85) set(px, py, selectedMat);
+        }
+      }
+    }
+  }
+
+  function drawLine(x0, y0, x1, y1) {
+    const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    while (true) {
+      placeMaterial(x0, y0);
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 < dx) { err += dx; y0 += sy; }
+    }
+  }
+
+  function onDrawStart(e) {
+    e.preventDefault();
+    drawing = true;
+    const [gx, gy] = getGridPos(e);
+    placeMaterial(gx, gy);
+    lastDrawX = gx; lastDrawY = gy;
+  }
+  function onDrawMove(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const [gx, gy] = getGridPos(e);
+    if (lastDrawX >= 0) drawLine(lastDrawX, lastDrawY, gx, gy);
+    else placeMaterial(gx, gy);
+    lastDrawX = gx; lastDrawY = gy;
+  }
+  function onDrawEnd(e) {
+    drawing = false;
+    lastDrawX = -1; lastDrawY = -1;
+  }
+
+  canvas.addEventListener('mousedown', onDrawStart);
+  canvas.addEventListener('mousemove', onDrawMove);
+  canvas.addEventListener('mouseup', onDrawEnd);
+  canvas.addEventListener('mouseleave', onDrawEnd);
+  canvas.addEventListener('touchstart', onDrawStart, { passive: false });
+  canvas.addEventListener('touchmove', onDrawMove, { passive: false });
+  canvas.addEventListener('touchend', onDrawEnd);
+
+  // --- UI ---
+  document.querySelectorAll('.mat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedMat = MAT_MAP[btn.dataset.mat];
+    });
+  });
+
+  document.querySelectorAll('[data-brush]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-brush]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      brushSize = parseInt(btn.dataset.brush);
+    });
+  });
+
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    grid.fill(0);
+  });
+
+  const pauseBtn = document.getElementById('pause-btn');
+  pauseBtn.addEventListener('click', () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Play' : 'Pause';
+    pauseBtn.classList.toggle('active', paused);
+  });
+
+  // --- Main loop ---
+  function loop() {
+    if (!paused) simulate();
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

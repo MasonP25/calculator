@@ -400,6 +400,61 @@
       <div class="upgrade-cost" id="cost-magnet">Cost: 250</div>
       <div class="progress-bar" id="prog-magnet"></div>
     </div>
+
+    <div class="upgrade-card" id="card-refinery" onclick="buyUpgrade('refinery')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#127981; Refinery</span>
+        <span class="upgrade-level" id="lvl-refinery">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Processes raw gems for extra value per second</div>
+      <div class="upgrade-effect" id="eff-refinery">+5 gems/sec passive</div>
+      <div class="upgrade-cost" id="cost-refinery">Cost: 800</div>
+      <div class="progress-bar" id="prog-refinery"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-shaft" onclick="buyUpgrade('shaft')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#9660; Mine Shaft</span>
+        <span class="upgrade-level" id="lvl-shaft">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Deeper shafts multiply click value by 1.2x per level</div>
+      <div class="upgrade-effect" id="eff-shaft">x1.2 click power</div>
+      <div class="upgrade-cost" id="cost-shaft">Cost: 1500</div>
+      <div class="progress-bar" id="prog-shaft"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-forge" onclick="buyUpgrade('forge')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#128293; Gem Forge</span>
+        <span class="upgrade-level" id="lvl-forge">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Forge gems into rarer ones &mdash; boosts all earnings x1.4</div>
+      <div class="upgrade-effect" id="eff-forge">x1.4 all earnings</div>
+      <div class="upgrade-cost" id="cost-forge">Cost: 5000</div>
+      <div class="progress-bar" id="prog-forge"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-dynamite" onclick="buyUpgrade('dynamite')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#129528; Dynamite</span>
+        <span class="upgrade-level" id="lvl-dynamite">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Chance for a massive 25x blast on click</div>
+      <div class="upgrade-effect" id="eff-dynamite">+2% blast chance</div>
+      <div class="upgrade-cost" id="cost-dynamite">Cost: 2000</div>
+      <div class="progress-bar" id="prog-dynamite"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-robot" onclick="buyUpgrade('robot')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#129302; Mining Robot</span>
+        <span class="upgrade-level" id="lvl-robot">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Auto-clicks the mine 2x per second per level</div>
+      <div class="upgrade-effect" id="eff-robot">+2 auto-clicks/sec</div>
+      <div class="upgrade-cost" id="cost-robot">Cost: 3000</div>
+      <div class="progress-bar" id="prog-robot"></div>
+    </div>
   </div>
 </div>
 
@@ -416,6 +471,19 @@ const GEM_TYPES = [
   { name: 'Amethysts', color: '#d050ff', sparkle: '#e899ff', shape: 'hex' },
   { name: 'Opals', color: '#ffe0b2', sparkle: '#fff8e1', shape: 'diamond' },
   { name: 'Dragonstone', color: '#ff6d00', sparkle: '#ffab40', shape: 'hex' },
+  { name: 'Topaz', color: '#ffca28', sparkle: '#fff176', shape: 'diamond' },
+  { name: 'Obsidian', color: '#424242', sparkle: '#757575', shape: 'hex' },
+  { name: 'Jade', color: '#66bb6a', sparkle: '#a5d6a7', shape: 'diamond' },
+  { name: 'Moonstone', color: '#90caf9', sparkle: '#e3f2fd', shape: 'hex' },
+  { name: 'Garnet', color: '#c62828', sparkle: '#ef5350', shape: 'diamond' },
+  { name: 'Tanzanite', color: '#5c6bc0', sparkle: '#9fa8da', shape: 'hex' },
+  { name: 'Alexandrite', color: '#26a69a', sparkle: '#80cbc4', shape: 'diamond' },
+  { name: 'Black Opal', color: '#1a237e', sparkle: '#536dfe', shape: 'hex' },
+  { name: 'Painite', color: '#d84315', sparkle: '#ff8a65', shape: 'diamond' },
+  { name: 'Musgravite', color: '#7b1fa2', sparkle: '#ce93d8', shape: 'hex' },
+  { name: 'Taaffeite', color: '#ec407a', sparkle: '#f48fb1', shape: 'diamond' },
+  { name: 'Void Crystal', color: '#311b92', sparkle: '#b388ff', shape: 'hex' },
+  { name: 'Cosmic Gem', color: '#ff1744', sparkle: '#ffd740', shape: 'diamond' },
 ];
 
 const UPGRADE_DEFS = {
@@ -423,11 +491,16 @@ const UPGRADE_DEFS = {
   autominer:  { baseCost: 50,  costScale: 3,   maxLevel: 50 },
   multiplier: { baseCost: 200, costScale: 5,   maxLevel: 20 },
   lucky:      { baseCost: 100, costScale: 4,   maxLevel: 15 },
-  depth:      { baseCost: 500, costScale: 4,   maxLevel: GEM_TYPES.length - 1 },
+  depth:      { baseCost: 500, costScale: 3.5, maxLevel: GEM_TYPES.length - 1 },
   explosives: { baseCost: 300, costScale: 3.5, maxLevel: 30 },
   drill:      { baseCost: 400, costScale: 4,   maxLevel: 25 },
   conveyor:   { baseCost: 600, costScale: 4.5, maxLevel: 15 },
   magnet:     { baseCost: 250, costScale: 3,   maxLevel: 20 },
+  refinery:   { baseCost: 800, costScale: 3.5, maxLevel: 30 },
+  shaft:      { baseCost: 1500, costScale: 4,  maxLevel: 20 },
+  forge:      { baseCost: 5000, costScale: 5,  maxLevel: 10 },
+  dynamite:   { baseCost: 2000, costScale: 4,  maxLevel: 15 },
+  robot:      { baseCost: 3000, costScale: 4.5, maxLevel: 20 },
 };
 
 let state = getDefaultState();
@@ -446,6 +519,11 @@ function getDefaultState() {
     drillLevel: 0,
     conveyorLevel: 0,
     magnetLevel: 0,
+    refineryLevel: 0,
+    shaftLevel: 0,
+    forgeLevel: 0,
+    dynamiteLevel: 0,
+    robotLevel: 0,
     prestigeCount: 0,
   };
 }
@@ -454,26 +532,34 @@ function getDefaultState() {
 function gemsPerClick() {
   const base = 1 + state.pickaxeLevel * 2;
   const depthMult = 1 + state.depthLevel;
+  const shaftMult = state.shaftLevel > 0 ? Math.pow(1.2, state.shaftLevel) : 1;
   const mult = getMultiplier();
-  return Math.floor(base * depthMult * mult);
+  return Math.floor(base * depthMult * shaftMult * mult);
 }
 
 function explosivesChance() {
   return state.explosivesLevel * 0.03;
 }
 
+function dynamiteChance() {
+  return state.dynamiteLevel * 0.02;
+}
+
 function gemsPerSec() {
-  if (state.autominerLevel === 0 && state.drillLevel === 0) return 0;
-  const base = state.autominerLevel * 2 + state.drillLevel * 3;
+  const base = state.autominerLevel * 2 + state.drillLevel * 3 + state.refineryLevel * 5;
+  const robotClicks = state.robotLevel * 2;
+  if (base === 0 && robotClicks === 0) return 0;
   const depthMult = 1 + state.depthLevel;
   const mult = getMultiplier();
   const conveyorMult = state.conveyorLevel > 0 ? Math.pow(1.3, state.conveyorLevel) : 1;
-  return Math.floor(base * depthMult * mult * conveyorMult) || 0;
+  const robotGems = robotClicks > 0 ? robotClicks * gemsPerClick() : 0;
+  return Math.floor(base * depthMult * mult * conveyorMult + robotGems) || 0;
 }
 
 function getMultiplier() {
   let m = 1;
   if (state.multiplierLevel > 0) m *= Math.pow(1.5, state.multiplierLevel);
+  if (state.forgeLevel > 0) m *= Math.pow(1.4, state.forgeLevel);
   if (state.prestigeCount > 0) m *= Math.pow(2, state.prestigeCount);
   return m;
 }
@@ -758,7 +844,12 @@ function onMineClick(e) {
     setTimeout(() => flash.remove(), 500);
   }
 
-  if (Math.random() < explosivesChance()) {
+  if (Math.random() < dynamiteChance()) {
+    earned *= 25;
+    exploded = true;
+    mineShake = 5;
+    if (!lucky) { if (window.SFX) window.SFX.combo(); }
+  } else if (Math.random() < explosivesChance()) {
     earned *= 5;
     exploded = true;
     mineShake = 3;
@@ -889,6 +980,11 @@ function updateUI() {
   updateCard('drill', `+3 gems/sec bonus (${state.drillLevel * 3} now)`);
   updateCard('conveyor', `x1.3 auto-mine speed (x${state.conveyorLevel > 0 ? Math.pow(1.3, state.conveyorLevel).toFixed(2) : '1.00'} now)`);
   updateCard('magnet', `+5 bonus gems per proc (${state.magnetLevel * 5} now)`);
+  updateCard('refinery', `+5 gems/sec passive (${state.refineryLevel * 5} now)`);
+  updateCard('shaft', `x1.2 click power (x${state.shaftLevel > 0 ? Math.pow(1.2, state.shaftLevel).toFixed(2) : '1.00'} now)`);
+  updateCard('forge', `x1.4 all earnings (x${state.forgeLevel > 0 ? Math.pow(1.4, state.forgeLevel).toFixed(2) : '1.00'} now)`);
+  updateCard('dynamite', `+2% blast chance (${Math.round(dynamiteChance() * 100)}% now)`);
+  updateCard('robot', `+2 auto-clicks/sec (${state.robotLevel * 2} now)`);
 }
 
 function updateCard(type, effectText) {

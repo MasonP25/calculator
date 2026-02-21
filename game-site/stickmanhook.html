@@ -73,10 +73,22 @@
   const COL_FINISH = '#4ecdc4';
   const COL_STAR = '#ffd700';
 
+  // ── Colors for new elements ──
+  const COL_PLATFORM = '#2a4a6a';
+  const COL_PLATFORM_TOP = '#3a6a9a';
+  const COL_JUMPPAD = '#00e676';
+  const COL_JUMPPAD_GLOW = 'rgba(0,230,118,0.3)';
+  const COL_SPIKE = '#ff4757';
+  const COL_BOOST = '#ffd700';
+
   // ── Game State ──
   let level = 1;
   let state = 'menu'; // menu, playing, levelComplete, dead
   let stickman, hooks, finishX;
+  let platforms = [];   // { x, y, w, h }
+  let jumpPads = [];    // { x, y, w, power }
+  let spikes = [];      // { x, y, w, h }
+  let boostRings = [];  // { x, y, r, collected }
   let camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
   let holding = false;
   let attachedHook = null;
@@ -108,6 +120,10 @@
   // ── Level Generation ──
   function generateLevel(lvl) {
     hooks = [];
+    platforms = [];
+    jumpPads = [];
+    spikes = [];
+    boostRings = [];
     const numHooks = 6 + Math.floor(lvl * 1.3);
     const baseSpacing = 220 + Math.min(lvl * 8, 120);
     const yVariance = 80 + Math.min(lvl * 12, 200);
@@ -115,6 +131,9 @@
 
     let cx = 100;
     let cy = heightBase;
+
+    // Starting platform under the player
+    platforms.push({ x: 30, y: canvas.height * 0.4 + 20, w: 120, h: 16 });
 
     for (let i = 0; i < numHooks; i++) {
       const spacing = (i === 0 ? 150 : baseSpacing) + (Math.random() - 0.3) * 80;
@@ -130,11 +149,59 @@
         pulse: Math.random() * Math.PI * 2,
         active: false
       });
+
+      // Add platforms between hooks (level 2+)
+      if (lvl >= 2 && Math.random() < 0.35) {
+        const platY = cy + 80 + Math.random() * 120;
+        platforms.push({
+          x: cx - 40 + Math.random() * 60,
+          y: Math.min(platY, canvas.height - 60),
+          w: 60 + Math.random() * 80,
+          h: 14
+        });
+      }
+
+      // Add jump pads (level 3+)
+      if (lvl >= 3 && Math.random() < 0.25) {
+        const padY = canvas.height * 0.5 + Math.random() * 150;
+        jumpPads.push({
+          x: cx - 20 + Math.random() * 40,
+          y: Math.min(padY, canvas.height - 40),
+          w: 50,
+          power: 14 + Math.random() * 6,
+          anim: 0
+        });
+      }
+
+      // Add spikes (level 4+)
+      if (lvl >= 4 && Math.random() < 0.2) {
+        const spikeY = cy + 60 + Math.random() * 100;
+        spikes.push({
+          x: cx + (Math.random() - 0.5) * 80,
+          y: Math.min(spikeY, canvas.height - 50),
+          w: 40 + Math.random() * 30,
+          h: 20
+        });
+      }
+
+      // Add boost rings (level 2+)
+      if (lvl >= 2 && Math.random() < 0.3) {
+        boostRings.push({
+          x: cx + (Math.random() - 0.5) * 60,
+          y: cy - 30 + Math.random() * 60,
+          r: 25,
+          collected: false,
+          anim: Math.random() * Math.PI * 2
+        });
+      }
     }
 
     finishX = cx + baseSpacing + 100;
 
-    stickman = createStickman(100, canvas.height * 0.4 - 50);
+    // Finish platform
+    platforms.push({ x: finishX - 60, y: canvas.height * 0.5, w: 120, h: 16 });
+
+    stickman = createStickman(80, canvas.height * 0.4 - 10);
     stickman.vx = 3;
     stickman.vy = -2;
 
@@ -303,6 +370,80 @@
       });
     }
 
+    // Platform collisions
+    for (const p of platforms) {
+      if (stickman.x > p.x - 5 && stickman.x < p.x + p.w + 5 &&
+          stickman.y > p.y - 10 && stickman.y < p.y + p.h + 10) {
+        // Landing on top
+        if (stickman.vy > 0 && stickman.y - stickman.vy <= p.y) {
+          stickman.y = p.y - 1;
+          stickman.vy = -2; // small bounce
+          stickman.vx *= 0.95;
+          // particles
+          for (let i = 0; i < 4; i++) {
+            particles.push({
+              x: stickman.x + (Math.random()-0.5)*20, y: p.y,
+              vx: (Math.random()-0.5)*3, vy: -Math.random()*3,
+              life: 0.6, color: COL_PLATFORM_TOP, size: 2
+            });
+          }
+        }
+      }
+    }
+
+    // Jump pad collisions
+    for (const jp of jumpPads) {
+      if (stickman.x > jp.x && stickman.x < jp.x + jp.w &&
+          stickman.y > jp.y - 15 && stickman.y < jp.y + 10 && stickman.vy > 0) {
+        stickman.vy = -jp.power;
+        stickman.vx *= 1.1;
+        jp.anim = 1;
+        if (attachedHook) { attachedHook.active = false; attachedHook = null; }
+        for (let i = 0; i < 10; i++) {
+          particles.push({
+            x: jp.x + jp.w/2 + (Math.random()-0.5)*30, y: jp.y,
+            vx: (Math.random()-0.5)*5, vy: -Math.random()*8 - 3,
+            life: 1, color: COL_JUMPPAD, size: 3
+          });
+        }
+        try { if (window.SoundFX) window.SoundFX.play('score'); } catch(e) {}
+      }
+      if (jp.anim > 0) jp.anim *= 0.92;
+    }
+
+    // Spike collisions
+    for (const s of spikes) {
+      if (stickman.x > s.x && stickman.x < s.x + s.w &&
+          stickman.y > s.y && stickman.y < s.y + s.h) {
+        die();
+        return;
+      }
+    }
+
+    // Boost ring collisions
+    for (const br of boostRings) {
+      if (br.collected) continue;
+      const dx = stickman.x - br.x, dy = stickman.y - br.y;
+      if (Math.sqrt(dx*dx + dy*dy) < br.r + 10) {
+        br.collected = true;
+        const spd = Math.sqrt(stickman.vx**2 + stickman.vy**2);
+        if (spd > 0) {
+          stickman.vx *= 1.5;
+          stickman.vy *= 1.5;
+        } else {
+          stickman.vx += 8;
+        }
+        for (let i = 0; i < 12; i++) {
+          particles.push({
+            x: br.x + (Math.random()-0.5)*20, y: br.y + (Math.random()-0.5)*20,
+            vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
+            life: 1, color: COL_BOOST, size: 3
+          });
+        }
+        try { if (window.SoundFX) window.SoundFX.play('score'); } catch(e) {}
+      }
+    }
+
     // check death (fell below)
     const screenBottom = camera.y + canvas.height + DEATH_Y_OFFSET;
     if (stickman.y > screenBottom) {
@@ -443,6 +584,140 @@
       ctx.beginPath();
       ctx.arc(x, y, 4, 0, Math.PI * 2);
       ctx.fill();
+    }
+  }
+
+  function drawPlatforms() {
+    for (const p of platforms) {
+      const { x, y } = worldToScreen(p.x, p.y);
+      if (x + p.w < -50 || x > canvas.width + 50) continue;
+      // Platform body
+      ctx.fillStyle = COL_PLATFORM;
+      ctx.beginPath();
+      ctx.roundRect(x, y, p.w, p.h, 4);
+      ctx.fill();
+      // Top highlight
+      ctx.fillStyle = COL_PLATFORM_TOP;
+      ctx.fillRect(x + 2, y, p.w - 4, 3);
+      // Subtle glow
+      ctx.strokeStyle = 'rgba(58,106,154,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x, y, p.w, p.h, 4);
+      ctx.stroke();
+    }
+  }
+
+  function drawJumpPads() {
+    for (const jp of jumpPads) {
+      const { x, y } = worldToScreen(jp.x, jp.y);
+      if (x + jp.w < -50 || x > canvas.width + 50) continue;
+      const squash = jp.anim > 0.05 ? 1 - jp.anim * 0.3 : 1;
+      // Glow
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      const glow = ctx.createRadialGradient(x + jp.w/2, y, 0, x + jp.w/2, y, 40);
+      glow.addColorStop(0, COL_JUMPPAD_GLOW);
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - 20, y - 30, jp.w + 40, 60);
+      ctx.restore();
+      // Pad body
+      ctx.fillStyle = COL_JUMPPAD;
+      ctx.beginPath();
+      ctx.roundRect(x, y - 4 * squash, jp.w, 8 * squash, 3);
+      ctx.fill();
+      // Chevrons
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.6;
+      const cx = x + jp.w / 2;
+      const pulse = Math.sin(levelTimer * 0.1) * 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - 8, y - 10 + pulse);
+      ctx.lineTo(cx, y - 16 + pulse);
+      ctx.lineTo(cx + 8, y - 10 + pulse);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, y - 18 + pulse);
+      ctx.lineTo(cx, y - 23 + pulse);
+      ctx.lineTo(cx + 6, y - 18 + pulse);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawSpikes() {
+    for (const s of spikes) {
+      const { x, y } = worldToScreen(s.x, s.y);
+      if (x + s.w < -50 || x > canvas.width + 50) continue;
+      const numSpikes = Math.floor(s.w / 12);
+      ctx.fillStyle = COL_SPIKE;
+      for (let i = 0; i < numSpikes; i++) {
+        const sx = x + i * (s.w / numSpikes);
+        const sw = s.w / numSpikes;
+        ctx.beginPath();
+        ctx.moveTo(sx, y + s.h);
+        ctx.lineTo(sx + sw / 2, y);
+        ctx.lineTo(sx + sw, y + s.h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      // Glow
+      ctx.save();
+      ctx.globalAlpha = 0.2 + Math.sin(levelTimer * 0.08) * 0.1;
+      ctx.shadowColor = COL_SPIKE;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = COL_SPIKE;
+      for (let i = 0; i < numSpikes; i++) {
+        const sx = x + i * (s.w / numSpikes);
+        const sw = s.w / numSpikes;
+        ctx.beginPath();
+        ctx.moveTo(sx, y + s.h);
+        ctx.lineTo(sx + sw / 2, y);
+        ctx.lineTo(sx + sw, y + s.h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawBoostRings() {
+    for (const br of boostRings) {
+      if (br.collected) continue;
+      const { x, y } = worldToScreen(br.x, br.y);
+      if (x < -50 || x > canvas.width + 50) continue;
+      br.anim += 0.03;
+      const pulse = Math.sin(br.anim) * 3;
+      // Outer glow
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      const glow = ctx.createRadialGradient(x, y, br.r - 5, x, y, br.r + 15);
+      glow.addColorStop(0, 'rgba(255,215,0,0.4)');
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, br.r + 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // Ring
+      ctx.strokeStyle = COL_BOOST;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(x, y, br.r + pulse, 0, Math.PI * 2);
+      ctx.stroke();
+      // Arrow inside
+      ctx.fillStyle = COL_BOOST;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(x + 8, y);
+      ctx.lineTo(x - 4, y - 6);
+      ctx.lineTo(x - 4, y + 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -870,6 +1145,10 @@
 
       ctx.save();
       drawFinish();
+      drawPlatforms();
+      drawJumpPads();
+      drawSpikes();
+      drawBoostRings();
       drawTrail();
       drawHooks();
       drawRope();
