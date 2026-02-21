@@ -530,7 +530,7 @@
         holeComplete = true;
         ballMoving = false;
         scores.push(strokesThisHole);
-        totalStrokes += 0; // already counted
+        // strokesThisHole already counted in totalStrokes
         const h = holes[currentHole];
         const diff = strokesThisHole - h.par;
         let label = '';
@@ -700,7 +700,7 @@
     messageEl.textContent = 'Final Score: ' + totalStrokes + ' (' + diffStr + ')';
 
     // Submit to leaderboard
-    if (window.HallOfFame) {
+    if (totalStrokes > 0 && window.HallOfFame) {
       window.HallOfFame.submit('golf', totalStrokes);
     }
   }
@@ -725,6 +725,6 @@
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=3"></script>
 </body>
 </html>

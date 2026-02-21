@@ -35,7 +35,7 @@
 <div class="msg" id="msg">Press SPACE or click to start running!</div>
 <script>
 function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
-function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+function _sb(k,v){if(window.HallOfFame){window.HallOfFame.setBest(k,v)}else{localStorage.setItem(k,v)}}
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
@@ -65,7 +65,11 @@ let lastTime, jumpHoldTime, jumpHeld;
 let lastObstacleX, nextMilestone;
 let ducking;
 
-highScore = parseInt(_gb('dinoBest', '0'));
+// Load high score after fame.js is ready
+highScore = 0;
+function _loadHighScore() { highScore = parseInt(_gb('dinoBest', '0')); }
+_loadHighScore();
+window.addEventListener('load', _loadHighScore);
 
 function init() {
   dino = {
@@ -701,6 +705,6 @@ draw();
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=3"></script>
 </body>
 </html>

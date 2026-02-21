@@ -34,7 +34,7 @@
     display: block;
     border: 2px solid #2a2a4a;
     border-radius: 12px;
-    background: #0f0f1a;
+    background: #1a1a2e;
   }
 
   /* HUD above canvas */
@@ -648,7 +648,7 @@ function render(dt) {
   }
 
   // Clear
-  ctx.fillStyle = '#0f0f1a';
+  ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(-5, -5, W + 10, H + 10);
 
   drawBackground();
@@ -821,7 +821,7 @@ document.addEventListener('keydown', (e) => {
 updateHearts();
 
 // Initial background render
-ctx.fillStyle = '#0f0f1a';
+ctx.fillStyle = '#1a1a2e';
 ctx.fillRect(0, 0, W, H);
 drawBackground();
 
@@ -832,6 +832,6 @@ frameId = requestAnimationFrame(gameLoop);
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=3"></script>
 </body>
 </html>

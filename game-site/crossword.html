@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crossword Puzzle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+a.back{position:fixed;top:18px;left:18px;color:#aaa;text-decoration:none;font-size:1.1rem;z-index:100;transition:color .2s;}
+a.back:hover{color:#00e5ff;}
+h1{font-size:2rem;margin:18px 0 6px;background:linear-gradient(135deg,#7b2ff7,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0;}
+.controls button,.diff-btn{background:#1a1a2e;border:2px solid #2a2a4a;color:#e0e0e0;padding:8px 18px;border-radius:8px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;font-size:.9rem;transition:border-color .2s,background .2s;}
+.controls button:hover,.diff-btn:hover{border-color:#7b2ff7;}
+.controls button.active,.diff-btn.active{border-color:#7b2ff7;background:#2a1a4e;color:#fff;}
+.timer{font-size:1.3rem;color:#00e5ff;margin:6px 0;font-variant-numeric:tabular-nums;}
+.penalty{color:#ff4757;font-size:.85rem;margin-left:8px;}
+.game-wrap{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-start;margin:10px auto;max-width:1100px;padding:0 12px;}
+.grid-container{position:relative;}
+.grid{display:inline-grid;gap:0;background:#2a2a4a;border:2px solid #2a2a4a;border-radius:6px;overflow:hidden;}
+.cell{width:46px;height:46px;position:relative;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:#e0e0e0;cursor:pointer;border:1px solid #2a2a4a;transition:background .15s;}
+.cell.black{background:#0a0a14;cursor:default;}
+.cell.white{background:#1a1a2e;}
+.cell.highlight-word{background:#2a1a4e;}
+.cell.highlight-current{background:#00e5ff33;box-shadow:inset 0 0 0 2px #00e5ff;}
+.cell .num{position:absolute;top:1px;left:3px;font-size:.6rem;color:#aaa;font-weight:400;}
+.cell input{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:none;outline:none;text-align:center;font-size:1.3rem;font-weight:700;color:#e0e0e0;font-family:'Segoe UI',Tahoma,sans-serif;text-transform:uppercase;caret-color:#00e5ff;cursor:pointer;padding:0;}
+.cell input::selection{background:#7b2ff744;}
+.cell.error input{color:#ff4757;}
+.cell.correct-word{background:#1a3a1a;}
+.clues-panel{display:flex;gap:20px;max-height:500px;}
+.clue-section{min-width:180px;max-width:250px;}
+.clue-section h3{color:#7b2ff7;margin-bottom:6px;font-size:1rem;border-bottom:1px solid #2a2a4a;padding-bottom:4px;}
+.clue-list{list-style:none;max-height:420px;overflow-y:auto;padding-right:6px;}
+.clue-list::-webkit-scrollbar{width:5px;}
+.clue-list::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+.clue-list::-webkit-scrollbar-track{background:transparent;}
+.clue-item{padding:4px 8px;border-radius:4px;cursor:pointer;font-size:.85rem;line-height:1.3;margin-bottom:2px;transition:background .15s;color:#ccc;}
+.clue-item:hover{background:#2a2a4a;}
+.clue-item.active{background:#7b2ff733;color:#fff;}
+.clue-item .clue-num{color:#00e5ff;font-weight:700;margin-right:4px;}
+.msg{margin:10px 0;font-size:1.2rem;min-height:1.8rem;text-align:center;}
+.msg.win{color:#00e5ff;text-shadow:0 0 12px #00e5ff55;}
+@media(max-width:700px){
+  .game-wrap{flex-direction:column;align-items:center;}
+  .clues-panel{flex-direction:column;max-height:none;}
+  .cell{width:38px;height:38px;font-size:1.1rem;}
+  .cell input{font-size:1.1rem;}
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back">&#8592; Back</a>
+<h1>Crossword Puzzle</h1>
+<div class="controls" id="diffBtns">
+  <button class="diff-btn" data-diff="easy">Easy (5x5)</button>
+  <button class="diff-btn active" data-diff="medium">Medium (7x7)</button>
+  <button class="diff-btn" data-diff="hard">Hard (9x9)</button>
+</div>
+<div class="controls">
+  <button onclick="newPuzzle()">New Puzzle</button>
+  <button onclick="checkPuzzle()">Check</button>
+  <button onclick="revealWord()">Reveal Word (+30s)</button>
+</div>
+<div class="timer" id="timer">0:00</div>
+<div class="msg" id="msg"></div>
+<div class="game-wrap">
+  <div class="grid-container">
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="clues-panel">
+    <div class="clue-section"><h3>Across</h3><ul class="clue-list" id="acrossClues"></ul></div>
+    <div class="clue-section"><h3>Down</h3><ul class="clue-list" id="downClues"></ul></div>
+  </div>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+<script>
+"use strict";
+const WORDS=[
+["ACE","Top card or pilot"],["ACT","Perform on stage"],["ADD","Sum numbers"],["AGE","Years lived"],["AID","Help or assist"],
+["AIM","Point toward target"],["AIR","What we breathe"],["ALE","Type of beer"],["ALL","Everything"],["AND","Also, in addition"],
+["ANT","Small insect"],["APE","Large primate"],["ARC","Curved line"],["ARE","Verb of being"],["ARK","Noah's boat"],
+["ARM","Body limb"],["ART","Creative expression"],["ATE","Past tense of eat"],["AWE","Wonder and amazement"],["AXE","Chopping tool"],
+["BAD","Not good"],["BAG","Carry items in this"],["BAN","Prohibit"],["BAR","Pub or rod"],["BAT","Flying mammal"],
+["BED","Sleep on this"],["BET","Wager"],["BIG","Large"],["BIT","Small piece"],["BOW","Bend in respect"],
+["BOX","Container"],["BOY","Young male"],["BUG","Insect or error"],["BUS","Public transport"],["BUT","However"],
+["BUY","Purchase"],["CAB","Taxi"],["CAN","Able to"],["CAP","Hat or lid"],["CAR","Automobile"],
+["CAT","Feline pet"],["COP","Police officer"],["COW","Farm animal"],["CRY","Weep or shout"],["CUP","Drinking vessel"],
+["CUT","Slice"],["DAD","Father"],["DAM","Water barrier"],["DAY","24 hours"],["DIG","Excavate"],
+["DIM","Not bright"],["DIP","Submerge briefly"],["DOG","Canine pet"],["DOT","Small point"],["DRY","Not wet"],
+["DUE","Owed"],["DUG","Past tense of dig"],["EAR","Hearing organ"],["EAT","Consume food"],["EEL","Snake-like fish"],
+["EGG","Laid by hen"],["ELF","Mythical small being"],["ELM","Type of tree"],["END","Finish"],["ERA","Time period"],
+["EVE","Night before"],["EWE","Female sheep"],["EYE","Organ of sight"],["FAN","Cooling device"],["FAR","Distant"],
+["FAT","Not thin"],["FAX","Send document by phone"],["FED","Past of feed"],["FEW","Not many"],["FIG","Sweet fruit"],
+["FIN","Fish appendage"],["FIT","In good shape"],["FIX","Repair"],["FLY","Travel through air"],["FOG","Thick mist"],
+["FOR","In favor of"],["FOX","Cunning animal"],["FUN","Enjoyment"],["FUR","Animal hair"],["GAP","Opening or space"],
+["GAS","Fuel or vapor"],["GEM","Precious stone"],["GET","Obtain"],["GUM","Chewing candy"],["GUN","Firearm"],
+["GUT","Stomach area"],["GUY","Man or fellow"],["GYM","Exercise place"],["HAD","Past of have"],["HAM","Cured meat"],
+["HAS","Possesses"],["HAT","Head covering"],["HEN","Female chicken"],["HID","Concealed"],["HIM","Male pronoun"],
+["HIP","Body joint"],["HIT","Strike"],["HOG","Pig"],["HOP","Small jump"],["HOT","High temperature"],
+["HOW","In what way"],["HUB","Center point"],["HUG","Embrace"],["HUM","Sing with lips closed"],["HUT","Small shelter"],
+["ICE","Frozen water"],["ILL","Sick"],["INK","Pen fluid"],["INN","Small hotel"],["ION","Charged atom"],
+["IRE","Anger"],["IVY","Climbing plant"],["JAB","Quick punch"],["JAM","Fruit preserve"],["JAR","Glass container"],
+["JAW","Mouth bone"],["JET","Fast plane"],["JOB","Employment"],["JOG","Slow run"],["JOT","Write quickly"],
+["JOY","Happiness"],["JUG","Pitcher"],["KEY","Opens locks"],["KID","Child"],["KIT","Set of tools"],
+["LAB","Science room"],["LAP","Circuit of track"],["LAW","Legal rule"],["LAY","Put down"],["LED","Past of lead"],
+["LEG","Walking limb"],["LET","Allow"],["LID","Cover for pot"],["LIE","Untruth"],["LIP","Edge of mouth"],
+["LOG","Tree trunk piece"],["LOT","Large amount"],["LOW","Not high"],["MAD","Angry or crazy"],["MAN","Adult male"],
+["MAP","Geographic chart"],["MAT","Floor covering"],["MIX","Combine"],["MOB","Rowdy crowd"],["MOM","Mother"],
+["MOP","Floor cleaner"],["MUD","Wet earth"],["MUG","Large cup"],["NAP","Short sleep"],["NET","Mesh fabric"],
+["NEW","Not old"],["NIT","Louse egg"],["NOD","Head gesture yes"],["NOR","And not"],["NOT","Negation"],
+["NOW","At this time"],["NUN","Religious woman"],["NUT","Hard-shelled fruit"],["OAK","Strong tree"],["OAR","Rowing tool"],
+["OAT","Cereal grain"],["ODD","Strange"],["OIL","Lubricant"],["OLD","Not young"],["ONE","Single"],
+["OPT","Choose"],["ORB","Sphere"],["ORE","Mineral deposit"],["OUR","Belonging to us"],["OUT","Not inside"],
+["OWE","Be in debt"],["OWL","Night bird"],["OWN","Possess"],["PAD","Cushion"],["PAN","Cooking vessel"],
+["PAT","Gentle touch"],["PAW","Animal foot"],["PAY","Give money"],["PEA","Small green veggie"],["PEG","Wooden pin"],
+["PEN","Writing tool"],["PET","Domestic animal"],["PIE","Baked pastry dish"],["PIG","Farm animal"],["PIN","Sharp fastener"],
+["PIT","Deep hole"],["POD","Seed case"],["POP","Burst or soda"],["POT","Cooking container"],["PUB","Drinking place"],
+["PUN","Play on words"],["PUP","Young dog"],["PUT","Place"],["RAG","Torn cloth"],["RAM","Male sheep"],
+["RAN","Past of run"],["RAP","Knock or music style"],["RAT","Rodent"],["RAW","Uncooked"],["RAY","Beam of light"],
+["RED","Color of blood"],["RIB","Chest bone"],["RID","Free from"],["RIG","Set up equipment"],["RIM","Edge of cup"],
+["RIP","Tear apart"],["ROB","Steal from"],["ROD","Thin stick"],["ROT","Decay"],["ROW","Line or paddle"],
+["RUB","Massage"],["RUG","Floor carpet"],["RUN","Move fast"],["RUT","Groove in road"],["SAD","Unhappy"],
+["SAP","Tree fluid"],["SAT","Past of sit"],["SAW","Cutting tool"],["SAY","Speak"],["SEA","Large body of water"],
+["SET","Group or place"],["SEW","Stitch fabric"],["SHE","Female pronoun"],["SIP","Drink slowly"],["SIS","Sister"],
+["SIT","Be seated"],["SIX","Number after five"],["SKI","Snow sport"],["SKY","Above the earth"],["SLY","Crafty"],
+["SOB","Cry hard"],["SOD","Grass turf"],["SON","Male child"],["SOP","Something soaked"],["SOT","Heavy drinker"],
+["SOW","Plant seeds"],["SOY","Bean sauce"],["SPA","Health resort"],["SPY","Secret agent"],["STY","Pig pen"],
+["SUB","Submarine or substitute"],["SUM","Total"],["SUN","Our star"],["TAB","Bill or label"],["TAG","Label"],
+["TAN","Brown from sun"],["TAP","Light knock"],["TAR","Black road substance"],["TAX","Government levy"],["TEA","Hot drink"],
+["TEN","Number after nine"],["THE","Common article"],["TIE","Fasten or neckwear"],["TIN","Metal container"],["TIP","End or gratuity"],
+["TOE","Foot digit"],["TON","Heavy weight"],["TOO","Also or excessive"],["TOP","Highest point"],["TOW","Pull vehicle"],
+["TOY","Plaything"],["TUB","Bathing vessel"],["TUG","Pull hard"],["TWO","Number after one"],["URN","Decorative vase"],
+["USE","Employ or utilize"],["VAN","Large vehicle"],["VAT","Large tank"],["VET","Animal doctor"],["VIA","By way of"],
+["VOW","Solemn promise"],["WAR","Armed conflict"],["WAX","Candle material"],["WAY","Path or method"],["WEB","Spider creation"],
+["WED","Marry"],["WET","Not dry"],["WHO","Which person"],["WIG","Fake hair"],["WIN","Achieve victory"],
+["WIT","Humor or cleverness"],["WOE","Grief or sorrow"],["WOK","Asian cooking pan"],["WON","Past of win"],["WOW","Exclamation"],
+["YAK","Tibetan ox"],["YAM","Sweet potato"],["YAW","Veer off course"],["YEN","Japanese currency"],["YES","Affirmative"],
+["YET","Still or however"],["YEW","Evergreen tree"],["ZAP","Hit with energy"],["ZEN","Buddhist meditation"],["ZIP","Close a fastener"],
+["ZOO","Animal park"],
+["ABLE","Capable"],["ALSO","In addition"],["AREA","Region"],["ARMY","Military force"],["AUNT","Parent's sister"],
+["BABY","Infant"],["BACK","Rear side"],["BAKE","Cook in oven"],["BALL","Round toy"],["BAND","Music group"],
+["BANK","Money institution"],["BARE","Uncovered"],["BARK","Tree skin or dog sound"],["BARN","Farm building"],["BASE","Foundation"],
+["BATH","Wash in tub"],["BEAD","Small round object"],["BEAM","Ray of light"],["BEAN","Legume"],["BEAR","Large furry animal"],
+["BEAT","Hit repeatedly"],["BEEN","Past participle of be"],["BELL","Makes ringing sound"],["BELT","Waist band"],["BEND","Curve"],
+["BEST","Most excellent"],["BIKE","Two-wheeled vehicle"],["BIRD","Feathered animal"],["BITE","Use teeth"],["BLOW","Expel air"],
+["BLUE","Sky color"],["BOAT","Water vessel"],["BODY","Physical form"],["BOLD","Brave and daring"],["BOLT","Metal fastener"],
+["BOMB","Explosive"],["BOND","Connection"],["BONE","Skeleton part"],["BOOK","Reading material"],["BOOT","Footwear"],
+["BORE","Be dull or drill"],["BORN","Brought into life"],["BOSS","Person in charge"],["BOWL","Round dish"],["BURN","On fire"],
+["CAGE","Animal enclosure"],["CAKE","Sweet dessert"],["CALM","Peaceful"],["CAME","Past of come"],["CAMP","Outdoor living"],
+["CAPE","Sleeveless cloak"],["CARD","Paper rectangle"],["CARE","Be concerned"],["CART","Wheeled carrier"],["CASE","Container or instance"],
+["CASH","Money"],["CAST","Throw or actors"],["CAVE","Underground chamber"],["CHIP","Small piece"],["CITY","Urban area"],
+["CLAM","Shellfish"],["CLAP","Applaud"],["CLAY","Moldable earth"],["CLIP","Cut or fastener"],["CLUB","Organization or stick"],
+["CLUE","Hint"],["COAL","Black fuel"],["COAT","Outer garment"],["CODE","Secret writing"],["COIN","Metal money"],
+["COLD","Low temperature"],["COMB","Hair tool"],["COME","Move toward"],["COOK","Prepare food"],["COOL","Slightly cold"],
+["COPE","Deal with"],["COPY","Duplicate"],["CORD","Rope or wire"],["CORE","Center"],["CORK","Bottle stopper"],
+["CORN","Cereal grain"],["COST","Price"],["COZY","Warm and snug"],["CREW","Team of workers"],["CROP","Farm produce"],
+["CROW","Black bird"],["CUBE","3D square"],["CURE","Heal illness"],["CURL","Spiral shape"],["DALE","Valley"],
+["DARE","Challenge"],["DARK","No light"],["DART","Pointed missile"],["DATA","Information"],["DATE","Calendar day"],
+["DAWN","Sunrise"],["DAYS","Plural of day"],["DEAD","Not alive"],["DEAF","Cannot hear"],["DEAL","Agreement"],
+["DEAR","Beloved"],["DEBT","Money owed"],["DECK","Ship floor"],["DEED","Action or document"],["DEEM","Consider"],
+["DEEP","Far down"],["DEER","Forest animal"],["DENY","Refuse to admit"],["DESK","Work table"],["DIAL","Turn to select"],
+["DICE","Gaming cubes"],["DIET","Food regimen"],["DIRT","Soil or grime"],["DISH","Plate or food"],["DISK","Flat circle"],
+["DOCK","Ship landing"],["DOES","Performs"],["DOME","Rounded roof"],["DONE","Finished"],["DOOM","Terrible fate"],
+["DOOR","Room entrance"],["DOSE","Medicine amount"],["DOWN","Lower direction"],["DRAG","Pull along"],["DRAW","Make a picture"],
+["DRIP","Fall in drops"],["DROP","Let fall"],["DRUM","Percussion instrument"],["DUAL","Double"],["DUCK","Water bird"],
+["DUEL","Two-person fight"],["DULL","Not sharp or boring"],["DUMP","Discard"],["DUNE","Sand hill"],["DUSK","Twilight"],
+["DUST","Fine particles"],["DUTY","Obligation"],["EACH","Every one"],["EARN","Get by working"],["EASE","Comfort"],
+["EAST","Sunrise direction"],["EASY","Not difficult"],["EDGE","Border"],["EDIT","Revise text"],["ELSE","Otherwise"],
+["EMIT","Send out"],["EPIC","Grand story"],["EVEN","Level or also"],["EVER","At any time"],["EVIL","Wicked"],
+["EXAM","Test"],["EXIT","Way out"],["FACE","Front of head"],["FACT","Truth"],["FADE","Lose color"],
+["FAIL","Not succeed"],["FAIR","Just or carnival"],["FAKE","Not real"],["FALL","Drop down"],["FAME","Being well known"],
+["FANG","Sharp tooth"],["FARM","Grow crops here"],["FAST","Quick"],["FATE","Destiny"],["FEAR","Be afraid"],
+["FEED","Give food"],["FEEL","Touch or emotion"],["FELL","Past of fall"],["FELT","Past of feel"],["FERN","Leafy plant"],
+["FILE","Document or tool"],["FILL","Make full"],["FILM","Movie"],["FIND","Discover"],["FINE","Okay or penalty"],
+["FIRE","Burning flames"],["FIRM","Company or solid"],["FISH","Water creature"],["FIST","Clenched hand"],["FLAG","National banner"],
+["FLAT","Level surface"],["FLAW","Defect"],["FLEE","Run away"],["FLEW","Past of fly"],["FLIP","Turn over"],
+["FLOW","Move smoothly"],["FOAM","Frothy mass"],["FOLD","Bend over"],["FOLK","People"],["FOND","Affectionate"],
+["FOOD","What we eat"],["FOOL","Silly person"],["FOOT","Lower limb end"],["FORK","Eating utensil"],["FORM","Shape"],
+["FORT","Military structure"],["FOUL","Unfair or smelly"],["FOUR","Number after three"],["FREE","No cost or liberty"],["FROM","Starting point"],
+["FUEL","Energy source"],["FULL","No room left"],["FUME","Smoke or be angry"],["FUND","Money source"],["FURY","Intense anger"],
+["FUSE","Safety device"],["GAIN","Acquire"],["GALE","Strong wind"],["GAME","Contest or play"],["GANG","Group"],
+["GASH","Deep cut"],["GATE","Fence door"],["GAVE","Past of give"],["GAZE","Stare"],["GEAR","Equipment"],
+["GIFT","Present"],["GIST","Main point"],["GIVE","Hand over"],["GLAD","Happy"],["GLOW","Emit light"],
+["GLUE","Adhesive"],["GNAW","Chew persistently"],["GOAT","Farm animal with horns"],["GOES","Travels"],["GOLD","Precious yellow metal"],
+["GOLF","Club and ball sport"],["GONE","Left or departed"],["GOOD","Positive quality"],["GRAB","Seize quickly"],["GRAY","Between black and white"],
+["GREW","Past of grow"],["GRID","Network of lines"],["GRIM","Stern or harsh"],["GRIN","Wide smile"],["GRIP","Hold tightly"],
+["GROW","Get bigger"],["GULF","Large bay"],["GURU","Expert teacher"],["GUST","Sudden wind"],["GUTS","Courage"],
+["HACK","Cut roughly"],["HAIL","Ice rain"],["HAIR","Head covering"],["HALE","Healthy"],["HALF","Fifty percent"],
+["HALL","Large room"],["HALT","Stop"],["HAND","End of arm"],["HANG","Suspend"],["HARD","Not soft"],
+["HARE","Fast rabbit"],["HARM","Damage"],["HARP","String instrument"],["HASTE","Speed urgency"],["HATE","Despise"],
+["HAUL","Drag or carry"],["HAVE","Possess"],["HAZE","Light fog"],["HEAD","Top of body"],["HEAL","Cure"],
+["HEAP","Pile"],["HEAR","Use ears"],["HEAT","Warmth"],["HEEL","Back of foot"],["HELD","Past of hold"],
+["HELP","Assist"],["HERB","Cooking plant"],["HERD","Group of animals"],["HERE","In this place"],["HERO","Brave person"],
+["HIDE","Conceal"],["HIGH","Tall or elevated"],["HIKE","Long walk"],["HILL","Small mountain"],["HINT","Clue"],
+["HIRE","Employ"],["HOLD","Grasp"],["HOLE","Opening"],["HOME","Where you live"],["HOOD","Head covering"],
+["HOOK","Curved metal"],["HOPE","Wish for"],["HORN","Animal growth or instrument"],["HOSE","Flexible tube"],["HOST","Party giver"],
+["HOUR","Sixty minutes"],["HOWL","Wolf cry"],["HUGE","Very large"],["HULL","Ship body"],["HUMP","Rounded bump"],
+["HUNG","Past of hang"],["HUNT","Search for prey"],["HURT","Cause pain"],["HYMN","Religious song"],["ICON","Symbol or image"],
+["IDEA","Thought"],["IDLE","Not active"],["INTO","Moving inside"],["IRON","Metal or press clothes"],["ISLE","Small island"],
+["ITEM","Single thing"],["JACK","Lifting device"],["JAIL","Prison"],["JAZZ","Music genre"],["JEAN","Denim fabric"],
+["JEER","Mock"],["JEST","Joke"],["JOBS","Employment positions"],["JOIN","Connect"],["JOKE","Funny story"],
+["JOLT","Sudden shake"],["JUMP","Leap"],["JUNE","Summer month"],["JUNK","Trash"],["JURY","Trial judges"],
+["JUST","Fair or exactly"],["KEEN","Eager"],["KEEP","Hold onto"],["KELP","Seaweed"],["KEPT","Past of keep"],
+["KICK","Strike with foot"],["KIDS","Children"],["KILL","End life"],["KIND","Gentle or type"],["KING","Male monarch"],
+["KISS","Lip touch"],["KITE","Flying toy"],["KNEE","Leg joint"],["KNEW","Past of know"],["KNIT","Make with yarn"],
+["KNOB","Round handle"],["KNOT","Tied rope"],["KNOW","Have knowledge"],["LACE","Delicate fabric"],["LACK","Be without"],
+["LAID","Past of lay"],["LAKE","Body of water"],["LAMB","Young sheep"],["LAME","Unable to walk"],["LAMP","Light source"],
+["LAND","Ground or arrive"],["LANE","Narrow road"],["LARK","Songbird or adventure"],["LASH","Eyelash or whip"],["LAST","Final"],
+["LATE","Not on time"],["LAWN","Grass yard"],["LAZY","Not energetic"],["LEAD","Go first or metal"],["LEAF","Tree part"],
+["LEAK","Drip through hole"],["LEAN","Thin or rest against"],["LEAP","Big jump"],["LEFT","Opposite of right"],["LEND","Loan"],
+["LENS","Optical glass"],["LESS","Smaller amount"],["LIAR","Untruthful person"],["LICK","Tongue action"],["LIFE","Being alive"],
+["LIFT","Raise up"],["LIKE","Enjoy or similar"],["LIMB","Arm or leg"],["LIME","Green citrus"],["LIMP","Walk unevenly"],
+["LINE","Long mark"],["LINK","Connection"],["LION","Big cat"],["LIST","Written items"],["LIVE","Be alive"],
+["LOAD","Cargo"],["LOAF","Bread shape"],["LOAN","Lend money"],["LOCK","Security device"],["LOFT","Upper room"],
+["LOGO","Company symbol"],["LONE","Single and alone"],["LONG","Extended"],["LOOK","See or glance"],["LOOP","Circular shape"],
+["LORD","Noble title"],["LOSE","Not win"],["LOSS","Act of losing"],["LOST","Cannot find way"],["LOUD","High volume"],
+["LOVE","Deep affection"],["LUCK","Good fortune"],["LUMP","Raised mass"],["LUNG","Breathing organ"],["LURE","Entice"],
+["LURK","Hide in wait"],["LUSH","Green and thick"],["MACE","Spray weapon"],["MADE","Created"],["MAID","Housekeeper"],
+["MAIL","Postal delivery"],["MAIN","Most important"],["MAKE","Create"],["MALE","Man or boy"],["MALL","Shopping center"],
+["MALT","Grain for brewing"],["MANE","Horse hair"],["MANY","A lot"],["MARE","Female horse"],["MARK","Sign or stain"],
+["MASK","Face covering"],["MASS","Large amount"],["MAST","Ship pole"],["MATE","Friend or partner"],["MAZE","Complex path"],
+["MEAL","Food occasion"],["MEAN","Unkind or average"],["MEAT","Animal flesh"],["MEET","Come together"],["MELT","Become liquid"],
+["MEMO","Short message"],["MEND","Repair"],["MENU","Food list"],["MESH","Net material"],["MESS","Disorder"],
+["MILD","Gentle or not spicy"],["MILE","Distance unit"],["MILK","White drink"],["MILL","Grinding factory"],["MIND","Brain or care about"],
+["MINE","Belonging to me"],["MINT","Herb or coin factory"],["MISS","Fail to hit"],["MIST","Light fog"],["MOAT","Castle water ditch"],
+["MODE","Method or setting"],["MOLD","Shape or fungus"],["MOLE","Burrowing animal"],["MONK","Religious man"],["MOOD","Emotional state"],
+["MOON","Night light"],["MOOR","Open heath"],["MOPE","Be gloomy"],["MORE","Greater amount"],["MOSS","Green growth"],
+["MOST","Greatest amount"],["MOTH","Night butterfly"],["MOVE","Change position"],["MUCH","Great quantity"],["MULE","Hybrid animal"],
+["MUSE","Think deeply"],["MUST","Have to"],["MYTH","Legend"],["NAIL","Finger tip or fastener"],["NAME","What you are called"],
+["NAVY","Sea military"],["NEAR","Close by"],["NEAT","Tidy"],["NECK","Body part"],["NEED","Require"],
+["NEST","Bird home"],["NEWS","Current events"],["NEXT","Following"],["NICE","Pleasant"],["NINE","Number after eight"],
+["NODE","Connection point"],["NONE","Zero amount"],["NOON","Midday"],["NORM","Standard"],["NOSE","Smell organ"],
+["NOTE","Written message"],["NOUN","Person place or thing"],["ODDS","Probability"],["OINK","Pig sound"],["ONCE","One time"],
+["ONLY","Sole"],["ONTO","On top of"],["OPEN","Not closed"],["ORAL","Spoken"],["OVEN","Baking appliance"],
+["OVER","Above"],["PACE","Speed of walking"],["PACK","Bundle"],["PAGE","Book leaf"],["PAID","Past of pay"],
+["PAIL","Bucket"],["PAIN","Hurt feeling"],["PAIR","Two of a kind"],["PALE","Light colored"],["PALM","Hand center or tree"],
+["PANE","Window glass"],["PARK","Recreation area"],["PART","Piece"],["PASS","Go by"],["PAST","Previous time"],
+["PATH","Walking trail"],["PAVE","Cover with asphalt"],["PEAK","Mountain top"],["PEAR","Fruit"],["PEEL","Remove skin"],
+["PIER","Dock or jetty"],["PILE","Heap"],["PINE","Evergreen tree"],["PINK","Light red"],["PIPE","Tube"],
+["PLAN","Strategy"],["PLAY","Have fun"],["PLEA","Urgent request"],["PLOD","Walk heavily"],["PLOT","Story plan or land"],
+["PLOW","Farm tool"],["PLUG","Stopper or advertise"],["PLUM","Purple fruit"],["PLUS","In addition"],["POEM","Verse writing"],
+["POET","Verse writer"],["POKE","Prod"],["POLE","Long stick"],["POLL","Survey or vote"],["POLO","Horse sport"],
+["POND","Small lake"],["POOL","Swimming place"],["POOR","Not wealthy"],["POPE","Catholic leader"],["PORE","Skin opening"],
+["PORK","Pig meat"],["PORT","Harbor"],["POSE","Position or pretend"],["POST","Mail or pole"],["POUR","Flow liquid"],
+["PRAY","Talk to God"],["PROP","Support"],["PULP","Soft mass"],["PUMP","Move fluid"],["PURE","Clean or unmixed"],
+["PUSH","Shove"],["QUIZ","Short test"],["RACE","Speed contest"],["RACK","Storage shelf"],["RAFT","Flat boat"],
+["RAGE","Intense anger"],["RAID","Surprise attack"],["RAIL","Fence bar"],["RAIN","Water from sky"],["RAKE","Garden tool"],
+["RAMP","Inclined surface"],["RANG","Past of ring"],["RANK","Position in order"],["RARE","Uncommon"],["RASH","Skin irritation"],
+["RATE","Speed or price"],["RAVE","Praise wildly"],["READ","Look at words"],["REAL","Genuine"],["REAP","Harvest"],
+["REAR","Back part"],["REEF","Coral ridge"],["REEL","Spool"],["RELY","Depend on"],["RENT","Pay for use"],
+["REST","Relax"],["RICH","Wealthy"],["RIDE","Travel on"],["RIND","Outer skin of fruit"],["RING","Circular band"],
+["RINK","Ice skating area"],["RIOT","Violent protest"],["RISE","Go up"],["RISK","Danger"],["ROAD","Paved way"],
+["ROAM","Wander"],["ROAR","Loud sound"],["ROBE","Long garment"],["ROCK","Stone or music genre"],["RODE","Past of ride"],
+["ROLE","Part to play"],["ROLL","Turn over"],["ROOF","Top of building"],["ROOM","Space in building"],["ROOT","Plant base"],
+["ROPE","Thick cord"],["ROSE","Red flower"],["RUDE","Impolite"],["RUIN","Destroy"],["RULE","Regulation"],
+["RUSH","Hurry"],["RUST","Iron corrosion"],["SAFE","Secure"],["SAGE","Wise person or herb"],["SAID","Past of say"],
+["SAIL","Travel by wind"],["SAKE","Purpose or rice wine"],["SALE","Discount event"],["SALT","Seasoning"],["SAME","Identical"],
+["SAND","Beach grains"],["SANE","Mentally sound"],["SANG","Past of sing"],["SANK","Past of sink"],["SAVE","Rescue or keep"],
+["SEAL","Close tight or animal"],["SEAM","Stitched join"],["SEED","Plant embryo"],["SEEK","Search for"],["SELF","One's own person"],
+["SELL","Exchange for money"],["SEND","Dispatch"],["SHED","Small building"],["SHIN","Front of lower leg"],["SHIP","Large vessel"],
+["SHOP","Store"],["SHOT","Fired bullet"],["SHOW","Display"],["SHUT","Close"],["SICK","Ill"],
+["SIDE","Edge"],["SIFT","Strain through"],["SIGH","Deep breath out"],["SIGN","Symbol or gesture"],["SILK","Smooth fabric"],
+["SING","Make music vocally"],["SINK","Basin or go down"],["SIZE","How big or small"],["SKIT","Short comedy"],["SLAB","Thick flat piece"],
+["SLAM","Shut forcefully"],["SLAP","Hit with palm"],["SLED","Snow vehicle"],["SLID","Past of slide"],["SLIM","Thin"],
+["SLIP","Slide accidentally"],["SLOT","Narrow opening"],["SLOW","Not fast"],["SLUG","Shell-less snail"],["SNAP","Break suddenly"],
+["SNOW","White precipitation"],["SNUG","Warm and tight"],["SOAK","Saturate with water"],["SOAP","Cleaning agent"],["SOAR","Fly high"],
+["SOCK","Foot garment"],["SODA","Fizzy drink"],["SOFA","Couch"],["SOFT","Not hard"],["SOIL","Earth for planting"],
+["SOLD","Past of sell"],["SOLE","Only one or shoe bottom"],["SOME","A few"],["SONG","Musical piece"],["SOON","Before long"],
+["SORE","Painful spot"],["SORT","Arrange by type"],["SOUL","Spirit"],["SOUR","Tasting acidic"],["SOWN","Planted"],
+["SPAN","Distance across"],["SPAR","Practice boxing"],["SPEC","Specification"],["SPED","Past of speed"],["SPIN","Rotate"],
+["SPIT","Expel from mouth"],["SPOT","Location"],["SPUR","Urge on"],["STAB","Pierce with knife"],["STAR","Celestial body"],
+["STAY","Remain"],["STEM","Plant stalk"],["STEP","Footfall"],["STEW","Meat soup"],["STIR","Mix around"],
+["STOP","Cease"],["STUB","Short end"],["STUD","Metal knob"],["STUN","Shock"],["SWAY","Move side to side"],
+["SWIM","Move in water"],["TABS","Bills or labels"],["TACK","Small nail"],["TACT","Diplomacy"],["TAIL","Animal rear part"],
+["TAKE","Grab"],["TALE","Story"],["TALK","Speak"],["TALL","High stature"],["TAME","Domesticated"],
+["TANK","Large container"],["TAPE","Adhesive strip"],["TASK","Job to do"],["TEAM","Group working together"],["TEAR","Rip or eye drop"],
+["TELL","Inform"],["TEND","Take care of"],["TENT","Camping shelter"],["TERM","Time period or word"],["TEST","Examination"],
+["TEXT","Written words"],["THAN","Comparison word"],["THAT","Demonstrative pronoun"],["THEM","Those people"],["THEN","After that"],
+["THEY","Those people"],["THIN","Not thick"],["THIS","Nearby thing"],["THORN","Sharp plant spike"],["TICK","Clock sound or insect"],
+["TIDE","Ocean rise and fall"],["TIDY","Neat and orderly"],["TIED","Fastened"],["TIER","Level or row"],["TILE","Floor piece"],
+["TILL","Until"],["TILT","Lean to one side"],["TIME","Duration measure"],["TINY","Very small"],["TIRE","Lose energy"],
+["TOAD","Warty amphibian"],["TOIL","Hard work"],["TOLD","Past of tell"],["TOLL","Bell ring or fee"],["TOMB","Burial place"],
+["TONE","Sound quality"],["TOOK","Past of take"],["TOOL","Work implement"],["TOPS","Highest points"],["TORE","Past of tear"],
+["TORN","Ripped"],["TOUR","Journey around"],["TOWN","Small city"],["TRAP","Snare"],["TRAY","Flat carrier"],
+["TREE","Tall woody plant"],["TREK","Long journey"],["TRIM","Cut neatly"],["TRIO","Group of three"],["TRIP","Journey"],
+["TROT","Slow run"],["TRUE","Not false"],["TUBE","Hollow cylinder"],["TUCK","Push edge in"],["TUNA","Large ocean fish"],
+["TUNE","Melody"],["TURN","Rotate"],["TWIN","One of two"],["TYPE","Kind or keyboard"],["UGLY","Not attractive"],
+["UNDO","Reverse action"],["UNIT","Single quantity"],["UPON","On top of"],["URGE","Strongly encourage"],["USED","Not new"],
+["USER","Person who uses"],["VAIN","Conceited"],["VALE","Valley"],["VANE","Wind indicator"],["VARY","Change"],
+["VASE","Flower container"],["VAST","Enormous"],["VEIL","Face covering"],["VEIN","Blood vessel"],["VENT","Air opening"],
+["VERB","Action word"],["VERY","Extremely"],["VEST","Sleeveless top"],["VIBE","Feeling or mood"],["VIEW","Scenery or opinion"],
+["VINE","Climbing plant"],["VISA","Travel permit"],["VOID","Empty space"],["VOLT","Electric unit"],["VOTE","Cast ballot"],
+["WADE","Walk through water"],["WAGE","Pay rate"],["WAIL","Cry loudly"],["WAIT","Stay put"],["WAKE","Stop sleeping"],
+["WALK","Move on foot"],["WALL","Room divider"],["WAND","Magic stick"],["WANT","Desire"],["WARD","Hospital section"],
+["WARM","Not cool"],["WARN","Alert to danger"],["WARP","Bend or twist"],["WART","Skin bump"],["WASH","Clean with water"],
+["WASP","Stinging insect"],["WAVE","Move hand or water"],["WEAK","Not strong"],["WEAR","Have on body"],["WEED","Unwanted plant"],
+["WEEK","Seven days"],["WEEP","Cry"],["WELD","Join metals"],["WELL","Water source or healthy"],["WENT","Past of go"],
+["WERE","Past of are"],["WEST","Sunset direction"],["WHAT","Which thing"],["WHEN","At what time"],["WHOM","Object pronoun"],
+["WICK","Candle string"],["WIDE","Broad"],["WIFE","Married woman"],["WILD","Untamed"],["WILL","Future tense helper"],
+["WILT","Droop"],["WILY","Crafty"],["WIND","Moving air"],["WINE","Grape drink"],["WING","Bird limb for flying"],
+["WINK","Close one eye"],["WIPE","Clean by rubbing"],["WIRE","Metal thread"],["WISE","Having wisdom"],["WISH","Desire"],
+["WITH","Alongside"],["WOKE","Past of wake"],["WOLF","Wild canine"],["WOOD","Tree material"],["WOOL","Sheep fiber"],
+["WORD","Language unit"],["WORE","Past of wear"],["WORK","Labor"],["WORM","Crawling creature"],["WORN","Used and old"],
+["WOVE","Past of weave"],["WRAP","Cover up"],["WREN","Small bird"],["YARD","Lawn area"],["YARN","Thread for knitting"],
+["YEAR","Twelve months"],["YELL","Shout loudly"],["YOGA","Exercise practice"],["YOKE","Wooden harness"],["YOUR","Belonging to you"],
+["ZEAL","Great enthusiasm"],["ZERO","Nothing"],["ZINC","Metallic element"],["ZONE","Area or region"],["ZOOM","Move fast"],
+["PLANT","Grows in soil"],["BRAIN","Thinking organ"],["CHAIR","Seat with back"],["DANCE","Move to music"],["EARLY","Before expected time"],
+["EARTH","Our planet"],["FLAME","Burning fire"],["GRACE","Elegance"],["GRAPE","Wine fruit"],["GUEST","Invited person"],
+["HEART","Blood pump organ"],["HOUSE","Place to live"],["JUICE","Fruit liquid"],["KNIFE","Cutting blade"],["LAUGH","Express amusement"],
+["LEARN","Gain knowledge"],["LIGHT","Illumination"],["MAGIC","Supernatural power"],["MARSH","Wetland"],["MIGHT","Power or maybe"],
+["MUSIC","Organized sound art"],["NIGHT","After sunset"],["OCEAN","Vast sea"],["PAINT","Color coating"],["PEACE","No conflict"],
+["PRIDE","Self-respect"],["QUEEN","Female monarch"],["REACH","Extend to"],["RIGHT","Correct direction"],["RIVER","Flowing water"],
+["ROUND","Circular shape"],["SAINT","Holy person"],["SEVEN","Number after six"],["SHADE","Partial darkness"],["SHARE","Give portion"],
+["SHEEP","Woolly animal"],["SHORE","Water edge"],["SIGHT","Vision"],["SLEEP","Rest at night"],["SMILE","Happy expression"],
+["SMOKE","Fire byproduct"],["SNAKE","Legless reptile"],["SOLAR","Of the sun"],["SOUND","Audible vibration"],["SPACE","Outer cosmos"],
+["SPOKE","Past of speak"],["SPOON","Eating utensil"],["STAGE","Theater platform"],["STAND","Be upright"],["STEAM","Hot water vapor"],
+["STEEL","Strong metal alloy"],["STONE","Hard rock"],["STORE","Shop"],["STORM","Severe weather"],["STORY","Narrative tale"],
+["STOVE","Cooking appliance"],["SUGAR","Sweet substance"],["SWEET","Sugary taste"],["SWORD","Blade weapon"],["TABLE","Furniture surface"],
+["THANK","Express gratitude"],["THEME","Central topic"],["THINK","Use the mind"],["THREE","Number after two"],["TIGER","Striped big cat"],
+["TOAST","Browned bread"],["TOWER","Tall structure"],["TRACK","Path or trail"],["TRADE","Buy and sell"],["TRAIL","Hiking path"],
+["TRAIN","Rail vehicle"],["TREAT","Special reward"],["TRICK","Deception"],["TROUT","Freshwater fish"],["TRUCK","Large vehicle"],
+["TRUST","Have faith in"],["TRUTH","Fact not fiction"],["TULIP","Spring flower"],["UPPER","Higher part"],["VAPOR","Gaseous state"],
+["VIDEO","Moving pictures"],["VIRUS","Infectious agent"],["VISIT","Go to see"],["VOCAL","Using voice"],["WASTE","Use carelessly"],
+["WATCH","Look at or timepiece"],["WATER","H2O"],["WHALE","Huge sea mammal"],["WHEAT","Bread grain"],["WHEEL","Round roller"],
+["WHERE","At which place"],["WHITE","Lightest color"],["WHOLE","Complete"],["WORLD","The Earth"],["WORSE","Less good"],
+["WOUND","Injury"],["WRITE","Put words on paper"],["YOUNG","Not old"],
+["BRIDGE","Structure over water"],["CASTLE","Fortified building"],["CHANGE","Make different"],["CHEESE","Dairy product"],
+["CIRCLE","Round shape"],["COFFEE","Morning drink"],["CORNER","Where walls meet"],["DESIGN","Creative plan"],["DINNER","Evening meal"],
+["DOCTOR","Medical professional"],["DRAGON","Mythical beast"],["ENERGY","Power or force"],["ENGINE","Motor"],["FAMILY","Related people"],
+["FINGER","Hand digit"],["FLOWER","Plant bloom"],["FOREST","Many trees"],["FROZEN","Turned to ice"],["FUTURE","Time to come"],
+["GARDEN","Plant area"],["GENTLE","Soft and kind"],["GUITAR","String instrument"],["HAMMER","Pounding tool"],["HEALTH","Wellness"],
+["ISLAND","Land in water"],["JUNGLE","Dense forest"],["KITTEN","Baby cat"],["LADDER","Climbing steps"],["LEMON","Yellow citrus"],
+["LESSON","Teaching session"],["LETTER","Written message"],["LISTEN","Hear attentively"],["MARKET","Place to buy goods"],["MIRROR","Reflective glass"],
+["MONKEY","Tree-climbing primate"],["MOTHER","Female parent"],["MUSEUM","Artifact building"],["NATURE","The natural world"],["NUMBER","Math figure"],
+["OFFICE","Work place"],["ORANGE","Citrus fruit"],["PARENT","Mother or father"],["PENCIL","Writing stick"],["PEOPLE","Human beings"],
+["PIRATE","Sea robber"],["PLANET","World in space"],["PLAYER","Game participant"],["POCKET","Clothing pouch"],["POISON","Toxic substance"],
+["POLICE","Law enforcement"],["POTATO","Root vegetable"],["PRINCE","Royal son"],["PRISON","Jail facility"],["PUZZLE","Brain teaser"],
+["RABBIT","Long-eared animal"],["RANDOM","Without pattern"],["REASON","Logical cause"],["RECORD","Store information"],["RESCUE","Save from danger"],
+["RIBBON","Decorative strip"],["ROCKET","Space vehicle"],["RUBBER","Elastic material"],["RUNNER","Person who runs"],["SAFETY","Being safe"],
+["SCHOOL","Learning place"],["SEASON","Time of year"],["SECRET","Hidden knowledge"],["SHADOW","Dark shape"],["SIGNAL","Communication sign"],
+["SILVER","Precious white metal"],["SIMPLE","Not complicated"],["SISTER","Female sibling"],["SMOOTH","Not rough"],["SPIDER","Eight-legged creature"],
+["SPIRIT","Soul or ghost"],["SPRING","Season after winter"],["SQUARE","Four equal sides"],["STATUE","Carved figure"],["STREAM","Small river"],
+["STREET","City road"],["STRONG","Having power"],["SUMMER","Warm season"],["SWITCH","Toggle device"],["SYMBOL","Representative sign"],
+["TEMPLE","Place of worship"],["THANKS","Gratitude"],["THIRTY","Three times ten"],["THROAT","Neck passage"],["TONGUE","Mouth organ"],
+["TRAVEL","Go on a journey"],["TROPHY","Victory award"],["TUNNEL","Underground passage"],["TURTLE","Shelled reptile"],["TWELVE","A dozen"],
+["VALLEY","Low land between hills"],["VIOLET","Purple flower"],["VISION","Ability to see"],["WALLET","Money holder"],["WINDOW","Wall opening"],
+["WINTER","Cold season"],["WONDER","Feel amazement"],["YELLOW","Bright warm color"],
+["AIRPORT","Plane terminal"],["BALLOON","Inflatable decoration"],["BLANKET","Bed covering"],["CABINET","Storage furniture"],
+["CAPTAIN","Ship leader"],["CHICKEN","Poultry bird"],["COLLECT","Gather together"],["COMPLEX","Complicated"],["CONTENT","Satisfied or material"],
+["COUNTRY","Nation"],["CRYSTAL","Clear mineral"],["CURTAIN","Window covering"],["DEFAULT","Standard setting"],["DIAMOND","Hardest gem"],
+["DOLPHIN","Smart sea mammal"],["DRAWING","Pencil art"],["EASTERN","From the east"],["EDITION","Published version"],["ELEMENT","Basic substance"],
+["EVENING","After afternoon"],["EXAMPLE","Instance"],["EXPLORE","Investigate new areas"],["FACTORY","Manufacturing plant"],["FANTASY","Imaginary world"],
+["FEATHER","Bird covering"],["FICTION","Made up story"],["FLOWERS","Plant blooms"],["FOREVER","For all time"],["FORTUNE","Wealth or luck"],
+["GARBAGE","Trash"],["GENERAL","Overall or army rank"],["GIRAFFE","Tall-necked animal"],["GLACIER","Ice river"],["GLASSES","Vision aids"],
+["GRAVITY","Pulling force"],["GREATER","More than"],["HALFWAY","Middle point"],["HARVEST","Gather crops"],["HIGHWAY","Major road"],
+["HISTORY","Past events"],["HOLIDAY","Day of celebration"],["HORIZON","Sky meets earth"],["HUNDRED","Ten times ten"],["IMAGINE","Picture mentally"],
+["INITIAL","First"],["JOURNEY","Long trip"],["KITCHEN","Cooking room"],["KINGDOM","Royal territory"],["LANTERN","Portable light"],
+["LEATHER","Animal skin material"],["LEOPARD","Spotted big cat"],["LIBERTY","Freedom"],["MACHINE","Mechanical device"],["MAILBOX","Letter receptacle"],
+["MANAGER","Person in charge"],["MASSAGE","Body rub"],["MILLION","Thousand thousands"],["MINERAL","Earth substance"],["MIRACLE","Amazing event"],
+["MISSING","Not found"],["MIXTURE","Blend"],["MORNING","Start of day"],["MYSTERY","Unsolved puzzle"],["NATURAL","From nature"],
+["NETWORK","Connected system"],["NOTHING","Zero"],["OCTOBER","Fall month"],["OPINION","Personal view"],["OUTDOOR","Outside"],
+["PACKAGE","Wrapped parcel"],["PANCAKE","Flat breakfast food"],["PANTHER","Black big cat"],["PATTERN","Repeated design"],["PENGUIN","Flightless seabird"],
+["PERFECT","Without flaw"],["PICTURE","Image"],["PILGRIM","Religious traveler"],["PITCHER","Pouring container"],["POPCORN","Movie snack"],
+["POPULAR","Well liked"],["PORTION","Part of whole"],["PRESENT","Gift or current"],["PRINTER","Paper output device"],["PROBLEM","Issue to solve"],
+["PROGRAM","Set of instructions"],["PROJECT","Planned task"],["PROMISE","Sworn word"],["PROTECT","Keep safe"],["PROTEIN","Body building nutrient"],
+["PUMPKIN","Orange gourd"],["PURPOSE","Reason for being"],["QUALITY","How good something is"],["QUARTER","One fourth"],["READING","Looking at text"],
+["REALITY","What is real"],["RECEIPT","Proof of purchase"],["REFLECT","Mirror or think"],["RESPECT","High regard"],["SAILING","Traveling by boat"],
+["SCIENCE","Study of nature"],["SERVING","Food portion"],["SHELTER","Protective cover"],["SILENCE","No sound"],["SIXTEEN","Number after fifteen"],
+["SOLDIER","Military person"],["SPONSOR","Financial backer"],["STADIUM","Sports arena"],["STATION","Stopping place"],["STOMACH","Digestive organ"],
+["SUBJECT","Topic"],["SUNRISE","Dawn light"],["SURFACE","Outside layer"],["TEACHER","Educator"],["THEATER","Performance venue"],
+["THOUGHT","Mental idea"],["THUNDER","Storm sound"],["TONIGHT","This evening"],["TOURIST","Vacation traveler"],["TROUBLE","Difficulty"],
+["TRUMPET","Brass instrument"],["UNIFORM","Matching outfit"],["UNKNOWN","Not known"],["VACCINE","Disease prevention"],["VEHICLE","Transport machine"],
+["VILLAGE","Small town"],["VINEGAR","Sour liquid"],["VOLCANO","Erupting mountain"],["WARNING","Danger notice"],["WEATHER","Climate conditions"],
+["WESTERN","From the west"],["WHISPER","Speak softly"],["WILDLIFE","Wild animals"],["WINNING","Being victorious"],["WRINKLE","Skin crease"]
+];
+
+const DIFF={easy:{size:5,minWords:4,maxWords:6,maxLen:5},medium:{size:7,minWords:6,maxWords:10,maxLen:7},hard:{size:9,minWords:8,maxWords:14,maxLen:9}};
+let difficulty='medium',grid=[],placed=[],clues={across:[],down:[]},gridSize=7;
+let selectedClue=null,selectedDir='across',selectedCells=[];
+let timerInterval=null,seconds=0,penalties=0,solved=false;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function getWordPool(){
+  const d=DIFF[difficulty];
+  const pool=WORDS.filter(w=>w[0].length<=d.maxLen&&w[0].length>=3);
+  return shuffle([...pool]);
+}
+
+function makeGrid(sz){return Array.from({length:sz},()=>Array.from({length:sz},()=>({letter:null,across:null,down:null,num:0})));}
+
+function canPlace(g,word,r,c,dir){
+  const sz=g.length,len=word.length;
+  const dr=dir==='down'?1:0,dc=dir==='across'?1:0;
+  if(r+dr*(len-1)>=sz||c+dc*(len-1)>=sz)return false;
+  // check cell before word is empty or wall
+  const br=r-dr,bc=c-dc;
+  if(br>=0&&bc>=0&&g[br][bc].letter!==null)return false;
+  // check cell after word is empty or wall
+  const ar=r+dr*len,ac=c+dc*len;
+  if(ar<sz&&ac<sz&&g[ar][ac].letter!==null)return false;
+
+  let intersections=0;
+  for(let i=0;i<len;i++){
+    const cr=r+dr*i,cc=c+dc*i;
+    const cell=g[cr][cc];
+    if(cell.letter!==null){
+      if(cell.letter!==word[i])return false;
+      // already used in same direction?
+      if(dir==='across'&&cell.across!==null)return false;
+      if(dir==='down'&&cell.down!==null)return false;
+      intersections++;
+    } else {
+      // check perpendicular neighbors don't create unwanted adjacency
+      if(dir==='across'){
+        if(cr>0&&g[cr-1][cc].letter!==null&&!willIntersect(g,cr-1,cc,word[i]))return false;
+        if(cr<sz-1&&g[cr+1][cc].letter!==null&&!willIntersect(g,cr+1,cc,word[i]))return false;
+      } else {
+        if(cc>0&&g[cr][cc-1].letter!==null&&!willIntersect(g,cr,cc-1,word[i]))return false;
+        if(cc<sz-1&&g[cr][cc+1].letter!==null&&!willIntersect(g,cr,cc+1,word[i]))return false;
+      }
+    }
+  }
+  return intersections;
+}
+
+function willIntersect(g,r,c,letter){return false;}
+
+function placeWord(g,word,r,c,dir,idx){
+  const dr=dir==='down'?1:0,dc=dir==='across'?1:0;
+  for(let i=0;i<word.length;i++){
+    const cr=r+dr*i,cc=c+dc*i;
+    g[cr][cc].letter=word[i];
+    if(dir==='across')g[cr][cc].across=idx;
+    else g[cr][cc].down=idx;
+  }
+}
+
+function removeWord(g,word,r,c,dir,idx){
+  const dr=dir==='down'?1:0,dc=dir==='across'?1:0;
+  for(let i=0;i<word.length;i++){
+    const cr=r+dr*i,cc=c+dc*i;
+    if(dir==='across'){
+      g[cr][cc].across=null;
+      if(g[cr][cc].down===null)g[cr][cc].letter=null;
+    } else {
+      g[cr][cc].down=null;
+      if(g[cr][cc].across===null)g[cr][cc].letter=null;
+    }
+  }
+}
+
+function generatePuzzle(){
+  const d=DIFF[difficulty];
+  const sz=d.size;
+  const pool=getWordPool();
+  let bestGrid=null,bestPlaced=[];
+
+  for(let attempt=0;attempt<40;attempt++){
+    const g=makeGrid(sz);
+    const pl=[];
+    const wp=shuffle([...pool]);
+
+    for(let wi=0;wi<wp.length&&pl.length<d.maxWords;wi++){
+      const [word,clue]=wp[wi];
+      if(pl.length===0){
+        // place first word across, near center
+        const row=Math.floor(sz/2);
+        const col=Math.max(0,Math.floor((sz-word.length)/2));
+        if(col+word.length<=sz){
+          placeWord(g,word,row,col,'across',0);
+          pl.push({word,clue,row,col,dir:'across'});
+        }
+        continue;
+      }
+      let bestPos=null,bestInt=-1;
+      const dirs=['across','down'];
+      for(const dir of dirs){
+        const dr=dir==='down'?1:0,dc=dir==='across'?1:0;
+        for(let r=0;r<sz;r++){
+          for(let c=0;c<sz;c++){
+            if(r+dr*(word.length-1)>=sz||c+dc*(word.length-1)>=sz)continue;
+            const ints=canPlace(g,word,r,c,dir);
+            if(ints>bestInt){
+              bestInt=ints;
+              bestPos={r,c,dir};
+            }
+          }
+        }
+      }
+      if(bestInt>0){
+        placeWord(g,word,bestPos.r,bestPos.c,bestPos.dir,pl.length);
+        pl.push({word,clue,row:bestPos.r,col:bestPos.c,dir:bestPos.dir});
+      }
+    }
+    if(pl.length>bestPlaced.length){
+      bestGrid=g.map(row=>row.map(cell=>({...cell})));
+      bestPlaced=[...pl];
+    }
+    if(pl.length>=d.maxWords)break;
+  }
+
+  if(!bestGrid||bestPlaced.length<d.minWords){
+    // fallback: try again
+    return generatePuzzle();
+  }
+
+  grid=bestGrid;
+  placed=bestPlaced;
+  gridSize=sz;
+  numberCells();
+}
+
+function numberCells(){
+  clues={across:[],down:[]};
+  let num=1;
+  const sz=gridSize;
+  for(let r=0;r<sz;r++){
+    for(let c=0;c<sz;c++){
+      const cell=grid[r][c];
+      if(cell.letter===null)continue;
+      let needsNum=false;
+      // check if start of across word
+      const isAcrossStart=cell.across!==null&&(c===0||grid[r][c-1].letter===null);
+      const isDownStart=cell.down!==null&&(r===0||grid[r-1][c].letter===null);
+      if(isAcrossStart||isDownStart){
+        cell.num=num;
+        if(isAcrossStart){
+          const p=placed.find(p=>p.dir==='across'&&p.row===r&&p.col===c);
+          if(p)clues.across.push({num,clue:p.clue,word:p.word,row:r,col:c,dir:'across'});
+        }
+        if(isDownStart){
+          const p=placed.find(p=>p.dir==='down'&&p.row===r&&p.col===c);
+          if(p)clues.down.push({num,clue:p.clue,word:p.word,row:r,col:c,dir:'down'});
+        }
+        num++;
+      }
+    }
+  }
+}
+
+function renderGrid(){
+  const el=document.getElementById('grid');
+  el.style.gridTemplateColumns=`repeat(${gridSize},46px)`;
+  el.innerHTML='';
+  for(let r=0;r<gridSize;r++){
+    for(let c=0;c<gridSize;c++){
+      const cell=grid[r][c];
+      const div=document.createElement('div');
+      div.className='cell '+(cell.letter?'white':'black');
+      div.dataset.r=r;div.dataset.c=c;
+      if(cell.num){
+        const numSpan=document.createElement('span');
+        numSpan.className='num';numSpan.textContent=cell.num;
+        div.appendChild(numSpan);
+      }
+      if(cell.letter){
+        const inp=document.createElement('input');
+        inp.maxLength=1;
+        inp.dataset.r=r;inp.dataset.c=c;
+        inp.addEventListener('input',onInput);
+        inp.addEventListener('keydown',onKeyDown);
+        inp.addEventListener('click',onCellClick);
+        inp.addEventListener('focus',onCellFocus);
+        div.appendChild(inp);
+      }
+      el.appendChild(div);
+    }
+  }
+}
+
+function renderClues(){
+  ['across','down'].forEach(dir=>{
+    const ul=document.getElementById(dir==='across'?'acrossClues':'downClues');
+    ul.innerHTML='';
+    clues[dir].forEach(cl=>{
+      const li=document.createElement('li');
+      li.className='clue-item';
+      li.dataset.dir=dir;
+      li.dataset.num=cl.num;
+      li.innerHTML=`<span class="clue-num">${cl.num}.</span> ${cl.clue}`;
+      li.addEventListener('click',()=>{
+        window.SFX?.select();
+        selectClue(cl,dir);
+        const cells=getWordCells(cl);
+        if(cells.length){
+          const firstEmpty=cells.find(([r,c])=>{
+            const inp=getInput(r,c);
+            return inp&&!inp.value;
+          });
+          const target=firstEmpty||cells[0];
+          const inp=getInput(target[0],target[1]);
+          if(inp)inp.focus();
+        }
+      });
+      ul.appendChild(li);
+    });
+  });
+}
+
+function getInput(r,c){return document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);}
+function getCell(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+
+function getWordCells(cl){
+  const cells=[];
+  const dr=cl.dir==='down'?1:0,dc=cl.dir==='across'?1:0;
+  for(let i=0;i<cl.word.length;i++){
+    cells.push([cl.row+dr*i,cl.col+dc*i]);
+  }
+  return cells;
+}
+
+function findClueAt(r,c,dir){
+  return clues[dir].find(cl=>{
+    const cells=getWordCells(cl);
+    return cells.some(([cr,cc])=>cr===r&&cc===c);
+  });
+}
+
+function selectClue(cl,dir){
+  selectedClue=cl;selectedDir=dir;
+  highlightWord();
+  document.querySelectorAll('.clue-item').forEach(li=>li.classList.remove('active'));
+  const li=document.querySelector(`.clue-item[data-dir="${dir}"][data-num="${cl.num}"]`);
+  if(li){li.classList.add('active');li.scrollIntoView({block:'nearest'});}
+}
+
+function highlightWord(){
+  document.querySelectorAll('.cell').forEach(d=>{d.classList.remove('highlight-word','highlight-current');});
+  if(!selectedClue)return;
+  const cells=getWordCells(selectedClue);
+  cells.forEach(([r,c])=>{
+    const d=getCell(r,c);
+    if(d)d.classList.add('highlight-word');
+  });
+  const focused=document.activeElement;
+  if(focused&&focused.tagName==='INPUT'){
+    const r=+focused.dataset.r,c=+focused.dataset.c;
+    const d=getCell(r,c);
+    if(d)d.classList.add('highlight-current');
+  }
+}
+
+function onCellClick(e){
+  const r=+e.target.dataset.r,c=+e.target.dataset.c;
+  const cell=grid[r][c];
+  // toggle direction if clicking same cell
+  if(selectedClue){
+    const cells=getWordCells(selectedClue);
+    const isInCurrent=cells.some(([cr,cc])=>cr===r&&cc===c);
+    if(isInCurrent&&document.activeElement===e.target){
+      const otherDir=selectedDir==='across'?'down':'across';
+      const otherClue=findClueAt(r,c,otherDir);
+      if(otherClue){
+        selectClue(otherClue,otherDir);
+        highlightWord();
+        return;
+      }
+    }
+  }
+  onCellFocus(e);
+}
+
+function onCellFocus(e){
+  const r=+e.target.dataset.r,c=+e.target.dataset.c;
+  // find clue for this cell
+  let cl=findClueAt(r,c,selectedDir);
+  if(!cl){
+    cl=findClueAt(r,c,selectedDir==='across'?'down':'across');
+    if(cl)selectedDir=cl.dir;
+  }
+  if(cl)selectClue(cl,cl.dir);
+  highlightWord();
+}
+
+function onInput(e){
+  if(solved)return;
+  const inp=e.target;
+  const val=inp.value.toUpperCase().replace(/[^A-Z]/g,'');
+  inp.value=val;
+  if(val){
+    window.SFX?.click();
+    inp.parentElement.classList.remove('error');
+    moveToNext(+inp.dataset.r,+inp.dataset.c);
+  }
+}
+
+function moveToNext(r,c){
+  if(!selectedClue)return;
+  const cells=getWordCells(selectedClue);
+  const idx=cells.findIndex(([cr,cc])=>cr===r&&cc===c);
+  // find next empty cell in word, or next cell
+  for(let i=idx+1;i<cells.length;i++){
+    const inp=getInput(cells[i][0],cells[i][1]);
+    if(inp&&!inp.value){inp.focus();return;}
+  }
+  for(let i=idx+1;i<cells.length;i++){
+    const inp=getInput(cells[i][0],cells[i][1]);
+    if(inp){inp.focus();return;}
+  }
+}
+
+function onKeyDown(e){
+  if(solved)return;
+  const r=+e.target.dataset.r,c=+e.target.dataset.c;
+  if(e.key==='Backspace'){
+    if(!e.target.value){
+      e.preventDefault();
+      moveToPrev(r,c);
+    } else {
+      e.target.value='';
+      e.target.parentElement.classList.remove('error');
+      e.preventDefault();
+    }
+    return;
+  }
+  if(e.key==='Tab'||e.key==='Enter'){
+    e.preventDefault();
+    moveToNextClue();
+    return;
+  }
+  if(e.key.startsWith('Arrow')){
+    e.preventDefault();
+    let nr=r,nc=c;
+    if(e.key==='ArrowUp')nr--;
+    if(e.key==='ArrowDown')nr++;
+    if(e.key==='ArrowLeft')nc--;
+    if(e.key==='ArrowRight')nc++;
+    if(nr>=0&&nr<gridSize&&nc>=0&&nc<gridSize){
+      const inp=getInput(nr,nc);
+      if(inp){
+        // switch direction based on arrow
+        if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+          const cl=findClueAt(nr,nc,'across');
+          if(cl)selectClue(cl,'across');
+        } else {
+          const cl=findClueAt(nr,nc,'down');
+          if(cl)selectClue(cl,'down');
+        }
+        inp.focus();
+      }
+    }
+    return;
+  }
+  if(/^[a-zA-Z]$/.test(e.key)){
+    e.preventDefault();
+    e.target.value=e.key.toUpperCase();
+    e.target.parentElement.classList.remove('error');
+    window.SFX?.click();
+    moveToNext(r,c);
+  }
+}
+
+function moveToPrev(r,c){
+  if(!selectedClue)return;
+  const cells=getWordCells(selectedClue);
+  const idx=cells.findIndex(([cr,cc])=>cr===r&&cc===c);
+  if(idx>0){
+    const inp=getInput(cells[idx-1][0],cells[idx-1][1]);
+    if(inp){inp.focus();inp.value='';inp.parentElement.classList.remove('error');}
+  }
+}
+
+function moveToNextClue(){
+  const allClues=[...clues.across,...clues.down];
+  if(!allClues.length)return;
+  const idx=selectedClue?allClues.findIndex(c=>c.num===selectedClue.num&&c.dir===selectedDir):-1;
+  const next=allClues[(idx+1)%allClues.length];
+  window.SFX?.select();
+  selectClue(next,next.dir);
+  const cells=getWordCells(next);
+  const firstEmpty=cells.find(([r,c])=>{const i=getInput(r,c);return i&&!i.value;});
+  const target=firstEmpty||cells[0];
+  const inp=getInput(target[0],target[1]);
+  if(inp)inp.focus();
+}
+
+function checkPuzzle(){
+  if(solved)return;
+  let allCorrect=true,anyError=false;
+  const allClues=[...clues.across,...clues.down];
+  allClues.forEach(cl=>{
+    const cells=getWordCells(cl);
+    let wordCorrect=true,wordFilled=true;
+    cells.forEach(([r,c],i)=>{
+      const inp=getInput(r,c);
+      const cell=getCell(r,c);
+      if(!inp)return;
+      if(!inp.value){wordCorrect=false;wordFilled=false;return;}
+      if(inp.value.toUpperCase()!==cl.word[i]){
+        wordCorrect=false;
+        cell.classList.add('error');
+        anyError=true;
+      } else {
+        cell.classList.remove('error');
+      }
+    });
+    if(wordCorrect&&wordFilled){
+      cells.forEach(([r,c])=>{
+        const cell=getCell(r,c);
+        if(cell)cell.classList.add('correct-word');
+      });
+    }
+    if(!wordCorrect)allCorrect=false;
+  });
+
+  if(anyError)window.SFX?.fail();
+  else if(!allCorrect)window.SFX?.correct();
+
+  if(allCorrect){
+    winGame();
+  }
+}
+
+function winGame(){
+  solved=true;
+  clearInterval(timerInterval);
+  window.SFX?.win();
+  const total=seconds+penalties;
+  document.getElementById('msg').innerHTML=`<span class="win">Puzzle Complete! Time: ${formatTime(total)}${penalties?' (includes '+penalties+'s penalty)':''}</span>`;
+  if(total>0)window.HallOfFame?.submit('crossword',total);
+  // disable inputs
+  document.querySelectorAll('.cell input').forEach(inp=>inp.disabled=true);
+}
+
+function revealWord(){
+  if(solved||!selectedClue)return;
+  penalties+=30;
+  const cells=getWordCells(selectedClue);
+  cells.forEach(([r,c],i)=>{
+    const inp=getInput(r,c);
+    const cell=getCell(r,c);
+    if(inp){
+      inp.value=selectedClue.word[i];
+      cell.classList.remove('error');
+      cell.classList.add('correct-word');
+    }
+  });
+  // check if all filled
+  let allDone=true;
+  [...clues.across,...clues.down].forEach(cl=>{
+    getWordCells(cl).forEach(([r,c],i)=>{
+      const inp=getInput(r,c);
+      if(!inp||inp.value.toUpperCase()!==cl.word[i])allDone=false;
+    });
+  });
+  if(allDone)winGame();
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  seconds=0;penalties=0;
+  timerInterval=setInterval(()=>{
+    if(!solved){seconds++;updateTimer();}
+  },1000);
+  updateTimer();
+}
+
+function updateTimer(){
+  const total=seconds+penalties;
+  document.getElementById('timer').innerHTML=formatTime(total)+(penalties?`<span class="penalty"> (+${penalties}s penalty)</span>`:'');
+}
+
+function formatTime(s){const m=Math.floor(s/60);const sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+
+function newPuzzle(){
+  solved=false;
+  document.getElementById('msg').textContent='';
+  generatePuzzle();
+  renderGrid();
+  renderClues();
+  startTimer();
+  // select first clue
+  if(clues.across.length){
+    selectClue(clues.across[0],'across');
+    setTimeout(()=>{
+      const cells=getWordCells(clues.across[0]);
+      const inp=getInput(cells[0][0],cells[0][1]);
+      if(inp)inp.focus();
+    },100);
+  }
+}
+
+// difficulty buttons
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    difficulty=btn.dataset.diff;
+    newPuzzle();
+  });
+});
+
+newPuzzle();
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=3"></script>
+</body>
+</html>

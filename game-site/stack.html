@@ -546,8 +546,7 @@ function handleAction(e) {
       }
     }
     // Space or tap anywhere restarts too
-    if (!e || e.type !== 'click') startGame();
-    else startGame(); // click anywhere restarts
+    startGame();
   } else if (state === 'playing') {
     placeBlock();
   }
@@ -575,6 +574,6 @@ loop();
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="auth.js"></script>
-<script src="theme.js?v=4"></script>
+<script src="theme.js?v=3"></script>
 </body>
 </html>
