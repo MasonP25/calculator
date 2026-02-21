@@ -55,7 +55,7 @@
   const ROPE_STIFFNESS = 0.02;
   const AIR_FRICTION = 0.999;
   const SWING_FRICTION = 0.998;
-  const MAX_ROPE_LEN = 250;
+  const MAX_ROPE_LEN = 350;
   const HOOK_RADIUS = 14;
   const STICKMAN_SIZE = 18;
   const DEATH_Y_OFFSET = 400;
@@ -113,11 +113,11 @@
     const yVariance = 80 + Math.min(lvl * 12, 200);
     const heightBase = canvas.height * 0.4;
 
-    let cx = 350;
+    let cx = 100;
     let cy = heightBase;
 
     for (let i = 0; i < numHooks; i++) {
-      const spacing = baseSpacing + (Math.random() - 0.3) * 80;
+      const spacing = (i === 0 ? 150 : baseSpacing) + (Math.random() - 0.3) * 80;
       const yOff = (Math.random() - 0.5) * yVariance;
       cx += spacing;
       cy = heightBase + yOff;
