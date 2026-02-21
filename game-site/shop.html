@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 0 1rem 3rem;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem 0;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .back-link {
+    position: absolute;
+    left: 0;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #7b2ff7; }
+  .top-bar h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Coin balance */
+  .coin-balance {
+    text-align: center;
+    font-size: 1.3rem;
+    margin: 0.4rem 0 1.2rem;
+    color: #ffd700;
+    font-weight: 700;
+  }
+
+  /* Tab toggle (matching fame.html scope toggle) */
+  .tab-toggle {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+  }
+  .tab-btn {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    color: #aaa;
+    padding: 0.45rem 1.4rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .tab-btn:first-child { border-radius: 10px 0 0 10px; }
+  .tab-btn:last-child  { border-radius: 0 10px 10px 0; }
+  .tab-btn.active {
+    background: #7b2ff7;
+    border-color: #7b2ff7;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Guest message */
+  .guest-msg {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #888;
+    margin-top: 4rem;
+  }
+
+  /* Shop container */
+  .shop-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ─── Avatar Tab ─── */
+  .avatar-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .avatar-preview-box {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1.2rem 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s;
+  }
+  .avatar-preview-box.previewing {
+    border: 2px dashed #7b2ff7;
+    opacity: 0.85;
+  }
+  .preview-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #7b2ff7;
+    margin-top: 0.3rem;
+    height: 1rem;
+  }
+
+  /* Category rows */
+  .category-row {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .category-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    width: 60px;
+    flex-shrink: 0;
+  }
+  .category-content {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  /* Arrow buttons */
+  .arrow-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #2a2a4a;
+    border: none;
+    color: #e0e0e0;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .arrow-btn:hover { background: #3a3a5a; }
+
+  /* Item info area */
+  .item-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 220px;
+    justify-content: center;
+  }
+  .item-mini-preview {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .item-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  .item-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Action buttons */
+  .btn-buy {
+    background: #22c55e;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+  .btn-buy:hover { background: #1ea34e; }
+  .btn-buy.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-buy.disabled:hover { background: #22c55e; }
+
+  .btn-equip {
+    background: #7b2ff7;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-equip:hover { background: #6a1fe0; }
+
+  .btn-remove {
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-remove:hover { border-color: #888; color: #ddd; }
+
+  .equipped-label {
+    font-size: 0.8rem;
+    color: #555;
+    font-weight: 600;
+  }
+
+  .item-price {
+    font-size: 0.75rem;
+    color: #ffd700;
+  }
+
+  /* ─── Nametag Tab ─── */
+  .nametag-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .nametag-preview-box {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1.2rem 2.5rem;
+    text-align: center;
+  }
+  .nametag-preview-name {
+    font-size: 2rem;
+    font-weight: 700;
+    min-height: 2.5rem;
+  }
+  .nametag-preview-label {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.3rem;
+  }
+
+  /* Nametag section titles */
+  .nt-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 1.5rem 0 0.8rem;
+    padding-left: 0.3rem;
+  }
+
+  /* Nametag grid */
+  .nt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  .nt-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+  .nt-card:hover {
+    border-color: #3a3a5a;
+    box-shadow: 0 2px 12px rgba(123, 47, 247, 0.1);
+  }
+  .nt-card.equipped-card {
+    border-color: #7b2ff7;
+  }
+  .nt-card-name-preview {
+    font-size: 1.3rem;
+    font-weight: 700;
+    min-height: 1.8rem;
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nt-card-style-name {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+  .nt-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .category-row { flex-direction: column; gap: 0.5rem; padding: 0.8rem; }
+    .category-label { width: auto; text-align: center; }
+    .item-info { min-width: 0; flex-wrap: wrap; justify-content: center; }
+    .nt-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .top-bar h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html" class="back-link">&larr; Back</a>
+  <h1>Shop</h1>
+</div>
+
+<div class="coin-balance" id="coinBalance">&#x1FA99; ---</div>
+
+<div class="tab-toggle">
+  <button class="tab-btn active" id="tabAvatar" onclick="switchTab('avatar')">Avatar</button>
+  <button class="tab-btn" id="tabNametags" onclick="switchTab('nametags')">Nametags</button>
+</div>
+
+<div class="guest-msg" id="guestMsg" style="display:none;">Sign in to use the shop</div>
+
+<div class="shop-container" id="shopContainer" style="display:none;">
+
+  <!-- ── Avatar Tab ── -->
+  <div id="avatarTab">
+    <div class="avatar-preview-wrap">
+      <div>
+        <div class="avatar-preview-box" id="avatarPreviewBox">
+          <div id="avatarPreview"></div>
+        </div>
+        <div class="preview-label" id="previewLabel"></div>
+      </div>
+    </div>
+
+    <div id="categoryRows"></div>
+  </div>
+
+  <!-- ── Nametag Tab ── -->
+  <div id="nametagTab" style="display:none;">
+    <div class="nametag-preview-wrap">
+      <div class="nametag-preview-box">
+        <div class="nametag-preview-name" id="ntPreviewName">Player</div>
+        <div class="nametag-preview-label">Your nametag preview</div>
+      </div>
+    </div>
+
+    <div class="nt-section-title">Colors &amp; Gradients</div>
+    <div class="nt-grid" id="ntColorGrid"></div>
+
+    <div class="nt-section-title">Fonts</div>
+    <div class="nt-grid" id="ntFontGrid"></div>
+  </div>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ── State ──
+  var CATEGORIES = ['hat', 'hair', 'face', 'shirt'];
+  var categoryItems = {}; // { hat: [{id, name, price}, ...], ... }
+  var categoryIndex = { hat: 0, hair: 0, face: 0, shirt: 0 }; // 0 = None
+  var currentTab = 'avatar';
+
+  // Build category item lists (index 0 = None)
+  CATEGORIES.forEach(function(cat) {
+    categoryItems[cat] = [{ id: '', name: 'None', price: 0 }];
+  });
+  var ITEMS = window.ArcadeAvatar.ITEMS;
+  Object.keys(ITEMS).forEach(function(id) {
+    var item = ITEMS[id];
+    categoryItems[item.category].push({ id: id, name: item.name, price: item.price });
+  });
+
+  // Build nametag lists
+  var NAMETAGS = window.ArcadeAvatar.NAMETAGS;
+  var ntColors = []; // colors + gradients
+  var ntFonts = [];
+  Object.keys(NAMETAGS).forEach(function(id) {
+    var nt = NAMETAGS[id];
+    var entry = { id: id, name: nt.name, type: nt.type, css: nt.css, price: nt.price };
+    if (nt.type === 'font') {
+      ntFonts.push(entry);
+    } else {
+      ntColors.push(entry);
+    }
+  });
+
+  // ── Helpers ──
+  function getUser() {
+    return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+  }
+  function isGuest() {
+    var u = getUser();
+    return !u || u === 'Guest';
+  }
+  function sfxCoin()  { if (window.SFX && window.SFX.coin) window.SFX.coin(); }
+  function sfxClick() { if (window.SFX && window.SFX.click) window.SFX.click(); }
+
+  // ── Tab switching ──
+  window.switchTab = function(tab) {
+    currentTab = tab;
+    document.getElementById('tabAvatar').className = 'tab-btn' + (tab === 'avatar' ? ' active' : '');
+    document.getElementById('tabNametags').className = 'tab-btn' + (tab === 'nametags' ? ' active' : '');
+    document.getElementById('avatarTab').style.display = tab === 'avatar' ? '' : 'none';
+    document.getElementById('nametagTab').style.display = tab === 'nametags' ? '' : 'none';
+    if (tab === 'nametags') renderNametags();
+  };
+
+  // ── Balance display ──
+  function updateBalance() {
+    var bal = window.ArcadeCoins.getBalance();
+    document.getElementById('coinBalance').innerHTML = '&#x1FA99; ' + bal.toLocaleString() + ' coins';
+  }
+
+  // ── Avatar preview ──
+  function getPreviewEquipped() {
+    var equipped = window.ArcadeCoins.getEquipped();
+    // Overlay current browsing selections (only if owned or is "None")
+    CATEGORIES.forEach(function(cat) {
+      var idx = categoryIndex[cat];
+      var item = categoryItems[cat][idx];
+      if (item.id === '') {
+        // "None" selected in browser
+        equipped[cat] = '';
+      } else if (window.ArcadeCoins.ownsItem(item.id)) {
+        equipped[cat] = item.id;
+      } else {
+        // Previewing unowned item — show it anyway
+        equipped[cat] = item.id;
+      }
+    });
+    return equipped;
+  }
+
+  function isPreviewingUnowned() {
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      var cat = CATEGORIES[i];
+      var idx = categoryIndex[cat];
+      var item = categoryItems[cat][idx];
+      if (item.id !== '' && !window.ArcadeCoins.ownsItem(item.id)) return true;
+    }
+    return false;
+  }
+
+  function renderAvatarPreview() {
+    var container = document.getElementById('avatarPreview');
+    var box = document.getElementById('avatarPreviewBox');
+    var label = document.getElementById('previewLabel');
+    var equipped = getPreviewEquipped();
+    window.ArcadeAvatar.render(container, equipped, 200);
+
+    if (isPreviewingUnowned()) {
+      box.classList.add('previewing');
+      label.textContent = 'Preview (not owned)';
+    } else {
+      box.classList.remove('previewing');
+      label.textContent = '';
+    }
+  }
+
+  // ── Sync category indices to equipped ──
+  function syncIndicesToEquipped() {
+    var equipped = window.ArcadeCoins.getEquipped();
+    CATEGORIES.forEach(function(cat) {
+      var eqId = equipped[cat] || '';
+      categoryIndex[cat] = 0;
+      for (var i = 0; i < categoryItems[cat].length; i++) {
+        if (categoryItems[cat][i].id === eqId) {
+          categoryIndex[cat] = i;
+          break;
+        }
+      }
+    });
+  }
+
+  // ── Build category rows ──
+  function buildCategoryRows() {
+    var container = document.getElementById('categoryRows');
+    container.innerHTML = '';
+
+    CATEGORIES.forEach(function(cat) {
+      var row = document.createElement('div');
+      row.className = 'category-row';
+      row.id = 'row-' + cat;
+
+      var label = document.createElement('div');
+      label.className = 'category-label';
+      label.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+
+      var content = document.createElement('div');
+      content.className = 'category-content';
+
+      var leftBtn = document.createElement('button');
+      leftBtn.className = 'arrow-btn';
+      leftBtn.innerHTML = '&#9664;';
+      leftBtn.onclick = function() { cycleCategory(cat, -1); };
+
+      var rightBtn = document.createElement('button');
+      rightBtn.className = 'arrow-btn';
+      rightBtn.innerHTML = '&#9654;';
+      rightBtn.onclick = function() { cycleCategory(cat, 1); };
+
+      var info = document.createElement('div');
+      info.className = 'item-info';
+      info.id = 'info-' + cat;
+
+      content.appendChild(leftBtn);
+      content.appendChild(info);
+      content.appendChild(rightBtn);
+      row.appendChild(label);
+      row.appendChild(content);
+      container.appendChild(row);
+    });
+
+    updateAllCategoryInfo();
+  }
+
+  function cycleCategory(cat, dir) {
+    var items = categoryItems[cat];
+    categoryIndex[cat] = (categoryIndex[cat] + dir + items.length) % items.length;
+    updateCategoryInfo(cat);
+    renderAvatarPreview();
+  }
+
+  function updateAllCategoryInfo() {
+    CATEGORIES.forEach(function(cat) { updateCategoryInfo(cat); });
+  }
+
+  function updateCategoryInfo(cat) {
+    var info = document.getElementById('info-' + cat);
+    if (!info) return;
+    info.innerHTML = '';
+
+    var idx = categoryIndex[cat];
+    var item = categoryItems[cat][idx];
+    var equipped = window.ArcadeCoins.getEquipped();
+
+    // Mini avatar preview
+    var miniWrap = document.createElement('div');
+    miniWrap.className = 'item-mini-preview';
+    if (item.id !== '') {
+      var miniEquipped = { hat: '', hair: '', face: '', shirt: '' };
+      miniEquipped[cat] = item.id;
+      window.ArcadeAvatar.render(miniWrap, miniEquipped, 40);
+    } else {
+      miniWrap.innerHTML = '<span style="font-size:1.5rem;color:#555;">&#8709;</span>';
+    }
+    info.appendChild(miniWrap);
+
+    // Details
+    var details = document.createElement('div');
+    details.className = 'item-details';
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'item-name';
+    nameEl.textContent = item.name;
+    details.appendChild(nameEl);
+
+    if (item.id === '') {
+      // "None" option
+      if (equipped[cat] === '' || !equipped[cat]) {
+        var eqLabel = document.createElement('span');
+        eqLabel.className = 'equipped-label';
+        eqLabel.textContent = 'Current';
+        details.appendChild(eqLabel);
+      } else {
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-remove';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = function() {
+          sfxClick();
+          window.ArcadeCoins.equipItem(cat, '');
+          syncIndicesToEquipped();
+          updateAllCategoryInfo();
+          renderAvatarPreview();
+        };
+        details.appendChild(removeBtn);
+      }
+    } else if (window.ArcadeCoins.ownsItem(item.id)) {
+      // Owned
+      if (equipped[cat] === item.id) {
+        var row2 = document.createElement('div');
+        row2.style.display = 'flex';
+        row2.style.alignItems = 'center';
+        row2.style.gap = '0.5rem';
+        var eqLabel2 = document.createElement('span');
+        eqLabel2.className = 'equipped-label';
+        eqLabel2.innerHTML = 'Equipped &#10003;';
+        row2.appendChild(eqLabel2);
+        var removeBtn2 = document.createElement('button');
+        removeBtn2.className = 'btn-remove';
+        removeBtn2.textContent = 'Remove';
+        removeBtn2.onclick = function() {
+          sfxClick();
+          window.ArcadeCoins.equipItem(cat, '');
+          categoryIndex[cat] = 0;
+          updateAllCategoryInfo();
+          renderAvatarPreview();
+        };
+        row2.appendChild(removeBtn2);
+        details.appendChild(row2);
+      } else {
+        var equipBtn = document.createElement('button');
+        equipBtn.className = 'btn-equip';
+        equipBtn.textContent = 'Equip';
+        (function(c, iid) {
+          equipBtn.onclick = function() {
+            sfxClick();
+            window.ArcadeCoins.equipItem(c, iid);
+            syncIndicesToEquipped();
+            updateAllCategoryInfo();
+            renderAvatarPreview();
+          };
+        })(cat, item.id);
+        details.appendChild(equipBtn);
+      }
+    } else {
+      // Not owned
+      var priceRow = document.createElement('div');
+      priceRow.style.display = 'flex';
+      priceRow.style.alignItems = 'center';
+      priceRow.style.gap = '0.5rem';
+
+      var priceLabel = document.createElement('span');
+      priceLabel.className = 'item-price';
+      priceLabel.innerHTML = '&#x1FA99; ' + item.price;
+      priceRow.appendChild(priceLabel);
+
+      var canAfford = window.ArcadeCoins.getBalance() >= item.price;
+      var buyBtn = document.createElement('button');
+      buyBtn.className = 'btn-buy' + (canAfford ? '' : ' disabled');
+      buyBtn.textContent = 'Buy';
+      if (canAfford) {
+        (function(c, iid, iprice) {
+          buyBtn.onclick = function() {
+            var result = window.ArcadeCoins.buyItem(iid, iprice);
+            if (result.ok) {
+              sfxCoin();
+              // Auto-equip after purchase
+              window.ArcadeCoins.equipItem(c, iid);
+              syncIndicesToEquipped();
+              updateBalance();
+              updateAllCategoryInfo();
+              renderAvatarPreview();
+            }
+          };
+        })(cat, item.id, item.price);
+      }
+      priceRow.appendChild(buyBtn);
+      details.appendChild(priceRow);
+    }
+
+    info.appendChild(details);
+  }
+
+  // ── Nametag rendering ──
+  function renderNametags() {
+    renderNtGrid('ntColorGrid', ntColors, 'nametagColor');
+    renderNtGrid('ntFontGrid', ntFonts, 'nametagFont');
+    updateNtPreview();
+  }
+
+  function renderNtGrid(containerId, items, equipCategory) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = '';
+    var equipped = window.ArcadeCoins.getEquipped();
+    var userName = getUser();
+
+    items.forEach(function(nt) {
+      var card = document.createElement('div');
+      card.className = 'nt-card' + (equipped[equipCategory] === nt.id ? ' equipped-card' : '');
+
+      // Name preview with style applied
+      var preview = document.createElement('div');
+      preview.className = 'nt-card-name-preview';
+      preview.textContent = userName;
+      applyNtCSS(preview, nt.css);
+      card.appendChild(preview);
+
+      // Style name
+      var styleName = document.createElement('div');
+      styleName.className = 'nt-card-style-name';
+      styleName.textContent = nt.name;
+      card.appendChild(styleName);
+
+      // Actions
+      var actions = document.createElement('div');
+      actions.className = 'nt-card-actions';
+
+      var owned = window.ArcadeCoins.ownsItem(nt.id);
+      var isEquipped = equipped[equipCategory] === nt.id;
+
+      if (isEquipped) {
+        var row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '0.4rem';
+        var eqLabel = document.createElement('span');
+        eqLabel.className = 'equipped-label';
+        eqLabel.innerHTML = 'Equipped &#10003;';
+        row.appendChild(eqLabel);
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-remove';
+        removeBtn.textContent = 'Remove';
+        (function(ec) {
+          removeBtn.onclick = function() {
+            sfxClick();
+            window.ArcadeCoins.equipItem(ec, '');
+            renderNametags();
+          };
+        })(equipCategory);
+        row.appendChild(removeBtn);
+        actions.appendChild(row);
+      } else if (owned) {
+        var equipBtn = document.createElement('button');
+        equipBtn.className = 'btn-equip';
+        equipBtn.textContent = 'Equip';
+        (function(ec, nid) {
+          equipBtn.onclick = function() {
+            sfxClick();
+            window.ArcadeCoins.equipItem(ec, nid);
+            renderNametags();
+          };
+        })(equipCategory, nt.id);
+        actions.appendChild(equipBtn);
+      } else {
+        var priceLabel = document.createElement('span');
+        priceLabel.className = 'item-price';
+        priceLabel.innerHTML = '&#x1FA99; ' + nt.price;
+        actions.appendChild(priceLabel);
+
+        var canAfford = window.ArcadeCoins.getBalance() >= nt.price;
+        var buyBtn = document.createElement('button');
+        buyBtn.className = 'btn-buy' + (canAfford ? '' : ' disabled');
+        buyBtn.textContent = 'Buy';
+        if (canAfford) {
+          (function(ec, nid, nprice) {
+            buyBtn.onclick = function() {
+              var result = window.ArcadeCoins.buyItem(nid, nprice);
+              if (result.ok) {
+                sfxCoin();
+                window.ArcadeCoins.equipItem(ec, nid);
+                updateBalance();
+                renderNametags();
+              }
+            };
+          })(equipCategory, nt.id, nt.price);
+        }
+        actions.appendChild(buyBtn);
+      }
+
+      card.appendChild(actions);
+      container.appendChild(card);
+    });
+  }
+
+  function updateNtPreview() {
+    var el = document.getElementById('ntPreviewName');
+    var userName = getUser();
+    el.textContent = userName;
+    // Reset styles
+    el.style.cssText = 'font-size:2rem;font-weight:700;min-height:2.5rem;';
+    var equipped = window.ArcadeCoins.getEquipped();
+    window.ArcadeAvatar.styleName(el, equipped);
+  }
+
+  function applyNtCSS(element, cssString) {
+    var declarations = cssString.split(';');
+    declarations.forEach(function(decl) {
+      decl = decl.trim();
+      if (!decl) return;
+      var colonIndex = decl.indexOf(':');
+      if (colonIndex === -1) return;
+      var prop = decl.substring(0, colonIndex).trim();
+      var val = decl.substring(colonIndex + 1).trim();
+      var camelProp = prop.replace(/-([a-z])/g, function(m, c) { return c.toUpperCase(); });
+      element.style[camelProp] = val;
+    });
+  }
+
+  // ── Init ──
+  function init() {
+    if (isGuest()) {
+      document.getElementById('guestMsg').style.display = '';
+      document.getElementById('shopContainer').style.display = 'none';
+      document.getElementById('coinBalance').innerHTML = '&#x1FA99; 0 coins';
+      return;
+    }
+
+    // Wait for ArcadeCoins to load
+    function tryInit() {
+      if (!window.ArcadeCoins || !window.ArcadeCoins.isLoaded()) {
+        setTimeout(tryInit, 100);
+        return;
+      }
+      document.getElementById('guestMsg').style.display = 'none';
+      document.getElementById('shopContainer').style.display = '';
+      updateBalance();
+      syncIndicesToEquipped();
+      buildCategoryRows();
+      renderAvatarPreview();
+      if (currentTab === 'nametags') renderNametags();
+    }
+    tryInit();
+  }
+
+  // Listen for coin updates
+  window.addEventListener('coins-updated', function() {
+    updateBalance();
+    if (currentTab === 'avatar') {
+      updateAllCategoryInfo();
+    } else {
+      renderNametags();
+    }
+  });
+
+  // Listen for auth changes
+  window.addEventListener('arcade-auth-change', function() {
+    setTimeout(function() { init(); }, 300);
+  });
+
+  // Start
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>

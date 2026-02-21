@@ -96,6 +96,19 @@ window.FirebaseLB = {
       score: score,
       date: new Date().toLocaleDateString()
     });
+    // Award coins for leaderboard placement
+    if (window.ArcadeCoins && gameId !== 'idleminer') {
+      try {
+        var scores = await window.FirebaseLB.getScores(gameId, 3);
+        for (var p = 0; p < scores.length && p < 3; p++) {
+          if (scores[p].name === name) {
+            var bonus = [50, 30, 15][p];
+            window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId);
+            break;
+          }
+        }
+      } catch(e) { /* ignore placement check errors */ }
+    }
   },
 
   getScores: async function(gameId, max) {

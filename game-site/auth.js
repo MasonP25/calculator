@@ -78,6 +78,7 @@
     '.auth-badge:hover{border-color:#7b2ff7}' +
     '.auth-badge .ab-icon{font-size:1rem}' +
     '.auth-badge .ab-name{color:#00d4ff;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.auth-badge .ab-coins{color:#ffd700;font-size:0.72rem;margin-left:0.1rem;font-weight:600}' +
     '.auth-badge .ab-out{color:#ff475799;font-size:0.68rem;margin-left:0.2rem;padding:2px 5px;border-radius:4px;transition:color .2s}' +
     '.auth-badge .ab-out:hover{color:#ff4757}' +
     '.auth-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,15,26,0.88);' +
@@ -178,6 +179,7 @@
       }
       if (result.ok) {
         closeModal();
+        window.dispatchEvent(new Event('arcade-auth-change'));
         updateBadge();
         if (window.SFX) window.SFX.correct();
       } else {
@@ -217,12 +219,18 @@
   function updateBadge() {
     var user = getCurrentUser();
     if (user) {
-      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name">' + user + '</span><span class="ab-out" id="abOut">Sign Out</span>';
+      var coinStr = '';
+      if (window.ArcadeCoins) {
+        var bal = window.ArcadeCoins.getBalance();
+        coinStr = '<span class="ab-coins">&#129689; ' + bal + '</span>';
+      }
+      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name">' + user + '</span>' + coinStr + '<span class="ab-out" id="abOut">Sign Out</span>';
       var out = document.getElementById('abOut');
       if (out) {
         out.addEventListener('click', function(e) {
           e.stopPropagation();
           doSignOut();
+          window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
     } else {
@@ -241,6 +249,11 @@
 
   // Listen for Firebase auth state (auto-login if already signed in)
   window.addEventListener('firebase-auth-ready', function() {
+    updateBadge();
+  });
+
+  // Update badge when coins change
+  window.addEventListener('coins-updated', function() {
     updateBadge();
   });
 })();

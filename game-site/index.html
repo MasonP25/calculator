@@ -445,6 +445,7 @@
   <p class="subtitle">Pick a game to play</p>
   <p class="count">67 games</p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
+  <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
 
   <div class="search-bar">
     <span class="search-icon">&#128269;</span>
@@ -1229,6 +1230,15 @@ document.getElementById('gameSearch').addEventListener('input', function() {
         + '<span class="chat-text">' + esc(m.text) + '</span>'
         + '<span class="chat-time">' + (m.time || hhmm(m.timestamp)) + '</span>';
       msgsDiv.appendChild(div);
+      // Apply nametag style
+      if (window.ArcadeCoins && window.ArcadeAvatar && nameDisplay !== 'Guest') {
+        (function(el, user) {
+          window.ArcadeCoins.getProfile(user).then(function(profile) {
+            var nameEl = el.querySelector('.chat-name');
+            if (nameEl && profile) window.ArcadeAvatar.styleName(nameEl, profile);
+          });
+        })(div, nameDisplay);
+      }
     }
     msgsDiv.scrollTop = msgsDiv.scrollHeight;
   }
@@ -1312,6 +1322,8 @@ document.getElementById('gameSearch').addEventListener('input', function() {
 
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 </body>
