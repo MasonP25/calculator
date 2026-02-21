@@ -112,7 +112,7 @@
 <a class="back" href="index.html">&#8592; Back</a>
 <h1>Mini Golf</h1>
 <div id="hud">
-  Hole: <span id="holeNum">1</span>/9 &nbsp;|&nbsp;
+  Hole: <span id="holeNum">1</span>/15 &nbsp;|&nbsp;
   Strokes: <span id="strokes">0</span> &nbsp;|&nbsp;
   Par: <span id="par">1</span> &nbsp;|&nbsp;
   Total: <span id="total">0</span>
@@ -136,8 +136,8 @@
   const FRICTION = 0.985;
   const MIN_SPEED = 0.15;
   const MAX_POWER = 12;
-  const SINK_SPEED = 2.5;
-  const SINK_DIST = 9;
+  const SINK_SPEED = 5;
+  const SINK_DIST = 10;
 
   // HUD elements
   const holeNumEl = document.getElementById('holeNum');
@@ -333,6 +333,119 @@
         { x: 510, y: 110, w: 18, h: 60 },
       ],
       bumpers: []
+    },
+    // Hole 10: Double bumper alley (par 2)
+    {
+      par: 2,
+      ball: { x: 100, y: 300 },
+      hole: { x: 500, y: 300 },
+      walls: [
+        { x: 40, y: 200, w: 520, h: 20 },
+        { x: 40, y: 400, w: 520, h: 20 },
+        { x: 40, y: 200, w: 20, h: 220 },
+        { x: 540, y: 200, w: 20, h: 220 },
+      ],
+      bumpers: [
+        { x: 250, y: 280, r: 20 },
+        { x: 350, y: 340, r: 20 },
+      ]
+    },
+    // Hole 11: U-turn (par 3)
+    {
+      par: 3,
+      ball: { x: 100, y: 100 },
+      hole: { x: 100, y: 500 },
+      walls: [
+        { x: 40, y: 40, w: 520, h: 20 },
+        { x: 40, y: 560, w: 520, h: 20 },
+        { x: 40, y: 40, w: 20, h: 540 },
+        { x: 540, y: 40, w: 20, h: 540 },
+        // Inner U walls
+        { x: 200, y: 40, w: 20, h: 350 },
+        { x: 200, y: 370, w: 220, h: 20 },
+        { x: 400, y: 200, w: 20, h: 380 },
+      ],
+      bumpers: []
+    },
+    // Hole 12: Pinball bumpers (par 2)
+    {
+      par: 2,
+      ball: { x: 300, y: 520 },
+      hole: { x: 300, y: 80 },
+      walls: [
+        { x: 120, y: 40, w: 360, h: 20 },
+        { x: 120, y: 560, w: 360, h: 20 },
+        { x: 120, y: 40, w: 20, h: 540 },
+        { x: 460, y: 40, w: 20, h: 540 },
+      ],
+      bumpers: [
+        { x: 220, y: 200, r: 18 },
+        { x: 380, y: 200, r: 18 },
+        { x: 300, y: 300, r: 18 },
+        { x: 220, y: 400, r: 18 },
+        { x: 380, y: 400, r: 18 },
+      ]
+    },
+    // Hole 13: Maze (par 4)
+    {
+      par: 4,
+      ball: { x: 80, y: 540 },
+      hole: { x: 520, y: 80 },
+      walls: [
+        { x: 40, y: 40, w: 520, h: 20 },
+        { x: 40, y: 560, w: 520, h: 20 },
+        { x: 40, y: 40, w: 20, h: 540 },
+        { x: 540, y: 40, w: 20, h: 540 },
+        // Maze walls
+        { x: 40, y: 460, w: 300, h: 18 },
+        { x: 200, y: 350, w: 360, h: 18 },
+        { x: 40, y: 240, w: 300, h: 18 },
+        { x: 200, y: 130, w: 360, h: 18 },
+      ],
+      bumpers: []
+    },
+    // Hole 14: Island green (par 2)
+    {
+      par: 2,
+      ball: { x: 300, y: 520 },
+      hole: { x: 300, y: 300 },
+      walls: [
+        { x: 40, y: 40, w: 520, h: 20 },
+        { x: 40, y: 560, w: 520, h: 20 },
+        { x: 40, y: 40, w: 20, h: 540 },
+        { x: 540, y: 40, w: 20, h: 540 },
+        // Island ring
+        { x: 220, y: 250, w: 160, h: 14 },
+        { x: 220, y: 340, w: 160, h: 14 },
+        { x: 220, y: 250, w: 14, h: 104 },
+        { x: 366, y: 250, w: 14, h: 104 },
+      ],
+      bumpers: [
+        { x: 200, y: 430, r: 20 },
+        { x: 400, y: 430, r: 20 },
+      ]
+    },
+    // Hole 15: Grand finale (par 4)
+    {
+      par: 4,
+      ball: { x: 80, y: 300 },
+      hole: { x: 520, y: 300 },
+      walls: [
+        { x: 40, y: 40, w: 520, h: 20 },
+        { x: 40, y: 560, w: 520, h: 20 },
+        { x: 40, y: 40, w: 20, h: 540 },
+        { x: 540, y: 40, w: 20, h: 540 },
+        // Barriers
+        { x: 180, y: 40, w: 18, h: 250 },
+        { x: 180, y: 350, w: 18, h: 230 },
+        { x: 350, y: 40, w: 18, h: 200 },
+        { x: 350, y: 380, w: 18, h: 200 },
+      ],
+      bumpers: [
+        { x: 265, y: 200, r: 22 },
+        { x: 265, y: 420, r: 22 },
+        { x: 450, y: 300, r: 22 },
+      ]
     }
   ];
 
@@ -539,10 +652,10 @@
         else if (diff === 0) label = 'Par!';
         else if (diff === 1) label = 'Bogey';
         else label = '+' + diff;
-        messageEl.textContent = label + (currentHole < 8 ? ' - Click to continue' : '');
+        messageEl.textContent = label + (currentHole < 14 ? ' - Click to continue' : '');
         window.SFX?.coin();
 
-        if (currentHole >= 8) {
+        if (currentHole >= 14) {
           // Game complete
           setTimeout(showScorecard, 1200);
         }
@@ -577,12 +690,21 @@
       ballMoving = false;
     }
 
-    // Hole detection
+    // Hole detection - check both current position and trajectory
     const h = holes[currentHole];
     const hx = h.hole.x - ball.x;
     const hy = h.hole.y - ball.y;
     const hDist = Math.sqrt(hx * hx + hy * hy);
-    if (hDist < SINK_DIST && speed < SINK_SPEED) {
+    // Also check if ball crossed over the hole this frame (line segment intersection)
+    const prevX = ball.x - ball.vx;
+    const prevY = ball.y - ball.vy;
+    const closestT = Math.max(0, Math.min(1,
+      ((h.hole.x - prevX) * ball.vx + (h.hole.y - prevY) * ball.vy) / (ball.vx * ball.vx + ball.vy * ball.vy + 0.001)));
+    const nearX = prevX + closestT * ball.vx;
+    const nearY = prevY + closestT * ball.vy;
+    const nearDist = Math.sqrt((h.hole.x - nearX) ** 2 + (h.hole.y - nearY) ** 2);
+    const effectiveDist = Math.min(hDist, nearDist);
+    if (effectiveDist < SINK_DIST && speed < SINK_SPEED) {
       // Sinking!
       sinking = true;
       sinkTimer = 0;
@@ -604,7 +726,7 @@
   canvas.addEventListener('mousedown', function(e) {
     if (gameOver) return;
     if (holeComplete) {
-      if (currentHole < 8) {
+      if (currentHole < 14) {
         currentHole++;
         loadHole(currentHole);
       }
@@ -678,7 +800,7 @@
     const tbody = document.querySelector('#scoreTable tbody');
     tbody.innerHTML = '';
     let totalPar = 0;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 15; i++) {
       const h = holes[i];
       const s = scores[i];
       const diff = s - h.par;

@@ -32,7 +32,7 @@
 <a class="back" href="index.html">&#8592; Back</a>
 <h1>Dinosaur Runner</h1>
 <canvas id="c" width="700" height="400"></canvas>
-<div class="msg" id="msg">Press SPACE or click to start running!</div>
+<div class="msg" id="msg">Press SPACE, W, or click to start running!</div>
 <script>
 function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
 function _sb(k,v){if(window.HallOfFame){window.HallOfFame.setBest(k,v)}else{localStorage.setItem(k,v)}}
@@ -164,21 +164,21 @@ function stopDuck() {
 
 // Input handling
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') {
+  if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
     e.preventDefault();
     jump();
   }
-  if (e.code === 'ArrowDown') {
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') {
     e.preventDefault();
     startDuck();
   }
 });
 
 document.addEventListener('keyup', (e) => {
-  if (e.code === 'Space') {
+  if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
     jumpHeld = false;
   }
-  if (e.code === 'ArrowDown') {
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') {
     stopDuck();
   }
 });
@@ -221,7 +221,7 @@ function spawnObstacle() {
       h: h,
       variant: 'tall'
     };
-  } else if (r < 0.85 && speed > 0.38) {
+  } else if (r < 0.85) {
     // Cactus cluster (two cacti close together)
     const w = 35 + Math.random() * 10;
     const h = 30 + Math.random() * 12;
@@ -290,8 +290,7 @@ function loop(timestamp) {
 }
 
 function update(dt) {
-  // Speed increases over time
-  speed = Math.min(MAX_SPEED, speed + SPEED_INCR * dt);
+  // Constant speed throughout the game
 
   // Score
   distance += speed * dt;
