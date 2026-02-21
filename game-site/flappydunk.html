@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Dunk - Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    cursor: pointer;
+    display: block;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<canvas id="c"></canvas>
+
+<script>
+(function() {
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+/* ── Sizing ── */
+const DESIGN_W = 480, DESIGN_H = 700;
+function resize() {
+  const maxW = Math.min(window.innerWidth - 20, DESIGN_W);
+  const maxH = Math.min(window.innerHeight - 20, DESIGN_H);
+  const ratio = DESIGN_W / DESIGN_H;
+  let w, h;
+  if (maxW / maxH > ratio) { h = maxH; w = h * ratio; }
+  else { w = maxW; h = w / ratio; }
+  canvas.width = Math.floor(w);
+  canvas.height = Math.floor(h);
+}
+resize();
+window.addEventListener('resize', resize);
+
+function S(v) { return v * canvas.width / DESIGN_W; }
+function SY(v) { return v * canvas.height / DESIGN_H; }
+
+/* ── Constants ── */
+const STATE = { MENU: 0, PLAYING: 1, DEAD: 2 };
+const BALL_R = 18;
+const GRAVITY = 0.36;
+const FLAP_VEL = -7.0;
+const MAX_FALL = 10;
+const HOOP_GAP_X = 210;
+const HOOP_RIM_W = 56;
+const HOOP_RIM_H = 8;
+const NET_DEPTH = 28;
+const RIM_POST_R = 5;
+const BASE_SCROLL = 2.8;
+
+/* ── State ── */
+let state = STATE.MENU;
+let ball = { x: 0, y: 0, vy: 0, angle: 0, vangle: 0 };
+let hoops = [];
+let scrollX = 0;
+let scrollSpeed = BASE_SCROLL;
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('flappydunk_best')) || 0;
+let combo = 0;
+let comboTimer = 0;
+let comboText = '';
+let popups = [];      // { screenX, y, text, timer, color }
+let menuAngle = 0;    // for spinning ball on menu
+
+/* ── Helpers ── */
+function saveBest() {
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('flappydunk_best', bestScore);
+  }
+}
+
+function createHoop(x) {
+  const minY = 130, maxY = 540;
+  return { x, y: minY + Math.random() * (maxY - minY), scored: false };
+}
+
+function initHoops() {
+  hoops = [];
+  for (let i = 0; i < 8; i++) hoops.push(createHoop(320 + i * HOOP_GAP_X));
+}
+
+function resetGame() {
+  ball = { x: 110, y: 300, vy: 0, angle: 0, vangle: 0 };
+  scrollX = 0;
+  scrollSpeed = BASE_SCROLL;
+  score = 0;
+  combo = 0;
+  comboTimer = 0;
+  comboText = '';
+  popups = [];
+  initHoops();
+}
+
+function flap() {
+  ball.vy = FLAP_VEL;
+  ball.vangle = -0.15;
+}
+
+function gameOver() {
+  state = STATE.DEAD;
+  saveBest();
+  if (typeof HallOfFame !== 'undefined' && HallOfFame.submit) {
+    HallOfFame.submit('flappydunk', score);
+  }
+}
+
+/* ── Play-again button geometry (in screen px) ── */
+function btnRect() {
+  const bx = canvas.width / 2;
+  const by = SY(490);
+  const bw = S(150);
+  const bh = S(44);
+  return { x: bx - bw / 2, y: by - bh / 2, w: bw, h: bh, cx: bx, cy: by };
+}
+
+/* ── Input ── */
+function pointerXY(e) {
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+
+function handleInput(e) {
+  e.preventDefault();
+  if (state === STATE.MENU) {
+    state = STATE.PLAYING;
+    resetGame();
+    flap();
+  } else if (state === STATE.PLAYING) {
+    flap();
+  } else if (state === STATE.DEAD) {
+    const p = pointerXY(e);
+    const b = btnRect();
+    if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) {
+      state = STATE.PLAYING;
+      resetGame();
+      flap();
+    }
+  }
+}
+
+canvas.addEventListener('mousedown', handleInput);
+canvas.addEventListener('touchstart', handleInput, { passive: false });
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (state === STATE.MENU) { state = STATE.PLAYING; resetGame(); flap(); }
+    else if (state === STATE.PLAYING) { flap(); }
+    else if (state === STATE.DEAD) { state = STATE.PLAYING; resetGame(); flap(); }
+  }
+});
+
+/* ── Physics / Scoring ── */
+function checkScoring() {
+  for (const h of hoops) {
+    if (h.scored) continue;
+    const hx = h.x - scrollX;
+    const rimHalf = HOOP_RIM_W / 2;
+    // Ball within hoop x-range
+    if (ball.x > hx - rimHalf + BALL_R * 0.3 && ball.x < hx + rimHalf - BALL_R * 0.3) {
+      // Going downward through hoop level
+      if (ball.vy > 0 && ball.y > h.y - BALL_R * 0.4 && ball.y < h.y + NET_DEPTH) {
+        h.scored = true;
+        const distCenter = Math.abs(ball.x - hx);
+        const isSwish = distCenter < rimHalf * 0.18;
+        if (isSwish) {
+          combo++;
+          const pts = 2 * combo;
+          score += pts;
+          comboText = combo > 1 ? 'SWISH x' + combo + '!' : 'SWISH!';
+          comboTimer = 60;
+          popups.push({ screenX: S(hx), y: SY(h.y - 30), text: '+' + pts, timer: 50, color: '#ffdd00' });
+        } else {
+          combo = 0;
+          score += 1;
+          comboText = '';
+          comboTimer = 0;
+          popups.push({ screenX: S(hx), y: SY(h.y - 30), text: '+1', timer: 50, color: '#ffffff' });
+        }
+        return;
+      }
+    }
+  }
+}
+
+function checkCollision() {
+  for (const h of hoops) {
+    const hx = h.x - scrollX;
+    if (Math.abs(ball.x - hx) > HOOP_RIM_W + BALL_R) continue;
+    const lx = hx - HOOP_RIM_W / 2, rx = hx + HOOP_RIM_W / 2;
+    // Rim posts
+    const dl = Math.hypot(ball.x - lx, ball.y - h.y);
+    if (dl < BALL_R + RIM_POST_R) return true;
+    const dr = Math.hypot(ball.x - rx, ball.y - h.y);
+    if (dr < BALL_R + RIM_POST_R) return true;
+    // Backboard
+    const bbX = rx + 4, bbW = 6, bbH = 50, bbY = h.y - 30;
+    if (ball.x + BALL_R > bbX && ball.x - BALL_R < bbX + bbW &&
+        ball.y + BALL_R > bbY && ball.y - BALL_R < bbY + bbH) return true;
+  }
+  return false;
+}
+
+function checkMissed() {
+  for (const h of hoops) {
+    if (h.scored) continue;
+    if (h.x - scrollX < ball.x - HOOP_RIM_W - BALL_R * 2) return true;
+  }
+  return false;
+}
+
+/* ── Update ── */
+function update() {
+  if (state !== STATE.PLAYING) return;
+  // Gravity
+  ball.vy += GRAVITY;
+  if (ball.vy > MAX_FALL) ball.vy = MAX_FALL;
+  ball.y += ball.vy;
+  // Spin
+  ball.vangle += 0.003;
+  if (ball.vangle > 0.12) ball.vangle = 0.12;
+  ball.angle += ball.vangle;
+  // Scroll
+  scrollX += scrollSpeed;
+  scrollSpeed = BASE_SCROLL + Math.min(Math.floor(score / 5) * 0.15, 2.5);
+  // Recycle hoops
+  for (let i = 0; i < hoops.length; i++) {
+    if (hoops[i].x - scrollX < -120) {
+      const furthest = hoops.reduce((a, b) => a.x > b.x ? a : b);
+      const vary = -30 + Math.random() * 60;
+      hoops[i] = createHoop(furthest.x + HOOP_GAP_X + vary);
+    }
+  }
+  // Checks
+  checkScoring();
+  if (checkCollision() || checkMissed()) { gameOver(); return; }
+  if (ball.y - BALL_R > DESIGN_H + 20 || ball.y + BALL_R < -60) { gameOver(); return; }
+  // Timers
+  if (comboTimer > 0) comboTimer--;
+  for (let i = popups.length - 1; i >= 0; i--) {
+    popups[i].timer--;
+    popups[i].y -= 0.8;
+    if (popups[i].timer <= 0) popups.splice(i, 1);
+  }
+}
+
+/* ── Drawing ── */
+function drawBg() {
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Court floor
+  const fy = SY(660);
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, fy, canvas.width, canvas.height - fy);
+  ctx.strokeStyle = '#2a2a4a';
+  ctx.lineWidth = S(2);
+  ctx.beginPath(); ctx.moveTo(0, fy); ctx.lineTo(canvas.width, fy); ctx.stroke();
+  // Subtle dots
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  const step = S(40);
+  for (let x = 0; x < canvas.width; x += step)
+    for (let y = 0; y < canvas.height; y += step) {
+      ctx.beginPath(); ctx.arc(x, y, S(1), 0, Math.PI * 2); ctx.fill();
+    }
+}
+
+function drawBall(cx, cy, r, angle) {
+  const sx = S(cx), sy = SY(cy), sr = S(r);
+  ctx.save();
+  ctx.translate(sx, sy);
+  ctx.rotate(angle);
+  // Shadow
+  ctx.beginPath(); ctx.arc(S(2), S(2), sr, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+  // Body
+  ctx.beginPath(); ctx.arc(0, 0, sr, 0, Math.PI * 2);
+  const g = ctx.createRadialGradient(-sr * 0.3, -sr * 0.3, sr * 0.1, 0, 0, sr);
+  g.addColorStop(0, '#ff8c00'); g.addColorStop(0.5, '#e67300'); g.addColorStop(1, '#cc5500');
+  ctx.fillStyle = g; ctx.fill();
+  // Lines
+  ctx.strokeStyle = '#4a2800'; ctx.lineWidth = S(1.5);
+  ctx.beginPath(); ctx.moveTo(-sr, 0); ctx.lineTo(sr, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -sr); ctx.lineTo(0, sr); ctx.stroke();
+  ctx.beginPath(); ctx.arc(-sr * 0.35, 0, sr * 0.85, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sr * 0.35, 0, sr * 0.85, Math.PI * 0.5, -Math.PI * 0.5); ctx.stroke();
+  // Outline
+  ctx.beginPath(); ctx.arc(0, 0, sr, 0, Math.PI * 2);
+  ctx.strokeStyle = '#3a1800'; ctx.lineWidth = S(1.5); ctx.stroke();
+  ctx.restore();
+}
+
+function drawHoop(h) {
+  const hx = S(h.x - scrollX), hy = SY(h.y);
+  const rw = S(HOOP_RIM_W), rh = S(HOOP_RIM_H);
+  const nd = SY(NET_DEPTH), pr = S(RIM_POST_R);
+  // Backboard
+  const bbX = hx + rw / 2 + S(4), bbW = S(6), bbH = SY(50), bbY = hy - SY(30);
+  ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.55;
+  ctx.fillRect(bbX, bbY, bbW, bbH);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#999'; ctx.lineWidth = S(1); ctx.strokeRect(bbX, bbY, bbW, bbH);
+  // Target square
+  const sq = S(14);
+  ctx.strokeStyle = '#ff4444'; ctx.lineWidth = S(1);
+  ctx.strokeRect(bbX - sq + bbW / 2, hy - sq / 2, sq, sq);
+  // Net
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = S(1);
+  const nbw = rw * 0.5;
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    ctx.beginPath();
+    ctx.moveTo(hx - rw / 2 + t * rw, hy + rh / 2);
+    ctx.lineTo(hx - nbw / 2 + t * nbw, hy + nd);
+    ctx.stroke();
+  }
+  for (let j = 1; j < 3; j++) {
+    const t = j / 3, lw = rw * (1 - t * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(hx - lw / 2, hy + rh / 2 + t * nd);
+    ctx.lineTo(hx + lw / 2, hy + rh / 2 + t * nd);
+    ctx.stroke();
+  }
+  // Rim
+  ctx.fillStyle = '#ff3300';
+  ctx.beginPath(); ctx.ellipse(hx, hy, rw / 2, rh / 2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#cc2200'; ctx.lineWidth = S(2); ctx.stroke();
+  // Highlight
+  ctx.beginPath(); ctx.ellipse(hx, hy - S(1), rw / 2, rh / 2 * 0.6, 0, Math.PI, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,150,100,0.5)'; ctx.lineWidth = S(1); ctx.stroke();
+  // Posts
+  [hx - rw / 2, hx + rw / 2].forEach(function(px) {
+    ctx.fillStyle = '#ff4400';
+    ctx.beginPath(); ctx.arc(px, hy, pr, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#cc2200'; ctx.lineWidth = S(1.5); ctx.stroke();
+  });
+}
+
+function drawHUD() {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // Big shadow score
+  ctx.globalAlpha = 0.12;
+  ctx.font = 'bold ' + S(50) + 'px "Segoe UI", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(score, canvas.width / 2, SY(55));
+  ctx.globalAlpha = 1;
+  // Score
+  ctx.font = 'bold ' + S(46) + 'px "Segoe UI", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(score, canvas.width / 2, SY(55));
+  // Combo
+  if (comboTimer > 0 && comboText) {
+    ctx.globalAlpha = Math.min(1, comboTimer / 15);
+    ctx.font = 'bold ' + S(26) + 'px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#ffdd00';
+    ctx.fillText(comboText, canvas.width / 2, SY(100));
+    ctx.globalAlpha = 1;
+  }
+  // Popups
+  for (const p of popups) {
+    ctx.globalAlpha = p.timer / 50;
+    ctx.font = 'bold ' + S(20) + 'px "Segoe UI", sans-serif';
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.text, p.screenX, p.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawMenu() {
+  drawBg();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // Title
+  ctx.fillStyle = '#ff8c00';
+  ctx.font = 'bold ' + S(50) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Flappy Dunk', canvas.width / 2, SY(180));
+  // Ball
+  menuAngle += 0.02;
+  drawBall(240, 310, 34, menuAngle);
+  // Subtitle
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#888';
+  ctx.font = S(17) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Tap or press SPACE to start', canvas.width / 2, SY(430));
+  if (bestScore > 0) {
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = S(16) + 'px "Segoe UI", sans-serif';
+    ctx.fillText('Best: ' + bestScore, canvas.width / 2, SY(465));
+  }
+  ctx.fillStyle = '#666';
+  ctx.font = S(13) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Flap through the hoops!', canvas.width / 2, SY(510));
+  ctx.fillText('Swish (center) = x2 points + combo!', canvas.width / 2, SY(535));
+}
+
+function drawGameOver() {
+  ctx.fillStyle = 'rgba(15,15,26,0.85)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // Title
+  ctx.fillStyle = '#ff4444';
+  ctx.font = 'bold ' + S(42) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Game Over', canvas.width / 2, SY(240));
+  // Score
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold ' + S(56) + 'px "Segoe UI", sans-serif';
+  ctx.fillText(score, canvas.width / 2, SY(305));
+  ctx.fillStyle = '#888';
+  ctx.font = S(15) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('SCORE', canvas.width / 2, SY(345));
+  // Best
+  ctx.fillStyle = '#00d4ff';
+  ctx.font = 'bold ' + S(22) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Best: ' + bestScore, canvas.width / 2, SY(395));
+  if (score >= bestScore && score > 0) {
+    ctx.fillStyle = '#ffdd00';
+    ctx.font = 'bold ' + S(17) + 'px "Segoe UI", sans-serif';
+    ctx.fillText('NEW BEST!', canvas.width / 2, SY(425));
+  }
+  // Button
+  const b = btnRect();
+  ctx.fillStyle = '#ff8c00';
+  const cr = S(8);
+  ctx.beginPath();
+  ctx.moveTo(b.x + cr, b.y);
+  ctx.lineTo(b.x + b.w - cr, b.y);
+  ctx.quadraticCurveTo(b.x + b.w, b.y, b.x + b.w, b.y + cr);
+  ctx.lineTo(b.x + b.w, b.y + b.h - cr);
+  ctx.quadraticCurveTo(b.x + b.w, b.y + b.h, b.x + b.w - cr, b.y + b.h);
+  ctx.lineTo(b.x + cr, b.y + b.h);
+  ctx.quadraticCurveTo(b.x, b.y + b.h, b.x, b.y + b.h - cr);
+  ctx.lineTo(b.x, b.y + cr);
+  ctx.quadraticCurveTo(b.x, b.y, b.x + cr, b.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold ' + S(18) + 'px "Segoe UI", sans-serif';
+  ctx.fillText('Play Again', b.cx, b.cy);
+}
+
+/* ── Main Loop ── */
+function loop() {
+  update();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (state === STATE.MENU) {
+    drawMenu();
+  } else {
+    drawBg();
+    for (const h of hoops) {
+      if (h.x - scrollX > -120 && h.x - scrollX < DESIGN_W + 60) drawHoop(h);
+    }
+    drawBall(ball.x, ball.y, BALL_R, ball.angle);
+    drawHUD();
+    if (state === STATE.DEAD) drawGameOver();
+  }
+  requestAnimationFrame(loop);
+}
+
+loop();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

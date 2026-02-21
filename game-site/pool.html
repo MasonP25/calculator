@@ -15,6 +15,8 @@ h1{font-size:1.8rem;margin-top:10px;}
 .mode-select button{background:#1a1a2e;border:2px solid #2a2a4a;color:#e0e0e0;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.95rem;font-family:inherit;transition:border-color .25s,background .25s;}
 .mode-select button:hover,.mode-select button.active{border-color:#7b2ff7;}
 .mode-select button.active{background:#2a1a4e;color:#fff;}
+.ai-difficulty{margin-top:-4px;}
+.diff-btn.active{background:#2a1a4e;color:#fff;}
 
 /* Player panels */
 .players-bar{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:780px;gap:8px;}
@@ -115,6 +117,11 @@ a.back:hover{color:#e0e0e0;}
   <button id="mode2p" class="active">2 Player</button>
   <button id="modeAI">vs AI</button>
   <button id="modeOnline">Online</button>
+</div>
+<div class="mode-select ai-difficulty" id="ai-difficulty" style="display:none;">
+  <button id="aiEasy" class="diff-btn active" style="border-color:#2ecc71;">Easy</button>
+  <button id="aiMedium" class="diff-btn" style="border-color:#f39c12;">Medium</button>
+  <button id="aiHard" class="diff-btn" style="border-color:#e74c3c;">Hard</button>
 </div>
 
 <!-- Online Panel -->
@@ -242,6 +249,12 @@ var placingAnywhere = false; // after scratch, place anywhere behind headstring 
 var aiThinking = false;
 var animating = false;
 var shotInProgress = false;
+var aiDifficulty = 'easy'; // 'easy', 'medium', 'hard'
+var AI_SETTINGS = {
+  easy:   { inaccuracy: 0.18, powerVar: 0.25, randomScore: 60, shotDelay: 600 },
+  medium: { inaccuracy: 0.08, powerVar: 0.12, randomScore: 30, shotDelay: 500 },
+  hard:   { inaccuracy: 0.03, powerVar: 0.05, randomScore: 10, shotDelay: 400 }
+};
 
 // Aiming state
 var aiming = false;
@@ -798,15 +811,7 @@ function afterShot(){
     }
   }
 
-  // Check foul: first contact must be own ball (if assigned)
-  if(playerAssign[currentPlayer] && firstContact!==null && firstContact!==8){
-    var contactIsSolid = firstContact>=1&&firstContact<=7;
-    var contactIsStripe = firstContact>=9&&firstContact<=15;
-    if(playerAssign[currentPlayer]==='solids' && !contactIsSolid) foul=true;
-    if(playerAssign[currentPlayer]==='stripes' && !contactIsStripe) foul=true;
-  }
-  // No contact at all = foul
-  if(firstContact===null && !cueBall.potted) foul=true;
+  // Foul only when cue ball is pocketed (handled in pocket detection above)
 
   // Did player pot one of their own balls?
   var pottedOwn = false;
@@ -820,8 +825,8 @@ function afterShot(){
     pottedOwn=true;
   }
 
-  // Handle scratch
-  if(foul || cueBall.potted){
+  // Handle scratch (cue ball pocketed)
+  if(cueBall.potted){
     foul=true;
     // Reset cue ball for opponent to place
     cueBall.potted=false;
@@ -853,7 +858,7 @@ function afterShot(){
 
   if(mode==='ai' && currentPlayer===2 && !gameOver){
     aiThinking=true;
-    setTimeout(aiTurn, 800);
+    setTimeout(aiTurn, AI_SETTINGS[aiDifficulty].shotDelay + 200);
   }
 }
 
@@ -1219,12 +1224,15 @@ function aiTurn(){
       var angle=Math.abs(dx*tpx+dy*tpy);
       score+=angle*50;
 
-      // Add randomness
-      score+=(Math.random()-0.5)*30;
+      // Add randomness (scaled by difficulty)
+      var settings=AI_SETTINGS[aiDifficulty];
+      score+=(Math.random()-0.5)*settings.randomScore;
 
       if(score>bestScore){
         bestScore=score;
-        bestShot={dirX:dx, dirY:dy, power:Math.min(d*0.08+5, MAX_POWER*0.75)};
+        var powerBase=Math.min(d*0.08+5, MAX_POWER*0.75);
+        var pVar=AI_SETTINGS[aiDifficulty].powerVar;
+        bestShot={dirX:dx, dirY:dy, power:powerBase*(1+(Math.random()-0.5)*pVar)};
       }
     }
   }
@@ -1235,8 +1243,9 @@ function aiTurn(){
     bestShot={dirX:Math.cos(angle), dirY:Math.sin(angle), power:MAX_POWER*0.4};
   }
 
-  // Add slight inaccuracy
-  var inaccuracy=(Math.random()-0.5)*0.08;
+  // Add inaccuracy based on difficulty
+  var settings2=AI_SETTINGS[aiDifficulty];
+  var inaccuracy=(Math.random()-0.5)*settings2.inaccuracy;
   var cos=Math.cos(inaccuracy), sin=Math.sin(inaccuracy);
   var newDx=bestShot.dirX*cos-bestShot.dirY*sin;
   var newDy=bestShot.dirX*sin+bestShot.dirY*cos;
@@ -1268,6 +1277,7 @@ document.getElementById('mode2p').addEventListener('click', function(){
   document.getElementById('online-panel').style.display='none';
   document.getElementById('online-info').style.display='none';
   document.getElementById('game-area').style.display='';
+  document.getElementById('ai-difficulty').style.display='none';
   initGame();
 });
 document.getElementById('modeAI').addEventListener('click', function(){
@@ -1277,6 +1287,7 @@ document.getElementById('modeAI').addEventListener('click', function(){
   document.getElementById('online-panel').style.display='none';
   document.getElementById('online-info').style.display='none';
   document.getElementById('game-area').style.display='';
+  document.getElementById('ai-difficulty').style.display='flex';
   initGame();
 });
 document.getElementById('modeOnline').addEventListener('click', function(){
@@ -1286,7 +1297,19 @@ document.getElementById('modeOnline').addEventListener('click', function(){
   document.getElementById('online-panel').style.display='';
   document.getElementById('online-info').style.display='none';
   document.getElementById('game-area').style.display='none';
+  document.getElementById('ai-difficulty').style.display='none';
   showOnlineLobby();
+});
+
+// AI difficulty buttons
+['Easy','Medium','Hard'].forEach(function(d){
+  document.getElementById('ai'+d).addEventListener('click', function(){
+    aiDifficulty=d.toLowerCase();
+    document.querySelectorAll('.diff-btn').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');
+    if(window.SFX) window.SFX.click();
+    initGame();
+  });
 });
 
 function updateModeButtons(){

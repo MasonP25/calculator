@@ -209,6 +209,22 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
+  .name-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .name-cell .mini-avatar {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: inline-flex;
+  }
+  .name-cell .player-name-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .empty-msg {
     color: #555;
     font-size: 0.85rem;
@@ -363,7 +379,7 @@ function setScope(scope) {
     { id: 'stickmanhook', name: 'Stickman Hook',    emoji: '\uD83E\uDDF0', unit: 'level',       lower: false },
     { id: 'paperio',      name: 'Paper.io',         emoji: '\uD83D\uDCCE', unit: '%',           lower: false },
     { id: 'fruitmerge',   name: 'Fruit Merge',      emoji: '\uD83C\uDF51', unit: 'score',       lower: false },
-    { id: 'flappyjump',   name: 'Flappy Jump',      emoji: '\uD83D\uDC3B', unit: 'score',       lower: false },
+    { id: 'flappydunk',   name: 'Flappy Dunk',      emoji: '\uD83C\uDFC0', unit: 'score',       lower: false },
     { id: 'pool',          name: 'Pool',              emoji: '\uD83C\uDFB1', unit: 'streak',      lower: false }
   ];
 
@@ -436,7 +452,18 @@ function setScope(scope) {
       tr.appendChild(tdRank);
 
       var tdName = document.createElement('td');
-      tdName.textContent = entry.name;
+      var nameCell = document.createElement('div');
+      nameCell.className = 'name-cell';
+      var miniAvatar = document.createElement('span');
+      miniAvatar.className = 'mini-avatar';
+      miniAvatar.dataset.username = entry.name;
+      var nameText = document.createElement('span');
+      nameText.className = 'player-name-text';
+      nameText.dataset.username = entry.name;
+      nameText.textContent = entry.name;
+      nameCell.appendChild(miniAvatar);
+      nameCell.appendChild(nameText);
+      tdName.appendChild(nameCell);
       tr.appendChild(tdName);
 
       var tdScore = document.createElement('td');
@@ -452,6 +479,21 @@ function setScope(scope) {
     });
     table.appendChild(tbody);
     card.appendChild(table);
+
+    // Render avatars and nametag styles for all players
+    if (window.ArcadeAvatar && window.ArcadeCoins && window.ArcadeCoins.getProfile) {
+      table.querySelectorAll('.mini-avatar[data-username]').forEach(function(el) {
+        var name = el.dataset.username;
+        if (!name || name === 'Guest') return;
+        window.ArcadeCoins.getProfile(name).then(function(profile) {
+          if (!profile) return;
+          window.ArcadeAvatar.renderMini(el, profile, 22);
+          // Apply nametag style to the name text
+          var nameEl = el.parentElement.querySelector('.player-name-text[data-username="' + name + '"]');
+          if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+        }).catch(function() {});
+      });
+    }
   }
 
   // --- Build a game card ---
@@ -582,7 +624,7 @@ function setScope(scope) {
     }
 
     var countEl = document.getElementById('resultCount');
-    var displayTotal = 67;
+    var displayTotal = 71;
     if (searchQuery) {
       countEl.textContent = list.length + ' of ' + displayTotal + ' games';
     } else {

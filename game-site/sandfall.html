@@ -99,6 +99,12 @@
   <button class="mat-btn" data-mat="acid" style="background:#44cc44;" title="Acid">Acid</button>
   <button class="mat-btn" data-mat="steam" style="background:#aaddee;" title="Steam"><span style="color:#335">Steam</span></button>
   <button class="mat-btn" data-mat="glass" style="background:#aaeedd;" title="Glass"><span style="color:#335">Glass</span></button>
+  <button class="mat-btn" data-mat="ice" style="background:#ccefff;" title="Ice"><span style="color:#336">Ice</span></button>
+  <button class="mat-btn" data-mat="gunpowder" style="background:#333;" title="Gunpowder">Powder</button>
+  <button class="mat-btn" data-mat="plant" style="background:#228B22;" title="Plant">Plant</button>
+  <button class="mat-btn" data-mat="smoke" style="background:#666;" title="Smoke">Smoke</button>
+  <button class="mat-btn" data-mat="metal" style="background:#999;" title="Metal"><span style="color:#333">Metal</span></button>
+  <button class="mat-btn" data-mat="mud" style="background:#6b4226;" title="Mud">Mud</button>
   <button class="mat-btn" data-mat="eraser" style="background:#1a1a2e;border:2px dashed #555;" title="Eraser">Erase</button>
 
   <div class="sep"></div>
@@ -130,11 +136,19 @@
   const GLASS = 8;
   const ACID = 9;
   const OIL = 10;
+  const ICE = 11;
+  const GUNPOWDER = 12;
+  const PLANT = 13;
+  const SMOKE = 14;
+  const METAL = 15;
+  const MUD = 16;
 
   const MAT_MAP = {
     sand: SAND, water: WATER, fire: FIRE, wood: WOOD,
     stone: STONE, lava: LAVA, steam: STEAM, glass: GLASS,
-    acid: ACID, oil: OIL, eraser: EMPTY
+    acid: ACID, oil: OIL, ice: ICE, gunpowder: GUNPOWDER,
+    plant: PLANT, smoke: SMOKE, metal: METAL, mud: MUD,
+    eraser: EMPTY
   };
 
   // --- Color palettes (multiple shades for visual variety) ---
@@ -149,7 +163,13 @@
     [STEAM]: ['#c8e8f4','#b8dce8','#d8f0fc','#a8d0e0'],
     [GLASS]: ['#aaeedd','#99ddcc','#bbffee'],
     [ACID]:  ['#44cc44','#33bb33','#55dd55','#22aa22'],
-    [OIL]:   ['#8B7D00','#7A6E00','#9C8E10','#6B5E00']
+    [OIL]:   ['#8B7D00','#7A6E00','#9C8E10','#6B5E00'],
+    [ICE]:   ['#ccefff','#b8e4ff','#ddf4ff','#aaddff'],
+    [GUNPOWDER]: ['#333','#2a2a2a','#3c3c3c','#222'],
+    [PLANT]: ['#228B22','#1e7a1e','#2da52d','#196619'],
+    [SMOKE]: ['#666','#555','#777','#4a4a4a'],
+    [METAL]: ['#999','#888','#aaa','#7a7a7a'],
+    [MUD]:   ['#6b4226','#5a3820','#7c4e2c','#4d3018']
   };
 
   // --- State ---
@@ -217,7 +237,12 @@
           case STEAM: simSteam(x, y); break;
           case ACID: simAcid(x, y); break;
           case OIL: simOil(x, y); break;
-          // WOOD, STONE, GLASS are static
+          case ICE: simIce(x, y); break;
+          case GUNPOWDER: simGunpowder(x, y); break;
+          case PLANT: simPlant(x, y); break;
+          case SMOKE: simSmoke(x, y); break;
+          case MUD: simMud(x, y); break;
+          // WOOD, STONE, GLASS, METAL are static
         }
       }
     }
@@ -251,6 +276,10 @@
   function simFire(x, y) {
     // Fire has a limited lifetime
     if (Math.random() < 0.08) { set(x, y, EMPTY); return; }
+    // Produce smoke occasionally
+    if (Math.random() < 0.02 && isEmpty(x, y - 1)) {
+      set(x, y - 1, SMOKE);
+    }
     // Spread to adjacent wood/oil
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
@@ -301,6 +330,18 @@
           set(x + dx, y + dy, FIRE);
         }
         if (nb === OIL && Math.random() < 0.12) {
+          set(x + dx, y + dy, FIRE);
+        }
+        if (nb === ICE && Math.random() < 0.15) {
+          set(x + dx, y + dy, WATER);
+        }
+        if (nb === METAL && Math.random() < 0.01) {
+          set(x + dx, y + dy, LAVA);
+        }
+        if (nb === PLANT && Math.random() < 0.08) {
+          set(x + dx, y + dy, FIRE);
+        }
+        if (nb === GUNPOWDER && Math.random() < 0.5) {
           set(x + dx, y + dy, FIRE);
         }
       }
@@ -359,6 +400,138 @@
     // Flow sideways
     if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
     if (isEmpty(x - d, y)) { swap(x, y, x - d, y); return; }
+  }
+
+  function simIce(x, y) {
+    // Ice melts near fire/lava -> water
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nb = get(x + dx, y + dy);
+        if ((nb === FIRE || nb === LAVA) && Math.random() < 0.08) {
+          set(x, y, WATER);
+          return;
+        }
+      }
+    }
+    // Ice freezes adjacent water
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        if (get(x + dx, y + dy) === WATER && Math.random() < 0.01) {
+          set(x + dx, y + dy, ICE);
+        }
+      }
+    }
+    // Ice is static (solid)
+  }
+
+  function simGunpowder(x, y) {
+    // Falls like sand
+    if (isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Explodes near fire/lava — chain reaction!
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        const nb = get(x + dx, y + dy);
+        if (nb === FIRE || nb === LAVA) {
+          // Explode: turn self and nearby gunpowder into fire
+          set(x, y, FIRE);
+          for (let ex = -2; ex <= 2; ex++) {
+            for (let ey = -2; ey <= 2; ey++) {
+              if (get(x + ex, y + ey) === GUNPOWDER && Math.random() < 0.6) {
+                set(x + ex, y + ey, FIRE);
+              }
+              if (isEmpty(x + ex, y + ey) && Math.random() < 0.3) {
+                set(x + ex, y + ey, FIRE);
+              }
+            }
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  function simPlant(x, y) {
+    // Grows when water is adjacent
+    let hasWater = false;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        if (get(x + dx, y + dy) === WATER) hasWater = true;
+      }
+    }
+    if (hasWater && Math.random() < 0.008) {
+      // Grow into a random empty adjacent cell
+      const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1]];
+      const shuffled = dirs.sort(() => Math.random() - 0.5);
+      for (const [dx, dy] of shuffled) {
+        if (isEmpty(x + dx, y + dy)) {
+          set(x + dx, y + dy, PLANT);
+          break;
+        }
+      }
+      // Consume water occasionally
+      if (Math.random() < 0.3) {
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            if (get(x + dx, y + dy) === WATER) {
+              set(x + dx, y + dy, EMPTY);
+              break;
+            }
+          }
+        }
+      }
+    }
+    // Burns like wood
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        if (get(x + dx, y + dy) === FIRE && Math.random() < 0.06) {
+          set(x, y, FIRE);
+          return;
+        }
+      }
+    }
+  }
+
+  function simSmoke(x, y) {
+    // Rises and dissipates
+    if (Math.random() < 0.03) { set(x, y, EMPTY); return; }
+    if (isEmpty(x, y - 1)) { swap(x, y, x, y - 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y - 1)) { swap(x, y, x + d, y - 1); return; }
+    if (isEmpty(x - d, y - 1)) { swap(x, y, x - d, y - 1); return; }
+    if (Math.random() < 0.5) {
+      if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    }
+  }
+
+  function simMud(x, y) {
+    // Falls slowly like thick liquid
+    if (Math.random() < 0.5 && isEmpty(x, y + 1)) { swap(x, y, x, y + 1); return; }
+    const d = randDir();
+    if (isEmpty(x + d, y + 1)) { swap(x, y, x + d, y + 1); return; }
+    if (isEmpty(x - d, y + 1)) { swap(x, y, x - d, y + 1); return; }
+    // Very slow sideways flow
+    if (Math.random() < 0.1) {
+      if (isEmpty(x + d, y)) { swap(x, y, x + d, y); return; }
+    }
+    // Mud dries near fire -> sand
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        if (get(x + dx, y + dy) === FIRE && Math.random() < 0.04) {
+          set(x, y, SAND);
+          return;
+        }
+      }
+    }
+    // Water + sand near mud can create more mud
   }
 
   // --- Rendering ---

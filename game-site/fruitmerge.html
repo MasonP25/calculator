@@ -29,7 +29,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 28px;
+    gap: 12px;
     padding: 10px 20px 4px;
     width: 100%;
     max-width: 520px;
@@ -48,12 +48,12 @@
     background: #1a1a2e;
     border: 1px solid #2a2a4a;
     border-radius: 10px;
-    padding: 4px 16px;
+    padding: 4px 12px;
     text-align: center;
-    min-width: 80px;
+    min-width: 60px;
   }
-  .score-box .label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-  .score-box .value { font-size: 1.3rem; font-weight: 700; color: #00d4ff; }
+  .score-box .label { font-size: 0.6rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .score-box .value { font-size: 1.1rem; font-weight: 700; color: #00d4ff; }
 
   .game-area {
     position: relative;
@@ -84,17 +84,28 @@
     background: linear-gradient(90deg, transparent, rgba(255,60,60,0.6), transparent);
   }
   .next-preview {
-    position: absolute;
-    top: -52px;
-    right: -4px;
     background: #1a1a2e;
     border: 1px solid #2a2a4a;
     border-radius: 10px;
     padding: 4px 12px;
     text-align: center;
+    min-width: 60px;
   }
   .next-preview .label { font-size: 0.6rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-  .next-preview .fruit { font-size: 1.6rem; line-height: 1.2; }
+  .next-preview .fruit { font-size: 1.4rem; line-height: 1.2; }
+  .save-quit-btn {
+    background: none;
+    border: 1px solid #2a2a4a;
+    color: #888;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .save-quit-btn:hover { border-color: #7b2ff7; color: #e0e0e0; }
 
   .aim-line {
     position: absolute;
@@ -160,16 +171,17 @@
 
 <div class="game-header">
   <div class="game-title">Fruit Merge</div>
+  <div class="next-preview">
+    <div class="label">Next</div>
+    <div class="fruit" id="nextFruit"></div>
+  </div>
   <div class="score-box"><div class="label">Score</div><div class="value" id="scoreVal">0</div></div>
   <div class="score-box"><div class="label">Best</div><div class="value" id="bestVal">0</div></div>
+  <button class="save-quit-btn" id="saveQuitBtn">Save &amp; Quit</button>
 </div>
 
 <div class="game-area">
   <div class="bin-wrapper" id="binWrapper">
-    <div class="next-preview">
-      <div class="label">Next</div>
-      <div class="fruit" id="nextFruit"></div>
-    </div>
     <div class="drop-line"></div>
     <div class="aim-line" id="aimLine"></div>
     <canvas id="gc"></canvas>
@@ -582,8 +594,125 @@
     if (window.HallOfFame) window.HallOfFame.submit('fruitmerge', score);
   }
 
-  restartBtn.addEventListener('click', startGame);
+  // ---- Save & Load (Firebase persistence) ----
+  function getUsername() {
+    return localStorage.getItem('arcade_currentUser') || null;
+  }
+
+  function serializeGame() {
+    return {
+      fruits: fruits.map(f => ({ type: f.type, x: Math.round(f.x*10)/10, y: Math.round(f.y*10)/10, vx: Math.round(f.vx*10)/10, vy: Math.round(f.vy*10)/10 })),
+      score: score,
+      currentType: currentType,
+      nextType: nextType,
+      dropX: dropX,
+      ts: Date.now()
+    };
+  }
+
+  function deserializeGame(data) {
+    fruits = [];
+    for (const fd of data.fruits) {
+      const fr = spawnFruit(fd.type, fd.x, fd.y, fd.vx || 0, fd.vy || 0);
+      fr.dropGrace = 0;
+      fr.justDropped = false;
+      fruits.push(fr);
+    }
+    score = data.score || 0;
+    scoreEl.textContent = score;
+    currentType = data.currentType || randType();
+    nextType = data.nextType || randType();
+    dropX = data.dropX || W / 2;
+    updateNextPreview();
+    aimLine.style.left = (dropX + WALL - 1) + 'px';
+    dangerTimer = 0;
+    gameOver = false;
+    canDrop = true;
+    overlay.classList.remove('show');
+    lastTime = 0;
+    animId = requestAnimationFrame(loop);
+  }
+
+  async function saveGame() {
+    const user = getUsername();
+    if (!user) { alert('Sign in to save your game!'); return; }
+    // Wait for firebase-lb.js to load
+    if (!window._fbDb) {
+      alert('Firebase not loaded yet. Try again in a moment.');
+      return;
+    }
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
+      const db = window._fbDb;
+      const saveData = serializeGame();
+      await setDoc(doc(db, 'users', user), { fruitmerge_save: JSON.stringify(saveData) }, { merge: true });
+      // Submit score to leaderboard
+      if (window.HallOfFame) window.HallOfFame.submit('fruitmerge', score);
+      // Go back to index
+      window.location.href = 'index.html';
+    } catch (e) {
+      console.error('Save failed:', e);
+      alert('Save failed: ' + e.message);
+    }
+  }
+
+  async function loadGame() {
+    const user = getUsername();
+    if (!user) return null;
+    // Wait briefly for firebase
+    await new Promise(r => setTimeout(r, 800));
+    if (!window._fbDb) return null;
+    try {
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
+      const db = window._fbDb;
+      const snap = await getDoc(doc(db, 'users', user));
+      if (snap.exists() && snap.data().fruitmerge_save) {
+        return JSON.parse(snap.data().fruitmerge_save);
+      }
+    } catch (e) { console.error('Load failed:', e); }
+    return null;
+  }
+
+  async function clearSave() {
+    const user = getUsername();
+    if (!user || !window._fbDb) return;
+    try {
+      const { doc, updateDoc, deleteField } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
+      const db = window._fbDb;
+      await updateDoc(doc(db, 'users', user), { fruitmerge_save: deleteField() });
+    } catch (e) {}
+  }
+
+  document.getElementById('saveQuitBtn').addEventListener('click', () => {
+    if (gameOver) { window.location.href = 'index.html'; return; }
+    saveGame();
+  });
+
+  // ---- End game: clear save ----
+  const origEndGame = endGame;
+  endGame = function() {
+    origEndGame();
+    clearSave();
+  };
+
+  restartBtn.addEventListener('click', () => {
+    clearSave();
+    startGame();
+  });
+
+  // ---- Init: try to load saved game ----
   startGame();
+  (async () => {
+    const saved = await loadGame();
+    if (saved && saved.fruits && saved.fruits.length > 0) {
+      // Check if save is less than 7 days old
+      if (saved.ts && Date.now() - saved.ts < 7 * 24 * 60 * 60 * 1000) {
+        cancelAnimationFrame(animId);
+        gameOver = false;
+        deserializeGame(saved);
+      }
+    }
+  })();
 })();
 </script>
 
