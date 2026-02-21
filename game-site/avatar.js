@@ -38,6 +38,11 @@
     hair_buzz:     { name: 'Buzz Cut', category: 'hair', price: 25 },
     hair_wavy:     { name: 'Wavy',     category: 'hair', price: 50 },
     hair_pigtails: { name: 'Pigtails', category: 'hair', price: 55 },
+    hair_braids:   { name: 'Braids',   category: 'hair', price: 65 },
+    hair_mullet:   { name: 'Mullet',   category: 'hair', price: 60 },
+    hair_bun:      { name: 'Bun',      category: 'hair', price: 45 },
+    hair_dreads:   { name: 'Dreads',   category: 'hair', price: 70 },
+    hair_emo:      { name: 'Emo',      category: 'hair', price: 55 },
     // Faces
     face_smile:    { name: 'Smile',     category: 'face', price: 30 },
     face_grin:     { name: 'Grin',      category: 'face', price: 40 },
@@ -60,6 +65,29 @@
     shirt_tuxedo:   { name: 'Tuxedo',     category: 'shirt', price: 200 },
     shirt_varsity:  { name: 'Varsity',    category: 'shirt', price: 100 },
     shirt_space:    { name: 'Space',      category: 'shirt', price: 110 }
+  };
+
+  // ── Skin Colors ─────────────────────────────────────────────────────
+  var SKIN_COLORS = {
+    // Free realistic skin tones
+    skin_light:    { name: 'Light',    color: '#FFD3B5', price: 0 },
+    skin_fair:     { name: 'Fair',     color: '#FFCBA4', price: 0 },
+    skin_peach:    { name: 'Peach',    color: '#F5C5A3', price: 0 },
+    skin_tan:      { name: 'Tan',      color: '#D4A373', price: 0 },
+    skin_caramel:  { name: 'Caramel',  color: '#C68642', price: 0 },
+    skin_brown:    { name: 'Brown',    color: '#A0724A', price: 0 },
+    skin_dark:     { name: 'Dark',     color: '#6B4226', price: 0 },
+    skin_deep:     { name: 'Deep',     color: '#4A2C17', price: 0 },
+    skin_olive:    { name: 'Olive',    color: '#C4A882', price: 0 },
+    skin_golden:   { name: 'Golden',   color: '#E8B878', price: 0 },
+    // ROYGBIV colors (purchasable)
+    skin_red:      { name: 'Red',      color: '#FF4444', price: 50 },
+    skin_orange:   { name: 'Orange',   color: '#FF8C00', price: 50 },
+    skin_yellow:   { name: 'Yellow',   color: '#FFD700', price: 50 },
+    skin_green:    { name: 'Green',    color: '#44CC44', price: 50 },
+    skin_blue:     { name: 'Blue',     color: '#4488FF', price: 50 },
+    skin_indigo:   { name: 'Indigo',   color: '#6A0DAD', price: 50 },
+    skin_violet:   { name: 'Violet',   color: '#9B59B6', price: 50 }
   };
 
   // ── Nametag Catalog ───────────────────────────────────────────────────
@@ -91,7 +119,15 @@
 
   // ── Drawing helpers ───────────────────────────────────────────────────
 
-  function drawBase(svg) {
+  function getSkinColor(equipped) {
+    if (equipped && equipped.skin && SKIN_COLORS[equipped.skin]) {
+      return SKIN_COLORS[equipped.skin].color;
+    }
+    return '#FFD3B5'; // default light
+  }
+
+  function drawBase(svg, equipped) {
+    var skinColor = getSkinColor(equipped);
     // Body / torso (default gray)
     el('rect', {
       x: 30, y: 68, width: 40, height: 55, rx: 12, ry: 12,
@@ -100,15 +136,15 @@
     // Arms
     el('rect', {
       x: 18, y: 74, width: 14, height: 36, rx: 7, ry: 7,
-      fill: '#CCCCCC', 'class': 'av-body'
+      fill: '#CCCCCC', 'class': 'av-body av-arm'
     }, svg);
     el('rect', {
       x: 68, y: 74, width: 14, height: 36, rx: 7, ry: 7,
-      fill: '#CCCCCC', 'class': 'av-body'
+      fill: '#CCCCCC', 'class': 'av-body av-arm'
     }, svg);
     // Head
     el('circle', {
-      cx: 50, cy: 40, r: 26, fill: '#FFD3B5', 'class': 'av-head'
+      cx: 50, cy: 40, r: 26, fill: skinColor, 'class': 'av-head'
     }, svg);
     // Default eyes (small dots)
     el('circle', { cx: 40, cy: 38, r: 2.5, fill: '#333' , 'class': 'av-default-eye' }, svg);
@@ -130,11 +166,20 @@
     },
     shirt_hoodie: function (svg) {
       svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#555555'); });
-      // Hood outline behind head
-      el('path', {
-        d: 'M30,68 Q30,55 38,50 L50,48 L62,50 Q70,55 70,68',
-        fill: 'none', stroke: '#444444', 'stroke-width': 3
-      }, svg);
+      // Hood behind head — insert before the head element
+      var headEl = svg.querySelector('.av-head');
+      var hood = el('path', {
+        d: 'M28,68 Q26,50 34,42 Q42,34 50,33 Q58,34 66,42 Q74,50 72,68 Z',
+        fill: '#4A4A4A'
+      });
+      if (headEl) {
+        svg.insertBefore(hood, headEl);
+      } else {
+        svg.appendChild(hood);
+      }
+      // Hood strings
+      el('line', { x1: 42, y1: 64, x2: 40, y2: 78, stroke: '#888888', 'stroke-width': 1.5 }, svg);
+      el('line', { x1: 58, y1: 64, x2: 60, y2: 78, stroke: '#888888', 'stroke-width': 1.5 }, svg);
     },
     shirt_jersey: function (svg) {
       svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#33AA55'); });
@@ -159,13 +204,13 @@
       el('ellipse', { cx: 55, cy: 95, rx: 4, ry: 7, fill: '#33AA44', opacity: 0.6, transform: 'rotate(15 55 95)' }, svg);
       el('ellipse', { cx: 45, cy: 105, rx: 5, ry: 6, fill: '#33AA44', opacity: 0.6, transform: 'rotate(-10 45 105)' }, svg);
     },
-    shirt_tank: function (svg) {
-      // Narrower body fill – keep arms skin-colored
+    shirt_tank: function (svg, equipped) {
+      var skinColor = getSkinColor(equipped);
       svg.querySelectorAll('.av-body').forEach(function (e) {
-        if (parseFloat(e.getAttribute('x')) === 30) {
-          e.setAttribute('fill', '#EEEEEE');
+        if (e.classList.contains('av-arm')) {
+          e.setAttribute('fill', skinColor);
         } else {
-          e.setAttribute('fill', '#FFD3B5');
+          e.setAttribute('fill', '#EEEEEE');
         }
       });
     },
@@ -216,19 +261,20 @@
       el('path', { d: 'M76,40 Q78,60 76,80 Q74,85 70,80 L72,40 Z', fill: '#2C1810' }, svg);
     },
     hair_curly: function (svg) {
-      var cx = 50, cy = 30;
-      // Series of small arcs to create poofy outline
+      // Poofy curly hair wrapping top of head
       el('path', {
-        d: 'M26,42 Q22,36 24,28 Q26,18 34,14 Q40,10 50,12 Q60,10 66,14 Q74,18 76,28 Q78,36 74,42 ' +
-           'Q78,38 76,30 Q72,16 60,12 Q52,8 40,12 Q28,16 24,30 Q22,38 26,42 Z',
+        d: 'M24,42 Q20,32 24,22 Q28,14 38,12 Q44,10 50,12 Q56,10 62,12 Q72,14 76,22 Q80,32 76,42 ' +
+           'L72,36 Q70,20 50,16 Q30,20 28,36 Z',
         fill: '#7B5B3A'
       }, svg);
-      // Extra poof bumps
-      el('circle', { cx: 28, cy: 32, r: 6, fill: '#7B5B3A' }, svg);
-      el('circle', { cx: 72, cy: 32, r: 6, fill: '#7B5B3A' }, svg);
-      el('circle', { cx: 38, cy: 18, r: 6, fill: '#7B5B3A' }, svg);
-      el('circle', { cx: 62, cy: 18, r: 6, fill: '#7B5B3A' }, svg);
-      el('circle', { cx: 50, cy: 15, r: 6, fill: '#7B5B3A' }, svg);
+      // Curl bumps around the head
+      el('circle', { cx: 26, cy: 36, r: 7, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 74, cy: 36, r: 7, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 34, cy: 20, r: 6, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 66, cy: 20, r: 6, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 50, cy: 16, r: 7, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 42, cy: 17, r: 5, fill: '#7B5B3A' }, svg);
+      el('circle', { cx: 58, cy: 17, r: 5, fill: '#7B5B3A' }, svg);
     },
     hair_spiky: function (svg) {
       el('polygon', { points: '30,30 35,8 40,28',  fill: '#F5D442' }, svg);
@@ -260,7 +306,8 @@
       el('circle', { cx: 70, cy: 34, r: 3, fill: '#CC4433', stroke: '#AA2222', 'stroke-width': 1.5 }, svg);
     },
     hair_afro: function (svg) {
-      el('ellipse', { cx: 50, cy: 30, rx: 32, ry: 28, fill: '#1A1A1A' }, svg);
+      // Big poofy afro wrapping around head (head is at cx:50, cy:40, r:26)
+      el('ellipse', { cx: 50, cy: 36, rx: 34, ry: 32, fill: '#1A1A1A' }, svg);
     },
     hair_buzz: function (svg) {
       el('path', {
@@ -290,6 +337,75 @@
       // Hair ties
       el('circle', { cx: 26, cy: 36, r: 3, fill: '#FF1493' }, svg);
       el('circle', { cx: 74, cy: 36, r: 3, fill: '#FF1493' }, svg);
+    },
+    hair_braids: function (svg) {
+      // Top hair
+      el('path', {
+        d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
+        fill: '#2C1810'
+      }, svg);
+      // Left braid
+      for (var i = 0; i < 5; i++) {
+        el('ellipse', { cx: 28 + (i % 2 ? 2 : -2), cy: 42 + i * 10, rx: 5, ry: 4, fill: i % 2 ? '#3D2317' : '#2C1810' }, svg);
+      }
+      // Right braid
+      for (var j = 0; j < 5; j++) {
+        el('ellipse', { cx: 72 + (j % 2 ? -2 : 2), cy: 42 + j * 10, rx: 5, ry: 4, fill: j % 2 ? '#3D2317' : '#2C1810' }, svg);
+      }
+      // Hair ties at bottom
+      el('circle', { cx: 28, cy: 88, r: 3, fill: '#FFD700' }, svg);
+      el('circle', { cx: 72, cy: 88, r: 3, fill: '#FFD700' }, svg);
+    },
+    hair_mullet: function (svg) {
+      // Short top
+      el('path', {
+        d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
+        fill: '#8B6914'
+      }, svg);
+      // Long back (the business in the back)
+      el('path', {
+        d: 'M30,36 Q28,50 30,70 Q32,80 38,85 Q44,88 50,86 Q56,88 62,85 Q68,80 70,70 Q72,50 70,36 Z',
+        fill: '#8B6914'
+      }, svg);
+    },
+    hair_bun: function (svg) {
+      // Base hair pulled back
+      el('path', {
+        d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
+        fill: '#1A1A1A'
+      }, svg);
+      // Bun on top
+      el('circle', { cx: 50, cy: 12, r: 10, fill: '#1A1A1A' }, svg);
+    },
+    hair_dreads: function (svg) {
+      // Top hair mass
+      el('path', {
+        d: 'M24,40 Q24,14 50,12 Q76,14 76,40 L72,30 Q68,18 50,16 Q32,18 28,30 Z',
+        fill: '#2C1810'
+      }, svg);
+      // Individual dreads hanging down
+      var dreadX = [24, 30, 36, 64, 70, 76];
+      dreadX.forEach(function(x) {
+        el('rect', { x: x - 3, y: 36, width: 6, height: 40, rx: 3, fill: '#2C1810' }, svg);
+      });
+      // Front dreads
+      el('rect', { x: 40, y: 14, width: 5, height: 20, rx: 2.5, fill: '#3D2317' }, svg);
+      el('rect', { x: 55, y: 14, width: 5, height: 20, rx: 2.5, fill: '#3D2317' }, svg);
+    },
+    hair_emo: function (svg) {
+      // Side-swept fringe covering one eye
+      el('path', {
+        d: 'M26,36 Q26,14 50,12 Q74,14 74,36 L70,30 Q65,18 50,16 Q35,18 30,30 Z',
+        fill: '#1A1A1A'
+      }, svg);
+      // Long swooping fringe over right eye
+      el('path', {
+        d: 'M28,30 Q30,16 50,14 Q60,16 68,26 L64,46 Q56,44 48,42 Q38,38 30,36 Z',
+        fill: '#1A1A1A'
+      }, svg);
+      // Side bits
+      el('path', { d: 'M24,38 Q22,50 24,62 Q26,65 28,60 L26,38 Z', fill: '#1A1A1A' }, svg);
+      el('path', { d: 'M76,38 Q78,50 76,62 Q74,65 72,60 L74,38 Z', fill: '#1A1A1A' }, svg);
     }
   };
 
@@ -537,11 +653,11 @@
     svg.style.display = 'block';
 
     // Draw base body and head
-    drawBase(svg);
+    drawBase(svg, equipped);
 
     // Layer 1: Shirt (modifies body fill)
     if (equipped.shirt && shirtRenderers[equipped.shirt]) {
-      shirtRenderers[equipped.shirt](svg);
+      shirtRenderers[equipped.shirt](svg, equipped);
     }
 
     // Layer 2: Hair
@@ -620,7 +736,8 @@
     renderMini: renderMini,
     styleName: styleName,
     ITEMS: ITEMS,
-    NAMETAGS: NAMETAGS
+    NAMETAGS: NAMETAGS,
+    SKIN_COLORS: SKIN_COLORS
   };
 
 })();

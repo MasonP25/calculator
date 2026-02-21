@@ -2,7 +2,7 @@
 (function() {
   var _balance = 0;
   var _inventory = [];
-  var _equipped = { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+  var _equipped = { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
   var _loaded = false;
   var _profileCache = {};
 
@@ -84,7 +84,7 @@
           var data = snap.data();
           _balance = data.coins || 0;
           _inventory = data.inventory || [];
-          _equipped = data.equipped || { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+          _equipped = data.equipped || { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
         }
         _loaded = true;
         _dispatch();
@@ -165,7 +165,11 @@
     },
 
     equipItem: function(category, itemId) {
-      if (itemId && _inventory.indexOf(itemId) === -1) return false;
+      // Allow free skin colors without needing them in inventory
+      var isFree = category === 'skin' && itemId && itemId.indexOf('skin_') === 0 &&
+        window.ArcadeAvatar && window.ArcadeAvatar.SKIN_COLORS && window.ArcadeAvatar.SKIN_COLORS[itemId] &&
+        window.ArcadeAvatar.SKIN_COLORS[itemId].price === 0;
+      if (itemId && !isFree && _inventory.indexOf(itemId) === -1) return false;
       _equipped[category] = itemId || '';
       _save();
       _dispatch();
@@ -175,7 +179,7 @@
     // Fetch another player's profile (equipped items) for display
     getProfile: function(username) {
       if (!username || username === 'Guest') {
-        return Promise.resolve({ hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' });
+        return Promise.resolve({ hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' });
       }
       // Check cache
       var cacheKey = username.toLowerCase();
@@ -183,10 +187,10 @@
         return Promise.resolve(_profileCache[cacheKey]);
       }
       return _initFirebase().then(function() {
-        if (!_db) return { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+        if (!_db) return { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
         var docRef = _doc(_db, 'users', cacheKey);
         return _getDoc(docRef).then(function(snap) {
-          var profile = { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+          var profile = { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
           if (snap.exists()) {
             var data = snap.data();
             if (data.equipped) profile = data.equipped;
@@ -196,7 +200,7 @@
           return profile;
         });
       }).catch(function() {
-        return { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+        return { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
       });
     },
 
@@ -204,7 +208,7 @@
     reload: function() {
       _balance = 0;
       _inventory = [];
-      _equipped = { hat: '', hair: '', face: '', shirt: '', nametagColor: '', nametagFont: '' };
+      _equipped = { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '' };
       _loaded = false;
       _profileCache = {};
       return _load();

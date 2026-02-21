@@ -248,6 +248,63 @@
     font-weight: 600;
   }
 
+  /* Skin color picker */
+  .skin-row {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .skin-row-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 0.6rem;
+  }
+  .skin-section-label {
+    font-size: 0.7rem;
+    color: #666;
+    margin: 0.5rem 0 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .skin-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .skin-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .skin-swatch:hover { transform: scale(1.15); }
+  .skin-swatch.active { border-color: #7b2ff7; }
+  .skin-swatch .swatch-price {
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.55rem;
+    color: #ffd700;
+    white-space: nowrap;
+  }
+  .skin-swatch .swatch-lock {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    opacity: 0.8;
+  }
+
   .item-price {
     font-size: 0.75rem;
     color: #ffd700;
@@ -371,6 +428,7 @@
       </div>
     </div>
 
+    <div id="skinColorRow"></div>
     <div id="categoryRows"></div>
   </div>
 
@@ -396,6 +454,7 @@
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="coins.js"></script>
 <script src="avatar.js"></script>
+<script src="admin.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
 <script>
@@ -417,6 +476,9 @@
     var item = ITEMS[id];
     categoryItems[item.category].push({ id: id, name: item.name, price: item.price });
   });
+
+  // Build skin color list
+  var SKIN_COLORS = window.ArcadeAvatar.SKIN_COLORS;
 
   // Build nametag lists
   var NAMETAGS = window.ArcadeAvatar.NAMETAGS;
@@ -700,6 +762,122 @@
     info.appendChild(details);
   }
 
+  // ── Skin color picker ──
+  function buildSkinColorRow() {
+    var container = document.getElementById('skinColorRow');
+    container.innerHTML = '';
+
+    var row = document.createElement('div');
+    row.className = 'skin-row';
+
+    var label = document.createElement('div');
+    label.className = 'skin-row-label';
+    label.textContent = 'Skin Color';
+    row.appendChild(label);
+
+    var equipped = window.ArcadeCoins.getEquipped();
+    var currentSkin = equipped.skin || '';
+
+    // Separate free and paid
+    var freeSkins = [];
+    var paidSkins = [];
+    Object.keys(SKIN_COLORS).forEach(function(id) {
+      var s = SKIN_COLORS[id];
+      if (s.price === 0) freeSkins.push({ id: id, name: s.name, color: s.color, price: 0 });
+      else paidSkins.push({ id: id, name: s.name, color: s.color, price: s.price });
+    });
+
+    // Free section
+    var freeLabel = document.createElement('div');
+    freeLabel.className = 'skin-section-label';
+    freeLabel.textContent = 'Skin Tones (Free)';
+    row.appendChild(freeLabel);
+
+    var freeSwatches = document.createElement('div');
+    freeSwatches.className = 'skin-swatches';
+    // Default (no skin selected)
+    var defSwatch = document.createElement('div');
+    defSwatch.className = 'skin-swatch' + (currentSkin === '' ? ' active' : '');
+    defSwatch.style.background = '#FFD3B5';
+    defSwatch.title = 'Default';
+    defSwatch.onclick = function() {
+      sfxClick();
+      window.ArcadeCoins.equipItem('skin', '');
+      buildSkinColorRow();
+      renderAvatarPreview();
+    };
+    freeSwatches.appendChild(defSwatch);
+
+    freeSkins.forEach(function(s) {
+      var swatch = document.createElement('div');
+      swatch.className = 'skin-swatch' + (currentSkin === s.id ? ' active' : '');
+      swatch.style.background = s.color;
+      swatch.title = s.name;
+      swatch.onclick = function() {
+        sfxClick();
+        window.ArcadeCoins.equipItem('skin', s.id);
+        buildSkinColorRow();
+        renderAvatarPreview();
+      };
+      freeSwatches.appendChild(swatch);
+    });
+    row.appendChild(freeSwatches);
+
+    // Paid ROYGBIV section
+    var paidLabel = document.createElement('div');
+    paidLabel.className = 'skin-section-label';
+    paidLabel.style.marginTop = '0.8rem';
+    paidLabel.textContent = 'Colors (50 coins each)';
+    row.appendChild(paidLabel);
+
+    var paidSwatches = document.createElement('div');
+    paidSwatches.className = 'skin-swatches';
+    paidSkins.forEach(function(s) {
+      var owned = window.ArcadeCoins.ownsItem(s.id);
+      var swatch = document.createElement('div');
+      swatch.className = 'skin-swatch' + (currentSkin === s.id ? ' active' : '');
+      swatch.style.background = s.color;
+      swatch.title = s.name + (owned ? '' : ' (50 coins)');
+
+      if (owned) {
+        swatch.onclick = function() {
+          sfxClick();
+          window.ArcadeCoins.equipItem('skin', s.id);
+          buildSkinColorRow();
+          renderAvatarPreview();
+        };
+      } else {
+        swatch.style.opacity = '0.5';
+        var lock = document.createElement('span');
+        lock.className = 'swatch-lock';
+        lock.textContent = '\uD83D\uDD12';
+        swatch.appendChild(lock);
+        var priceTag = document.createElement('span');
+        priceTag.className = 'swatch-price';
+        priceTag.textContent = '50';
+        swatch.appendChild(priceTag);
+        (function(sid, sprice) {
+          swatch.onclick = function() {
+            if (window.ArcadeCoins.getBalance() >= sprice) {
+              var result = window.ArcadeCoins.buyItem(sid, sprice);
+              if (result.ok) {
+                sfxCoin();
+                window.ArcadeCoins.equipItem('skin', sid);
+                updateBalance();
+                buildSkinColorRow();
+                renderAvatarPreview();
+              }
+            }
+          };
+        })(s.id, s.price);
+      }
+      paidSwatches.appendChild(swatch);
+    });
+    row.appendChild(paidSwatches);
+
+    container.appendChild(row);
+  }
+
   // ── Nametag rendering ──
   function renderNametags() {
     renderNtGrid('ntColorGrid', ntColors, 'nametagColor');
@@ -844,6 +1022,7 @@
       document.getElementById('shopContainer').style.display = '';
       updateBalance();
       syncIndicesToEquipped();
+      buildSkinColorRow();
       buildCategoryRows();
       renderAvatarPreview();
       if (currentTab === 'nametags') renderNametags();
@@ -856,6 +1035,7 @@
     updateBalance();
     if (currentTab === 'avatar') {
       updateAllCategoryInfo();
+      buildSkinColorRow();
     } else {
       renderNametags();
     }
