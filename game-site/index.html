@@ -122,6 +122,46 @@
   }
   .fame-link span { margin-right: 0.4rem; }
 
+  /* Search bar */
+  .search-bar {
+    margin-bottom: 1.5rem;
+    position: relative;
+    width: 300px;
+  }
+  .search-bar input {
+    width: 100%;
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 0.55rem 1rem 0.55rem 2.3rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-bar input:focus { border-color: #7b2ff7; }
+  .search-bar input::placeholder { color: #555; }
+  .search-bar .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+  .card.hidden-search { display: none; }
+  .section-title.hidden-search { display: none; }
+  .games.hidden-search { display: none; }
+  .no-results {
+    color: #555;
+    font-size: 0.95rem;
+    font-style: italic;
+    display: none;
+    margin-bottom: 1rem;
+  }
+
   /* ── Chat Panel ── */
   #chat-panel {
     position: fixed;
@@ -405,6 +445,12 @@
   <p class="subtitle">Pick a game to play</p>
   <p class="count">67 games</p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
+
+  <div class="search-bar">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" id="gameSearch" placeholder="Search games..." autocomplete="off">
+  </div>
+  <div class="no-results" id="noResults">No games found</div>
 
   <div class="section-title">Featured</div>
   <div class="games">
@@ -827,6 +873,42 @@
       <span class="badge solo">Keyboard</span><span class="badge new">New</span>
     </a>
   </div>
+<script>
+document.getElementById('gameSearch').addEventListener('input', function() {
+  var q = this.value.toLowerCase().trim();
+  var cards = document.querySelectorAll('.card');
+  var sections = document.querySelectorAll('.section-title');
+  var grids = document.querySelectorAll('.games');
+  var anyVisible = false;
+
+  cards.forEach(function(card) {
+    var name = card.querySelector('h2');
+    var desc = card.querySelector('p');
+    var text = ((name ? name.textContent : '') + ' ' + (desc ? desc.textContent : '')).toLowerCase();
+    if (!q || text.indexOf(q) !== -1) {
+      card.classList.remove('hidden-search');
+    } else {
+      card.classList.add('hidden-search');
+    }
+  });
+
+  // Hide sections where all cards are hidden
+  grids.forEach(function(grid, i) {
+    var visibleCards = grid.querySelectorAll('.card:not(.hidden-search)');
+    if (q && visibleCards.length === 0) {
+      grid.classList.add('hidden-search');
+      if (sections[i]) sections[i].classList.add('hidden-search');
+    } else {
+      grid.classList.remove('hidden-search');
+      if (sections[i]) sections[i].classList.remove('hidden-search');
+      if (visibleCards.length > 0) anyVisible = true;
+    }
+  });
+
+  document.getElementById('noResults').style.display = (q && !anyVisible) ? 'block' : 'none';
+});
+</script>
+
 <!-- Chat Panel -->
 <div id="chat-panel" class="collapsed">
   <div id="chat-header" onclick="toggleChat()">
