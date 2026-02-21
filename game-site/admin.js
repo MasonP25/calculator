@@ -60,6 +60,44 @@
     });
   }
 
+  // Game name → id lookup (so admin can type either)
+  var _gameNames = {
+    'snake':'snake','pong':'pong','tron':'tron','tank battle':'tanks','space race':'racer',
+    'connect four':'connect4','connect 4':'connect4','reaction time':'reaction','tetris':'tetris',
+    'breakout':'breakout','2048':'2048','minesweeper':'minesweeper','flappy bird':'flappy',
+    'asteroids':'asteroids','memory match':'memory','wordle':'wordle','doodle jump':'doodle',
+    'typing test':'typing','sudoku':'sudoku','connections':'connections','hangman':'hangman',
+    'simon says':'simon','gravity run':'gravity','chess':'chess','checkers':'checkers',
+    'platformer':'platformer','piano tiles':'tiles','crossy road':'crossy','space invaders':'invaders',
+    'aim (classic)':'aim_classic','aim classic':'aim_classic','aim (speed)':'aim_speed','aim speed':'aim_speed',
+    'aim (precision)':'aim_precision','aim precision':'aim_precision','battleship':'battleship',
+    'whack-a-mole':'whack','whack a mole':'whack','sliding puzzle':'sliding','stack tower':'stack',
+    'word search':'wordsearch','geometry dash':'geodash','rock paper scissors':'rps',
+    'pac-man':'pacman','pacman':'pacman','solitaire':'solitaire','color flood':'flood',
+    'bubble shooter':'bubbles','uno':'uno','wavelength':'wavelength','tic tac toe':'tictactoe',
+    'wordscapes':'wordscapes','match 3':'match3','nonogram':'nonogram','fruit slicer':'fruit',
+    'maze runner':'maze','20 questions':'20q','hue sort':'huesort','lights out':'lightsout',
+    'pipe puzzle':'pipes','ball sort':'ballsort','snake.io':'snakeio','hole.io':'holeio',
+    'idle miner':'idleminer','color switch':'colorswitch','duck hunt':'duckhunt',
+    'tower defense':'td','bullet dodge':'bulletdodge','penguin knockout':'penguin',
+    'imposter':'imposter','rhythm':'rhythm','mini golf':'golf','dino runner':'dino',
+    'galaga':'galaga','crossword':'crossword','block blast':'blockblast',
+    'stickman hook':'stickmanhook','paper.io':'paperio','fruit merge':'fruitmerge',
+    'flappy dunk':'flappydunk','pool':'pool','sand fall':'sandfall'
+  };
+
+  function _resolveGameId(input) {
+    if (!input) return input;
+    var lower = input.toLowerCase().trim();
+    // Direct match (already an id)
+    if (_gameNames[lower] || lower.match(/^[a-z0-9_]+$/)) return _gameNames[lower] || lower;
+    // Fuzzy: check if any name starts with input
+    for (var name in _gameNames) {
+      if (name.indexOf(lower) === 0) return _gameNames[name];
+    }
+    return input;
+  }
+
   window.ArcadeAdmin = {
     // ── Set a user's coin balance ──
     setCoins: function (username, amount) {
@@ -171,8 +209,11 @@
 
     // ── Set a leaderboard score ──
     // Usage: ArcadeAdmin.setScore('snake', 'mason', 9999)
+    // Also accepts game names: ArcadeAdmin.setScore('Doodle Jump', 'mason', 9999)
     setScore: function (gameId, name, score) {
       if (!gameId || !name) return console.error('[Admin] gameId and name required');
+      // Try to resolve game name to game id
+      gameId = _resolveGameId(gameId);
       score = parseInt(score) || 0;
       return _initFirebase().then(function () {
         var docRef = _doc(_db, 'scores', gameId + '_' + name.toLowerCase());
@@ -202,6 +243,7 @@
     // ── Delete a leaderboard entry ──
     deleteScore: function (gameId, name) {
       if (!gameId || !name) return console.error('[Admin] gameId and name required');
+      gameId = _resolveGameId(gameId);
       return _initFirebase().then(function () {
         return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function (mod) {
           var deleteDoc = mod.deleteDoc;

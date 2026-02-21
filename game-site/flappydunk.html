@@ -75,7 +75,7 @@ const BASE_SCROLL = 2.8;
 
 /* ── State ── */
 let state = STATE.MENU;
-let ball = { x: 0, y: 0, vy: 0, angle: 0, vangle: 0 };
+let ball = { x: 0, y: 0, vx: 0, vy: 0, angle: 0, vangle: 0 };
 let hoops = [];
 let scrollX = 0;
 let scrollSpeed = BASE_SCROLL;
@@ -106,7 +106,7 @@ function initHoops() {
 }
 
 function resetGame() {
-  ball = { x: 110, y: 300, vy: 0, angle: 0, vangle: 0 };
+  ball = { x: 110, y: 300, vx: 0, vy: 0, angle: 0, vangle: 0 };
   scrollX = 0;
   scrollSpeed = BASE_SCROLL;
   score = 0;
@@ -210,41 +210,45 @@ function checkScoring() {
 }
 
 function handleCollisions() {
-  const BOUNCE = 0.45; // bounciness off rim/backboard
+  const BOUNCE = 0.5;
   for (const h of hoops) {
     const hx = h.x - scrollX;
-    if (Math.abs(ball.x - hx) > HOOP_RIM_W + BALL_R + 10) continue;
+    if (Math.abs(ball.x - hx) > HOOP_RIM_W + BALL_R + 20) continue;
     const lx = hx - HOOP_RIM_W / 2, rx = hx + HOOP_RIM_W / 2;
-    // Left rim post
-    const dl = Math.hypot(ball.x - lx, ball.y - h.y);
     const minDist = BALL_R + RIM_POST_R;
-    if (dl < minDist && dl > 0) {
-      const nx = (ball.x - lx) / dl, ny = (ball.y - h.y) / dl;
-      ball.x = lx + nx * minDist;
+    // Ball's effective velocity relative to the hoop (hoop moves left at scrollSpeed)
+    const relVx = ball.vx + scrollSpeed;
+
+    // Resolve circle-circle collision with a rim post
+    function resolveRim(postX) {
+      const dx = ball.x - postX, dy = ball.y - h.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist >= minDist || dist === 0) return;
+      // Push ball out of rim post
+      const nx = dx / dist, ny = dy / dist;
+      ball.x = postX + nx * minDist;
       ball.y = h.y + ny * minDist;
-      const dot = ball.vy * ny;
-      ball.vy -= (1 + BOUNCE) * dot * ny;
-      const vx = -scrollSpeed;
-      const dotX = vx * nx;
-      // nudge ball horizontally based on bounce direction
-      ball.x += nx * 0.5;
+      // Reflect velocity along collision normal
+      const dot = relVx * nx + ball.vy * ny;
+      if (dot < 0) { // only bounce if moving toward post
+        ball.vx -= (1 + BOUNCE) * dot * nx;
+        ball.vy -= (1 + BOUNCE) * dot * ny;
+        // Dampen a bit
+        ball.vx *= 0.8;
+        ball.vy *= 0.8;
+      }
     }
-    // Right rim post
-    const dr = Math.hypot(ball.x - rx, ball.y - h.y);
-    if (dr < minDist && dr > 0) {
-      const nx = (ball.x - rx) / dr, ny = (ball.y - h.y) / dr;
-      ball.x = rx + nx * minDist;
-      ball.y = h.y + ny * minDist;
-      const dot = ball.vy * ny;
-      ball.vy -= (1 + BOUNCE) * dot * ny;
-      ball.x += nx * 0.5;
-    }
-    // Backboard
+
+    resolveRim(lx);
+    resolveRim(rx);
+
+    // Backboard — solid wall on right side of hoop
     const bbX = rx + 4, bbW = 6, bbH = 50, bbY = h.y - 30;
     if (ball.x + BALL_R > bbX && ball.x - BALL_R < bbX + bbW &&
         ball.y + BALL_R > bbY && ball.y - BALL_R < bbY + bbH) {
       ball.x = bbX - BALL_R;
-      ball.vy *= BOUNCE;
+      if (ball.vx > 0) ball.vx = -ball.vx * BOUNCE;
+      ball.vy *= 0.9;
     }
   }
 }
@@ -264,6 +268,12 @@ function update() {
   ball.vy += GRAVITY;
   if (ball.vy > MAX_FALL) ball.vy = MAX_FALL;
   ball.y += ball.vy;
+  // Horizontal movement (from bounces)
+  ball.x += ball.vx;
+  ball.vx *= 0.96; // friction — drift back
+  // Keep ball on screen horizontally
+  if (ball.x < BALL_R) { ball.x = BALL_R; ball.vx = 0; }
+  if (ball.x > DESIGN_W - BALL_R) { ball.x = DESIGN_W - BALL_R; ball.vx = 0; }
   // Spin
   ball.vangle += 0.003;
   if (ball.vangle > 0.12) ball.vangle = 0.12;
