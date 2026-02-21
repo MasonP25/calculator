@@ -182,6 +182,18 @@
           score: score,
           date: new Date().toLocaleDateString()
         }).then(function () {
+          // Also update local leaderboard
+          try {
+            var key = 'hallOfFame_' + gameId;
+            var list = JSON.parse(localStorage.getItem(key) || '[]');
+            list = list.filter(function(e) { return e.name !== name; });
+            list.push({ name: name, score: score, date: new Date().toLocaleDateString() });
+            var lowerBetter = ['reaction','minesweeper','memory','sudoku','nonogram','maze','20q','huesort','lightsout','pipes','ballsort','wordsearch','sliding','aim_classic','golf','crossword'];
+            var lower = lowerBetter.indexOf(gameId) !== -1;
+            list.sort(function(a, b) { return lower ? a.score - b.score : b.score - a.score; });
+            list = list.slice(0, 10);
+            localStorage.setItem(key, JSON.stringify(list));
+          } catch(e) {}
           console.log('[Admin] Set ' + name + ' score on ' + gameId + ' to ' + score);
         });
       });

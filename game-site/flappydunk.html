@@ -209,22 +209,44 @@ function checkScoring() {
   }
 }
 
-function checkCollision() {
+function handleCollisions() {
+  const BOUNCE = 0.45; // bounciness off rim/backboard
   for (const h of hoops) {
     const hx = h.x - scrollX;
-    if (Math.abs(ball.x - hx) > HOOP_RIM_W + BALL_R) continue;
+    if (Math.abs(ball.x - hx) > HOOP_RIM_W + BALL_R + 10) continue;
     const lx = hx - HOOP_RIM_W / 2, rx = hx + HOOP_RIM_W / 2;
-    // Rim posts
+    // Left rim post
     const dl = Math.hypot(ball.x - lx, ball.y - h.y);
-    if (dl < BALL_R + RIM_POST_R) return true;
+    const minDist = BALL_R + RIM_POST_R;
+    if (dl < minDist && dl > 0) {
+      const nx = (ball.x - lx) / dl, ny = (ball.y - h.y) / dl;
+      ball.x = lx + nx * minDist;
+      ball.y = h.y + ny * minDist;
+      const dot = ball.vy * ny;
+      ball.vy -= (1 + BOUNCE) * dot * ny;
+      const vx = -scrollSpeed;
+      const dotX = vx * nx;
+      // nudge ball horizontally based on bounce direction
+      ball.x += nx * 0.5;
+    }
+    // Right rim post
     const dr = Math.hypot(ball.x - rx, ball.y - h.y);
-    if (dr < BALL_R + RIM_POST_R) return true;
+    if (dr < minDist && dr > 0) {
+      const nx = (ball.x - rx) / dr, ny = (ball.y - h.y) / dr;
+      ball.x = rx + nx * minDist;
+      ball.y = h.y + ny * minDist;
+      const dot = ball.vy * ny;
+      ball.vy -= (1 + BOUNCE) * dot * ny;
+      ball.x += nx * 0.5;
+    }
     // Backboard
     const bbX = rx + 4, bbW = 6, bbH = 50, bbY = h.y - 30;
     if (ball.x + BALL_R > bbX && ball.x - BALL_R < bbX + bbW &&
-        ball.y + BALL_R > bbY && ball.y - BALL_R < bbY + bbH) return true;
+        ball.y + BALL_R > bbY && ball.y - BALL_R < bbY + bbH) {
+      ball.x = bbX - BALL_R;
+      ball.vy *= BOUNCE;
+    }
   }
-  return false;
 }
 
 function checkMissed() {
@@ -259,7 +281,8 @@ function update() {
   }
   // Checks
   checkScoring();
-  if (checkCollision() || checkMissed()) { gameOver(); return; }
+  handleCollisions();
+  if (checkMissed()) { gameOver(); return; }
   if (ball.y - BALL_R > DESIGN_H + 20 || ball.y + BALL_R < -60) { gameOver(); return; }
   // Timers
   if (comboTimer > 0) comboTimer--;

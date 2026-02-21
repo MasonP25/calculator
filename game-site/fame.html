@@ -636,12 +636,33 @@ function setScope(scope) {
     });
   };
 
+  // Render avatars/nametags on all visible tables
+  window._renderFameAvatars = function() {
+    if (!window.ArcadeAvatar || !window.ArcadeCoins || !window.ArcadeCoins.getProfile) return;
+    document.querySelectorAll('.mini-avatar[data-username]').forEach(function(el) {
+      if (el.dataset.rendered) return;
+      var name = el.dataset.username;
+      if (!name || name === 'Guest') return;
+      el.dataset.rendered = '1';
+      window.ArcadeCoins.getProfile(name).then(function(profile) {
+        if (!profile) return;
+        window.ArcadeAvatar.renderMini(el, profile);
+        var nameEl = el.parentElement.querySelector('.player-name-text[data-username="' + name + '"]');
+        if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+      }).catch(function() {});
+    });
+  };
+
   render();
 })();
 </script>
 <script src="sound.js?v=2"></script>
 <script src="coins.js"></script>
 <script src="avatar.js"></script>
+<script>
+// After coins.js and avatar.js load, render avatars on all leaderboard entries
+if (window._renderFameAvatars) window._renderFameAvatars();
+</script>
 <script src="admin.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>

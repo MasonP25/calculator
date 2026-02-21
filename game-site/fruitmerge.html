@@ -633,17 +633,35 @@
     animId = requestAnimationFrame(loop);
   }
 
+  // Firebase helper for save/load
+  let _fmDb = null;
+  async function _getFmDb() {
+    if (_fmDb) return _fmDb;
+    const [appMod, fsMod] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js')
+    ]);
+    const config = {
+      apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+      authDomain: "calculator-81d08.firebaseapp.com",
+      projectId: "calculator-81d08",
+      storageBucket: "calculator-81d08.firebasestorage.app",
+      messagingSenderId: "375406495739",
+      appId: "1:375406495739:web:fd28553263599864426d5e"
+    };
+    let app;
+    try { app = appMod.initializeApp(config, 'fruitmerge-app'); }
+    catch(e) { try { app = appMod.getApp('fruitmerge-app'); } catch(e2) { app = appMod.initializeApp(config, 'fruitmerge-app-' + Date.now()); } }
+    _fmDb = fsMod.getFirestore(app);
+    return _fmDb;
+  }
+
   async function saveGame() {
     const user = getUsername();
     if (!user) { alert('Sign in to save your game!'); return; }
-    // Wait for firebase-lb.js to load
-    if (!window._fbDb) {
-      alert('Firebase not loaded yet. Try again in a moment.');
-      return;
-    }
     try {
       const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
-      const db = window._fbDb;
+      const db = await _getFmDb();
       const saveData = serializeGame();
       await setDoc(doc(db, 'users', user), { fruitmerge_save: JSON.stringify(saveData) }, { merge: true });
       // Submit score to leaderboard
@@ -659,12 +677,9 @@
   async function loadGame() {
     const user = getUsername();
     if (!user) return null;
-    // Wait briefly for firebase
-    await new Promise(r => setTimeout(r, 800));
-    if (!window._fbDb) return null;
     try {
       const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
-      const db = window._fbDb;
+      const db = await _getFmDb();
       const snap = await getDoc(doc(db, 'users', user));
       if (snap.exists() && snap.data().fruitmerge_save) {
         return JSON.parse(snap.data().fruitmerge_save);
@@ -675,10 +690,10 @@
 
   async function clearSave() {
     const user = getUsername();
-    if (!user || !window._fbDb) return;
+    if (!user) return;
     try {
       const { doc, updateDoc, deleteField } = await import('https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js');
-      const db = window._fbDb;
+      const db = await _getFmDb();
       await updateDoc(doc(db, 'users', user), { fruitmerge_save: deleteField() });
     } catch (e) {}
   }
