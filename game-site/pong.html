@@ -61,6 +61,7 @@
 <div class="scores">
   <div><span class="label" id="p1label">You: </span><span class="p1v" id="pScore">0</span></div>
   <div><span class="label" id="p2label">CPU: </span><span class="p2v" id="cScore">0</span></div>
+  <div><span class="label">Score: </span><span style="color:#a855f7;font-weight:bold" id="winsDisp">0</span></div>
 </div>
 <canvas id="c" width="600" height="400"></canvas>
 <div class="msg" id="msg">Click or press SPACE to serve</div>
@@ -144,11 +145,6 @@ function resetBall(serveRight) {
 
 function serve() {
   if (!playing) {
-    if (gameOverState) {
-      pScore = 0; cScore = 0;
-      pScoreEl.textContent = '0'; cScoreEl.textContent = '0';
-      gameOverState = false;
-    }
     playing = true;
     msgEl.textContent = '';
   }
@@ -228,32 +224,16 @@ function update() {
   if (ball.x < 0) {
     cScore++;
     cScoreEl.textContent = cScore;
-    console.log('[PONG] CPU scored:', cScore, '/ WIN_SCORE:', WIN_SCORE);
     if (window.SFX) window.SFX.correct();
-    if (cScore >= WIN_SCORE) {
-      if (window.SFX) window.SFX.fail();
-      msgEl.textContent = 'CPU wins this round. Wins: ' + sessionWins + '  —  SPACE to play again';
-      playing = false; gameOverState = true; return;
-    }
     resetBall(true);
   }
   if (ball.x > W) {
     pScore++;
     pScoreEl.textContent = pScore;
-    console.log('[PONG] Player scored:', pScore, '/ WIN_SCORE:', WIN_SCORE, '| HallOfFame:', !!window.HallOfFame);
     if (window.SFX) window.SFX.correct();
-    if (pScore >= WIN_SCORE) {
-      if (window.SFX) window.SFX.win();
-      sessionWins++;
-      if (window.HallOfFame) {
-        window.HallOfFame.submit('pong', sessionWins);
-        console.log('[PONG] Submitted wins:', sessionWins);
-      } else {
-        console.warn('[PONG] HallOfFame not found!');
-      }
-      msgEl.textContent = 'You win! Total wins: ' + sessionWins + ' (saved!)  —  SPACE to play again';
-      playing = false; gameOverState = true; return;
-    }
+    sessionWins++;
+    document.getElementById('winsDisp').textContent = sessionWins;
+    if (window.HallOfFame) window.HallOfFame.submit('pong', sessionWins);
     resetBall(false);
   }
 }
