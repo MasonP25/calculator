@@ -200,8 +200,10 @@
   // ── Drawing helpers ───────────────────────────────────────────────────
 
   function getSkinColor(equipped) {
-    if (equipped && equipped.skin && SKIN_COLORS[equipped.skin]) {
-      return SKIN_COLORS[equipped.skin].color;
+    if (equipped && equipped.skin) {
+      // Support custom hex colors (admin feature)
+      if (equipped.skin.charAt(0) === '#') return equipped.skin;
+      if (SKIN_COLORS[equipped.skin]) return SKIN_COLORS[equipped.skin].color;
     }
     return '#FFD3B5'; // default light
   }

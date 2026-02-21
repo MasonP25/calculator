@@ -906,6 +906,76 @@
     });
     row.appendChild(paidSwatches);
 
+    // Admin custom color picker — only show if user owns any exclusive item
+    var hasExclusive = false;
+    if (window.ArcadeCoins && window.ArcadeCoins.ownsItem) {
+      var allItems = Object.keys(ITEMS).concat(Object.keys(NAMETAGS));
+      for (var ei = 0; ei < allItems.length; ei++) {
+        var eItem = ITEMS[allItems[ei]] || NAMETAGS[allItems[ei]];
+        if (eItem && eItem.exclusive && window.ArcadeCoins.ownsItem(allItems[ei])) {
+          hasExclusive = true; break;
+        }
+      }
+    }
+    if (hasExclusive) {
+      var adminLabel = document.createElement('div');
+      adminLabel.className = 'skin-section-label';
+      adminLabel.style.marginTop = '0.8rem';
+      adminLabel.textContent = 'Custom Color \u2605';
+      row.appendChild(adminLabel);
+
+      var customRow = document.createElement('div');
+      Object.assign(customRow.style, {
+        display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0'
+      });
+
+      var colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = (currentSkin && currentSkin.charAt(0) === '#') ? currentSkin : '#FF69B4';
+      Object.assign(colorInput.style, {
+        width: '48px', height: '36px', border: '2px solid #3a3a5a', borderRadius: '8px',
+        cursor: 'pointer', padding: '2px', background: 'transparent'
+      });
+
+      var applyBtn = document.createElement('button');
+      applyBtn.textContent = 'Apply';
+      applyBtn.className = 'btn-equip';
+      Object.assign(applyBtn.style, {
+        padding: '6px 16px', fontSize: '0.85rem', borderRadius: '6px'
+      });
+
+      var customActive = (currentSkin && currentSkin.charAt(0) === '#');
+      if (customActive) {
+        var indicator = document.createElement('span');
+        indicator.textContent = 'Equipped';
+        Object.assign(indicator.style, {
+          color: '#7b2ff7', fontWeight: '600', fontSize: '0.8rem'
+        });
+        customRow.appendChild(indicator);
+      }
+
+      applyBtn.onclick = function() {
+        sfxClick();
+        window.ArcadeCoins.equipItem('skin', colorInput.value);
+        buildSkinColorRow();
+        renderAvatarPreview();
+      };
+
+      // Live preview on color change
+      colorInput.addEventListener('input', function() {
+        var previewEquipped = Object.assign({}, window.ArcadeCoins.getEquipped(), { skin: colorInput.value });
+        var previewContainer = document.getElementById('avatarPreview');
+        if (previewContainer && window.ArcadeAvatar) {
+          previewContainer.innerHTML = '';
+          window.ArcadeAvatar.render(previewContainer, previewEquipped, 150);
+        }
+      });
+
+      customRow.appendChild(colorInput);
+      customRow.appendChild(applyBtn);
+      row.appendChild(customRow);
+    }
+
     container.appendChild(row);
   }
 
