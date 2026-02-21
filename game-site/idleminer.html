@@ -831,7 +831,7 @@ document.getElementById('prestige-btn').addEventListener('click', () => {
   if (window.SFX) window.SFX.levelup();
 
   // Submit to leaderboard
-  if (window.HallOfFame) window.HallOfFame.submit('idleminer', state.lifetimeGems);
+  if (window.HallOfFame) window.HallOfFame.submit('idleminer', Math.floor(state.lifetimeGems));
 
   const lifetime = state.lifetimeGems;
   const prestiges = state.prestigeCount + 1;
@@ -981,12 +981,12 @@ setInterval(function() {
   updateUI();
 }, 30000);
 
-// Leaderboard submit every 10 minutes
+// Leaderboard submit every 30 seconds
 setInterval(function() {
   if (state.lifetimeGems > 0 && window.HallOfFame) {
     window.HallOfFame.submit('idleminer', Math.floor(state.lifetimeGems));
   }
-}, 600000);
+}, 30000);
 // Also submit on page unload
 window.addEventListener('beforeunload', function() {
   if (state.lifetimeGems > 0 && window.HallOfFame) {
