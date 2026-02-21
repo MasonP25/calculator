@@ -76,7 +76,8 @@
   // ── Game State ──
   let level = 1;
   let state = 'menu'; // menu, playing, levelComplete, dead
-  let stickman, hooks, finishX, camera;
+  let stickman, hooks, finishX;
+  let camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
   let holding = false;
   let attachedHook = null;
   let ropeLength = 0;

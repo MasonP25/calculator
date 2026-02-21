@@ -105,6 +105,11 @@
   }
   .start-btn:hover { opacity: 0.85; transform: translateY(-1px); }
   .start-btn:active { transform: scale(0.97); }
+  .diff-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .diff-btn { padding: 12px 28px; font-size: 1rem; }
+  .diff-btn[data-diff="easy"] { background: linear-gradient(135deg, #2ed573, #1e9c50); }
+  .diff-btn[data-diff="medium"] { background: linear-gradient(135deg, #ffa502, #d68400); }
+  .diff-btn[data-diff="hard"] { background: linear-gradient(135deg, #ff4757, #c0392b); }
   .controls-hint {
     margin-top: 1.5rem; color: #555; font-size: 0.8rem; text-align: center; line-height: 1.7;
   }
@@ -166,7 +171,11 @@
 <div id="menu-screen">
   <h1>Paper.io</h1>
   <p class="subtitle">Claim your territory</p>
-  <button class="start-btn" id="start-btn">Play</button>
+  <div class="diff-btns">
+    <button class="start-btn diff-btn" data-diff="easy">Easy</button>
+    <button class="start-btn diff-btn" data-diff="medium">Medium</button>
+    <button class="start-btn diff-btn" data-diff="hard">Hard</button>
+  </div>
   <div class="controls-hint">
     Arrow Keys / WASD to move<br>
     Swipe or D-Pad on mobile
@@ -178,7 +187,11 @@
   <h2>Game Over</h2>
   <p class="final-score">Territory: <span id="final-pct">0</span>%</p>
   <p class="killed-by" id="killed-by-msg"></p>
-  <button class="start-btn" id="restart-btn">Play Again</button>
+  <div class="diff-btns">
+    <button class="start-btn diff-btn" data-diff="easy">Easy</button>
+    <button class="start-btn diff-btn" data-diff="medium">Medium</button>
+    <button class="start-btn diff-btn" data-diff="hard">Hard</button>
+  </div>
 </div>
 
 <script>
@@ -187,9 +200,20 @@
   const GRID = 100;
   const CELL = 8;
   const MAP = GRID * CELL;
-  const MOVE_INTERVAL = 80; // ms per cell move
-  const BOT_COUNT = 4;
   const PLAYER_START_SIZE = 3;
+
+  // Difficulty settings
+  const DIFFICULTIES = {
+    easy:   { botCount: 2, moveInterval: 100, botMaxTrail: [8, 14],  botTurnRate: [10, 25], botHunts: false },
+    medium: { botCount: 4, moveInterval: 80,  botMaxTrail: [15, 35], botTurnRate: [8, 20],  botHunts: false },
+    hard:   { botCount: 6, moveInterval: 65,  botMaxTrail: [20, 45], botTurnRate: [5, 15],  botHunts: true  },
+  };
+  let difficulty = 'medium';
+  let MOVE_INTERVAL = 80;
+  let BOT_COUNT = 4;
+  let botMaxTrailRange = [15, 35];
+  let botTurnRateRange = [8, 20];
+  let botHunts = false;
 
   // Colors
   const COLORS = [
@@ -198,6 +222,8 @@
     { name: 'Blaze',   terr: '#ffa502', trail: '#ffa50280', head: '#ffc048', dark: '#7a4e00' },
     { name: 'Venom',   terr: '#2ed573', trail: '#2ed57380', head: '#55e898', dark: '#14692e' },
     { name: 'Phantom', terr: '#9b59b6', trail: '#9b59b680', head: '#c084d8', dark: '#4a1a6b' },
+    { name: 'Shadow',  terr: '#636e72', trail: '#636e7280', head: '#8395a7', dark: '#2d3436' },
+    { name: 'Coral',   terr: '#e84393', trail: '#e8439380', head: '#fd79a8', dark: '#6c1f44' },
   ];
 
   // Directions: 0=up, 1=right, 2=down, 3=left
@@ -336,7 +362,7 @@
       trail: [], alive: true, respawnTimer: 0,
       outsideTerritory: false,
       // Bot AI state
-      turnTimer: 0, targetDir: 1, trailLen: 0, maxTrail: 15 + Math.floor(Math.random() * 20),
+      turnTimer: 0, targetDir: 1, trailLen: 0, maxTrail: botMaxTrailRange[0] + Math.floor(Math.random() * (botMaxTrailRange[1] - botMaxTrailRange[0])),
     };
   }
 
@@ -480,7 +506,7 @@
     p.dir = Math.floor(Math.random() * 4);
     p.nextDir = p.dir;
     p.turnTimer = 0;
-    p.maxTrail = 15 + Math.floor(Math.random() * 20);
+    p.maxTrail = botMaxTrailRange[0] + Math.floor(Math.random() * (botMaxTrailRange[1] - botMaxTrailRange[0]));
     const half = Math.floor(PLAYER_START_SIZE / 2);
     for (let dy = -half; dy <= half; dy++)
       for (let dx = -half; dx <= half; dx++) {
@@ -511,7 +537,23 @@
 
     // Occasionally change direction
     if (p.turnTimer <= 0) {
-      p.turnTimer = 8 + Math.floor(Math.random() * 20);
+      p.turnTimer = botTurnRateRange[0] + Math.floor(Math.random() * (botTurnRateRange[1] - botTurnRateRange[0]));
+
+      // Hard mode: bots sometimes hunt the player
+      if (botHunts && !p.outsideTerritory && Math.random() < 0.4) {
+        const player = players[0];
+        if (player.alive && player.outsideTerritory && player.trail.length > 0) {
+          // Head toward player's trail
+          const target = player.trail[Math.floor(player.trail.length / 2)];
+          const dx = target[0] - p.x, dy = target[1] - p.y;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            p.dir = dx > 0 ? 1 : 3;
+          } else {
+            p.dir = dy > 0 ? 2 : 0;
+          }
+          return;
+        }
+      }
 
       // If on own territory, go out
       if (!p.outsideTerritory) {
@@ -871,7 +913,15 @@
   }, { passive: true });
 
   // ====== START / RESTART ======
-  function startGame() {
+  function startGame(diff) {
+    difficulty = diff || 'medium';
+    const cfg = DIFFICULTIES[difficulty];
+    BOT_COUNT = cfg.botCount;
+    MOVE_INTERVAL = cfg.moveInterval;
+    botMaxTrailRange = cfg.botMaxTrail;
+    botTurnRateRange = cfg.botTurnRate;
+    botHunts = cfg.botHunts;
+
     menuEl.style.display = 'none';
     overEl.style.display = 'none';
     hudEl.style.display = 'flex';
@@ -882,8 +932,9 @@
     lastTime = 0;
   }
 
-  document.getElementById('start-btn').addEventListener('click', startGame);
-  document.getElementById('restart-btn').addEventListener('click', startGame);
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => startGame(btn.dataset.diff));
+  });
 
   // Start render loop
   requestAnimationFrame(gameLoop);
