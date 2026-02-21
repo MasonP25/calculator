@@ -1119,9 +1119,13 @@
     element.style.textShadow = '';
 
     // Apply color/gradient
-    if (equipped.nametagColor && NAMETAGS[equipped.nametagColor]) {
-      var colorEntry = NAMETAGS[equipped.nametagColor];
-      applyCSS(element, colorEntry.css);
+    if (equipped.nametagColor) {
+      if (equipped.nametagColor.charAt(0) === '#') {
+        element.style.color = equipped.nametagColor;
+      } else if (NAMETAGS[equipped.nametagColor]) {
+        var colorEntry = NAMETAGS[equipped.nametagColor];
+        applyCSS(element, colorEntry.css);
+      }
     }
 
     // Apply font

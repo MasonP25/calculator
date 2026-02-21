@@ -169,8 +169,8 @@
       var isFree = category === 'skin' && itemId && itemId.indexOf('skin_') === 0 &&
         window.ArcadeAvatar && window.ArcadeAvatar.SKIN_COLORS && window.ArcadeAvatar.SKIN_COLORS[itemId] &&
         window.ArcadeAvatar.SKIN_COLORS[itemId].price === 0;
-      // Allow custom hex colors for skin (admin feature)
-      var isCustomHex = category === 'skin' && itemId && itemId.charAt(0) === '#';
+      // Allow custom hex colors for skin and nametag (admin feature)
+      var isCustomHex = (category === 'skin' || category === 'nametagColor') && itemId && itemId.charAt(0) === '#';
       if (itemId && !isFree && !isCustomHex && _inventory.indexOf(itemId) === -1) return false;
       _equipped[category] = itemId || '';
       _save();

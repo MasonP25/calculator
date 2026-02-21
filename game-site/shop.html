@@ -536,6 +536,17 @@
   function sfxCoin()  { if (window.SFX && window.SFX.coin) window.SFX.coin(); }
   function sfxClick() { if (window.SFX && window.SFX.click) window.SFX.click(); }
 
+  // ── Admin check ──
+  function _hasExclusive() {
+    if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem) return false;
+    var allIds = Object.keys(ITEMS).concat(Object.keys(NAMETAGS));
+    for (var i = 0; i < allIds.length; i++) {
+      var item = ITEMS[allIds[i]] || NAMETAGS[allIds[i]];
+      if (item && item.exclusive && window.ArcadeCoins.ownsItem(allIds[i])) return true;
+    }
+    return false;
+  }
+
   // ── Tab switching ──
   window.switchTab = function(tab) {
     currentTab = tab;
@@ -907,17 +918,7 @@
     row.appendChild(paidSwatches);
 
     // Admin custom color picker — only show if user owns any exclusive item
-    var hasExclusive = false;
-    if (window.ArcadeCoins && window.ArcadeCoins.ownsItem) {
-      var allItems = Object.keys(ITEMS).concat(Object.keys(NAMETAGS));
-      for (var ei = 0; ei < allItems.length; ei++) {
-        var eItem = ITEMS[allItems[ei]] || NAMETAGS[allItems[ei]];
-        if (eItem && eItem.exclusive && window.ArcadeCoins.ownsItem(allItems[ei])) {
-          hasExclusive = true; break;
-        }
-      }
-    }
-    if (hasExclusive) {
+    if (_hasExclusive()) {
       var adminLabel = document.createElement('div');
       adminLabel.className = 'skin-section-label';
       adminLabel.style.marginTop = '0.8rem';
@@ -931,7 +932,7 @@
 
       var colorInput = document.createElement('input');
       colorInput.type = 'color';
-      colorInput.value = (currentSkin && currentSkin.charAt(0) === '#') ? currentSkin : '#FF69B4';
+      colorInput.value = (currentSkin && currentSkin.charAt(0) === '#') ? currentSkin : '#ff69b4';
       Object.assign(colorInput.style, {
         width: '48px', height: '36px', border: '2px solid #3a3a5a', borderRadius: '8px',
         cursor: 'pointer', padding: '2px', background: 'transparent'
@@ -956,7 +957,11 @@
 
       applyBtn.onclick = function() {
         sfxClick();
-        window.ArcadeCoins.equipItem('skin', colorInput.value);
+        var hexVal = colorInput.value;
+        // Directly set equipped and save
+        var eq = window.ArcadeCoins.getEquipped();
+        eq.skin = hexVal;
+        window.ArcadeCoins.equipItem('skin', hexVal);
         buildSkinColorRow();
         renderAvatarPreview();
       };
@@ -967,7 +972,7 @@
         var previewContainer = document.getElementById('avatarPreview');
         if (previewContainer && window.ArcadeAvatar) {
           previewContainer.innerHTML = '';
-          window.ArcadeAvatar.render(previewContainer, previewEquipped, 150);
+          window.ArcadeAvatar.render(previewContainer, previewEquipped, 200);
         }
       });
 
@@ -982,8 +987,88 @@
   // ── Nametag rendering ──
   function renderNametags() {
     renderNtGrid('ntColorGrid', ntColors, 'nametagColor');
+    buildCustomNtColor();
     renderNtGrid('ntFontGrid', ntFonts, 'nametagFont');
     updateNtPreview();
+  }
+
+  // ── Custom nametag color picker (admin only) ──
+  function buildCustomNtColor() {
+    var existing = document.getElementById('customNtColorRow');
+    if (existing) existing.remove();
+    if (!_hasExclusive()) return;
+
+    var equipped = window.ArcadeCoins.getEquipped();
+    var currentColor = equipped.nametagColor || '';
+    var isCustom = currentColor.charAt(0) === '#';
+
+    var wrap = document.createElement('div');
+    wrap.id = 'customNtColorRow';
+    Object.assign(wrap.style, {
+      display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px',
+      background: '#1a1a2e', borderRadius: '10px', margin: '8px 0'
+    });
+
+    var label = document.createElement('span');
+    label.textContent = 'Custom Color \u2605';
+    Object.assign(label.style, { fontSize: '0.85rem', fontWeight: '600', color: '#ccc' });
+    wrap.appendChild(label);
+
+    var colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = isCustom ? currentColor : '#ff4444';
+    Object.assign(colorInput.style, {
+      width: '44px', height: '32px', border: '2px solid #3a3a5a', borderRadius: '6px',
+      cursor: 'pointer', padding: '2px', background: 'transparent'
+    });
+    wrap.appendChild(colorInput);
+
+    var applyBtn = document.createElement('button');
+    applyBtn.textContent = isCustom ? 'Equipped' : 'Apply';
+    applyBtn.className = 'btn-equip';
+    Object.assign(applyBtn.style, {
+      padding: '5px 14px', fontSize: '0.8rem', borderRadius: '6px'
+    });
+    if (isCustom) {
+      applyBtn.style.background = '#3a3a5a';
+    }
+    wrap.appendChild(applyBtn);
+
+    if (isCustom) {
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove';
+      removeBtn.textContent = 'Remove';
+      removeBtn.onclick = function() {
+        sfxClick();
+        window.ArcadeCoins.equipItem('nametagColor', '');
+        renderNametags();
+      };
+      wrap.appendChild(removeBtn);
+    }
+
+    // Live preview
+    colorInput.addEventListener('input', function() {
+      var el = document.getElementById('ntPreviewName');
+      if (el) {
+        el.style.cssText = 'font-size:2rem;font-weight:700;min-height:2.5rem;';
+        el.style.color = colorInput.value;
+        // Re-apply font if equipped
+        var eq = window.ArcadeCoins.getEquipped();
+        if (eq.nametagFont && NAMETAGS[eq.nametagFont]) {
+          applyNtCSS(el, NAMETAGS[eq.nametagFont].css);
+        }
+      }
+    });
+
+    applyBtn.onclick = function() {
+      sfxClick();
+      window.ArcadeCoins.equipItem('nametagColor', colorInput.value);
+      renderNametags();
+    };
+
+    // Insert after the ntColorGrid
+    var grid = document.getElementById('ntColorGrid');
+    grid.parentNode.insertBefore(wrap, grid.nextSibling);
   }
 
   function renderNtGrid(containerId, items, equipCategory) {
