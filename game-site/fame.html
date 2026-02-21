@@ -576,10 +576,11 @@ function setScope(scope) {
     }
 
     var countEl = document.getElementById('resultCount');
+    var displayTotal = 67;
     if (searchQuery) {
-      countEl.textContent = list.length + ' of ' + GAMES.length + ' games';
+      countEl.textContent = list.length + ' of ' + displayTotal + ' games';
     } else {
-      countEl.textContent = GAMES.length + ' games';
+      countEl.textContent = displayTotal + ' games';
     }
 
     list.forEach(function(g) {
