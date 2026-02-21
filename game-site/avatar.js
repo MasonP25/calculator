@@ -75,15 +75,48 @@
     shirt_tuxedo:   { name: 'Tuxedo',     category: 'shirt', price: 200 },
     shirt_varsity:  { name: 'Varsity',    category: 'shirt', price: 100 },
     shirt_space:    { name: 'Space',      category: 'shirt', price: 110 },
+    // ── New Regular Items ──
+    hat_pirate:     { name: 'Pirate',     category: 'hat', price: 130 },
+    hat_viking:     { name: 'Viking',     category: 'hat', price: 160 },
+    hat_chef:       { name: 'Chef',       category: 'hat', price: 90 },
+    hat_beret:      { name: 'Beret',      category: 'hat', price: 70 },
+    hat_santa:      { name: 'Santa',      category: 'hat', price: 140 },
+    hair_sidepart:  { name: 'Side Part',  category: 'hair', price: 35 },
+    hair_topknot:   { name: 'Top Knot',   category: 'hair', price: 55 },
+    hair_bob:       { name: 'Bob',        category: 'hair', price: 40 },
+    hair_faux:      { name: 'Faux Hawk',  category: 'hair', price: 65 },
+    hair_twintail:  { name: 'Twin Tail',  category: 'hair', price: 50 },
+    face_dizzy:     { name: 'Dizzy',      category: 'face', price: 45 },
+    face_cat:       { name: 'Cat',        category: 'face', price: 80 },
+    face_happy:     { name: 'Happy',      category: 'face', price: 35 },
+    face_pirate:    { name: 'Pirate',     category: 'face', price: 90 },
+    face_blush:     { name: 'Blush',      category: 'face', price: 55 },
+    shirt_plaid:    { name: 'Plaid',      category: 'shirt', price: 60 },
+    shirt_leather:  { name: 'Leather',    category: 'shirt', price: 120 },
+    shirt_camo:     { name: 'Camo',       category: 'shirt', price: 85 },
+    shirt_tie_dye:  { name: 'Tie Dye',    category: 'shirt', price: 95 },
+    shirt_sailor:   { name: 'Sailor',     category: 'shirt', price: 75 },
     // ── Exclusive Items ──
     hat_astronaut:    { name: 'Astronaut',      category: 'hat',   price: 0, exclusive: true },
     hat_diamond_crown:{ name: 'Diamond Crown',  category: 'hat',   price: 0, exclusive: true },
+    hat_glitch:       { name: 'Glitch',         category: 'hat',   price: 0, exclusive: true },
+    hat_void:         { name: 'Void',           category: 'hat',   price: 0, exclusive: true },
+    hat_hologram:     { name: 'Hologram',       category: 'hat',   price: 0, exclusive: true },
     hair_flame:       { name: 'Flame',          category: 'hair',  price: 0, exclusive: true },
     hair_galaxy:      { name: 'Galaxy',         category: 'hair',  price: 0, exclusive: true },
+    hair_lightning:   { name: 'Lightning',      category: 'hair',  price: 0, exclusive: true },
+    hair_crystal:     { name: 'Crystal',        category: 'hair',  price: 0, exclusive: true },
+    hair_void:        { name: 'Void',           category: 'hair',  price: 0, exclusive: true },
     face_robot:       { name: 'Robot',          category: 'face',  price: 0, exclusive: true },
     face_demon:       { name: 'Demon',          category: 'face',  price: 0, exclusive: true },
+    face_laser:       { name: 'Laser',          category: 'face',  price: 0, exclusive: true },
+    face_void:        { name: 'Void',           category: 'face',  price: 0, exclusive: true },
+    face_glitch:      { name: 'Glitch',         category: 'face',  price: 0, exclusive: true },
     shirt_flame:      { name: 'Flame',          category: 'shirt', price: 0, exclusive: true },
-    shirt_galaxy:     { name: 'Galaxy',         category: 'shirt', price: 0, exclusive: true }
+    shirt_galaxy:     { name: 'Galaxy',         category: 'shirt', price: 0, exclusive: true },
+    shirt_hologram:   { name: 'Hologram',       category: 'shirt', price: 0, exclusive: true },
+    shirt_void:       { name: 'Void',           category: 'shirt', price: 0, exclusive: true },
+    shirt_glitch:     { name: 'Glitch',         category: 'shirt', price: 0, exclusive: true }
   };
 
   // ── Skin Colors ─────────────────────────────────────────────────────
@@ -134,6 +167,19 @@
     nt_smallcaps:{ name: 'Small Caps', type: 'font', css: 'font-variant:small-caps', price: 75 },
     nt_shadow:   { name: 'Shadow',    type: 'font', css: 'text-shadow:2px 2px 4px rgba(0,0,0,0.8)', price: 100 },
     nt_glow:     { name: 'Glow',      type: 'font', css: 'text-shadow:0 0 8px currentColor, 0 0 16px currentColor', price: 200 },
+    // ── New Regular Nametags ──
+    nt_purple:   { name: 'Purple',    type: 'color',    css: 'color:#9b59b6', price: 50 },
+    nt_orange:   { name: 'Orange',    type: 'color',    css: 'color:#ff8c00', price: 50 },
+    nt_cyan:     { name: 'Cyan',      type: 'color',    css: 'color:#00cccc', price: 50 },
+    nt_lime:     { name: 'Lime',      type: 'color',    css: 'color:#39ff14', price: 75 },
+    nt_cherry:   { name: 'Cherry',    type: 'gradient', css: 'background:linear-gradient(90deg,#ff1744,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 125 },
+    nt_mint:     { name: 'Mint',      type: 'gradient', css: 'background:linear-gradient(90deg,#00e5a0,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 125 },
+    nt_peach:    { name: 'Peach',     type: 'gradient', css: 'background:linear-gradient(90deg,#ffb347,#ff69b4);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 125 },
+    nt_storm:    { name: 'Storm',     type: 'gradient', css: 'background:linear-gradient(90deg,#4a4a8a,#8888cc,#4a4a8a);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 175 },
+    nt_forest:   { name: 'Forest',    type: 'gradient', css: 'background:linear-gradient(90deg,#228b22,#90ee90,#228b22);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 150 },
+    nt_underline:{ name: 'Underline', type: 'font', css: 'text-decoration:underline;text-underline-offset:3px', price: 40 },
+    nt_wide:     { name: 'Wide',      type: 'font', css: 'letter-spacing:3px', price: 60 },
+    nt_condensed:{ name: 'Condensed', type: 'font', css: 'letter-spacing:-1px;font-weight:700', price: 60 },
     // ── Exclusive Nametags ──
     nt_plasma:    { name: 'Plasma',     type: 'gradient', css: 'background:linear-gradient(90deg,#ff00ff,#00ffff,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
     nt_aurora:    { name: 'Aurora',     type: 'gradient', css: 'background:linear-gradient(90deg,#00ff87,#60efff,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
@@ -142,7 +188,13 @@
     nt_lava:      { name: 'Lava',       type: 'gradient', css: 'background:linear-gradient(90deg,#ff0000,#ff6600,#ffcc00,#ff6600,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
     nt_glitch:    { name: 'Glitch',     type: 'font', css: 'text-shadow:2px 0 #ff0000,-2px 0 #00ffff;letter-spacing:2px', price: 0, exclusive: true },
     nt_outline:   { name: 'Outline',    type: 'font', css: '-webkit-text-stroke:1px currentColor;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
-    nt_thick:     { name: 'Thick',      type: 'font', css: 'font-weight:900;font-size:1.2em;letter-spacing:1px', price: 0, exclusive: true }
+    nt_thick:     { name: 'Thick',      type: 'font', css: 'font-weight:900;font-size:1.2em;letter-spacing:1px', price: 0, exclusive: true },
+    nt_void:      { name: 'Void',       type: 'gradient', css: 'background:linear-gradient(90deg,#000000,#4a0080,#000000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_electric:  { name: 'Electric',   type: 'gradient', css: 'background:linear-gradient(90deg,#ffff00,#00ffff,#ff00ff,#ffff00);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_inferno:   { name: 'Inferno',    type: 'gradient', css: 'background:linear-gradient(90deg,#ff0000,#ff4400,#ffff00,#ff4400,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_hacker:    { name: 'Hacker',     type: 'font', css: 'font-family:monospace;color:#39ff14;text-shadow:0 0 6px #39ff14', price: 0, exclusive: true },
+    nt_glitchfont:{ name: 'Glitch+',    type: 'font', css: 'text-shadow:3px 0 #ff0000,-3px 0 #00ffff,0 3px #ff00ff;letter-spacing:3px;font-weight:900', price: 0, exclusive: true },
+    nt_phantom:   { name: 'Phantom',    type: 'font', css: 'opacity:0.6;font-style:italic;letter-spacing:2px', price: 0, exclusive: true }
   };
 
   // ── Drawing helpers ───────────────────────────────────────────────────
@@ -267,6 +319,45 @@
         el('circle', { cx: p[0], cy: p[1], r: 1.2, fill: '#ffffff', opacity: 0.9 }, svg);
       });
     },
+    // ── New Regular Shirts ──
+    shirt_plaid: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#CC3333'); });
+      for (var py = 72; py < 120; py += 10) {
+        el('rect', { x: 31, y: py, width: 38, height: 2, fill: '#228B22', opacity: 0.6 }, svg);
+      }
+      for (var px = 34; px < 68; px += 10) {
+        el('rect', { x: px, y: 69, width: 2, height: 52, fill: '#228B22', opacity: 0.6 }, svg);
+      }
+    },
+    shirt_leather: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#3D2B1F'); });
+      el('path', { d: 'M40,68 L50,72 L60,68', fill: 'none', stroke: '#5C4033', 'stroke-width': 2 }, svg);
+      el('line', { x1: 50, y1: 72, x2: 50, y2: 120, stroke: '#5C4033', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 50, cy: 80, r: 1.5, fill: '#888' }, svg);
+      el('circle', { cx: 50, cy: 90, r: 1.5, fill: '#888' }, svg);
+      el('circle', { cx: 50, cy: 100, r: 1.5, fill: '#888' }, svg);
+    },
+    shirt_camo: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#4B5320'); });
+      var camo = [[36,76,6,4],[44,84,8,5],[55,78,5,6],[38,96,7,4],[52,92,6,5],[60,104,5,4],[42,108,6,3]];
+      camo.forEach(function (c) {
+        el('ellipse', { cx: c[0], cy: c[1], rx: c[2], ry: c[3], fill: c[0] % 2 ? '#3B4219' : '#6B8E23', opacity: 0.7 }, svg);
+      });
+    },
+    shirt_tie_dye: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#FF69B4'); });
+      el('circle', { cx: 44, cy: 85, r: 10, fill: '#FFD700', opacity: 0.5 }, svg);
+      el('circle', { cx: 56, cy: 95, r: 8, fill: '#00CED1', opacity: 0.5 }, svg);
+      el('circle', { cx: 50, cy: 105, r: 9, fill: '#9370DB', opacity: 0.5 }, svg);
+      el('circle', { cx: 40, cy: 100, r: 7, fill: '#FF4500', opacity: 0.4 }, svg);
+    },
+    shirt_sailor: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#FFFFFF'); });
+      for (var sy = 72; sy < 120; sy += 8) {
+        el('rect', { x: 31, y: sy, width: 38, height: 3, fill: '#000080', opacity: 0.9 }, svg);
+      }
+      el('path', { d: 'M38,68 Q50,78 62,68', fill: '#000080' }, svg);
+    },
     // ── Exclusive Shirts ──
     shirt_flame: function (svg) {
       svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#222222'); });
@@ -286,6 +377,28 @@
       el('circle', { cx: 42, cy: 95, r: 0.8, fill: '#fff', opacity: 0.8 }, svg);
       el('circle', { cx: 60, cy: 105, r: 1, fill: '#ffaaff', opacity: 0.8 }, svg);
       el('circle', { cx: 48, cy: 110, r: 1.2, fill: '#fff', opacity: 0.9 }, svg);
+    },
+    shirt_hologram: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#1a1a3e'); });
+      el('rect', { x: 34, y: 72, width: 32, height: 46, rx: 6, fill: 'none', stroke: '#00ffff', 'stroke-width': 1, opacity: 0.6 }, svg);
+      el('rect', { x: 38, y: 78, width: 24, height: 34, rx: 4, fill: 'none', stroke: '#ff00ff', 'stroke-width': 0.8, opacity: 0.4 }, svg);
+      for (var hy = 76; hy < 116; hy += 6) {
+        el('line', { x1: 34, y1: hy, x2: 66, y2: hy, stroke: '#00ffff', 'stroke-width': 0.5, opacity: 0.3 }, svg);
+      }
+    },
+    shirt_void: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#000000'); });
+      el('ellipse', { cx: 50, cy: 92, rx: 12, ry: 14, fill: '#1a003a', opacity: 0.8 }, svg);
+      el('ellipse', { cx: 50, cy: 92, rx: 6, ry: 8, fill: '#2a0060', opacity: 0.6 }, svg);
+      el('circle', { cx: 50, cy: 92, r: 2, fill: '#6a0dad', opacity: 0.8 }, svg);
+    },
+    shirt_glitch: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#222'); });
+      var gy = [74, 82, 90, 98, 106, 114];
+      gy.forEach(function (y, i) {
+        var offset = (i % 3 - 1) * 3;
+        el('rect', { x: 33 + offset, y: y, width: 34, height: 4, fill: i % 2 ? '#ff0000' : '#00ffff', opacity: 0.5 }, svg);
+      });
     }
   };
 
@@ -486,6 +599,56 @@
       // Nebula swirl
       el('path', { d: 'M30,26 Q40,20 50,24 Q60,28 70,22', fill: 'none', stroke: '#7b2ff7', 'stroke-width': 2, opacity: 0.6 }, svg);
       el('path', { d: 'M34,30 Q44,24 54,28 Q64,32 72,28', fill: 'none', stroke: '#ff69b4', 'stroke-width': 1.5, opacity: 0.5 }, svg);
+    },
+    hair_lightning: function (svg) {
+      behindHead(svg, 'path', { d: 'M24,38 Q22,48 24,58 Q26,62 28,58 L26,38 Z', fill: '#FFD700' });
+      behindHead(svg, 'path', { d: 'M76,38 Q78,48 76,58 Q74,62 72,58 L74,38 Z', fill: '#FFD700' });
+      el('path', { d: 'M26,36 Q26,14 50,12 Q74,14 74,36 L70,28 Q65,18 50,16 Q35,18 30,28 Z', fill: '#FFD700' }, svg);
+      el('polygon', { points: '34,20 28,6 38,16', fill: '#FFFF00' }, svg);
+      el('polygon', { points: '50,16 48,0 52,0', fill: '#FFFF00' }, svg);
+      el('polygon', { points: '66,20 72,6 62,16', fill: '#FFFF00' }, svg);
+    },
+    hair_crystal: function (svg) {
+      el('polygon', { points: '32,30 36,8 40,28', fill: '#00ddff', opacity: 0.8 }, svg);
+      el('polygon', { points: '40,26 46,4 50,24', fill: '#88eeff', opacity: 0.7 }, svg);
+      el('polygon', { points: '50,24 54,2 58,24', fill: '#00ddff', opacity: 0.8 }, svg);
+      el('polygon', { points: '58,26 64,6 68,28', fill: '#88eeff', opacity: 0.7 }, svg);
+      el('polygon', { points: '26,36 22,18 32,32', fill: '#00ddff', opacity: 0.6 }, svg);
+      el('polygon', { points: '68,32 78,18 74,36', fill: '#00ddff', opacity: 0.6 }, svg);
+    },
+    hair_void: function (svg) {
+      behindHead(svg, 'path', { d: 'M22,42 Q20,56 22,68 Q24,72 28,68 L26,42 Z', fill: '#0a0020' });
+      behindHead(svg, 'path', { d: 'M78,42 Q80,56 78,68 Q76,72 72,68 L74,42 Z', fill: '#0a0020' });
+      el('path', { d: 'M24,40 Q24,12 50,10 Q76,12 76,40 L72,30 Q68,16 50,14 Q32,16 28,30 Z', fill: '#0a0020' }, svg);
+      el('circle', { cx: 36, cy: 22, r: 1.5, fill: '#6a0dad', opacity: 0.7 }, svg);
+      el('circle', { cx: 56, cy: 18, r: 1, fill: '#6a0dad', opacity: 0.5 }, svg);
+      el('circle', { cx: 64, cy: 26, r: 1.2, fill: '#6a0dad', opacity: 0.6 }, svg);
+    },
+    // ── New Regular Hair ──
+    hair_sidepart: function (svg) {
+      el('path', { d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z', fill: '#5C3317' }, svg);
+      el('path', { d: 'M26,36 Q28,28 36,24 L40,30 Q34,28 30,34 Z', fill: '#4A2810' }, svg);
+    },
+    hair_topknot: function (svg) {
+      el('path', { d: 'M30,38 Q30,22 50,20 Q70,22 70,38 Q68,26 50,24 Q32,26 30,38 Z', fill: '#1A1A1A' }, svg);
+      el('ellipse', { cx: 50, cy: 10, rx: 8, ry: 10, fill: '#1A1A1A' }, svg);
+      el('rect', { x: 47, y: 14, width: 6, height: 8, fill: '#1A1A1A' }, svg);
+    },
+    hair_bob: function (svg) {
+      behindHead(svg, 'path', { d: 'M24,36 Q22,48 26,56 Q28,58 32,56 L28,36 Z', fill: '#8B4513' });
+      behindHead(svg, 'path', { d: 'M76,36 Q78,48 74,56 Q72,58 68,56 L72,36 Z', fill: '#8B4513' });
+      el('path', { d: 'M24,36 Q24,14 50,12 Q76,14 76,36 L72,28 Q65,18 50,16 Q35,18 28,28 Z', fill: '#8B4513' }, svg);
+    },
+    hair_faux: function (svg) {
+      el('path', { d: 'M30,34 Q30,18 50,16 Q70,18 70,34 Q68,22 50,20 Q32,22 30,34 Z', fill: '#333' }, svg);
+      el('path', { d: 'M38,28 Q38,8 50,6 Q62,8 62,28 Q58,16 50,14 Q42,16 38,28 Z', fill: '#333' }, svg);
+    },
+    hair_twintail: function (svg) {
+      behindHead(svg, 'path', { d: 'M22,34 Q18,50 20,70 Q22,75 26,70 L24,34 Z', fill: '#FF8C00' });
+      behindHead(svg, 'path', { d: 'M78,34 Q82,50 80,70 Q78,75 74,70 L76,34 Z', fill: '#FF8C00' });
+      el('path', { d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z', fill: '#FF8C00' }, svg);
+      el('circle', { cx: 24, cy: 34, r: 3, fill: '#FF4500' }, svg);
+      el('circle', { cx: 76, cy: 34, r: 3, fill: '#FF4500' }, svg);
     }
   };
 
@@ -619,6 +782,74 @@
       // Fangs
       el('polygon', { points: '40,50 42,56 44,50', fill: '#ffffff' }, svg);
       el('polygon', { points: '56,50 58,56 60,50', fill: '#ffffff' }, svg);
+    },
+    face_laser: function (svg) {
+      removeDefaultEyes(svg);
+      el('rect', { x: 32, y: 34, width: 14, height: 6, rx: 2, fill: '#ff0000' }, svg);
+      el('rect', { x: 54, y: 34, width: 14, height: 6, rx: 2, fill: '#ff0000' }, svg);
+      el('line', { x1: 32, y1: 37, x2: 10, y2: 37, stroke: '#ff0000', 'stroke-width': 2, opacity: 0.6 }, svg);
+      el('line', { x1: 68, y1: 37, x2: 90, y2: 37, stroke: '#ff0000', 'stroke-width': 2, opacity: 0.6 }, svg);
+      el('path', { d: 'M40,50 Q50,54 60,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    face_void: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 37, r: 5, fill: '#000000' }, svg);
+      el('circle', { cx: 60, cy: 37, r: 5, fill: '#000000' }, svg);
+      el('circle', { cx: 40, cy: 37, r: 2, fill: '#6a0dad' }, svg);
+      el('circle', { cx: 60, cy: 37, r: 2, fill: '#6a0dad' }, svg);
+      el('ellipse', { cx: 50, cy: 52, rx: 4, ry: 5, fill: '#000000' }, svg);
+    },
+    face_glitch: function (svg) {
+      removeDefaultEyes(svg);
+      el('rect', { x: 35, y: 33, width: 10, height: 7, fill: '#00ffff', opacity: 0.8 }, svg);
+      el('rect', { x: 37, y: 35, width: 6, height: 3, fill: '#ff0000', opacity: 0.6 }, svg);
+      el('rect', { x: 55, y: 34, width: 10, height: 7, fill: '#ff00ff', opacity: 0.8 }, svg);
+      el('rect', { x: 57, y: 36, width: 6, height: 3, fill: '#00ff00', opacity: 0.6 }, svg);
+      el('rect', { x: 38, y: 48, width: 24, height: 4, fill: '#333' }, svg);
+      el('rect', { x: 40, y: 49, width: 8, height: 2, fill: '#ff0000', opacity: 0.5 }, svg);
+      el('rect', { x: 52, y: 49, width: 8, height: 2, fill: '#00ffff', opacity: 0.5 }, svg);
+    },
+    // ── New Regular Faces ──
+    face_dizzy: function (svg) {
+      removeDefaultEyes(svg);
+      el('path', { d: 'M36,34 L44,40 M36,40 L44,34', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M56,34 L64,40 M56,40 L64,34', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M42,52 Q50,48 58,52', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+    },
+    face_cat: function (svg) {
+      removeDefaultEyes(svg);
+      el('path', { d: 'M36,37 L40,34 L44,37', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M56,37 L60,34 L64,37', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('circle', { cx: 50, cy: 46, r: 2.5, fill: '#FF69B4' }, svg);
+      el('path', { d: 'M50,48 L46,52', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M50,48 L54,52', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+      el('line', { x1: 28, y1: 44, x2: 38, y2: 46, stroke: '#333', 'stroke-width': 1 }, svg);
+      el('line', { x1: 28, y1: 48, x2: 38, y2: 48, stroke: '#333', 'stroke-width': 1 }, svg);
+      el('line', { x1: 72, y1: 44, x2: 62, y2: 46, stroke: '#333', 'stroke-width': 1 }, svg);
+      el('line', { x1: 72, y1: 48, x2: 62, y2: 48, stroke: '#333', 'stroke-width': 1 }, svg);
+    },
+    face_happy: function (svg) {
+      removeDefaultEyes(svg);
+      el('path', { d: 'M35,35 Q40,30 45,35', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M55,35 Q60,30 65,35', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M36,46 Q50,58 64,46 Z', fill: '#ffffff', stroke: '#333', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 42, cy: 34, r: 3, fill: '#FFB7C5', opacity: 0.5 }, svg);
+      el('circle', { cx: 58, cy: 34, r: 3, fill: '#FFB7C5', opacity: 0.5 }, svg);
+    },
+    face_pirate: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 37, r: 3, fill: '#333' }, svg);
+      el('ellipse', { cx: 60, cy: 37, rx: 7, ry: 6, fill: '#222' }, svg);
+      el('line', { x1: 54, y1: 32, x2: 66, y2: 32, stroke: '#333', 'stroke-width': 2 }, svg);
+      el('path', { d: 'M40,50 Q50,56 60,50', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+    },
+    face_blush: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('circle', { cx: 60, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('path', { d: 'M42,50 Q50,54 58,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+      el('ellipse', { cx: 34, cy: 44, rx: 5, ry: 3, fill: '#FF69B4', opacity: 0.4 }, svg);
+      el('ellipse', { cx: 66, cy: 44, rx: 5, ry: 3, fill: '#FF69B4', opacity: 0.4 }, svg);
     }
   };
 
@@ -734,6 +965,56 @@
       drawStar(svg, 34, 14, 2, '#ffffff');
       drawStar(svg, 56, 10, 2, '#ffffff');
       drawStar(svg, 66, 14, 1.5, '#ffffff');
+    },
+    hat_glitch: function (svg) {
+      el('rect', { x: 28, y: 14, width: 44, height: 14, rx: 3, fill: '#222' }, svg);
+      el('rect', { x: 30, y: 16, width: 14, height: 4, fill: '#ff0000', opacity: 0.7 }, svg);
+      el('rect', { x: 48, y: 18, width: 10, height: 3, fill: '#00ffff', opacity: 0.7 }, svg);
+      el('rect', { x: 36, y: 22, width: 18, height: 3, fill: '#ff00ff', opacity: 0.6 }, svg);
+      el('rect', { x: 60, y: 16, width: 10, height: 5, fill: '#00ff00', opacity: 0.5 }, svg);
+    },
+    hat_void: function (svg) {
+      el('ellipse', { cx: 50, cy: 16, rx: 26, ry: 14, fill: '#000000' }, svg);
+      el('ellipse', { cx: 50, cy: 16, rx: 16, ry: 8, fill: '#1a003a' }, svg);
+      el('ellipse', { cx: 50, cy: 16, rx: 6, ry: 4, fill: '#3a0080' }, svg);
+      el('circle', { cx: 50, cy: 16, r: 1.5, fill: '#6a0dad' }, svg);
+    },
+    hat_hologram: function (svg) {
+      el('path', { d: 'M28,24 Q28,4 50,2 Q72,4 72,24 Z', fill: 'rgba(0,255,255,0.15)', stroke: '#00ffff', 'stroke-width': 1 }, svg);
+      el('path', { d: 'M32,22 Q32,8 50,6 Q68,8 68,22 Z', fill: 'rgba(255,0,255,0.1)', stroke: '#ff00ff', 'stroke-width': 0.5 }, svg);
+      for (var hy = 8; hy < 24; hy += 4) {
+        el('line', { x1: 30, y1: hy, x2: 70, y2: hy, stroke: '#00ffff', 'stroke-width': 0.4, opacity: 0.4 }, svg);
+      }
+    },
+    // ── New Regular Hats ──
+    hat_pirate: function (svg) {
+      el('ellipse', { cx: 50, cy: 22, rx: 30, ry: 5, fill: '#111' }, svg);
+      el('path', { d: 'M24,22 Q24,4 50,0 Q76,4 76,22 Z', fill: '#222' }, svg);
+      drawStar(svg, 50, 12, 4, '#FFD700');
+    },
+    hat_viking: function (svg) {
+      el('path', { d: 'M26,26 Q26,10 50,8 Q74,10 74,26 Z', fill: '#8B6914' }, svg);
+      el('rect', { x: 26, y: 22, width: 48, height: 6, rx: 2, fill: '#A0782C' }, svg);
+      el('polygon', { points: '22,24 18,4 26,20', fill: '#DDDDDD' }, svg);
+      el('polygon', { points: '78,24 82,4 74,20', fill: '#DDDDDD' }, svg);
+    },
+    hat_chef: function (svg) {
+      el('rect', { x: 28, y: 18, width: 44, height: 8, rx: 2, fill: '#fff' }, svg);
+      el('ellipse', { cx: 50, cy: 12, rx: 18, ry: 12, fill: '#fff' }, svg);
+      el('circle', { cx: 38, cy: 8, r: 6, fill: '#fff' }, svg);
+      el('circle', { cx: 62, cy: 8, r: 6, fill: '#fff' }, svg);
+      el('circle', { cx: 50, cy: 4, r: 7, fill: '#fff' }, svg);
+    },
+    hat_beret: function (svg) {
+      el('ellipse', { cx: 46, cy: 20, rx: 22, ry: 10, fill: '#8B0000' }, svg);
+      el('path', { d: 'M28,22 Q30,12 50,10 Q66,12 68,22 Z', fill: '#AA0000' }, svg);
+      el('circle', { cx: 46, cy: 8, r: 3, fill: '#CC0000' }, svg);
+    },
+    hat_santa: function (svg) {
+      el('path', { d: 'M26,28 Q26,8 50,6 Q74,8 74,28 Z', fill: '#CC0000' }, svg);
+      el('path', { d: 'M74,16 Q80,8 82,0 Q84,4 86,2', fill: 'none', stroke: '#CC0000', 'stroke-width': 6, 'stroke-linecap': 'round' }, svg);
+      el('rect', { x: 24, y: 24, width: 52, height: 8, rx: 4, fill: '#fff' }, svg);
+      el('circle', { cx: 86, cy: 2, r: 5, fill: '#fff' }, svg);
     }
   };
 

@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Stickman Hook</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  .back {
+    position: fixed; top: 12px; left: 16px; z-index: 100;
+    color: #00d4ff; text-decoration: none; font-size: 1.1rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: rgba(15,15,26,0.7); padding: 6px 14px;
+    border-radius: 8px; border: 1px solid #2a2a4a;
+    transition: background 0.2s;
+  }
+  .back:hover { background: rgba(15,15,26,0.95); }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<canvas id="gc"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gc');
+  const ctx = canvas.getContext('2d');
+
+  // ── Resize ──
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Constants ──
+  const GRAVITY = 0.4;
+  const ROPE_STIFFNESS = 0.02;
+  const AIR_FRICTION = 0.999;
+  const SWING_FRICTION = 0.998;
+  const MAX_ROPE_LEN = 250;
+  const HOOK_RADIUS = 14;
+  const STICKMAN_SIZE = 18;
+  const DEATH_Y_OFFSET = 400;
+  const FINISH_WIDTH = 60;
+
+  // ── Colors ──
+  const COL_BG = '#0f0f1a';
+  const COL_BG2 = '#14142a';
+  const COL_ACCENT = '#00d4ff';
+  const COL_PURPLE = '#7b2ff7';
+  const COL_HOOK = '#00d4ff';
+  const COL_HOOK_GLOW = 'rgba(0,212,255,0.3)';
+  const COL_ROPE = '#ffd700';
+  const COL_STICK = '#ffffff';
+  const COL_FINISH = '#4ecdc4';
+  const COL_STAR = '#ffd700';
+
+  // ── Game State ──
+  let level = 1;
+  let state = 'menu'; // menu, playing, levelComplete, dead
+  let stickman, hooks, finishX, camera;
+  let holding = false;
+  let attachedHook = null;
+  let ropeLength = 0;
+  let particles = [];
+  let trailParticles = [];
+  let levelTimer = 0;
+  let deathTimer = 0;
+  let completeTimer = 0;
+  let stars = [];
+  let bestLevel = parseInt(localStorage.getItem('stickmanhook_best') || '0');
+
+  // ── Background Stars ──
+  for (let i = 0; i < 120; i++) {
+    stars.push({
+      x: Math.random() * 4000 - 1000,
+      y: Math.random() * 2000 - 500,
+      r: Math.random() * 1.5 + 0.3,
+      a: Math.random() * 0.5 + 0.2,
+      speed: Math.random() * 0.3 + 0.05
+    });
+  }
+
+  // ── Stickman ──
+  function createStickman(x, y) {
+    return { x, y, vx: 0, vy: 0, angle: 0, limbPhase: 0, alive: true };
+  }
+
+  // ── Level Generation ──
+  function generateLevel(lvl) {
+    hooks = [];
+    const numHooks = 6 + Math.floor(lvl * 1.3);
+    const baseSpacing = 220 + Math.min(lvl * 8, 120);
+    const yVariance = 80 + Math.min(lvl * 12, 200);
+    const heightBase = canvas.height * 0.4;
+
+    let cx = 350;
+    let cy = heightBase;
+
+    for (let i = 0; i < numHooks; i++) {
+      const spacing = baseSpacing + (Math.random() - 0.3) * 80;
+      const yOff = (Math.random() - 0.5) * yVariance;
+      cx += spacing;
+      cy = heightBase + yOff;
+      cy = Math.max(120, Math.min(canvas.height - 200, cy));
+
+      hooks.push({
+        x: cx,
+        y: cy,
+        radius: HOOK_RADIUS,
+        pulse: Math.random() * Math.PI * 2,
+        active: false
+      });
+    }
+
+    finishX = cx + baseSpacing + 100;
+
+    stickman = createStickman(100, canvas.height * 0.4 - 50);
+    stickman.vx = 3;
+    stickman.vy = -2;
+
+    camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    attachedHook = null;
+    holding = false;
+    particles = [];
+    trailParticles = [];
+    levelTimer = 0;
+  }
+
+  // ── Attach to nearest hook ──
+  function attachToNearest() {
+    if (attachedHook) return;
+    let best = null;
+    let bestDist = Infinity;
+    const lookAheadX = stickman.x + stickman.vx * 10;
+
+    for (const h of hooks) {
+      const dx = h.x - stickman.x;
+      const dy = h.y - stickman.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      // prefer hooks ahead and above
+      if (dist < MAX_ROPE_LEN * 1.5 && dist < bestDist && dx > -100) {
+        bestDist = dist;
+        best = h;
+      }
+    }
+
+    if (best) {
+      attachedHook = best;
+      best.active = true;
+      ropeLength = Math.sqrt(
+        (best.x - stickman.x) ** 2 + (best.y - stickman.y) ** 2
+      );
+      ropeLength = Math.min(ropeLength, MAX_ROPE_LEN);
+      // add attach particles
+      for (let i = 0; i < 8; i++) {
+        particles.push({
+          x: best.x, y: best.y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          life: 1, color: COL_ACCENT, size: 3
+        });
+      }
+      if (typeof SoundManager !== 'undefined') {
+        try { SoundManager.play('click'); } catch(e) {}
+      }
+    }
+  }
+
+  // ── Detach ──
+  function detach() {
+    if (attachedHook) {
+      attachedHook.active = false;
+      // boost on release
+      const speed = Math.sqrt(stickman.vx ** 2 + stickman.vy ** 2);
+      if (speed > 0) {
+        const boost = 1.15;
+        stickman.vx *= boost;
+        stickman.vy *= boost;
+      }
+      // release particles
+      for (let i = 0; i < 6; i++) {
+        particles.push({
+          x: stickman.x, y: stickman.y,
+          vx: stickman.vx * 0.3 + (Math.random() - 0.5) * 3,
+          vy: stickman.vy * 0.3 + (Math.random() - 0.5) * 3,
+          life: 1, color: COL_PURPLE, size: 3
+        });
+      }
+      attachedHook = null;
+    }
+  }
+
+  // ── Input ──
+  function onDown(e) {
+    e.preventDefault();
+    if (state === 'menu') {
+      state = 'playing';
+      generateLevel(level);
+      return;
+    }
+    if (state === 'dead') {
+      if (deathTimer > 40) {
+        state = 'playing';
+        generateLevel(level);
+      }
+      return;
+    }
+    if (state === 'levelComplete') {
+      if (completeTimer > 60) {
+        level++;
+        state = 'playing';
+        generateLevel(level);
+      }
+      return;
+    }
+    if (state === 'playing') {
+      holding = true;
+      attachToNearest();
+    }
+  }
+
+  function onUp(e) {
+    e.preventDefault();
+    if (state === 'playing') {
+      holding = false;
+      detach();
+    }
+  }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchend', onUp, { passive: false });
+
+  // ── Physics ──
+  function updatePhysics() {
+    if (state !== 'playing') return;
+    levelTimer++;
+
+    // gravity
+    stickman.vy += GRAVITY;
+
+    if (attachedHook) {
+      // pendulum constraint
+      const dx = stickman.x - attachedHook.x;
+      const dy = stickman.y - attachedHook.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist > ropeLength) {
+        const angle = Math.atan2(dy, dx);
+        stickman.x = attachedHook.x + Math.cos(angle) * ropeLength;
+        stickman.y = attachedHook.y + Math.sin(angle) * ropeLength;
+
+        // project velocity onto tangent
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const dot = stickman.vx * nx + stickman.vy * ny;
+        stickman.vx -= dot * nx;
+        stickman.vy -= dot * ny;
+
+        // slight centripetal
+        stickman.vx *= SWING_FRICTION;
+        stickman.vy *= SWING_FRICTION;
+      }
+    } else {
+      stickman.vx *= AIR_FRICTION;
+      stickman.vy *= AIR_FRICTION;
+    }
+
+    stickman.x += stickman.vx;
+    stickman.y += stickman.vy;
+
+    // limb animation
+    const speed = Math.sqrt(stickman.vx ** 2 + stickman.vy ** 2);
+    stickman.limbPhase += speed * 0.05;
+    stickman.angle = Math.atan2(stickman.vy, stickman.vx);
+
+    // trail
+    if (speed > 4) {
+      trailParticles.push({
+        x: stickman.x, y: stickman.y,
+        life: 1, size: 2 + speed * 0.2
+      });
+    }
+
+    // check death (fell below)
+    const screenBottom = camera.y + canvas.height + DEATH_Y_OFFSET;
+    if (stickman.y > screenBottom) {
+      die();
+    }
+
+    // check finish
+    if (stickman.x >= finishX) {
+      completeLevel();
+    }
+  }
+
+  function die() {
+    state = 'dead';
+    deathTimer = 0;
+    // explosion particles
+    for (let i = 0; i < 20; i++) {
+      particles.push({
+        x: stickman.x, y: stickman.y,
+        vx: (Math.random() - 0.5) * 10,
+        vy: (Math.random() - 0.5) * 10,
+        life: 1, color: '#ff4444', size: 4
+      });
+    }
+    if (typeof SoundManager !== 'undefined') {
+      try { SoundManager.play('wrong'); } catch(e) {}
+    }
+  }
+
+  function completeLevel() {
+    state = 'levelComplete';
+    completeTimer = 0;
+    if (level > bestLevel) {
+      bestLevel = level;
+      localStorage.setItem('stickmanhook_best', bestLevel);
+    }
+    // celebration particles
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: stickman.x + (Math.random() - 0.5) * 60,
+        y: stickman.y + (Math.random() - 0.5) * 60,
+        vx: (Math.random() - 0.5) * 8,
+        vy: (Math.random() - 1) * 8,
+        life: 1,
+        color: [COL_ACCENT, COL_PURPLE, COL_STAR, COL_FINISH][Math.floor(Math.random() * 4)],
+        size: 3 + Math.random() * 4
+      });
+    }
+    if (typeof SoundManager !== 'undefined') {
+      try { SoundManager.play('correct'); } catch(e) {}
+    }
+  }
+
+  // ── Camera ──
+  function updateCamera() {
+    if (state !== 'playing' && state !== 'levelComplete' && state !== 'dead') return;
+    camera.targetX = stickman.x - canvas.width * 0.35;
+    camera.targetY = stickman.y - canvas.height * 0.5;
+    camera.x += (camera.targetX - camera.x) * 0.08;
+    camera.y += (camera.targetY - camera.y) * 0.06;
+  }
+
+  // ── Particles ──
+  function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1;
+      p.life -= 0.025;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = trailParticles.length - 1; i >= 0; i--) {
+      const p = trailParticles[i];
+      p.life -= 0.04;
+      if (p.life <= 0) trailParticles.splice(i, 1);
+    }
+  }
+
+  // ── Drawing ──
+  function drawBackground() {
+    // gradient background
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#0a0a16');
+    grad.addColorStop(0.5, COL_BG);
+    grad.addColorStop(1, '#0d0d22');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // stars parallax
+    ctx.save();
+    for (const s of stars) {
+      const sx = ((s.x - camera.x * s.speed) % (canvas.width + 200));
+      const sy = ((s.y - camera.y * s.speed * 0.3) % (canvas.height + 200));
+      const pulse = Math.sin(levelTimer * 0.02 + s.a * 10) * 0.2 + 0.8;
+      ctx.globalAlpha = s.a * pulse;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx < 0 ? sx + canvas.width + 200 : sx, sy < 0 ? sy + canvas.height + 200 : sy, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function worldToScreen(wx, wy) {
+    return { x: wx - camera.x, y: wy - camera.y };
+  }
+
+  function drawHooks() {
+    for (const h of hooks) {
+      const { x, y } = worldToScreen(h.x, h.y);
+      if (x < -50 || x > canvas.width + 50 || y < -50 || y > canvas.height + 50) continue;
+
+      h.pulse += 0.04;
+      const pulseSize = Math.sin(h.pulse) * 3;
+
+      // glow
+      ctx.save();
+      ctx.globalAlpha = 0.3 + Math.sin(h.pulse) * 0.1;
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, 35 + pulseSize);
+      glow.addColorStop(0, h.active ? 'rgba(123,47,247,0.5)' : COL_HOOK_GLOW);
+      glow.addColorStop(1, 'rgba(0,212,255,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, 35 + pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // hook circle
+      ctx.strokeStyle = h.active ? COL_PURPLE : COL_HOOK;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x, y, HOOK_RADIUS + pulseSize * 0.3, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // inner dot
+      ctx.fillStyle = h.active ? COL_PURPLE : COL_HOOK;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawRope() {
+    if (!attachedHook) return;
+    const s = worldToScreen(stickman.x, stickman.y);
+    const h = worldToScreen(attachedHook.x, attachedHook.y);
+
+    // rope with slight curve
+    const midX = (s.x + h.x) / 2;
+    const midY = (s.y + h.y) / 2 + 15;
+
+    ctx.save();
+    ctx.strokeStyle = COL_ROPE;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = COL_ROPE;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(h.x, h.y);
+    ctx.quadraticCurveTo(midX, midY, s.x, s.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawStickman() {
+    const { x, y } = worldToScreen(stickman.x, stickman.y);
+    const speed = Math.sqrt(stickman.vx ** 2 + stickman.vy ** 2);
+    const swing = stickman.limbPhase;
+    const tilt = attachedHook ? Math.atan2(stickman.x - attachedHook.x, -(stickman.y - attachedHook.y)) * 0.5 : stickman.angle * 0.3;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+
+    // glow around stickman
+    ctx.shadowColor = COL_ACCENT;
+    ctx.shadowBlur = 12;
+
+    const S = STICKMAN_SIZE;
+    ctx.strokeStyle = COL_STICK;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // head
+    ctx.beginPath();
+    ctx.arc(0, -S * 1.4, S * 0.45, 0, Math.PI * 2);
+    ctx.fillStyle = COL_STICK;
+    ctx.fill();
+
+    // body
+    ctx.beginPath();
+    ctx.moveTo(0, -S);
+    ctx.lineTo(0, S * 0.4);
+    ctx.stroke();
+
+    // arms
+    const armSwing = Math.sin(swing) * 0.5;
+    // left arm
+    ctx.beginPath();
+    ctx.moveTo(0, -S * 0.6);
+    ctx.lineTo(-S * 0.7, -S * 0.1 + Math.sin(swing) * S * 0.3);
+    ctx.stroke();
+    // right arm
+    ctx.beginPath();
+    ctx.moveTo(0, -S * 0.6);
+    ctx.lineTo(S * 0.7, -S * 0.1 + Math.sin(swing + Math.PI) * S * 0.3);
+    ctx.stroke();
+
+    // if attached, point arm toward hook
+    if (attachedHook) {
+      const hscreen = worldToScreen(attachedHook.x, attachedHook.y);
+      const dx = hscreen.x - x;
+      const dy = hscreen.y - y;
+      const a = Math.atan2(dy, dx) - tilt;
+      ctx.beginPath();
+      ctx.moveTo(0, -S * 0.6);
+      ctx.lineTo(Math.cos(a) * S, Math.sin(a) * S);
+      ctx.stroke();
+    }
+
+    // legs
+    ctx.beginPath();
+    ctx.moveTo(0, S * 0.4);
+    ctx.lineTo(-S * 0.5, S * 1.1 + Math.sin(swing + 1) * S * 0.25);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, S * 0.4);
+    ctx.lineTo(S * 0.5, S * 1.1 + Math.sin(swing + 1 + Math.PI) * S * 0.25);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawFinish() {
+    const { x, y } = worldToScreen(finishX, 0);
+    if (x < -100 || x > canvas.width + 100) return;
+
+    const flagH = canvas.height;
+
+    // pole
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, flagH);
+    ctx.stroke();
+
+    // flag
+    const wave = Math.sin(levelTimer * 0.06) * 5;
+    ctx.fillStyle = COL_FINISH;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x, canvas.height * 0.25);
+    ctx.lineTo(x + 40 + wave, canvas.height * 0.25 + 20);
+    ctx.lineTo(x, canvas.height * 0.25 + 40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // checkered pattern at bottom
+    const tileSize = 20;
+    for (let row = 0; row < 3; row++) {
+      for (let col = -3; col <= 3; col++) {
+        const tx = x + col * tileSize - tileSize * 0.5;
+        const ty = canvas.height - 80 + row * tileSize;
+        ctx.fillStyle = (row + col) % 2 === 0 ? '#ffffff' : '#333';
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(tx, ty, tileSize, tileSize);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // "FINISH" text
+    ctx.save();
+    ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = COL_FINISH;
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.7 + Math.sin(levelTimer * 0.05) * 0.3;
+    ctx.fillText('FINISH', x, canvas.height * 0.22);
+    ctx.restore();
+  }
+
+  function drawTrail() {
+    for (const p of trailParticles) {
+      const { x, y } = worldToScreen(p.x, p.y);
+      ctx.globalAlpha = p.life * 0.4;
+      ctx.fillStyle = COL_ACCENT;
+      ctx.beginPath();
+      ctx.arc(x, y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const { x, y } = worldToScreen(p.x, p.y);
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(x, y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawHUD() {
+    // level counter top right
+    ctx.save();
+    ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fillText('Level ' + level, canvas.width - 20, 36);
+
+    ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = '#666';
+    ctx.fillText('Best: Level ' + bestLevel, canvas.width - 20, 56);
+    ctx.restore();
+
+    // title top center
+    ctx.save();
+    ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    const titleGrad = ctx.createLinearGradient(canvas.width / 2 - 80, 0, canvas.width / 2 + 80, 0);
+    titleGrad.addColorStop(0, COL_ACCENT);
+    titleGrad.addColorStop(1, COL_PURPLE);
+    ctx.fillStyle = titleGrad;
+    ctx.fillText('STICKMAN HOOK', canvas.width / 2, 32);
+    ctx.restore();
+
+    // progress bar
+    if (state === 'playing' && hooks.length > 0) {
+      const progress = Math.max(0, Math.min(1, (stickman.x - 100) / (finishX - 100)));
+      const barW = Math.min(200, canvas.width * 0.3);
+      const barH = 6;
+      const barX = (canvas.width - barW) / 2;
+      const barY = 48;
+
+      ctx.fillStyle = '#1a1a2e';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 3);
+      ctx.fill();
+
+      const progGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      progGrad.addColorStop(0, COL_ACCENT);
+      progGrad.addColorStop(1, COL_PURPLE);
+      ctx.fillStyle = progGrad;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW * progress, barH, 3);
+      ctx.fill();
+    }
+  }
+
+  function drawMenu() {
+    ctx.save();
+
+    // title
+    ctx.font = 'bold 48px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    const grad = ctx.createLinearGradient(canvas.width / 2 - 150, 0, canvas.width / 2 + 150, 0);
+    grad.addColorStop(0, COL_ACCENT);
+    grad.addColorStop(1, COL_PURPLE);
+    ctx.fillStyle = grad;
+    const titleY = canvas.height * 0.3;
+    ctx.fillText('STICKMAN HOOK', canvas.width / 2, titleY);
+
+    // animated stickman preview
+    const previewT = Date.now() * 0.003;
+    const px = canvas.width / 2 + Math.sin(previewT) * 40;
+    const py = titleY + 80 + Math.sin(previewT * 1.5) * 20;
+    ctx.strokeStyle = COL_STICK;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    // head
+    ctx.beginPath();
+    ctx.arc(px, py - 25, 8, 0, Math.PI * 2);
+    ctx.fillStyle = COL_STICK;
+    ctx.fill();
+    // body
+    ctx.beginPath();
+    ctx.moveTo(px, py - 17);
+    ctx.lineTo(px, py + 2);
+    ctx.stroke();
+    // arms
+    ctx.beginPath();
+    ctx.moveTo(px - 12, py - 8 + Math.sin(previewT * 2) * 5);
+    ctx.lineTo(px, py - 12);
+    ctx.lineTo(px + 12, py - 8 + Math.sin(previewT * 2 + Math.PI) * 5);
+    ctx.stroke();
+    // legs
+    ctx.beginPath();
+    ctx.moveTo(px - 10, py + 18 + Math.sin(previewT * 2) * 4);
+    ctx.lineTo(px, py + 2);
+    ctx.lineTo(px + 10, py + 18 + Math.sin(previewT * 2 + Math.PI) * 4);
+    ctx.stroke();
+    // rope from arm up
+    ctx.strokeStyle = COL_ROPE;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px + 12, py - 8 + Math.sin(previewT * 2 + Math.PI) * 5);
+    ctx.quadraticCurveTo(px + 40, py - 60, px + 60, py - 80);
+    ctx.stroke();
+    // hook
+    ctx.strokeStyle = COL_HOOK;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px + 60, py - 80, 8, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // instructions
+    ctx.font = '18px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = '#999';
+    ctx.fillText('Click/Tap to swing from hook to hook', canvas.width / 2, canvas.height * 0.65);
+    ctx.fillText('Release to fly through the air', canvas.width / 2, canvas.height * 0.65 + 28);
+
+    // start prompt
+    const blink = Math.sin(Date.now() * 0.004) * 0.3 + 0.7;
+    ctx.globalAlpha = blink;
+    ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = COL_ACCENT;
+    ctx.fillText('TAP TO START', canvas.width / 2, canvas.height * 0.8);
+    ctx.globalAlpha = 1;
+
+    if (bestLevel > 0) {
+      ctx.font = '15px "Segoe UI", Tahoma, sans-serif';
+      ctx.fillStyle = '#666';
+      ctx.fillText('Best: Level ' + bestLevel, canvas.width / 2, canvas.height * 0.85);
+    }
+
+    ctx.restore();
+  }
+
+  function drawLevelComplete() {
+    completeTimer++;
+    ctx.save();
+
+    const alpha = Math.min(1, completeTimer / 30);
+    ctx.globalAlpha = alpha;
+
+    // overlay
+    ctx.fillStyle = 'rgba(15,15,26,0.6)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = 'bold 44px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    const grad = ctx.createLinearGradient(canvas.width / 2 - 150, 0, canvas.width / 2 + 150, 0);
+    grad.addColorStop(0, COL_ACCENT);
+    grad.addColorStop(1, COL_FINISH);
+    ctx.fillStyle = grad;
+
+    const bounce = Math.sin(completeTimer * 0.1) * 5 * Math.max(0, 1 - completeTimer / 60);
+    ctx.fillText('Level Complete!', canvas.width / 2, canvas.height * 0.38 + bounce);
+
+    ctx.font = 'bold 28px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = COL_STAR;
+    ctx.fillText('Level ' + level + ' cleared', canvas.width / 2, canvas.height * 0.48);
+
+    if (completeTimer > 60) {
+      const blink = Math.sin(Date.now() * 0.004) * 0.3 + 0.7;
+      ctx.globalAlpha = blink;
+      ctx.font = '18px "Segoe UI", Tahoma, sans-serif';
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('Tap to continue', canvas.width / 2, canvas.height * 0.6);
+    }
+
+    ctx.restore();
+  }
+
+  function drawDead() {
+    deathTimer++;
+    ctx.save();
+
+    const alpha = Math.min(1, deathTimer / 20);
+    ctx.globalAlpha = alpha;
+
+    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = 'bold 38px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff4444';
+    const shake = deathTimer < 15 ? (Math.random() - 0.5) * (15 - deathTimer) : 0;
+    ctx.fillText('Fell!', canvas.width / 2 + shake, canvas.height * 0.38);
+
+    ctx.font = '20px "Segoe UI", Tahoma, sans-serif';
+    ctx.fillStyle = '#999';
+    ctx.fillText('Level ' + level, canvas.width / 2, canvas.height * 0.47);
+
+    if (deathTimer > 40) {
+      const blink = Math.sin(Date.now() * 0.004) * 0.3 + 0.7;
+      ctx.globalAlpha = blink;
+      ctx.font = '18px "Segoe UI", Tahoma, sans-serif';
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('Tap to retry', canvas.width / 2, canvas.height * 0.57);
+    }
+
+    ctx.restore();
+  }
+
+  function drawHintArrow() {
+    // show hint arrow toward nearest hook in first few levels
+    if (level > 3 || !hooks.length || attachedHook) return;
+    if (levelTimer > 180) return;
+
+    let nearest = null;
+    let nearDist = Infinity;
+    for (const h of hooks) {
+      const dx = h.x - stickman.x;
+      const dy = h.y - stickman.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < nearDist && dx > -50) {
+        nearDist = d;
+        nearest = h;
+      }
+    }
+    if (!nearest || nearDist > MAX_ROPE_LEN * 2) return;
+
+    const { x, y } = worldToScreen(nearest.x, nearest.y);
+    const pulse = Math.sin(levelTimer * 0.08) * 4;
+    ctx.save();
+    ctx.globalAlpha = 0.5 + Math.sin(levelTimer * 0.06) * 0.2;
+    ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COL_ACCENT;
+    ctx.fillText('HOLD TO SWING', x, y - 30 + pulse);
+    ctx.restore();
+  }
+
+  // ── Game Over (submitted to Hall of Fame when level resets to 1) ──
+  let submittedGameOver = false;
+
+  function checkGameOver() {
+    // We submit score when player dies and hasn't submitted yet
+    if (state === 'dead' && !submittedGameOver && level > 1) {
+      submittedGameOver = true;
+      if (window.HallOfFame) window.HallOfFame.submit('stickmanhook', level);
+    }
+    if (state === 'playing') {
+      submittedGameOver = false;
+    }
+  }
+
+  // Actually, let's submit when dying at any level:
+  function handleDeath() {
+    if (state === 'dead' && deathTimer === 1) {
+      if (window.HallOfFame) window.HallOfFame.submit('stickmanhook', level);
+    }
+  }
+
+  // ── Main Loop ──
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (state === 'menu') {
+      drawBackground();
+      drawMenu();
+    } else {
+      updatePhysics();
+      updateCamera();
+      updateParticles();
+      handleDeath();
+
+      drawBackground();
+
+      ctx.save();
+      drawFinish();
+      drawTrail();
+      drawHooks();
+      drawRope();
+      drawStickman();
+      drawParticles();
+      drawHintArrow();
+      ctx.restore();
+
+      drawHUD();
+
+      if (state === 'levelComplete') drawLevelComplete();
+      if (state === 'dead') drawDead();
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  gameLoop();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

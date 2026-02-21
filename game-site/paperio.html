@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper.io</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+
+  canvas { display: block; }
+
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: center; align-items: center;
+    padding: 10px 70px; z-index: 50; pointer-events: none;
+  }
+  #hud h1 {
+    font-size: 1.3rem; font-weight: 800;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-right: 24px; white-space: nowrap;
+  }
+  #score-display {
+    font-size: 1.05rem; font-weight: 600; color: #aaa;
+    white-space: nowrap;
+  }
+  #score-display span { color: #00d4ff; font-size: 1.3rem; font-weight: 800; }
+
+  #kill-feed {
+    position: fixed; top: 50px; right: 16px; z-index: 50;
+    pointer-events: none; font-size: 0.8rem; color: #888;
+    text-align: right;
+  }
+  .kill-msg {
+    animation: fadeKill 2.5s forwards; margin-bottom: 4px;
+  }
+  @keyframes fadeKill {
+    0% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+
+  #minimap-container {
+    position: fixed; bottom: 12px; right: 12px; z-index: 50;
+    border: 2px solid #2a2a4a; border-radius: 6px; overflow: hidden;
+    background: #0a0a14;
+  }
+
+  /* D-pad for mobile */
+  #dpad {
+    display: none; position: fixed; bottom: 24px; left: 24px;
+    z-index: 80; width: 140px; height: 140px;
+  }
+  .dpad-btn {
+    position: absolute; width: 44px; height: 44px;
+    background: rgba(123, 47, 247, 0.35); border: 2px solid rgba(123, 47, 247, 0.5);
+    border-radius: 10px; color: #fff; font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
+    cursor: pointer; transition: background 0.1s;
+  }
+  .dpad-btn:active { background: rgba(123, 47, 247, 0.7); }
+  #dpad-up    { top: 0; left: 50%; transform: translateX(-50%); }
+  #dpad-down  { bottom: 0; left: 50%; transform: translateX(-50%); }
+  #dpad-left  { top: 50%; left: 0; transform: translateY(-50%); }
+  #dpad-right { top: 50%; right: 0; transform: translateY(-50%); }
+
+  /* Menu overlay */
+  #menu-screen {
+    position: fixed; inset: 0; z-index: 90;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #0f0f1a;
+  }
+  #menu-screen h1 {
+    font-size: 3.2rem; font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7, #ff4757);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 0.3rem;
+  }
+  #menu-screen .subtitle {
+    color: #666; font-size: 0.95rem; margin-bottom: 2rem;
+  }
+  .start-btn {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white; border: none; padding: 14px 48px;
+    border-radius: 12px; font-size: 1.15rem; font-weight: 700;
+    cursor: pointer; font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .start-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .start-btn:active { transform: scale(0.97); }
+  .controls-hint {
+    margin-top: 1.5rem; color: #555; font-size: 0.8rem; text-align: center; line-height: 1.7;
+  }
+
+  /* Game Over overlay */
+  #gameover-screen {
+    position: fixed; inset: 0; z-index: 90;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(15, 15, 26, 0.92);
+    backdrop-filter: blur(6px);
+  }
+  #gameover-screen h2 {
+    font-size: 2.4rem; font-weight: 800; color: #ff4757;
+    margin-bottom: 0.3rem;
+  }
+  #gameover-screen .final-score {
+    font-size: 1.4rem; color: #aaa; margin-bottom: 0.3rem;
+  }
+  #gameover-screen .final-score span { color: #00d4ff; font-weight: 700; font-size: 1.6rem; }
+  #gameover-screen .killed-by {
+    font-size: 0.95rem; color: #666; margin-bottom: 1.5rem;
+  }
+
+  @media (pointer: coarse) {
+    #dpad { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&#8592; Back</a>
+
+<!-- HUD -->
+<div id="hud" style="display:none;">
+  <h1>Paper.io</h1>
+  <div id="score-display">Territory: <span id="score-val">0.0</span>%</div>
+</div>
+
+<div id="kill-feed"></div>
+
+<!-- Minimap -->
+<div id="minimap-container" style="display:none;">
+  <canvas id="minimap" width="120" height="120"></canvas>
+</div>
+
+<!-- D-Pad -->
+<div id="dpad">
+  <div class="dpad-btn" id="dpad-up">&#9650;</div>
+  <div class="dpad-btn" id="dpad-down">&#9660;</div>
+  <div class="dpad-btn" id="dpad-left">&#9664;</div>
+  <div class="dpad-btn" id="dpad-right">&#9654;</div>
+</div>
+
+<!-- Main canvas -->
+<canvas id="game"></canvas>
+
+<!-- Menu screen -->
+<div id="menu-screen">
+  <h1>Paper.io</h1>
+  <p class="subtitle">Claim your territory</p>
+  <button class="start-btn" id="start-btn">Play</button>
+  <div class="controls-hint">
+    Arrow Keys / WASD to move<br>
+    Swipe or D-Pad on mobile
+  </div>
+</div>
+
+<!-- Game Over screen -->
+<div id="gameover-screen">
+  <h2>Game Over</h2>
+  <p class="final-score">Territory: <span id="final-pct">0</span>%</p>
+  <p class="killed-by" id="killed-by-msg"></p>
+  <button class="start-btn" id="restart-btn">Play Again</button>
+</div>
+
+<script>
+(() => {
+  // ====== CONFIG ======
+  const GRID = 100;
+  const CELL = 8;
+  const MAP = GRID * CELL;
+  const MOVE_INTERVAL = 80; // ms per cell move
+  const BOT_COUNT = 4;
+  const PLAYER_START_SIZE = 3;
+
+  // Colors
+  const COLORS = [
+    { name: 'You',     terr: '#00d4ff', trail: '#00d4ff80', head: '#00eaff', dark: '#005f73' },
+    { name: 'Rex',     terr: '#ff4757', trail: '#ff475780', head: '#ff6b7a', dark: '#7a1520' },
+    { name: 'Blaze',   terr: '#ffa502', trail: '#ffa50280', head: '#ffc048', dark: '#7a4e00' },
+    { name: 'Venom',   terr: '#2ed573', trail: '#2ed57380', head: '#55e898', dark: '#14692e' },
+    { name: 'Phantom', terr: '#9b59b6', trail: '#9b59b680', head: '#c084d8', dark: '#4a1a6b' },
+  ];
+
+  // Directions: 0=up, 1=right, 2=down, 3=left
+  const DX = [0, 1, 0, -1];
+  const DY = [-1, 0, 1, 0];
+
+  // ====== STATE ======
+  let canvas, ctx, mmCanvas, mmCtx;
+  let grid;         // grid[y][x] = owner index (-1 = unclaimed)
+  let players;      // { x, y, dir, trail:[], alive, id, respawnTimer }
+  let running = false;
+  let lastMove = 0;
+  let inputQueue = [];
+  let animTimer = 0;
+  let fillAnimations = []; // { cells:[], progress:0, color }
+  let gameOverShown = false;
+
+  // DOM
+  const menuEl = document.getElementById('menu-screen');
+  const overEl = document.getElementById('gameover-screen');
+  const hudEl = document.getElementById('hud');
+  const mmContainer = document.getElementById('minimap-container');
+  const scoreVal = document.getElementById('score-val');
+  const finalPct = document.getElementById('final-pct');
+  const killedMsg = document.getElementById('killed-by-msg');
+  const killFeed = document.getElementById('kill-feed');
+
+  canvas = document.getElementById('game');
+  ctx = canvas.getContext('2d');
+  mmCanvas = document.getElementById('minimap');
+  mmCtx = mmCanvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ====== GRID HELPERS ======
+  function inBounds(x, y) { return x >= 0 && x < GRID && y >= 0 && y < GRID; }
+
+  function claimTerritory(pid, cells) {
+    const col = COLORS[pid];
+    cells.forEach(([cx, cy]) => { grid[cy][cx] = pid; });
+    if (cells.length > 0) {
+      fillAnimations.push({ cells: cells.slice(), progress: 0, color: col.terr });
+    }
+  }
+
+  function countTerritory(pid) {
+    let c = 0;
+    for (let y = 0; y < GRID; y++)
+      for (let x = 0; x < GRID; x++)
+        if (grid[y][x] === pid) c++;
+    return c;
+  }
+
+  // Flood-fill to find enclosed area
+  function floodFillClaim(pid, trailCells) {
+    // Mark trail as territory first
+    const newCells = [];
+    trailCells.forEach(([tx, ty]) => {
+      if (grid[ty][tx] !== pid) newCells.push([tx, ty]);
+      grid[ty][tx] = pid;
+    });
+
+    // Find enclosed regions: flood fill from edges, anything not reached and not owned by someone = claimed
+    const visited = Array.from({ length: GRID }, () => new Uint8Array(GRID));
+
+    // Mark all player-owned cells as visited (they are walls)
+    for (let y = 0; y < GRID; y++)
+      for (let x = 0; x < GRID; x++)
+        if (grid[y][x] === pid) visited[y][x] = 1;
+
+    // BFS from all edge cells that aren't owned by pid
+    const queue = [];
+    for (let x = 0; x < GRID; x++) {
+      if (!visited[0][x]) { visited[0][x] = 2; queue.push([x, 0]); }
+      if (!visited[GRID-1][x]) { visited[GRID-1][x] = 2; queue.push([x, GRID-1]); }
+    }
+    for (let y = 1; y < GRID - 1; y++) {
+      if (!visited[y][0]) { visited[y][0] = 2; queue.push([0, y]); }
+      if (!visited[y][GRID-1]) { visited[y][GRID-1] = 2; queue.push([GRID-1, y]); }
+    }
+
+    let qi = 0;
+    while (qi < queue.length) {
+      const [cx, cy] = queue[qi++];
+      for (let d = 0; d < 4; d++) {
+        const nx = cx + DX[d], ny = cy + DY[d];
+        if (inBounds(nx, ny) && !visited[ny][nx]) {
+          visited[ny][nx] = 2;
+          queue.push([nx, ny]);
+        }
+      }
+    }
+
+    // Everything not visited (not reachable from outside, not our territory) is enclosed
+    const enclosed = [];
+    for (let y = 0; y < GRID; y++)
+      for (let x = 0; x < GRID; x++)
+        if (!visited[y][x]) enclosed.push([x, y]);
+
+    enclosed.forEach(([ex, ey]) => { grid[ey][ex] = pid; });
+    newCells.push(...enclosed);
+
+    return newCells;
+  }
+
+  // ====== PLAYER/BOT INIT ======
+  function spawnPos(avoid) {
+    for (let attempts = 0; attempts < 200; attempts++) {
+      const x = 5 + Math.floor(Math.random() * (GRID - 10));
+      const y = 5 + Math.floor(Math.random() * (GRID - 10));
+      let ok = true;
+      if (avoid) {
+        for (const a of avoid) {
+          if (Math.abs(a.x - x) < 12 && Math.abs(a.y - y) < 12) { ok = false; break; }
+        }
+      }
+      if (ok) return { x, y };
+    }
+    return { x: 5 + Math.floor(Math.random() * (GRID - 10)), y: 5 + Math.floor(Math.random() * (GRID - 10)) };
+  }
+
+  function initPlayer(pid, x, y) {
+    const half = Math.floor(PLAYER_START_SIZE / 2);
+    for (let dy = -half; dy <= half; dy++)
+      for (let dx = -half; dx <= half; dx++) {
+        const gx = x + dx, gy = y + dy;
+        if (inBounds(gx, gy)) grid[gy][gx] = pid;
+      }
+    return {
+      id: pid, x, y, dir: 1, nextDir: 1,
+      trail: [], alive: true, respawnTimer: 0,
+      outsideTerritory: false,
+      // Bot AI state
+      turnTimer: 0, targetDir: 1, trailLen: 0, maxTrail: 15 + Math.floor(Math.random() * 20),
+    };
+  }
+
+  function initGame() {
+    grid = Array.from({ length: GRID }, () => new Int8Array(GRID).fill(-1));
+    players = [];
+    fillAnimations = [];
+    inputQueue = [];
+    gameOverShown = false;
+
+    // Player
+    const pPos = spawnPos([]);
+    players.push(initPlayer(0, pPos.x, pPos.y));
+
+    // Bots
+    const placed = [pPos];
+    for (let i = 1; i <= BOT_COUNT; i++) {
+      const bPos = spawnPos(placed);
+      placed.push(bPos);
+      players.push(initPlayer(i, bPos.x, bPos.y));
+      players[i].dir = Math.floor(Math.random() * 4);
+      players[i].nextDir = players[i].dir;
+    }
+  }
+
+  // ====== MOVEMENT & LOGIC ======
+  function oppositeDir(d) { return (d + 2) % 4; }
+
+  function movePlayer(p) {
+    if (!p.alive) return;
+
+    // Apply queued direction (no 180 turns)
+    if (p.id === 0 && inputQueue.length > 0) {
+      const nd = inputQueue.shift();
+      if (nd !== oppositeDir(p.dir) || !p.outsideTerritory) {
+        p.dir = nd;
+      }
+    } else if (p.id === 0) {
+      // keep current dir
+    }
+
+    // Bot AI
+    if (p.id > 0) botAI(p);
+
+    const nx = p.x + DX[p.dir];
+    const ny = p.y + DY[p.dir];
+
+    // Wall bounce
+    if (!inBounds(nx, ny)) {
+      // Turn to a valid direction
+      const dirs = [0,1,2,3].filter(d => {
+        const tx = p.x + DX[d], ty = p.y + DY[d];
+        return inBounds(tx, ty);
+      });
+      if (dirs.length > 0) {
+        p.dir = dirs[Math.floor(Math.random() * dirs.length)];
+        if (p.id === 0) {
+          // Player just stays, doesn't auto turn
+          return;
+        }
+      }
+      return;
+    }
+
+    const wasOutside = p.outsideTerritory;
+    const onOwnTerritory = grid[ny][nx] === p.id;
+
+    // Check if stepping on own trail (suicide)
+    if (p.trail.some(([tx, ty]) => tx === nx && ty === ny)) {
+      killPlayer(p, p);
+      return;
+    }
+
+    // Check if stepping on someone else's trail
+    for (const other of players) {
+      if (other.id === p.id || !other.alive) continue;
+      if (other.trail.some(([tx, ty]) => tx === nx && ty === ny)) {
+        killPlayer(other, p);
+      }
+    }
+
+    // If outside territory, leave trail
+    if (!onOwnTerritory) {
+      if (!p.outsideTerritory) {
+        p.outsideTerritory = true;
+      }
+      p.trail.push([nx, ny]);
+    }
+
+    // If returning to own territory while having a trail
+    if (onOwnTerritory && p.trail.length > 0) {
+      const claimed = floodFillClaim(p.id, p.trail);
+      if (claimed.length > 0) {
+        fillAnimations.push({ cells: claimed, progress: 0, color: COLORS[p.id].terr });
+      }
+      // Check if we claimed over any bot's position or trail
+      for (const other of players) {
+        if (other.id === p.id || !other.alive) continue;
+        // Kill bots whose trail we claimed over
+        if (other.trail.some(([tx, ty]) => grid[ty][tx] === p.id)) {
+          killPlayer(other, p);
+        }
+      }
+      p.trail = [];
+      p.outsideTerritory = false;
+    }
+
+    p.x = nx;
+    p.y = ny;
+  }
+
+  function killPlayer(victim, killer) {
+    if (!victim.alive) return;
+    victim.alive = false;
+    victim.trail = [];
+    victim.outsideTerritory = false;
+
+    // Clear trail from rendering
+    addKillMsg(killer.id, victim.id);
+
+    if (victim.id === 0) {
+      // Player died
+      gameOver(killer.id);
+    } else {
+      // Bot died, remove territory and respawn
+      victim.respawnTimer = 120; // ~3 seconds at 40fps effective
+      // Remove territory
+      for (let y = 0; y < GRID; y++)
+        for (let x = 0; x < GRID; x++)
+          if (grid[y][x] === victim.id) grid[y][x] = -1;
+    }
+  }
+
+  function respawnBot(p) {
+    const pos = spawnPos(players.filter(pp => pp.alive));
+    p.x = pos.x;
+    p.y = pos.y;
+    p.alive = true;
+    p.trail = [];
+    p.outsideTerritory = false;
+    p.dir = Math.floor(Math.random() * 4);
+    p.nextDir = p.dir;
+    p.turnTimer = 0;
+    p.maxTrail = 15 + Math.floor(Math.random() * 20);
+    const half = Math.floor(PLAYER_START_SIZE / 2);
+    for (let dy = -half; dy <= half; dy++)
+      for (let dx = -half; dx <= half; dx++) {
+        const gx = p.x + dx, gy = p.y + dy;
+        if (inBounds(gx, gy)) grid[gy][gx] = p.id;
+      }
+  }
+
+  function addKillMsg(killerId, victimId) {
+    const div = document.createElement('div');
+    div.className = 'kill-msg';
+    const kn = COLORS[killerId].name;
+    const vn = COLORS[victimId].name;
+    div.innerHTML = `<span style="color:${COLORS[killerId].terr}">${kn}</span> eliminated <span style="color:${COLORS[victimId].terr}">${vn}</span>`;
+    killFeed.appendChild(div);
+    setTimeout(() => div.remove(), 2500);
+  }
+
+  // ====== BOT AI ======
+  function botAI(p) {
+    p.turnTimer--;
+
+    // If trail is long enough, try to return home
+    if (p.trail.length >= p.maxTrail) {
+      returnHome(p);
+      return;
+    }
+
+    // Occasionally change direction
+    if (p.turnTimer <= 0) {
+      p.turnTimer = 8 + Math.floor(Math.random() * 20);
+
+      // If on own territory, go out
+      if (!p.outsideTerritory) {
+        // Pick a direction toward unclaimed/enemy area
+        const dirs = [0,1,2,3].filter(d => d !== oppositeDir(p.dir));
+        p.dir = dirs[Math.floor(Math.random() * dirs.length)];
+      } else {
+        // While outside, occasionally turn (not 180)
+        if (Math.random() < 0.5) {
+          const turns = [p.dir, (p.dir + 1) % 4, (p.dir + 3) % 4];
+          p.dir = turns[Math.floor(Math.random() * turns.length)];
+        }
+      }
+    }
+
+    // Avoid walls
+    const nx = p.x + DX[p.dir], ny = p.y + DY[p.dir];
+    if (!inBounds(nx, ny)) {
+      const dirs = [0,1,2,3].filter(d => {
+        const tx = p.x + DX[d], ty = p.y + DY[d];
+        return inBounds(tx, ty) && d !== oppositeDir(p.dir);
+      });
+      if (dirs.length > 0) p.dir = dirs[Math.floor(Math.random() * dirs.length)];
+    }
+
+    // Avoid own trail
+    const nx2 = p.x + DX[p.dir], ny2 = p.y + DY[p.dir];
+    if (p.trail.some(([tx, ty]) => tx === nx2 && ty === ny2)) {
+      const dirs = [0,1,2,3].filter(d => {
+        const tx = p.x + DX[d], ty = p.y + DY[d];
+        return inBounds(tx, ty) && !p.trail.some(([ttx, tty]) => ttx === tx && tty === ty);
+      });
+      if (dirs.length > 0) p.dir = dirs[Math.floor(Math.random() * dirs.length)];
+    }
+  }
+
+  function returnHome(p) {
+    // Simple: find direction toward nearest own territory
+    let bestDir = p.dir;
+    let bestDist = Infinity;
+
+    for (let d = 0; d < 4; d++) {
+      if (d === oppositeDir(p.dir) && p.outsideTerritory) continue;
+      const nx = p.x + DX[d], ny = p.y + DY[d];
+      if (!inBounds(nx, ny)) continue;
+      if (p.trail.some(([tx, ty]) => tx === nx && ty === ny)) continue;
+
+      // Check if this is own territory
+      if (grid[ny][nx] === p.id) {
+        p.dir = d;
+        return;
+      }
+
+      // Distance to nearest territory cell (sample a few)
+      let minD = Infinity;
+      for (let sy = 0; sy < GRID; sy += 5) {
+        for (let sx = 0; sx < GRID; sx += 5) {
+          if (grid[sy][sx] === p.id) {
+            const dist = Math.abs(nx - sx) + Math.abs(ny - sy);
+            if (dist < minD) minD = dist;
+          }
+        }
+      }
+      if (minD < bestDist) {
+        bestDist = minD;
+        bestDir = d;
+      }
+    }
+    p.dir = bestDir;
+  }
+
+  // ====== GAME OVER ======
+  function gameOver(killerId) {
+    running = false;
+    const pct = ((countTerritory(0) / (GRID * GRID)) * 100).toFixed(1);
+    finalPct.textContent = pct;
+    if (killerId === 0) {
+      killedMsg.textContent = 'You ran into your own trail!';
+    } else {
+      killedMsg.innerHTML = `Eliminated by <span style="color:${COLORS[killerId].terr}">${COLORS[killerId].name}</span>`;
+    }
+    overEl.style.display = 'flex';
+    gameOverShown = true;
+
+    const score = parseFloat(pct);
+    if (window.HallOfFame) window.HallOfFame.submit('paperio', score);
+  }
+
+  // ====== RENDERING ======
+  function render() {
+    const w = canvas.width, h = canvas.height;
+    ctx.fillStyle = '#0f0f1a';
+    ctx.fillRect(0, 0, w, h);
+
+    if (!running && !gameOverShown) return;
+
+    const player = players[0];
+    // Camera centered on player
+    const camX = player.x * CELL - w / 2;
+    const camY = player.y * CELL - h / 2;
+
+    // Grid bounds visible
+    const startX = Math.max(0, Math.floor(camX / CELL) - 1);
+    const startY = Math.max(0, Math.floor(camY / CELL) - 1);
+    const endX = Math.min(GRID, Math.ceil((camX + w) / CELL) + 1);
+    const endY = Math.min(GRID, Math.ceil((camY + h) / CELL) + 1);
+
+    ctx.save();
+    ctx.translate(-camX, -camY);
+
+    // Draw grid background
+    ctx.fillStyle = '#12122a';
+    ctx.fillRect(0, 0, MAP, MAP);
+
+    // Grid lines (subtle)
+    ctx.strokeStyle = '#1a1a35';
+    ctx.lineWidth = 0.5;
+    for (let x = startX; x <= endX; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * CELL, startY * CELL);
+      ctx.lineTo(x * CELL, endY * CELL);
+      ctx.stroke();
+    }
+    for (let y = startY; y <= endY; y++) {
+      ctx.beginPath();
+      ctx.moveTo(startX * CELL, y * CELL);
+      ctx.lineTo(endX * CELL, y * CELL);
+      ctx.stroke();
+    }
+
+    // Draw territories
+    for (let y = startY; y < endY; y++) {
+      for (let x = startX; x < endX; x++) {
+        const owner = grid[y][x];
+        if (owner >= 0) {
+          ctx.fillStyle = COLORS[owner].dark;
+          ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+        }
+      }
+    }
+
+    // Draw fill animations
+    for (const anim of fillAnimations) {
+      if (anim.progress < 1) {
+        const alpha = 0.5 * (1 - anim.progress);
+        ctx.fillStyle = anim.color;
+        ctx.globalAlpha = alpha;
+        for (const [cx, cy] of anim.cells) {
+          if (cx >= startX && cx < endX && cy >= startY && cy < endY) {
+            ctx.fillRect(cx * CELL, cy * CELL, CELL, CELL);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Draw trails
+    for (const p of players) {
+      if (!p.alive || p.trail.length === 0) continue;
+      ctx.fillStyle = COLORS[p.id].trail;
+      for (const [tx, ty] of p.trail) {
+        if (tx >= startX && tx < endX && ty >= startY && ty < endY) {
+          ctx.fillRect(tx * CELL + 1, ty * CELL + 1, CELL - 2, CELL - 2);
+        }
+      }
+      // Trail border
+      ctx.strokeStyle = COLORS[p.id].terr;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5;
+      for (const [tx, ty] of p.trail) {
+        if (tx >= startX && tx < endX && ty >= startY && ty < endY) {
+          ctx.strokeRect(tx * CELL + 1, ty * CELL + 1, CELL - 2, CELL - 2);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw player heads
+    for (const p of players) {
+      if (!p.alive) continue;
+      if (p.x >= startX - 1 && p.x <= endX && p.y >= startY - 1 && p.y <= endY) {
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(p.x * CELL + 1, p.y * CELL + 2, CELL, CELL);
+        // Head
+        ctx.fillStyle = COLORS[p.id].head;
+        ctx.fillRect(p.x * CELL, p.y * CELL, CELL, CELL);
+        // Border
+        ctx.strokeStyle = COLORS[p.id].terr;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p.x * CELL, p.y * CELL, CELL, CELL);
+
+        // Direction indicator (small triangle)
+        ctx.fillStyle = '#fff';
+        const cx = p.x * CELL + CELL / 2;
+        const cy = p.y * CELL + CELL / 2;
+        const sz = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + DX[p.dir] * sz * 1.5, cy + DY[p.dir] * sz * 1.5);
+        ctx.lineTo(cx + DY[p.dir] * sz, cy - DX[p.dir] * sz);
+        ctx.lineTo(cx - DY[p.dir] * sz, cy + DX[p.dir] * sz);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Map border
+    ctx.strokeStyle = '#2a2a5a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(0, 0, MAP, MAP);
+
+    ctx.restore();
+
+    // Update HUD
+    const pct = ((countTerritory(0) / (GRID * GRID)) * 100).toFixed(1);
+    scoreVal.textContent = pct;
+
+    // Minimap
+    renderMinimap();
+  }
+
+  function renderMinimap() {
+    const mw = 120, mh = 120;
+    const scale = mw / GRID;
+    mmCtx.fillStyle = '#0a0a14';
+    mmCtx.fillRect(0, 0, mw, mh);
+
+    // Batch territory drawing by color for performance
+    for (let pid = 0; pid < COLORS.length; pid++) {
+      mmCtx.fillStyle = COLORS[pid].terr;
+      for (let y = 0; y < GRID; y += 2) {
+        for (let x = 0; x < GRID; x += 2) {
+          if (grid[y][x] === pid) {
+            mmCtx.fillRect(x * scale, y * scale, scale * 2 + 0.5, scale * 2 + 0.5);
+          }
+        }
+      }
+    }
+
+    // Player trails on minimap
+    for (const p of players) {
+      if (!p.alive || p.trail.length === 0) continue;
+      mmCtx.fillStyle = COLORS[p.id].terr;
+      mmCtx.globalAlpha = 0.6;
+      for (const [tx, ty] of p.trail) {
+        mmCtx.fillRect(tx * scale, ty * scale, scale + 0.5, scale + 0.5);
+      }
+      mmCtx.globalAlpha = 1;
+    }
+
+    // Player positions
+    for (const p of players) {
+      if (!p.alive) continue;
+      mmCtx.fillStyle = COLORS[p.id].head;
+      mmCtx.fillRect(p.x * scale - 1, p.y * scale - 1, 3, 3);
+    }
+
+    // Viewport rect
+    const player = players[0];
+    const vw = canvas.width / CELL * scale;
+    const vh = canvas.height / CELL * scale;
+    const vx = (player.x * scale) - vw / 2;
+    const vy = (player.y * scale) - vh / 2;
+    mmCtx.strokeStyle = '#ffffff44';
+    mmCtx.lineWidth = 1;
+    mmCtx.strokeRect(vx, vy, vw, vh);
+  }
+
+  // ====== GAME LOOP ======
+  let lastTime = 0;
+  let moveAccum = 0;
+
+  function gameLoop(time) {
+    requestAnimationFrame(gameLoop);
+
+    const dt = lastTime ? time - lastTime : 16;
+    lastTime = time;
+
+    if (!running) {
+      render();
+      return;
+    }
+
+    // Move players on interval
+    moveAccum += dt;
+    while (moveAccum >= MOVE_INTERVAL) {
+      moveAccum -= MOVE_INTERVAL;
+
+      // Move all
+      for (const p of players) {
+        if (p.alive) {
+          movePlayer(p);
+          if (!running) break;
+        } else if (p.id > 0) {
+          p.respawnTimer--;
+          if (p.respawnTimer <= 0) respawnBot(p);
+        }
+      }
+      if (!running) break;
+    }
+
+    // Update fill animations
+    for (const anim of fillAnimations) {
+      anim.progress += dt / 400;
+    }
+    fillAnimations = fillAnimations.filter(a => a.progress < 1);
+
+    render();
+  }
+
+  // ====== INPUT ======
+  function queueDir(dir) {
+    if (!running) return;
+    // Only queue if different from last queued or current direction
+    const last = inputQueue.length > 0 ? inputQueue[inputQueue.length - 1] : players[0].dir;
+    if (dir !== last && inputQueue.length < 3) {
+      inputQueue.push(dir);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!running) return;
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': e.preventDefault(); queueDir(0); break;
+      case 'ArrowRight': case 'd': case 'D': e.preventDefault(); queueDir(1); break;
+      case 'ArrowDown': case 's': case 'S': e.preventDefault(); queueDir(2); break;
+      case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); queueDir(3); break;
+    }
+  });
+
+  // D-Pad
+  document.getElementById('dpad-up').addEventListener('touchstart', (e) => { e.preventDefault(); queueDir(0); });
+  document.getElementById('dpad-down').addEventListener('touchstart', (e) => { e.preventDefault(); queueDir(2); });
+  document.getElementById('dpad-left').addEventListener('touchstart', (e) => { e.preventDefault(); queueDir(3); });
+  document.getElementById('dpad-right').addEventListener('touchstart', (e) => { e.preventDefault(); queueDir(1); });
+
+  // Swipe
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    if (e.target.closest('#dpad') || e.target.closest('button') || e.target.closest('a')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (e.target.closest('#dpad')) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    const threshold = 20;
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      queueDir(dx > 0 ? 1 : 3);
+    } else {
+      queueDir(dy > 0 ? 2 : 0);
+    }
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // ====== START / RESTART ======
+  function startGame() {
+    menuEl.style.display = 'none';
+    overEl.style.display = 'none';
+    hudEl.style.display = 'flex';
+    mmContainer.style.display = 'block';
+    initGame();
+    running = true;
+    moveAccum = 0;
+    lastTime = 0;
+  }
+
+  document.getElementById('start-btn').addEventListener('click', startGame);
+  document.getElementById('restart-btn').addEventListener('click', startGame);
+
+  // Start render loop
+  requestAnimationFrame(gameLoop);
+})();
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
