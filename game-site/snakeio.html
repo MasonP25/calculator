@@ -687,10 +687,10 @@ function gameTick() {
       // Move
       s.segments.unshift({ x: nx, y: ny });
 
-      // Food check (1-cell pickup radius)
+      // Food check
       let ate = false;
       for (let f = food.length - 1; f >= 0; f--) {
-        if (Math.abs(food[f].x - nx) <= CELL && Math.abs(food[f].y - ny) <= CELL) {
+        if (food[f].x === nx && food[f].y === ny) {
           food.splice(f, 1);
           s.score++;
           ate = true;
@@ -1689,10 +1689,10 @@ async function onlineHostTick() {
 
         s.segments.unshift({ x: nx, y: ny });
 
-        // Food (1-cell pickup radius)
+        // Food
         let ate = false;
         for (let f = fData.length - 1; f >= 0; f--) {
-          if (Math.abs(fData[f].x - nx) <= CELL && Math.abs(fData[f].y - ny) <= CELL) {
+          if (fData[f].x === nx && fData[f].y === ny) {
             fData.splice(f, 1);
             s.score = (s.score || 0) + 1;
             ate = true;

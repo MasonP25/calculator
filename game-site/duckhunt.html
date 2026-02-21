@@ -744,6 +744,7 @@ function shoot(mx, my) {
       spawnFeathers(duck.x, duck.y, duck.color);
       const pts = (duck.isGolden ? 5 : 1) * 100 * round;
       score += pts;
+      console.log('[DUCK] Hit! +' + pts + ' total score:', score);
       if (duck.isGolden) {
         if (window.SFX) window.SFX.combo();
       } else {
@@ -868,7 +869,8 @@ function showGameOver() {
       score = 0; round = 1;
       startRound();
     };
-    if (window.HallOfFame) window.HallOfFame.submit('duckhunt', score);
+    console.log('[DUCK] Game over! Submitting score:', score);
+    if (score > 0 && window.HallOfFame) window.HallOfFame.submit('duckhunt', score);
   }, 800);
 }
 
