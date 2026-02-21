@@ -129,10 +129,14 @@
     },
   };
 
-  // ─── Custom theme builder ───
+  // ─── Helpers ───
   function hexToRgb(hex) {
     var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return {r:r, g:g, b:b};
+  }
+  function hexToRgba(hex, alpha) {
+    var c = hexToRgb(hex);
+    return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + alpha + ')';
   }
   function rgbToHex(r,g,b) {
     return '#' + [r,g,b].map(function(v){ return Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0'); }).join('');
@@ -206,22 +210,29 @@
         --t-canvas:${t.canvasBg}; --t-canvas2:${t.canvasBg2};
       }
       body { background:${t.bg1}!important; color:${t.text}!important; }
+      body::before { background:radial-gradient(circle, ${t.accent} 0%, transparent 70%)!important; }
+      body::after { background:radial-gradient(circle, ${t.accent2} 0%, transparent 70%)!important; }
       a { color:${t.accent}!important; }
       h1 { background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
            -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important; }
       .subtitle,.hint,.controls,.hint-text { color:${t.dim}!important; }
       canvas { border-color:${t.border}!important; }
 
-      /* Cards & panels */
-      .card,.panel,.score-col,.results-box,#setup,.vs-scores,.board,
+      /* Cards & panels — glass transparency */
+      .card {
+        background:${hexToRgba(t.bg2, 0.55)}!important; border-color:rgba(255,255,255,0.08)!important; color:${t.text}!important;
+        backdrop-filter:blur(16px)!important; -webkit-backdrop-filter:blur(16px)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.25)!important;
+      }
+      .panel,.score-col,.results-box,#setup,.vs-scores,.board,
       .mode-select button,.diff-btn,.round-btn,.mode-btn,
       .game-card,.stat-box,.online-panel,.online-info,.online-score,
       .score-display,.selector-btn,.lobby-container,.screen {
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
       }
-      .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
-      .card.featured { background:linear-gradient(135deg,${t.bg2},${t.bg3})!important; border-color:${t.accent}33!important; }
-      .card.featured:hover { border-color:${t.accent}!important; }
+      .card:hover,.game-card:hover { border-color:${t.accent}80!important; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), 0 12px 40px ${t.glow}, 0 0 60px ${hexToRgba(t.accent, 0.08)}!important; }
+      .card.featured { background:linear-gradient(135deg,${hexToRgba(t.bg2, 0.6)},${hexToRgba(t.bg3, 0.6)})!important; border-color:${t.accent}22!important; }
+      .card.featured:hover { border-color:${t.accent}80!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
 
       /* Badges */
@@ -248,6 +259,7 @@
         color:${t.accent2}!important;
       }
       .scores .label,.round-info,.section-title,.count,.stat-label,.score-type { color:${t.dim}!important; }
+      .section-title::after { background:linear-gradient(90deg, transparent, ${t.accent}44, transparent)!important; }
 
       /* Game specific */
       .player-row,.lb-row { background:${t.bg1}!important; }
@@ -290,14 +302,15 @@
       .waiting-msg { color:${t.dim}!important; }
       .leave-btn { border-color:${t.border}!important; }
 
-      /* Chat elements */
-      #chat-panel,#chat-header { background:${t.bg2}!important; border-color:${t.border}!important; }
-      #chat-body,#chat-messages { background:${t.bg1}!important; }
-      #chat-input-area { background:${t.bg2}!important; border-color:${t.border}!important; }
-      #chat-input { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      /* Chat elements — glass */
+      #chat-panel { background:${hexToRgba(t.bg2, 0.7)}!important; border-color:${t.border}!important; backdrop-filter:blur(20px)!important; -webkit-backdrop-filter:blur(20px)!important; }
+      #chat-header { background:${hexToRgba(t.bg2, 0.7)}!important; border-color:${t.border}44!important; }
+      #chat-body,#chat-messages { background:${hexToRgba(t.bg1, 0.6)}!important; }
+      #chat-input-area { background:${hexToRgba(t.bg2, 0.7)}!important; border-color:${t.border}44!important; }
+      #chat-input { background:${hexToRgba(t.bg1, 0.6)}!important; border-color:${t.border}44!important; color:${t.text}!important; }
       #chat-input:focus { border-color:${t.accent}!important; }
       #chat-send { background:${t.accent}!important; }
-      #chat-tabs { background:${t.bg1}!important; border-color:${t.border}!important; }
+      #chat-tabs { background:${hexToRgba(t.bg1, 0.7)}!important; border-color:${t.border}44!important; }
       .chat-tab { color:${t.dim}!important; }
       .chat-tab.active { color:${t.text}!important; border-bottom-color:${t.accent}!important; }
 
@@ -311,18 +324,21 @@
       .auth-btn { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
       .auth-overlay { background:${t.bg1}dd!important; }
 
-      /* Hall of Fame link */
+      /* Hall of Fame link — glass */
       .fame-link {
-        background:linear-gradient(135deg,${t.bg2},${t.bg3})!important;
-        border-color:${t.accent}33!important; color:${t.text}!important;
+        background:${hexToRgba(t.bg2, 0.55)}!important;
+        border-color:rgba(255,255,255,0.08)!important; color:${t.text}!important;
+        backdrop-filter:blur(16px)!important; -webkit-backdrop-filter:blur(16px)!important;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.2)!important;
       }
       .fame-link:hover {
-        border-color:${t.accent}!important; box-shadow:0 6px 20px ${t.glow}!important;
+        border-color:${t.accent}80!important; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 30px ${t.glow}!important;
+        background:${hexToRgba(t.bg2, 0.7)}!important;
       }
 
       /* Theme picker itself */
-      .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
-      .theme-panel { background:${t.bg2}; border-color:${t.border}; }
+      .theme-picker-btn { background:${hexToRgba(t.bg2, 0.7)}; border-color:${t.border}; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+      .theme-panel { background:${hexToRgba(t.bg2, 0.85)}; border-color:${t.border}; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
       .theme-option { border-color:${t.border}; }
       .theme-option:hover,.theme-option.active { border-color:${t.accent}; }
       .theme-option span { color:${t.text}; }
