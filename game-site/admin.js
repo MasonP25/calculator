@@ -83,7 +83,7 @@
     'imposter':'imposter','rhythm':'rhythm','mini golf':'golf','dino runner':'dino',
     'galaga':'galaga','crossword':'crossword','block blast':'blockblast',
     'stickman hook':'stickmanhook','paper.io':'paperio','fruit merge':'fruitmerge',
-    'flappy dunk':'flappydunk','pool':'pool','sand fall':'sandfall'
+    'pool':'pool','sand fall':'sandfall'
   };
 
   function _resolveGameId(input) {
