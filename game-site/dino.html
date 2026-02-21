@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinosaur Runner</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; }
+  .msg { margin-top: 0.8rem; color: #888; min-height: 1.5rem; font-size: 0.9rem; }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Dinosaur Runner</h1>
+<canvas id="c" width="700" height="400"></canvas>
+<div class="msg" id="msg">Press SPACE or click to start running!</div>
+<script>
+function _gb(k,f){return(window.HallOfFame?window.HallOfFame.getBest(k,f):localStorage.getItem(k))||f}
+function _sb(k,v){window.HallOfFame?window.HallOfFame.setBest(k,v):localStorage.setItem(k,v)}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const W = canvas.width, H = canvas.height;
+
+// Constants
+const GROUND_Y = H - 50;
+const GRAVITY = 0.0018;
+const JUMP_VEL = -0.65;
+const JUMP_HOLD_BOOST = -0.0012;
+const MAX_JUMP_HOLD = 200;
+const DINO_W = 30;
+const DINO_H_STAND = 50;
+const DINO_H_DUCK = 28;
+const DINO_X = 70;
+const BASE_SPEED = 0.3;
+const MAX_SPEED = 0.75;
+const SPEED_INCR = 0.000008;
+const MIN_OBSTACLE_GAP = 500;
+
+// State
+let dino, obstacles, particles, stars, terrainDots;
+let score, highScore, speed, distance;
+let playing, gameOver, nightMode;
+let lastTime, jumpHoldTime, jumpHeld;
+let lastObstacleX, nextMilestone;
+let ducking;
+
+highScore = parseInt(_gb('dinoBest', '0'));
+
+function init() {
+  dino = {
+    x: DINO_X,
+    y: GROUND_Y - DINO_H_STAND,
+    w: DINO_W,
+    h: DINO_H_STAND,
+    vy: 0,
+    grounded: true,
+    legFrame: 0,
+    legTimer: 0
+  };
+  obstacles = [];
+  particles = [];
+  stars = [];
+  terrainDots = [];
+  score = 0;
+  speed = BASE_SPEED;
+  distance = 0;
+  playing = false;
+  gameOver = false;
+  nightMode = false;
+  lastTime = 0;
+  jumpHoldTime = 0;
+  jumpHeld = false;
+  lastObstacleX = W + 200;
+  nextMilestone = 100;
+  ducking = false;
+
+  // Generate initial terrain dots
+  for (let i = 0; i < 40; i++) {
+    terrainDots.push({
+      x: Math.random() * W,
+      y: GROUND_Y + 5 + Math.random() * 35,
+      size: 1 + Math.random() * 2
+    });
+  }
+
+  // Generate stars for night mode
+  for (let i = 0; i < 50; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * (GROUND_Y - 60),
+      size: 0.5 + Math.random() * 2,
+      twinkle: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function jump() {
+  if (gameOver) {
+    init();
+    startGame();
+    return;
+  }
+  if (!playing) {
+    startGame();
+  }
+  if (dino.grounded) {
+    dino.vy = JUMP_VEL;
+    dino.grounded = false;
+    jumpHeld = true;
+    jumpHoldTime = 0;
+    ducking = false;
+    try { window.SFX?.click(); } catch(e) {}
+  }
+}
+
+function startGame() {
+  playing = true;
+  gameOver = false;
+  msgEl.textContent = '';
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function startDuck() {
+  if (!gameOver && dino.grounded) {
+    ducking = true;
+    dino.h = DINO_H_DUCK;
+    dino.y = GROUND_Y - DINO_H_DUCK;
+  }
+}
+
+function stopDuck() {
+  ducking = false;
+  if (dino.grounded) {
+    dino.h = DINO_H_STAND;
+    dino.y = GROUND_Y - DINO_H_STAND;
+  }
+}
+
+// Input handling
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    jump();
+  }
+  if (e.code === 'ArrowDown') {
+    e.preventDefault();
+    startDuck();
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') {
+    jumpHeld = false;
+  }
+  if (e.code === 'ArrowDown') {
+    stopDuck();
+  }
+});
+
+canvas.addEventListener('click', (e) => {
+  e.preventDefault();
+  jump();
+});
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  jump();
+});
+
+// Spawn obstacles
+function spawnObstacle() {
+  const r = Math.random();
+  let obs;
+  if (r < 0.35) {
+    // Short cactus
+    const w = 15 + Math.random() * 10;
+    const h = 25 + Math.random() * 10;
+    obs = {
+      type: 'cactus',
+      x: W + 20,
+      y: GROUND_Y - h,
+      w: w,
+      h: h,
+      variant: 'short'
+    };
+  } else if (r < 0.7) {
+    // Tall cactus
+    const w = 14 + Math.random() * 8;
+    const h = 40 + Math.random() * 15;
+    obs = {
+      type: 'cactus',
+      x: W + 20,
+      y: GROUND_Y - h,
+      w: w,
+      h: h,
+      variant: 'tall'
+    };
+  } else if (r < 0.85 && speed > 0.38) {
+    // Cactus cluster (two cacti close together)
+    const w = 35 + Math.random() * 10;
+    const h = 30 + Math.random() * 12;
+    obs = {
+      type: 'cactus',
+      x: W + 20,
+      y: GROUND_Y - h,
+      w: w,
+      h: h,
+      variant: 'cluster'
+    };
+  } else {
+    // Pterodactyl
+    const flyH = GROUND_Y - 60 - Math.random() * 80;
+    obs = {
+      type: 'ptero',
+      x: W + 20,
+      y: flyH,
+      w: 40,
+      h: 22,
+      wingFrame: 0,
+      wingTimer: 0
+    };
+  }
+  obstacles.push(obs);
+  lastObstacleX = W + 20;
+}
+
+// Dust particles on landing
+function spawnDust() {
+  for (let i = 0; i < 6; i++) {
+    particles.push({
+      x: dino.x + dino.w / 2 + (Math.random() - 0.5) * 20,
+      y: GROUND_Y,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: -Math.random() * 0.08 - 0.02,
+      life: 300 + Math.random() * 200,
+      maxLife: 500,
+      size: 2 + Math.random() * 2
+    });
+  }
+}
+
+// Collision detection (AABB with padding)
+function checkCollision(a, b) {
+  const pad = 4;
+  return a.x + pad < b.x + b.w - pad &&
+         a.x + a.w - pad > b.x + pad &&
+         a.y + pad < b.y + b.h - pad &&
+         a.y + a.h - pad > b.y + pad;
+}
+
+// Game loop
+function loop(timestamp) {
+  if (!playing) return;
+
+  const dt = Math.min(timestamp - lastTime, 33); // cap delta to ~30fps minimum
+  lastTime = timestamp;
+
+  update(dt);
+  draw();
+
+  if (!gameOver) {
+    requestAnimationFrame(loop);
+  }
+}
+
+function update(dt) {
+  // Speed increases over time
+  speed = Math.min(MAX_SPEED, speed + SPEED_INCR * dt);
+
+  // Score
+  distance += speed * dt;
+  score = Math.floor(distance / 10);
+
+  // Milestone sound
+  if (score >= nextMilestone) {
+    nextMilestone += 100;
+    try { window.SFX?.coin(); } catch(e) {}
+  }
+
+  // Night mode toggles at certain scores
+  nightMode = (Math.floor(score / 300) % 2 === 1);
+
+  // Dino physics
+  if (!dino.grounded) {
+    // Hold jump for higher jump
+    if (jumpHeld && jumpHoldTime < MAX_JUMP_HOLD && dino.vy < 0) {
+      dino.vy += JUMP_HOLD_BOOST * dt;
+      jumpHoldTime += dt;
+    }
+    dino.vy += GRAVITY * dt;
+    dino.y += dino.vy * dt;
+
+    const groundLevel = GROUND_Y - dino.h;
+    if (dino.y >= groundLevel) {
+      dino.y = groundLevel;
+      dino.vy = 0;
+      dino.grounded = true;
+      spawnDust();
+      try { window.SFX?.bounce(); } catch(e) {}
+      if (ducking) {
+        dino.h = DINO_H_DUCK;
+        dino.y = GROUND_Y - DINO_H_DUCK;
+      }
+    }
+  } else {
+    // Leg animation while running
+    dino.legTimer += dt;
+    if (dino.legTimer > 100) {
+      dino.legTimer = 0;
+      dino.legFrame = (dino.legFrame + 1) % 2;
+    }
+  }
+
+  // Obstacle spawning
+  let farthestObs = 0;
+  for (const o of obstacles) {
+    if (o.x > farthestObs) farthestObs = o.x;
+  }
+  const gap = MIN_OBSTACLE_GAP / (speed / BASE_SPEED * 0.7 + 0.3);
+  if (farthestObs < W - gap || obstacles.length === 0) {
+    if (playing && !gameOver) {
+      spawnObstacle();
+    }
+  }
+
+  // Move obstacles
+  const moveAmt = speed * dt;
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.x -= moveAmt;
+
+    // Ptero wing animation
+    if (o.type === 'ptero') {
+      o.wingTimer += dt;
+      if (o.wingTimer > 180) {
+        o.wingTimer = 0;
+        o.wingFrame = (o.wingFrame + 1) % 2;
+      }
+    }
+
+    // Remove off-screen
+    if (o.x + o.w < -20) {
+      obstacles.splice(i, 1);
+      continue;
+    }
+
+    // Collision
+    if (checkCollision(dino, o)) {
+      die();
+      return;
+    }
+  }
+
+  // Move terrain dots
+  for (const d of terrainDots) {
+    d.x -= moveAmt * 0.5;
+    if (d.x < -5) {
+      d.x = W + Math.random() * 20;
+      d.y = GROUND_Y + 5 + Math.random() * 35;
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+
+  // Twinkle stars
+  for (const s of stars) {
+    s.twinkle += dt * 0.003;
+  }
+}
+
+function die() {
+  gameOver = true;
+  playing = false;
+  try { window.SFX?.death(); } catch(e) {}
+
+  if (score > highScore) {
+    highScore = score;
+    _sb('dinoBest', highScore);
+  }
+
+  if (score > 0) {
+    if (window.HallOfFame) window.HallOfFame.submit('dino', score);
+  }
+
+  msgEl.textContent = 'Press SPACE or click to restart';
+  draw(); // one final draw with game over overlay
+}
+
+function draw() {
+  // Background
+  const bgColor = nightMode ? '#0e0e1a' : '#1a1a2e';
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars (night mode)
+  if (nightMode) {
+    for (const s of stars) {
+      const alpha = 0.3 + 0.7 * Math.abs(Math.sin(s.twinkle));
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Ground line
+  ctx.strokeStyle = '#3a3a5a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND_Y);
+  ctx.lineTo(W, GROUND_Y);
+  ctx.stroke();
+
+  // Terrain dots
+  ctx.fillStyle = nightMode ? '#2a2a3e' : '#2e2e48';
+  for (const d of terrainDots) {
+    ctx.fillRect(d.x, d.y, d.size, d.size);
+  }
+
+  // Draw dinosaur
+  drawDino();
+
+  // Draw obstacles
+  for (const o of obstacles) {
+    if (o.type === 'cactus') {
+      drawCactus(o);
+    } else {
+      drawPtero(o);
+    }
+  }
+
+  // Dust particles
+  for (const p of particles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.fillStyle = `rgba(180,180,200,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Score display
+  ctx.fillStyle = '#e0e0e0';
+  ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
+  ctx.textAlign = 'right';
+  const scoreStr = String(score).padStart(5, '0');
+  ctx.fillText(scoreStr, W - 20, 30);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
+  ctx.fillText('HI ' + String(highScore).padStart(5, '0'), W - 20, 50);
+
+  ctx.textAlign = 'left';
+
+  // Game over overlay
+  if (gameOver) {
+    drawGameOver();
+  }
+
+  // Start screen
+  if (!playing && !gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#e0e0e0';
+    ctx.font = 'bold 20px "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press SPACE or Click to Start', W / 2, H / 2);
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawDino() {
+  const x = dino.x;
+  const y = dino.y;
+  const w = dino.w;
+  const h = dino.h;
+
+  ctx.fillStyle = '#e8e8f0';
+
+  if (ducking && dino.grounded) {
+    // Ducking dino - wider and shorter
+    // Body (long horizontal)
+    ctx.fillRect(x - 8, y + 4, w + 16, h - 8);
+    // Head bump
+    ctx.fillRect(x + w - 2, y, 14, 12);
+    // Eye
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x + w + 6, y + 3, 4, 4);
+    // Legs
+    ctx.fillStyle = '#e8e8f0';
+    if (dino.legFrame === 0) {
+      ctx.fillRect(x + 2, y + h - 4, 6, 8);
+      ctx.fillRect(x + w - 4, y + h - 4, 6, 8);
+    } else {
+      ctx.fillRect(x + 8, y + h - 4, 6, 8);
+      ctx.fillRect(x + w - 10, y + h - 4, 6, 8);
+    }
+  } else {
+    // Standing/jumping dino - T-rex silhouette
+
+    // Body (main torso)
+    ctx.fillRect(x + 2, y + 12, w - 4, h - 24);
+
+    // Head
+    ctx.fillRect(x + 4, y, w - 2, 16);
+
+    // Snout
+    ctx.fillRect(x + w - 6, y + 2, 10, 10);
+
+    // Eye
+    ctx.fillStyle = nightMode ? '#0e0e1a' : '#1a1a2e';
+    ctx.fillRect(x + w - 1, y + 4, 4, 4);
+
+    // Arm (tiny)
+    ctx.fillStyle = '#e8e8f0';
+    ctx.fillRect(x + w - 6, y + 20, 8, 4);
+    ctx.fillRect(x + w - 2, y + 22, 4, 4);
+
+    // Tail
+    ctx.fillRect(x - 6, y + 14, 10, 8);
+    ctx.fillRect(x - 10, y + 16, 6, 5);
+
+    // Legs
+    if (dino.grounded) {
+      if (dino.legFrame === 0) {
+        ctx.fillRect(x + 6, y + h - 14, 7, 14);
+        ctx.fillRect(x + 6, y + h - 2, 10, 4);
+        ctx.fillRect(x + w - 14, y + h - 10, 7, 10);
+        ctx.fillRect(x + w - 14, y + h - 2, 10, 4);
+      } else {
+        ctx.fillRect(x + 6, y + h - 10, 7, 10);
+        ctx.fillRect(x + 6, y + h - 2, 10, 4);
+        ctx.fillRect(x + w - 14, y + h - 14, 7, 14);
+        ctx.fillRect(x + w - 14, y + h - 2, 10, 4);
+      }
+    } else {
+      // Both legs back while jumping
+      ctx.fillRect(x + 4, y + h - 14, 7, 14);
+      ctx.fillRect(x + 4, y + h - 2, 10, 4);
+      ctx.fillRect(x + 14, y + h - 12, 7, 12);
+      ctx.fillRect(x + 14, y + h - 2, 10, 4);
+    }
+  }
+}
+
+function drawCactus(o) {
+  ctx.fillStyle = '#44ff88';
+  const x = o.x;
+  const y = o.y;
+  const w = o.w;
+  const h = o.h;
+
+  if (o.variant === 'cluster') {
+    // Two cacti side by side
+    const w1 = Math.floor(w * 0.4);
+    const w2 = Math.floor(w * 0.4);
+    const gap = w - w1 - w2;
+
+    // Left cactus
+    ctx.fillRect(x, y + 5, w1, h - 5);
+    ctx.fillRect(x - 4, y + h * 0.3, 5, 4);
+    ctx.fillRect(x - 4, y + h * 0.3, 2, 10);
+    ctx.fillRect(x + w1, y + h * 0.45, 5, 4);
+    ctx.fillRect(x + w1 + 3, y + h * 0.45, 2, 8);
+
+    // Right cactus
+    const rx = x + w1 + gap;
+    const rh = h - 8;
+    ctx.fillRect(rx, y + 8, w2, rh);
+    ctx.fillRect(rx - 4, y + h * 0.5, 5, 4);
+    ctx.fillRect(rx - 4, y + h * 0.5, 2, 8);
+  } else {
+    // Single cactus trunk
+    ctx.fillRect(x, y, w, h);
+
+    // Arms
+    if (o.variant === 'tall') {
+      // Left arm
+      ctx.fillRect(x - 6, y + h * 0.25, 7, 4);
+      ctx.fillRect(x - 6, y + h * 0.25, 3, 14);
+      // Right arm
+      ctx.fillRect(x + w - 1, y + h * 0.4, 7, 4);
+      ctx.fillRect(x + w + 3, y + h * 0.4, 3, 12);
+    } else {
+      // Short cactus - smaller arms
+      ctx.fillRect(x - 4, y + h * 0.3, 5, 3);
+      ctx.fillRect(x - 4, y + h * 0.3, 2, 8);
+      ctx.fillRect(x + w - 1, y + h * 0.45, 5, 3);
+      ctx.fillRect(x + w + 2, y + h * 0.45, 2, 7);
+    }
+  }
+
+  // Top spikes
+  ctx.fillStyle = '#33dd77';
+  ctx.fillRect(x + 1, y - 2, 3, 3);
+  ctx.fillRect(x + w - 4, y - 1, 3, 2);
+}
+
+function drawPtero(o) {
+  const x = o.x;
+  const y = o.y;
+  const w = o.w;
+  const h = o.h;
+
+  ctx.fillStyle = '#7b2ff7';
+
+  // Body
+  ctx.fillRect(x + 8, y + 8, w - 16, h - 12);
+
+  // Head
+  ctx.fillRect(x + w - 12, y + 6, 14, 10);
+
+  // Beak
+  ctx.fillStyle = '#9955ff';
+  ctx.fillRect(x + w, y + 9, 6, 4);
+
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x + w - 6, y + 8, 3, 3);
+
+  // Wings
+  ctx.fillStyle = '#7b2ff7';
+  if (o.wingFrame === 0) {
+    // Wings up
+    ctx.fillRect(x + 6, y - 8, w - 20, 6);
+    ctx.fillRect(x + 10, y - 14, w - 28, 6);
+    ctx.fillRect(x + 14, y + h - 2, w - 28, 4);
+  } else {
+    // Wings down
+    ctx.fillRect(x + 6, y + h - 2, w - 20, 6);
+    ctx.fillRect(x + 10, y + h + 4, w - 28, 6);
+    ctx.fillRect(x + 14, y - 2, w - 28, 4);
+  }
+}
+
+function drawGameOver() {
+  // Dark overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+
+  // Game Over text
+  ctx.fillStyle = '#e0e0e0';
+  ctx.font = 'bold 36px "Segoe UI", Tahoma, sans-serif';
+  ctx.fillText('GAME OVER', W / 2, H / 2 - 40);
+
+  // Score
+  ctx.font = '22px "Segoe UI", Tahoma, sans-serif';
+  ctx.fillStyle = '#00d4ff';
+  ctx.fillText('Score: ' + score, W / 2, H / 2 + 5);
+
+  // High score
+  ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('Best: ' + highScore, W / 2, H / 2 + 35);
+
+  // Restart prompt
+  ctx.font = '15px "Segoe UI", Tahoma, sans-serif';
+  ctx.fillStyle = '#aaa';
+  ctx.fillText('Press SPACE to restart', W / 2, H / 2 + 70);
+
+  ctx.textAlign = 'left';
+}
+
+// Initial setup
+init();
+draw();
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
