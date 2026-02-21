@@ -16,6 +16,10 @@
 - **Online Multiplayer** with real-time WebSocket rooms
 - **Global Leaderboards** powered by Firebase
 - **User Accounts** to track scores across devices
+- **Coin Economy** — earn coins by playing games and placing on leaderboards
+- **Shop** — buy and equip avatar parts (hats, hair, faces, shirts) and nametag styles (colors, gradients, fonts)
+- **Custom Avatars** — mix-and-match avatar builder with 40+ items
+- **Nametag Customization** — styled names with gradients, colors, and fonts visible in chat and multiplayer
 - **22 Themes** that apply across every game
 - **Sound Effects** with mute toggle
 
