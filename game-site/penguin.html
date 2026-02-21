@@ -67,6 +67,8 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 .player-indicator { display: flex; gap: 8px; align-items: center; }
 .pi-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 .pi-name { font-size: 0.8rem; }
+.pi-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+.lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
 .pi-count { font-size: 0.75rem; color: #888; }
 .pi-dead { opacity: 0.3; text-decoration: line-through; }
 
@@ -491,11 +493,28 @@ function updateHUD() {
     const dead = count === 0;
     html += `<div class="player-indicator ${dead ? 'pi-dead' : ''}">
       <span class="pi-dot" style="background:${p.color}"></span>
-      <span class="pi-name">${p.name}</span>
+      <span class="pi-avatar" data-player="${p.name}"></span>
+      <span class="pi-name" data-player-name="${p.name}">${p.name}</span>
       <span class="pi-count">(${count})</span>
     </div>`;
   });
   hud.innerHTML = html;
+  // Render mini avatars and nametag styles
+  if (mode === 'online' && window.ArcadeAvatar && window.ArcadeCoins) {
+    hud.querySelectorAll('.pi-avatar').forEach(function(el) {
+      var name = el.dataset.player;
+      if (name && window.ArcadeCoins.getProfile) {
+        window.ArcadeCoins.getProfile(name).then(function(profile) {
+          if (profile) {
+            window.ArcadeAvatar.renderMini(el, profile);
+            // Apply nametag style to name
+            var nameEl = hud.querySelector('[data-player-name="' + name + '"]');
+            if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+          }
+        });
+      }
+    });
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1292,7 +1311,7 @@ function handleOnlineUpdate(data) {
   // Update player list in waiting screen
   if (data.status === 'waiting') {
     const playerListHtml = data.players.map((n, i) =>
-      `<div style="padding:4px 0"><span class="pi-dot" style="background:${COLORS[i]};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>${n}</div>`
+      `<div style="padding:4px 0;display:flex;align-items:center;gap:6px;justify-content:center"><span class="pi-dot" style="background:${COLORS[i]};display:inline-block;width:10px;height:10px;border-radius:50%"></span><span class="lobby-avatar" data-player="${n}"></span><span class="lobby-name" data-player-name="${n}">${n}</span></div>`
     ).join('');
 
     // Update host's create area
@@ -1302,6 +1321,22 @@ function handleOnlineUpdate(data) {
 
     // Update guest's waiting area
     document.getElementById('guestPlayerList').innerHTML = playerListHtml;
+
+    // Render avatars and nametag styles in lobby
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+      document.querySelectorAll('.lobby-avatar').forEach(function(el) {
+        var name = el.dataset.player;
+        if (name && window.ArcadeCoins.getProfile) {
+          window.ArcadeCoins.getProfile(name).then(function(profile) {
+            if (profile) {
+              window.ArcadeAvatar.renderMini(el, profile);
+              var nameEl = el.parentElement.querySelector('.lobby-name');
+              if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+            }
+          });
+        }
+      });
+    }
 
     if (onlineIsHost && data.players.length >= 2) {
       document.getElementById('onlineStartBtn').style.display = 'inline-block';
@@ -1455,12 +1490,10 @@ async function submitOnlineShots() {
   }));
 
   try {
-    const { doc: docFn, getDoc: getDocFn, updateDoc: updateDocFn } = await getFirebaseFns();
+    const { doc: docFn, updateDoc: updateDocFn } = await getFirebaseFns();
     const roomRef = docFn(window._pkDB, 'penguin_rooms', onlineRoomId);
-    const snap = await getDocFn(roomRef);
-    const data = snap.data();
-    const allShots = { ...(data.shots || {}), [onlineMyIndex]: shots };
-    await updateDocFn(roomRef, { shots: allShots });
+    // Use dot notation to update only our player's shots — avoids race condition
+    await updateDocFn(roomRef, { [`shots.${onlineMyIndex}`]: shots });
   } catch (e) {
     console.error('Submit shots error:', e);
   }
@@ -1539,9 +1572,20 @@ function toggleChat() {
 function renderChat(msgs) {
   const container = document.getElementById('chat-messages');
   container.innerHTML = msgs.map(m =>
-    `<div class="chat-msg"><span class="chat-name">${m.name}:</span> ${m.text}<span class="chat-time">${m.time || ''}</span></div>`
+    `<div class="chat-msg"><span class="chat-name" data-chat-user="${m.name}">${m.name}:</span> ${m.text}<span class="chat-time">${m.time || ''}</span></div>`
   ).join('');
   container.parentElement.scrollTop = container.parentElement.scrollHeight;
+  // Apply nametag styles to chat names
+  if (window.ArcadeAvatar && window.ArcadeCoins) {
+    container.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+      var name = el.dataset.chatUser;
+      if (name && window.ArcadeCoins.getProfile) {
+        window.ArcadeCoins.getProfile(name).then(function(profile) {
+          if (profile) window.ArcadeAvatar.styleName(el, profile);
+        });
+      }
+    });
+  }
 }
 
 async function sendChat() {

@@ -675,6 +675,8 @@ h1 {
     z-index: 5;
 }
 
+.lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+
 /* Responsive */
 @media (max-width: 600px) {
     .card { width: 58px; height: 82px; }
@@ -1086,7 +1088,7 @@ h1 {
             slot.className = 'opponent-slot';
             if (i === data.currentPlayer) slot.classList.add('active-turn');
 
-            var nameHTML = '<div class="opp-name">' + escapeHTML(pName) + '</div>';
+            var nameHTML = '<div class="opp-name" style="display:inline-flex;align-items:center;gap:4px;"><span class="lobby-avatar" data-player="' + escapeHTML(pName) + '"></span><span class="lobby-name" data-player-name="' + escapeHTML(pName) + '">' + escapeHTML(pName) + '</span></div>';
             var cardsHTML = '<div class="opp-cards">' + pHand.length + ' card' + (pHand.length !== 1 ? 's' : '');
             if (pHand.length === 1) {
                 cardsHTML += ' <span class="uno-badge">UNO!</span>';
@@ -1094,6 +1096,21 @@ h1 {
             cardsHTML += '</div>';
             slot.innerHTML = nameHTML + cardsHTML;
             opponentsArea.appendChild(slot);
+        }
+        // Render avatars in opponent slots
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            opponentsArea.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                var name = el.dataset.player;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) {
+                            window.ArcadeAvatar.renderMini(el, profile);
+                            var nameEl = el.parentElement.querySelector('.lobby-name');
+                            if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                        }
+                    });
+                }
+            });
         }
 
         // Discard
@@ -1322,11 +1339,26 @@ h1 {
         for (var i = 0; i < players.length; i++) {
             var item = document.createElement('div');
             item.className = 'player-list-item';
-            var nameSpan = '<span>' + escapeHTML(players[i]) +
-                (players[i] === myUsername ? ' (you)' : '') + '</span>';
+            var nameSpan = '<span style="display:inline-flex;align-items:center;gap:6px;"><span class="lobby-avatar" data-player="' + escapeHTML(players[i]) + '"></span><span class="lobby-name" data-player-name="' + escapeHTML(players[i]) + '">' + escapeHTML(players[i]) +
+                (players[i] === myUsername ? ' (you)' : '') + '</span></span>';
             var badge = players[i] === hostName ? '<span class="host-badge">HOST</span>' : '';
             item.innerHTML = nameSpan + badge;
             targetEl.appendChild(item);
+        }
+        // Render avatars and nametag styles in lobby
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            targetEl.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                var name = el.dataset.player;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) {
+                            window.ArcadeAvatar.renderMini(el, profile);
+                            var nameEl = el.parentElement.querySelector('.lobby-name');
+                            if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                        }
+                    });
+                }
+            });
         }
     }
 
@@ -1433,8 +1465,19 @@ h1 {
             var m = msgs[i];
             var div = document.createElement('div');
             div.className = 'chat-msg';
-            div.innerHTML = '<span class="chat-name">' + escapeHTML(m.name) + '</span><span class="chat-text">' + escapeHTML(m.text) + '</span><span class="chat-time">' + escapeHTML(m.time || '') + '</span>';
+            div.innerHTML = '<span class="chat-name" data-chat-user="' + escapeHTML(m.name) + '">' + escapeHTML(m.name) + '</span><span class="chat-text">' + escapeHTML(m.text) + '</span><span class="chat-time">' + escapeHTML(m.time || '') + '</span>';
             chatMessages.appendChild(div);
+        }
+        // Apply nametag styles to chat names
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            chatMessages.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+                var name = el.dataset.chatUser;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    });
+                }
+            });
         }
         scrollChat();
     }

@@ -533,6 +533,8 @@ h1 {
     box-shadow: 0 4px 12px rgba(123, 47, 247, 0.2);
 }
 
+.lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+
 /* Responsive */
 @media (max-width: 500px) {
     .word-card { padding: 25px 20px; }
@@ -823,8 +825,23 @@ function renderLobby(data) {
         var badges = '';
         if (p === data.host) badges += '<span class="host-badge">HOST</span>';
         if (p === G.username) badges += '<span class="you-badge">YOU</span>';
-        return '<div class="player-list-item"><span>' + escHtml(p) + badges + '</span></div>';
+        return '<div class="player-list-item"><span style="display:inline-flex;align-items:center;gap:6px;"><span class="lobby-avatar" data-player="' + escHtml(p) + '"></span><span class="lobby-name" data-player-name="' + escHtml(p) + '">' + escHtml(p) + '</span>' + badges + '</span></div>';
     }).join('');
+    // Render avatars and nametag styles in lobby
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+        listEl.querySelectorAll('.lobby-avatar').forEach(function(el) {
+            var name = el.dataset.player;
+            if (name && window.ArcadeCoins.getProfile) {
+                window.ArcadeCoins.getProfile(name).then(function(profile) {
+                    if (profile) {
+                        window.ArcadeAvatar.renderMini(el, profile);
+                        var nameEl = el.parentElement.querySelector('.lobby-name');
+                        if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                    }
+                });
+            }
+        });
+    }
 
     if (G.isHost) {
         var btn = document.getElementById('start-game-btn');
@@ -1468,8 +1485,23 @@ function renderPlayerBar(data) {
         var cls = 'player-chip';
         if (p === G.username) cls += ' current';
         if (showImposter && p === data.imposter) cls += ' is-imposter';
-        return '<span class="' + cls + '">' + escHtml(p) + '<span class="chip-score">' + (data.scores[p] || 0) + '</span></span>';
+        return '<span class="' + cls + '"><span class="lobby-avatar" data-player="' + escHtml(p) + '"></span><span class="lobby-name" data-player-name="' + escHtml(p) + '">' + escHtml(p) + '</span><span class="chip-score">' + (data.scores[p] || 0) + '</span></span>';
     }).join('');
+    // Render avatars in player bar
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+        bar.querySelectorAll('.lobby-avatar').forEach(function(el) {
+            var name = el.dataset.player;
+            if (name && window.ArcadeCoins.getProfile) {
+                window.ArcadeCoins.getProfile(name).then(function(profile) {
+                    if (profile) {
+                        window.ArcadeAvatar.renderMini(el, profile);
+                        var nameEl = el.parentElement.querySelector('.lobby-name');
+                        if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                    }
+                });
+            }
+        });
+    }
 }
 
 // ---------- Utilities ----------
@@ -1529,8 +1561,19 @@ function _chatRender(msgs) {
         var m = msgs[i];
         var div = document.createElement('div');
         div.className = 'chat-msg';
-        div.innerHTML = '<span class="chat-name">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
+        div.innerHTML = '<span class="chat-name" data-chat-user="' + escHtml(m.name) + '">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
         _chatMessages.appendChild(div);
+    }
+    // Apply nametag styles to chat names
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+        _chatMessages.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+            var name = el.dataset.chatUser;
+            if (name && window.ArcadeCoins.getProfile) {
+                window.ArcadeCoins.getProfile(name).then(function(profile) {
+                    if (profile) window.ArcadeAvatar.styleName(el, profile);
+                });
+            }
+        });
     }
     requestAnimationFrame(function(){ _chatMessages.scrollTop = _chatMessages.scrollHeight; });
 }

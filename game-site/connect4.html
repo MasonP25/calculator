@@ -232,6 +232,8 @@
   .online-score .os-draw { color: #aaa; }
   .online-score .os-sep { color: #555; margin: 0 2px; }
 
+  .lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+
   /* Chat Sidebar */
   #chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:90;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
   #chat-toggle:hover{transform:scale(1.1);}
@@ -984,8 +986,19 @@ function renderChat(msgs) {
         var m = msgs[i];
         var div = document.createElement('div');
         div.className = 'chat-msg';
-        div.innerHTML = '<span class="chat-name">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
+        div.innerHTML = '<span class="chat-name" data-chat-user="' + escHtml(m.name) + '">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
         chatMessagesEl.appendChild(div);
+    }
+    // Apply nametag styles to chat names
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+        chatMessagesEl.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+            var name = el.dataset.chatUser;
+            if (name && window.ArcadeCoins.getProfile) {
+                window.ArcadeCoins.getProfile(name).then(function(profile) {
+                    if (profile) window.ArcadeAvatar.styleName(el, profile);
+                });
+            }
+        });
     }
     requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; });
 }
@@ -1115,7 +1128,22 @@ function startListening(roomId) {
             var myColor = st.myRole === 1 ? 'Red' : 'Yellow';
             var roleClass = st.myRole === 1 ? 'you-red' : 'you-yellow';
             gamePlayerInfo.innerHTML = 'You are <span class="' + roleClass + '">' + myColor +
-                '</span> (' + c4.getMyUsername() + ') vs ' + opponentName;
+                '</span> (<span class="lobby-avatar" data-player="' + c4.getMyUsername() + '"></span><span class="lobby-name" data-player-name="' + c4.getMyUsername() + '">' + c4.getMyUsername() + '</span>) vs <span class="lobby-avatar" data-player="' + opponentName + '"></span><span class="lobby-name" data-player-name="' + opponentName + '">' + opponentName + '</span>';
+            // Render avatars in player info
+            if (window.ArcadeAvatar && window.ArcadeCoins) {
+                gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                    var name = el.dataset.player;
+                    if (name && window.ArcadeCoins.getProfile) {
+                        window.ArcadeCoins.getProfile(name).then(function(profile) {
+                            if (profile) {
+                                window.ArcadeAvatar.renderMini(el, profile);
+                                var nameEl = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                                if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                            }
+                        });
+                    }
+                });
+            }
             c4.showOnlineScore();
         }
 
@@ -1219,7 +1247,22 @@ window._c4OnlineJoinGame = async function(code) {
         onlineInfo.style.display = '';
         document.getElementById('game-area').style.display = '';
         gameRoomCode.textContent = code;
-        gamePlayerInfo.innerHTML = 'You are <span class="you-yellow">Yellow</span> (' + username + ') vs ' + data.hostPlayer;
+        gamePlayerInfo.innerHTML = 'You are <span class="you-yellow">Yellow</span> (<span class="lobby-avatar" data-player="' + username + '"></span><span class="lobby-name" data-player-name="' + username + '">' + username + '</span>) vs <span class="lobby-avatar" data-player="' + data.hostPlayer + '"></span><span class="lobby-name" data-player-name="' + data.hostPlayer + '">' + data.hostPlayer + '</span>';
+        // Render avatars in player info
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                var name = el.dataset.player;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) {
+                            window.ArcadeAvatar.renderMini(el, profile);
+                            var nameEl = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                            if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                        }
+                    });
+                }
+            });
+        }
 
         c4.init();
         startListening(code);

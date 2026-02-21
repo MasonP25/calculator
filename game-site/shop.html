@@ -471,17 +471,18 @@
   CATEGORIES.forEach(function(cat) {
     categoryItems[cat] = [{ id: '', name: 'None', price: 0 }];
   });
-  var ITEMS = window.ArcadeAvatar.ITEMS;
+  var AA = window.ArcadeAvatar || {};
+  var ITEMS = AA.ITEMS || {};
   Object.keys(ITEMS).forEach(function(id) {
     var item = ITEMS[id];
     categoryItems[item.category].push({ id: id, name: item.name, price: item.price });
   });
 
   // Build skin color list
-  var SKIN_COLORS = window.ArcadeAvatar.SKIN_COLORS;
+  var SKIN_COLORS = AA.SKIN_COLORS || {};
 
   // Build nametag lists
-  var NAMETAGS = window.ArcadeAvatar.NAMETAGS;
+  var NAMETAGS = AA.NAMETAGS || {};
   var ntColors = []; // colors + gradients
   var ntFonts = [];
   Object.keys(NAMETAGS).forEach(function(id) {
