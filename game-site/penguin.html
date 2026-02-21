@@ -135,13 +135,14 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 
 /* Chat */
 #chat-panel { position: fixed; top: 0; right: -320px; width: 300px; height: 100%;
-  background: #1a1a2e; border-left: 2px solid #2a2a4a; z-index: 95;
+  background: #1a1a2e; border-left: 2px solid #2a2a4a; z-index: 10000;
   display: flex; flex-direction: column; transition: right 0.3s; }
 #chat-panel.open { right: 0; }
 #chat-header { padding: 10px 14px; border-bottom: 2px solid #2a2a4a;
   display: flex; justify-content: space-between; align-items: center; }
 #chat-header span { color: #00d4ff; font-weight: bold; }
-#chat-close { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; }
+#chat-close { background: #2a2a4a; border: none; color: #e0e0e0; font-size: 1.1rem; cursor: pointer; padding: 4px 10px; border-radius: 6px; transition: all .2s; }
+#chat-close:hover { background: #3a3a5a; color: #fff; }
 #chat-body { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
 #chat-messages { display: flex; flex-direction: column; gap: 4px; }
 .chat-msg { font-size: 0.8rem; }
@@ -155,7 +156,7 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
   border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
 #chat-toggle { position: fixed; top: 12px; right: 16px; background: #1a1a2e;
   border: 2px solid #2a2a4a; color: #e0e0e0; width: 36px; height: 36px;
-  border-radius: 50%; cursor: pointer; z-index: 96; font-size: 1rem;
+  border-radius: 50%; cursor: pointer; z-index: 9999; font-size: 1rem;
   display: none; transition: border-color 0.2s; }
 #chat-toggle:hover { border-color: #7b2ff7; }
 

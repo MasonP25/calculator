@@ -475,6 +475,7 @@
   var ITEMS = AA.ITEMS || {};
   Object.keys(ITEMS).forEach(function(id) {
     var item = ITEMS[id];
+    if (item.exclusive) return; // exclusive items added dynamically when owned
     categoryItems[item.category].push({ id: id, name: item.name, price: item.price });
   });
 
@@ -487,6 +488,7 @@
   var ntFonts = [];
   Object.keys(NAMETAGS).forEach(function(id) {
     var nt = NAMETAGS[id];
+    if (nt.exclusive) return; // exclusive nametags added dynamically when owned
     var entry = { id: id, name: nt.name, type: nt.type, css: nt.css, price: nt.price };
     if (nt.type === 'font') {
       ntFonts.push(entry);
@@ -494,6 +496,34 @@
       ntColors.push(entry);
     }
   });
+
+  // Add owned exclusive items to their respective lists
+  function addOwnedExclusives() {
+    // Avatar items
+    Object.keys(ITEMS).forEach(function(id) {
+      var item = ITEMS[id];
+      if (!item.exclusive) return;
+      if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem(id)) return;
+      // Check not already added
+      var list = categoryItems[item.category];
+      for (var i = 0; i < list.length; i++) { if (list[i].id === id) return; }
+      list.push({ id: id, name: item.name + ' \u2605', price: 0 });
+    });
+    // Nametags
+    Object.keys(NAMETAGS).forEach(function(id) {
+      var nt = NAMETAGS[id];
+      if (!nt.exclusive) return;
+      if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem(id)) return;
+      var entry = { id: id, name: nt.name + ' \u2605', type: nt.type, css: nt.css, price: 0 };
+      if (nt.type === 'font') {
+        for (var i = 0; i < ntFonts.length; i++) { if (ntFonts[i].id === id) return; }
+        ntFonts.push(entry);
+      } else {
+        for (var i = 0; i < ntColors.length; i++) { if (ntColors[i].id === id) return; }
+        ntColors.push(entry);
+      }
+    });
+  }
 
   // ── Helpers ──
   function getUser() {
@@ -1021,6 +1051,7 @@
       }
       document.getElementById('guestMsg').style.display = 'none';
       document.getElementById('shopContainer').style.display = '';
+      addOwnedExclusives();
       updateBalance();
       syncIndicesToEquipped();
       buildSkinColorRow();
@@ -1033,6 +1064,7 @@
 
   // Listen for coin updates
   window.addEventListener('coins-updated', function() {
+    addOwnedExclusives();
     updateBalance();
     if (currentTab === 'avatar') {
       updateAllCategoryInfo();

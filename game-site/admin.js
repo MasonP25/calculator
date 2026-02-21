@@ -175,14 +175,12 @@
       if (!gameId || !name) return console.error('[Admin] gameId and name required');
       score = parseInt(score) || 0;
       return _initFirebase().then(function () {
-        var scoresRef = _collection(_db, 'scores');
-        // The leaderboard stores as: doc ID = gameId_name
         var docRef = _doc(_db, 'scores', gameId + '_' + name.toLowerCase());
         return _setDoc(docRef, {
-          game: gameId,
+          gameId: gameId,
           name: name,
           score: score,
-          ts: Date.now()
+          date: new Date().toLocaleDateString()
         }).then(function () {
           console.log('[Admin] Set ' + name + ' score on ' + gameId + ' to ' + score);
         });
@@ -243,6 +241,39 @@
       }
     },
 
+    // ── Unlock all exclusive items for a user ──
+    unlockExclusives: function (username) {
+      if (!username) return console.error('[Admin] Username required');
+      var exclusiveItems = [];
+      if (window.ArcadeAvatar) {
+        var ITEMS = window.ArcadeAvatar.ITEMS || {};
+        var NAMETAGS = window.ArcadeAvatar.NAMETAGS || {};
+        Object.keys(ITEMS).forEach(function (id) {
+          if (ITEMS[id].exclusive) exclusiveItems.push(id);
+        });
+        Object.keys(NAMETAGS).forEach(function (id) {
+          if (NAMETAGS[id].exclusive) exclusiveItems.push(id);
+        });
+      }
+      if (exclusiveItems.length === 0) return console.error('[Admin] No exclusive items found');
+      return _initFirebase().then(function () {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function (snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          if (!data.inventory) data.inventory = [];
+          exclusiveItems.forEach(function (id) {
+            if (data.inventory.indexOf(id) === -1) data.inventory.push(id);
+          });
+          return _setDoc(docRef, data).then(function () {
+            console.log('[Admin] Unlocked ' + exclusiveItems.length + ' exclusive items for ' + username + ':');
+            exclusiveItems.forEach(function (id) { console.log('  → ' + id); });
+            if (window.ArcadeCoins) window.ArcadeCoins.reload();
+          });
+        });
+      });
+    },
+
     // ── Quick help ──
     help: function () {
       console.log(
@@ -251,6 +282,7 @@
         '  ArcadeAdmin.addCoins("user", 500)           — Add coins\n' +
         '  ArcadeAdmin.giveItem("user", "hat_crown")   — Give one item\n' +
         '  ArcadeAdmin.giveAllItems("user")            — Give ALL items\n' +
+        '  ArcadeAdmin.unlockExclusives("user")        — Give all EXCLUSIVE items\n' +
         '  ArcadeAdmin.setEquipped("user", {hat:"hat_crown"}) — Set equipped\n' +
         '  ArcadeAdmin.setScore("snake", "user", 9999) — Set leaderboard score\n' +
         '  ArcadeAdmin.deleteScore("snake", "user")    — Delete a score\n' +

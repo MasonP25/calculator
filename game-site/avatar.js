@@ -14,6 +14,16 @@
     return e;
   }
 
+  // Insert element before the head circle (renders behind head but in front of body)
+  function behindHead(svg, tag, attrs) {
+    var head = svg.querySelector('.av-head');
+    var e = document.createElementNS(SVG_NS, tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (head) svg.insertBefore(e, head);
+    else svg.appendChild(e);
+    return e;
+  }
+
   // ── Item Catalog ──────────────────────────────────────────────────────
   var ITEMS = {
     // Hats
@@ -64,7 +74,16 @@
     shirt_tank:     { name: 'Tank Top',   category: 'shirt', price: 25 },
     shirt_tuxedo:   { name: 'Tuxedo',     category: 'shirt', price: 200 },
     shirt_varsity:  { name: 'Varsity',    category: 'shirt', price: 100 },
-    shirt_space:    { name: 'Space',      category: 'shirt', price: 110 }
+    shirt_space:    { name: 'Space',      category: 'shirt', price: 110 },
+    // ── Exclusive Items ──
+    hat_astronaut:    { name: 'Astronaut',      category: 'hat',   price: 0, exclusive: true },
+    hat_diamond_crown:{ name: 'Diamond Crown',  category: 'hat',   price: 0, exclusive: true },
+    hair_flame:       { name: 'Flame',          category: 'hair',  price: 0, exclusive: true },
+    hair_galaxy:      { name: 'Galaxy',         category: 'hair',  price: 0, exclusive: true },
+    face_robot:       { name: 'Robot',          category: 'face',  price: 0, exclusive: true },
+    face_demon:       { name: 'Demon',          category: 'face',  price: 0, exclusive: true },
+    shirt_flame:      { name: 'Flame',          category: 'shirt', price: 0, exclusive: true },
+    shirt_galaxy:     { name: 'Galaxy',         category: 'shirt', price: 0, exclusive: true }
   };
 
   // ── Skin Colors ─────────────────────────────────────────────────────
@@ -114,7 +133,16 @@
     nt_cursive:  { name: 'Cursive',   type: 'font', css: 'font-family:cursive', price: 100 },
     nt_smallcaps:{ name: 'Small Caps', type: 'font', css: 'font-variant:small-caps', price: 75 },
     nt_shadow:   { name: 'Shadow',    type: 'font', css: 'text-shadow:2px 2px 4px rgba(0,0,0,0.8)', price: 100 },
-    nt_glow:     { name: 'Glow',      type: 'font', css: 'text-shadow:0 0 8px currentColor, 0 0 16px currentColor', price: 200 }
+    nt_glow:     { name: 'Glow',      type: 'font', css: 'text-shadow:0 0 8px currentColor, 0 0 16px currentColor', price: 200 },
+    // ── Exclusive Nametags ──
+    nt_plasma:    { name: 'Plasma',     type: 'gradient', css: 'background:linear-gradient(90deg,#ff00ff,#00ffff,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_aurora:    { name: 'Aurora',     type: 'gradient', css: 'background:linear-gradient(90deg,#00ff87,#60efff,#ff00ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_bloodmoon: { name: 'Blood Moon', type: 'gradient', css: 'background:linear-gradient(90deg,#8B0000,#FF4500,#8B0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_ice:       { name: 'Ice',        type: 'gradient', css: 'background:linear-gradient(90deg,#a8edea,#ffffff,#a8edea);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_lava:      { name: 'Lava',       type: 'gradient', css: 'background:linear-gradient(90deg,#ff0000,#ff6600,#ffcc00,#ff6600,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_glitch:    { name: 'Glitch',     type: 'font', css: 'text-shadow:2px 0 #ff0000,-2px 0 #00ffff;letter-spacing:2px', price: 0, exclusive: true },
+    nt_outline:   { name: 'Outline',    type: 'font', css: '-webkit-text-stroke:1px currentColor;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
+    nt_thick:     { name: 'Thick',      type: 'font', css: 'font-weight:900;font-size:1.2em;letter-spacing:1px', price: 0, exclusive: true }
   };
 
   // ── Drawing helpers ───────────────────────────────────────────────────
@@ -238,6 +266,26 @@
       starPositions.forEach(function (p) {
         el('circle', { cx: p[0], cy: p[1], r: 1.2, fill: '#ffffff', opacity: 0.9 }, svg);
       });
+    },
+    // ── Exclusive Shirts ──
+    shirt_flame: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#222222'); });
+      // Flame pattern rising from bottom
+      el('path', { d: 'M30,120 Q34,108 38,114 Q42,106 46,112 Q50,104 54,112 Q58,106 62,114 Q66,108 70,120 Z', fill: '#FF4400' }, svg);
+      el('path', { d: 'M32,120 Q36,112 40,116 Q44,110 48,115 Q52,108 56,115 Q60,110 64,116 Q68,112 70,120 Z', fill: '#FF6600' }, svg);
+      el('path', { d: 'M34,120 Q38,114 42,118 Q46,112 50,117 Q54,112 58,118 Q62,114 66,120 Z', fill: '#FFAA00' }, svg);
+    },
+    shirt_galaxy: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#0a0020'); });
+      // Nebula swirls
+      el('ellipse', { cx: 45, cy: 88, rx: 8, ry: 5, fill: '#7b2ff7', opacity: 0.4, transform: 'rotate(-20 45 88)' }, svg);
+      el('ellipse', { cx: 55, cy: 100, rx: 6, ry: 4, fill: '#ff69b4', opacity: 0.3, transform: 'rotate(15 55 100)' }, svg);
+      // Stars
+      el('circle', { cx: 38, cy: 80, r: 1, fill: '#fff', opacity: 0.9 }, svg);
+      el('circle', { cx: 55, cy: 85, r: 1.2, fill: '#aaddff', opacity: 0.9 }, svg);
+      el('circle', { cx: 42, cy: 95, r: 0.8, fill: '#fff', opacity: 0.8 }, svg);
+      el('circle', { cx: 60, cy: 105, r: 1, fill: '#ffaaff', opacity: 0.8 }, svg);
+      el('circle', { cx: 48, cy: 110, r: 1.2, fill: '#fff', opacity: 0.9 }, svg);
     }
   };
 
@@ -251,25 +299,26 @@
       }, svg);
     },
     hair_long: function (svg) {
-      // Top hair
+      // Side hair behind head
+      behindHead(svg, 'path', { d: 'M24,40 Q22,60 24,80 Q26,85 30,80 L28,40 Z', fill: '#2C1810' });
+      behindHead(svg, 'path', { d: 'M76,40 Q78,60 76,80 Q74,85 70,80 L72,40 Z', fill: '#2C1810' });
+      // Top hair on top of head
       el('path', {
         d: 'M24,40 Q24,12 50,12 Q76,12 76,40 L72,30 Q68,16 50,16 Q32,16 28,30 Z',
         fill: '#2C1810'
       }, svg);
-      // Side hair flowing down
-      el('path', { d: 'M24,40 Q22,60 24,80 Q26,85 30,80 L28,40 Z', fill: '#2C1810' }, svg);
-      el('path', { d: 'M76,40 Q78,60 76,80 Q74,85 70,80 L72,40 Z', fill: '#2C1810' }, svg);
     },
     hair_curly: function (svg) {
-      // Poofy curly hair wrapping top of head
+      // Side curls behind head
+      behindHead(svg, 'circle', { cx: 26, cy: 36, r: 7, fill: '#7B5B3A' });
+      behindHead(svg, 'circle', { cx: 74, cy: 36, r: 7, fill: '#7B5B3A' });
+      // Top hair on top of head
       el('path', {
         d: 'M24,42 Q20,32 24,22 Q28,14 38,12 Q44,10 50,12 Q56,10 62,12 Q72,14 76,22 Q80,32 76,42 ' +
            'L72,36 Q70,20 50,16 Q30,20 28,36 Z',
         fill: '#7B5B3A'
       }, svg);
-      // Curl bumps around the head
-      el('circle', { cx: 26, cy: 36, r: 7, fill: '#7B5B3A' }, svg);
-      el('circle', { cx: 74, cy: 36, r: 7, fill: '#7B5B3A' }, svg);
+      // Top curl bumps
       el('circle', { cx: 34, cy: 20, r: 6, fill: '#7B5B3A' }, svg);
       el('circle', { cx: 66, cy: 20, r: 6, fill: '#7B5B3A' }, svg);
       el('circle', { cx: 50, cy: 16, r: 7, fill: '#7B5B3A' }, svg);
@@ -292,22 +341,24 @@
       el('rect', { x: 45, y: 14, width: 10, height: 18, rx: 3, fill: '#33CC33' }, svg);
     },
     hair_ponytail: function (svg) {
-      // Base hair on top
+      // Ponytail behind head
+      behindHead(svg, 'path', {
+        d: 'M68,32 Q82,34 84,50 Q85,62 78,70 Q76,66 78,54 Q80,42 68,36 Z',
+        fill: '#CC4433'
+      });
+      // Top hair
       el('path', {
         d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
-        fill: '#CC4433'
-      }, svg);
-      // Ponytail flowing to the right
-      el('path', {
-        d: 'M68,32 Q82,34 84,50 Q85,62 78,70 Q76,66 78,54 Q80,42 68,36 Z',
         fill: '#CC4433'
       }, svg);
       // Hair tie
       el('circle', { cx: 70, cy: 34, r: 3, fill: '#CC4433', stroke: '#AA2222', 'stroke-width': 1.5 }, svg);
     },
     hair_afro: function (svg) {
-      // Big poofy afro wrapping around head (head is at cx:50, cy:40, r:26)
-      el('ellipse', { cx: 50, cy: 36, rx: 34, ry: 32, fill: '#1A1A1A' }, svg);
+      // Big afro behind head (head circle will show face through center)
+      behindHead(svg, 'ellipse', { cx: 50, cy: 36, rx: 34, ry: 32, fill: '#1A1A1A' });
+      // Top crown on top of head
+      el('path', { d: 'M20,30 Q20,6 50,4 Q80,6 80,30', fill: '#1A1A1A' }, svg);
     },
     hair_buzz: function (svg) {
       el('path', {
@@ -316,60 +367,59 @@
       }, svg);
     },
     hair_wavy: function (svg) {
+      // Side bits behind head
+      behindHead(svg, 'path', { d: 'M24,40 Q20,50 22,60 Q24,65 28,60 Q26,50 26,40 Z', fill: '#8B4513' });
+      behindHead(svg, 'path', { d: 'M76,40 Q80,50 78,60 Q76,65 72,60 Q74,50 74,40 Z', fill: '#8B4513' });
+      // Top hair
       el('path', {
         d: 'M24,40 Q24,14 50,12 Q76,14 76,40 L72,30 Q68,18 50,16 Q32,18 28,30 Z',
         fill: '#8B4513'
       }, svg);
-      // Wavy side bits
-      el('path', { d: 'M24,40 Q20,50 22,60 Q24,65 28,60 Q26,50 26,40 Z', fill: '#8B4513' }, svg);
-      el('path', { d: 'M76,40 Q80,50 78,60 Q76,65 72,60 Q74,50 74,40 Z', fill: '#8B4513' }, svg);
     },
     hair_pigtails: function (svg) {
+      // Pigtails behind head
+      behindHead(svg, 'ellipse', { cx: 22, cy: 48, rx: 7, ry: 14, fill: '#FF69B4' });
+      behindHead(svg, 'ellipse', { cx: 78, cy: 48, rx: 7, ry: 14, fill: '#FF69B4' });
       // Top hair
       el('path', {
         d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
         fill: '#FF69B4'
       }, svg);
-      // Left pigtail
-      el('ellipse', { cx: 22, cy: 48, rx: 7, ry: 14, fill: '#FF69B4' }, svg);
-      // Right pigtail
-      el('ellipse', { cx: 78, cy: 48, rx: 7, ry: 14, fill: '#FF69B4' }, svg);
       // Hair ties
       el('circle', { cx: 26, cy: 36, r: 3, fill: '#FF1493' }, svg);
       el('circle', { cx: 74, cy: 36, r: 3, fill: '#FF1493' }, svg);
     },
     hair_braids: function (svg) {
-      // Top hair
+      // Braids behind head
+      for (var i = 0; i < 5; i++) {
+        behindHead(svg, 'ellipse', { cx: 28 + (i % 2 ? 2 : -2), cy: 42 + i * 10, rx: 5, ry: 4, fill: i % 2 ? '#3D2317' : '#2C1810' });
+      }
+      for (var j = 0; j < 5; j++) {
+        behindHead(svg, 'ellipse', { cx: 72 + (j % 2 ? -2 : 2), cy: 42 + j * 10, rx: 5, ry: 4, fill: j % 2 ? '#3D2317' : '#2C1810' });
+      }
+      // Hair tie beads behind head
+      behindHead(svg, 'circle', { cx: 28, cy: 88, r: 3, fill: '#FFD700' });
+      behindHead(svg, 'circle', { cx: 72, cy: 88, r: 3, fill: '#FFD700' });
+      // Top hair on top
       el('path', {
         d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
         fill: '#2C1810'
       }, svg);
-      // Left braid
-      for (var i = 0; i < 5; i++) {
-        el('ellipse', { cx: 28 + (i % 2 ? 2 : -2), cy: 42 + i * 10, rx: 5, ry: 4, fill: i % 2 ? '#3D2317' : '#2C1810' }, svg);
-      }
-      // Right braid
-      for (var j = 0; j < 5; j++) {
-        el('ellipse', { cx: 72 + (j % 2 ? -2 : 2), cy: 42 + j * 10, rx: 5, ry: 4, fill: j % 2 ? '#3D2317' : '#2C1810' }, svg);
-      }
-      // Hair ties at bottom
-      el('circle', { cx: 28, cy: 88, r: 3, fill: '#FFD700' }, svg);
-      el('circle', { cx: 72, cy: 88, r: 3, fill: '#FFD700' }, svg);
     },
     hair_mullet: function (svg) {
-      // Short top
+      // Long back behind head
+      behindHead(svg, 'path', {
+        d: 'M30,36 Q28,50 30,70 Q32,80 38,85 Q44,88 50,86 Q56,88 62,85 Q68,80 70,70 Q72,50 70,36 Z',
+        fill: '#8B6914'
+      });
+      // Short top on top
       el('path', {
         d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
         fill: '#8B6914'
       }, svg);
-      // Long back (the business in the back)
-      el('path', {
-        d: 'M30,36 Q28,50 30,70 Q32,80 38,85 Q44,88 50,86 Q56,88 62,85 Q68,80 70,70 Q72,50 70,36 Z',
-        fill: '#8B6914'
-      }, svg);
     },
     hair_bun: function (svg) {
-      // Base hair pulled back
+      // Base hair on top
       el('path', {
         d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z',
         fill: '#1A1A1A'
@@ -378,34 +428,64 @@
       el('circle', { cx: 50, cy: 12, r: 10, fill: '#1A1A1A' }, svg);
     },
     hair_dreads: function (svg) {
-      // Top hair mass
+      // Hanging dreads behind head (sides only)
+      var dreadPositions = [22, 28, 34, 66, 72, 78];
+      dreadPositions.forEach(function (x) {
+        behindHead(svg, 'rect', { x: x - 3, y: 34, width: 6, height: 44, rx: 3, fill: '#2C1810' });
+      });
+      // Top hair mass on top of head
       el('path', {
         d: 'M24,40 Q24,14 50,12 Q76,14 76,40 L72,30 Q68,18 50,16 Q32,18 28,30 Z',
         fill: '#2C1810'
       }, svg);
-      // Individual dreads hanging down
-      var dreadX = [24, 30, 36, 64, 70, 76];
-      dreadX.forEach(function(x) {
-        el('rect', { x: x - 3, y: 36, width: 6, height: 40, rx: 3, fill: '#2C1810' }, svg);
-      });
-      // Front dreads
-      el('rect', { x: 40, y: 14, width: 5, height: 20, rx: 2.5, fill: '#3D2317' }, svg);
-      el('rect', { x: 55, y: 14, width: 5, height: 20, rx: 2.5, fill: '#3D2317' }, svg);
+      // Visible front edge dreads (don't cover face)
+      el('rect', { x: 22, y: 36, width: 5, height: 35, rx: 2.5, fill: '#3D2317' }, svg);
+      el('rect', { x: 73, y: 36, width: 5, height: 35, rx: 2.5, fill: '#3D2317' }, svg);
     },
     hair_emo: function (svg) {
-      // Side-swept fringe covering one eye
+      // Side bits behind head
+      behindHead(svg, 'path', { d: 'M24,38 Q22,50 24,62 Q26,65 28,60 L26,38 Z', fill: '#1A1A1A' });
+      behindHead(svg, 'path', { d: 'M76,38 Q78,50 76,62 Q74,65 72,60 L74,38 Z', fill: '#1A1A1A' });
+      // Base top hair
       el('path', {
         d: 'M26,36 Q26,14 50,12 Q74,14 74,36 L70,30 Q65,18 50,16 Q35,18 30,30 Z',
         fill: '#1A1A1A'
       }, svg);
-      // Long swooping fringe over right eye
+      // Long swooping fringe over right eye (intentionally covers one eye)
       el('path', {
         d: 'M28,30 Q30,16 50,14 Q60,16 68,26 L64,46 Q56,44 48,42 Q38,38 30,36 Z',
         fill: '#1A1A1A'
       }, svg);
-      // Side bits
-      el('path', { d: 'M24,38 Q22,50 24,62 Q26,65 28,60 L26,38 Z', fill: '#1A1A1A' }, svg);
-      el('path', { d: 'M76,38 Q78,50 76,62 Q74,65 72,60 L74,38 Z', fill: '#1A1A1A' }, svg);
+    },
+    // ── Exclusive Hair ──
+    hair_flame: function (svg) {
+      // Flame tendrils behind head
+      behindHead(svg, 'path', { d: 'M22,38 Q18,20 26,8 Q30,14 28,30 Z', fill: '#FF4400' });
+      behindHead(svg, 'path', { d: 'M78,38 Q82,20 74,8 Q70,14 72,30 Z', fill: '#FF4400' });
+      // Main flame mass
+      el('path', { d: 'M26,36 Q24,20 30,8 Q36,0 42,4 Q46,-4 50,-2 Q54,-4 58,4 Q64,0 70,8 Q76,20 74,36 L70,28 Q65,16 50,14 Q35,16 30,28 Z', fill: '#FF6600' }, svg);
+      // Inner flame highlights
+      el('path', { d: 'M32,30 Q34,16 42,8 Q46,2 50,6 Q54,2 58,8 Q66,16 68,30 L64,24 Q60,14 50,12 Q40,14 36,24 Z', fill: '#FFAA00' }, svg);
+      // Flame tips
+      el('path', { d: 'M38,20 Q40,10 44,6 Q46,14 42,22 Z', fill: '#FFDD44' }, svg);
+      el('path', { d: 'M56,20 Q58,8 62,4 Q62,14 58,22 Z', fill: '#FFDD44' }, svg);
+      el('path', { d: 'M46,16 Q48,-2 52,0 Q52,12 50,18 Z', fill: '#FFDD44' }, svg);
+    },
+    hair_galaxy: function (svg) {
+      // Cosmic hair behind head
+      behindHead(svg, 'path', { d: 'M22,42 Q20,54 22,66 Q24,70 28,66 L26,42 Z', fill: '#1a0533' });
+      behindHead(svg, 'path', { d: 'M78,42 Q80,54 78,66 Q76,70 72,66 L74,42 Z', fill: '#1a0533' });
+      // Main galaxy hair
+      el('path', { d: 'M24,40 Q24,12 50,10 Q76,12 76,40 L72,30 Q68,16 50,14 Q32,16 28,30 Z', fill: '#1a0533' }, svg);
+      // Star sparkles
+      el('circle', { cx: 34, cy: 22, r: 1.5, fill: '#ffffff', opacity: 0.9 }, svg);
+      el('circle', { cx: 58, cy: 18, r: 1, fill: '#ffffff', opacity: 0.8 }, svg);
+      el('circle', { cx: 44, cy: 16, r: 1.2, fill: '#aaddff', opacity: 0.9 }, svg);
+      el('circle', { cx: 66, cy: 24, r: 1, fill: '#ffaaff', opacity: 0.8 }, svg);
+      el('circle', { cx: 50, cy: 14, r: 1.5, fill: '#ffddaa', opacity: 0.9 }, svg);
+      // Nebula swirl
+      el('path', { d: 'M30,26 Q40,20 50,24 Q60,28 70,22', fill: 'none', stroke: '#7b2ff7', 'stroke-width': 2, opacity: 0.6 }, svg);
+      el('path', { d: 'M34,30 Q44,24 54,28 Q64,32 72,28', fill: 'none', stroke: '#ff69b4', 'stroke-width': 1.5, opacity: 0.5 }, svg);
     }
   };
 
@@ -508,6 +588,37 @@
       el('path', { d: 'M54,28 Q60,24 66,28', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
       // Slight smile
       el('path', { d: 'M40,50 Q50,54 60,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    // ── Exclusive Faces ──
+    face_robot: function (svg) {
+      removeDefaultEyes(svg);
+      // Digital square eyes
+      el('rect', { x: 35, y: 33, width: 10, height: 7, rx: 1, fill: '#00FF00' }, svg);
+      el('rect', { x: 55, y: 33, width: 10, height: 7, rx: 1, fill: '#00FF00' }, svg);
+      // Pixel pupils
+      el('rect', { x: 38, y: 35, width: 4, height: 3, fill: '#003300' }, svg);
+      el('rect', { x: 58, y: 35, width: 4, height: 3, fill: '#003300' }, svg);
+      // Grid mouth
+      el('rect', { x: 38, y: 48, width: 24, height: 6, rx: 1, fill: '#333' }, svg);
+      for (var rx = 40; rx < 62; rx += 4) {
+        el('line', { x1: rx, y1: 48, x2: rx, y2: 54, stroke: '#00FF00', 'stroke-width': 1 }, svg);
+      }
+      // Antenna dot
+      el('circle', { cx: 50, cy: 14, r: 2, fill: '#FF0000' }, svg);
+      el('line', { x1: 50, y1: 14, x2: 50, y2: 18, stroke: '#888', 'stroke-width': 1.5 }, svg);
+    },
+    face_demon: function (svg) {
+      removeDefaultEyes(svg);
+      // Glowing red eyes
+      el('circle', { cx: 40, cy: 36, r: 4, fill: '#FF0000', opacity: 0.3 }, svg);
+      el('circle', { cx: 60, cy: 36, r: 4, fill: '#FF0000', opacity: 0.3 }, svg);
+      el('path', { d: 'M36,36 L40,33 L44,36 L40,37 Z', fill: '#FF0000' }, svg);
+      el('path', { d: 'M56,36 L60,33 L64,36 L60,37 Z', fill: '#FF0000' }, svg);
+      // Evil grin
+      el('path', { d: 'M34,48 Q40,56 50,54 Q60,56 66,48', fill: 'none', stroke: '#CC0000', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      // Fangs
+      el('polygon', { points: '40,50 42,56 44,50', fill: '#ffffff' }, svg);
+      el('polygon', { points: '56,50 58,56 60,50', fill: '#ffffff' }, svg);
     }
   };
 
@@ -600,6 +711,29 @@
       // Right horn
       el('polygon', { points: '70,28 74,4 62,24', fill: '#CC2222' }, svg);
       el('polygon', { points: '74,4 76,0 70,8', fill: '#FF4444' }, svg);
+    },
+    // ── Exclusive Hats ──
+    hat_astronaut: function (svg) {
+      // Glass dome helmet
+      el('ellipse', { cx: 50, cy: 32, rx: 30, ry: 28, fill: 'none', stroke: '#AAAAAA', 'stroke-width': 2.5 }, svg);
+      el('ellipse', { cx: 50, cy: 32, rx: 28, ry: 26, fill: 'rgba(180,220,255,0.25)' }, svg);
+      // Visor reflection
+      el('path', { d: 'M32,24 Q38,18 48,20', fill: 'none', stroke: 'rgba(255,255,255,0.5)', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      // Antenna on top
+      el('line', { x1: 50, y1: 4, x2: 50, y2: -6, stroke: '#888', 'stroke-width': 2 }, svg);
+      el('circle', { cx: 50, cy: -8, r: 3, fill: '#FF0000' }, svg);
+    },
+    hat_diamond_crown: function (svg) {
+      // Crown base
+      el('polygon', { points: '28,28 30,10 38,22 44,6 50,22 56,6 62,22 70,10 72,28', fill: '#E0E0E0', stroke: '#C0C0C0', 'stroke-width': 1 }, svg);
+      // Diamond gems
+      el('polygon', { points: '38,20 40,16 42,20 40,24', fill: '#00DDFF' }, svg);
+      el('polygon', { points: '50,18 52,14 54,18 52,22', fill: '#FF69B4' }, svg);
+      el('polygon', { points: '62,20 64,16 66,20 64,24', fill: '#00FF88' }, svg);
+      // Sparkles
+      drawStar(svg, 34, 14, 2, '#ffffff');
+      drawStar(svg, 56, 10, 2, '#ffffff');
+      drawStar(svg, 66, 14, 1.5, '#ffffff');
     }
   };
 
