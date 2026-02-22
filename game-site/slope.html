@@ -93,14 +93,18 @@ a.back:hover { background: #2a2a4a; color: #fff; }
   function genSegment() {
     var seg = { index: totalCreated, curve: 0, y: 0, obstacle: null };
 
-    // Curves
-    if (curveDur <= 0) {
-      curveTarget = (Math.random() - 0.5) * 5;
-      curveDur = 40 + Math.random() * 80;
+    // Curves - first 40 segments are straight
+    if (totalCreated < 40) {
+      seg.curve = 0;
+    } else {
+      if (curveDur <= 0) {
+        curveTarget = (Math.random() - 0.5) * 5;
+        curveDur = 40 + Math.random() * 80;
+      }
+      curveValue += (curveTarget - curveValue) * 0.03;
+      curveDur--;
+      seg.curve = curveValue;
     }
-    curveValue += (curveTarget - curveValue) * 0.03;
-    curveDur--;
-    seg.curve = curveValue;
 
     // Hills
     if (hillDur <= 0) {
@@ -244,7 +248,7 @@ a.back:hover { background: #2a2a4a; color: #fff; }
 
     // Centrifugal force
     if (seg) {
-      playerVX += seg.curve * speed * 0.00018;
+      playerVX += seg.curve * speed * 0.00010;
     }
 
     playerX += playerVX * dt * 60;
