@@ -91,7 +91,6 @@
     'fnaf':'fnaf','five nights at freddys':'fnaf',
     'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
-    'bloxd':'bloxd','bloxd.io':'bloxd'
   };
 
   function _resolveGameId(input) {
