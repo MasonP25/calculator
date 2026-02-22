@@ -67,36 +67,37 @@ var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/s
   }
 });
 
-// Try multiple approaches to skip the menu and start gameplay
+// Disable branding, hide menus, and auto-start gameplay
 function tryAutoStart() {
+  var started = false;
   var attempts = 0;
   var interval = setInterval(function() {
     attempts++;
     try {
-      // Try SendMessage to known game objects to start the game
-      gameInstance.SendMessage('GameManager', 'RestartLevel');
-      gameInstance.SendMessage('GameManager', 'StartGame');
-      gameInstance.SendMessage('MainMenuScreen', 'OnPlayClick');
-      gameInstance.SendMessage('Canvas', 'RestartLevel');
+      if (!started) {
+        // Disable all branding / external links / IDnet
+        gameInstance.SendMessage('Branding', 'DisableMoreGames');
+        gameInstance.SendMessage('BrandingScript', 'DisableMoreGames');
+        gameInstance.SendMessage('Y8Branding', 'DisableY8Link');
+        gameInstance.SendMessage('Branding_Y8', 'SetActive', '0');
+        gameInstance.SendMessage('Branding_Y8_MoreGames', 'SetActive', '0');
+        gameInstance.SendMessage('Branding_IDnet', 'SetActive', '0');
+        gameInstance.SendMessage('IDnetObject', 'SetActive', '0');
+        gameInstance.SendMessage('y8_logo', 'SetActive', '0');
+        gameInstance.SendMessage('y8_logo_moregames', 'SetActive', '0');
+        gameInstance.SendMessage('idnet_logo', 'SetActive', '0');
+        gameInstance.SendMessage('PromoScreen', 'SetActive', '0');
 
-      // Simulate a mouse click in the center of the canvas to hit "Play" button
-      var canvas = document.querySelector('#gameContainer canvas');
-      if (canvas) {
-        var rect = canvas.getBoundingClientRect();
-        var cx = rect.width / 2;
-        var cy = rect.height / 2;
-        // Click slightly below center where Play button typically is
-        ['mousedown', 'mouseup', 'click'].forEach(function(type) {
-          canvas.dispatchEvent(new MouseEvent(type, {
-            bubbles: true, cancelable: true, view: window,
-            clientX: rect.left + cx, clientY: rect.top + cy + 20
-          }));
-        });
+        // Hide all screens then start the game
+        gameInstance.SendMessage('GameLogic', 'HideAllScreens');
+        gameInstance.SendMessage('GameLogic', 'RestartLevel');
+        started = true;
       }
     } catch(e) {}
 
-    if (attempts > 15) clearInterval(interval);
-  }, 800);
+    // Safety: keep trying for a bit in case game isn't ready yet
+    if (attempts > 20) clearInterval(interval);
+  }, 600);
 }
 </script>
 
