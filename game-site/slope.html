@@ -27,7 +27,6 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 #loading-text{color:#888;margin-top:12px;font-size:13px}
 #play-btn{display:none;background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4);margin-top:20px}
 #play-btn:hover{background:#0f0;color:#111;text-shadow:none;box-shadow:0 0 20px rgba(0,255,0,0.5)}
-#click-hint{display:none;color:#0f0;font-size:18px;margin-top:20px;animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
 /* Game over overlay */
@@ -50,7 +49,6 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     <div class="loader" id="load-spinner"></div>
     <div id="loading-text">Loading game...</div>
     <button id="play-btn">Play</button>
-    <div id="click-hint">Click the game to start, then use arrow keys</div>
   </div>
 
   <div id="gameover-overlay">
@@ -86,19 +84,16 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     var spinner = document.getElementById('load-spinner');
     var loadText = document.getElementById('loading-text');
     var playBtn = document.getElementById('play-btn');
-    var hint = document.getElementById('click-hint');
 
     // Reset overlay to loading state
     if (overlay) {
       overlay.style.display = 'flex';
       overlay.style.opacity = '1';
-      overlay.style.pointerEvents = 'auto';
       overlay.classList.remove('hidden');
     }
     if (spinner) spinner.style.display = 'block';
     if (loadText) { loadText.style.display = 'block'; loadText.textContent = 'Loading game...'; }
     if (playBtn) playBtn.style.display = 'none';
-    if (hint) hint.style.display = 'none';
 
     // After 4 seconds, assume iframe loaded — show Play button
     iframeLoadTimer = setTimeout(showPlayButton, 4000);
@@ -118,25 +113,13 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   }
 
   // =============================================
-  // PHASE 3: User clicks Play — overlay becomes fully click-through
-  // Overlay stays VISUALLY OPAQUE (user never sees ugly menu)
-  // but pointer-events:none on overlay so clicks reach iframe
+  // PHASE 3: User clicks Play — hide overlay, let user interact with game
   // =============================================
   document.getElementById('play-btn').addEventListener('click', function() {
     var overlay = document.getElementById('loading-overlay');
-    var playBtn = document.getElementById('play-btn');
-    var hint = document.getElementById('click-hint');
-
-    // Hide button, show hint text
-    if (playBtn) playBtn.style.display = 'none';
-    if (hint) hint.style.display = 'block';
-
-    // KEY: Make entire overlay pointer-events:none
-    // The overlay is still visually there (opaque #111 background)
-    // but ALL clicks now pass through to the iframe underneath
-    if (overlay) overlay.style.pointerEvents = 'none';
-
-    // Focus iframe
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
     var frame = document.getElementById('game-frame');
     if (frame) frame.focus();
   });
