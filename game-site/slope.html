@@ -179,62 +179,18 @@ function restartGame() {
     if (window.SFX && window.SFX.coin) window.SFX.coin();
   }
 
-  // Keep our overlay visible while we get the game restarted behind it
-  gameActive = false;
-  gameStarted = false;
-  lastInputTime = 0;
-
-  var canvas = document.querySelector('#gameContainer canvas');
-  if (!canvas) return;
-  var rect = canvas.getBoundingClientRect();
-
-  // The Unity game over screen has its own buttons. We need to:
-  // 1. Click through Unity's menu/play button to get back to gameplay
-  // 2. Only THEN hide our overlay
-
-  // Try SendMessage restart methods
-  if (gameInstance) {
-    var objects = ['GameLogic', 'CanvasScripts', 'GameManager', 'Game'];
-    for (var i = 0; i < objects.length; i++) {
-      try { gameInstance.SendMessage(objects[i], 'RestartLevel'); } catch(e) {}
-      try { gameInstance.SendMessage(objects[i], 'HideAllScreens'); } catch(e) {}
-      try { gameInstance.SendMessage(objects[i], 'PlayGame'); } catch(e) {}
-      try { gameInstance.SendMessage(objects[i], 'StartGame'); } catch(e) {}
-    }
+  // Show loading state on the button
+  var btn = document.getElementById('play-again-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:10px"></span> Restarting...';
   }
 
-  disableBranding();
-
-  // Unity's game-over screen likely has a "Menu" or "Play Again" button.
-  // After death, the game goes to its menu. We need to click through that menu's
-  // Play button just like we do at initial load.
-  // First, wait a moment for the Unity menu to appear after our SendMessage calls
-  // Then click the Play button position (same as initial auto-play)
-  var clickSequence = [
-    { delay: 300, yPct: 0.58 },  // Play button position
-    { delay: 800, yPct: 0.52 },  // Slightly higher
-    { delay: 1300, yPct: 0.45 }, // Even higher
-    { delay: 1800, yPct: 0.58 }, // Try play button again
-    { delay: 2300, yPct: 0.52 }, // One more try
-  ];
-
-  for (var c = 0; c < clickSequence.length; c++) {
-    (function(delay, yPct) {
-      setTimeout(function() {
-        rect = canvas.getBoundingClientRect();
-        fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * yPct);
-      }, delay);
-    })(clickSequence[c].delay, clickSequence[c].yPct);
-  }
-
-  // After clicking sequence, hide our overlay
+  // Reload the page after a brief delay - Unity files are cached so it's fast
+  // The auto-play sequence on load will handle clicking Play automatically
   setTimeout(function() {
-    var overlay = document.getElementById('gameover-overlay');
-    if (overlay) overlay.classList.remove('visible');
-    disableBranding();
-    setTimeout(disableBranding, 2000);
-    setTimeout(disableBranding, 5000);
-  }, 2800);
+    location.reload();
+  }, score > 0 ? 800 : 300);
 }
 
 document.getElementById('play-again-btn').addEventListener('click', restartGame);
