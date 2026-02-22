@@ -12,11 +12,9 @@ body{background:#231F20;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;
 .back:hover{text-shadow:0 0 16px rgba(0,255,0,0.8)}
 .webgl-content{width:100%;height:100vh}
 #gameContainer{width:100%;height:100%;margin:0}
-/* Hide Unity's default loading screen completely */
 #gameContainer .logo,
 #gameContainer .progress{display:none!important}
-/* Custom loading overlay */
-#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s}
+#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
 #loading-overlay h1{color:#0f0;font-size:48px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:30px}
 .loader{width:40px;height:40px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
@@ -38,23 +36,15 @@ body{background:#231F20;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;
 </div>
 
 <script>
-// Custom progress handler - no Unity logo/bar, just our overlay
 function UnityProgress(inst, progress) {
   var txt = document.getElementById('loading-text');
-  if (txt) {
-    if (typeof progress === 'number') {
-      txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
-    }
-    if (progress === 1 || progress === 'complete') {
-      // Game loaded - hide loading, auto-start game
-      setTimeout(function() {
-        var overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.classList.add('hidden');
-        setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 600);
-        // Try to skip main menu and start game directly
-        tryAutoStart();
-      }, 500);
-    }
+  if (txt && typeof progress === 'number') {
+    txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
+  }
+  if (progress === 1 || progress === 'complete') {
+    // Game is loaded - menu is rendering BEHIND our overlay
+    // Wait for menu to fully appear, then click Play while overlay hides it
+    setTimeout(autoClickPlay, 2500);
   }
 }
 
@@ -67,37 +57,86 @@ var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/s
   }
 });
 
-// Disable branding, hide menus, and auto-start gameplay
-function tryAutoStart() {
-  var started = false;
-  var attempts = 0;
-  var interval = setInterval(function() {
-    attempts++;
-    try {
-      if (!started) {
-        // Disable all branding / external links / IDnet
-        gameInstance.SendMessage('Branding', 'DisableMoreGames');
-        gameInstance.SendMessage('BrandingScript', 'DisableMoreGames');
-        gameInstance.SendMessage('Y8Branding', 'DisableY8Link');
-        gameInstance.SendMessage('Branding_Y8', 'SetActive', '0');
-        gameInstance.SendMessage('Branding_Y8_MoreGames', 'SetActive', '0');
-        gameInstance.SendMessage('Branding_IDnet', 'SetActive', '0');
-        gameInstance.SendMessage('IDnetObject', 'SetActive', '0');
-        gameInstance.SendMessage('y8_logo', 'SetActive', '0');
-        gameInstance.SendMessage('y8_logo_moregames', 'SetActive', '0');
-        gameInstance.SendMessage('idnet_logo', 'SetActive', '0');
-        gameInstance.SendMessage('PromoScreen', 'SetActive', '0');
+function autoClickPlay() {
+  var canvas = document.querySelector('#gameContainer canvas');
+  if (!canvas) {
+    // Canvas not ready yet, retry
+    setTimeout(autoClickPlay, 500);
+    return;
+  }
 
-        // Hide all screens then start the game
-        gameInstance.SendMessage('GameLogic', 'HideAllScreens');
-        gameInstance.SendMessage('GameLogic', 'RestartLevel');
-        started = true;
-      }
-    } catch(e) {}
+  // Try SendMessage approaches first
+  try {
+    // Disable branding elements
+    var brandingObjects = [
+      'Branding', 'BrandingScript', 'Y8Branding',
+      'Branding_Y8', 'Branding_Y8_MoreGames', 'Branding_IDnet',
+      'IDnetObject', 'y8_logo', 'y8_logo_moregames', 'idnet_logo',
+      'PromoScreen'
+    ];
+    for (var i = 0; i < brandingObjects.length; i++) {
+      try { gameInstance.SendMessage(brandingObjects[i], 'SetActive', '0'); } catch(e) {}
+    }
+    try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
+    try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
 
-    // Safety: keep trying for a bit in case game isn't ready yet
-    if (attempts > 20) clearInterval(interval);
-  }, 600);
+    // Try direct game start via various object names
+    var gameObjects = ['GameLogic', 'GameManager', 'Game', 'Manager', 'Logic', 'Controller', 'GameController', 'LevelManager'];
+    for (var j = 0; j < gameObjects.length; j++) {
+      try { gameInstance.SendMessage(gameObjects[j], 'HideAllScreens'); } catch(e) {}
+      try { gameInstance.SendMessage(gameObjects[j], 'RestartLevel'); } catch(e) {}
+    }
+  } catch(e) {}
+
+  // Now click the Play button - it's at center of the screen
+  // The Play button in Slope is centered horizontally, roughly in the middle vertically
+  var rect = canvas.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+
+  // Single precise click at center where Play button is
+  fireClick(canvas, cx, cy);
+
+  // Also try slightly above center and below center in case button is offset
+  setTimeout(function() { fireClick(canvas, cx, cy - rect.height * 0.05); }, 150);
+  setTimeout(function() { fireClick(canvas, cx, cy + rect.height * 0.05); }, 300);
+
+  // Wait for the click to register, then hide the overlay
+  // The game should be starting by now
+  setTimeout(function() {
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.add('hidden');
+    setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
+
+    // After overlay is gone, disable branding again (some may re-enable)
+    setTimeout(disableBranding, 1000);
+    setTimeout(disableBranding, 3000);
+    setTimeout(disableBranding, 6000);
+  }, 800);
+}
+
+function fireClick(el, x, y) {
+  var events = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
+  for (var i = 0; i < events.length; i++) {
+    el.dispatchEvent(new PointerEvent(events[i], {
+      bubbles: true, cancelable: true, view: window,
+      clientX: x, clientY: y, button: 0, pointerId: 1,
+      pointerType: 'mouse'
+    }));
+  }
+}
+
+function disableBranding() {
+  try {
+    var objs = ['Branding', 'BrandingScript', 'Y8Branding', 'Branding_Y8',
+      'Branding_Y8_MoreGames', 'Branding_IDnet', 'IDnetObject',
+      'y8_logo', 'y8_logo_moregames', 'idnet_logo', 'PromoScreen'];
+    for (var i = 0; i < objs.length; i++) {
+      try { gameInstance.SendMessage(objs[i], 'SetActive', '0'); } catch(e) {}
+    }
+    try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
+    try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
+  } catch(e) {}
 }
 </script>
 
