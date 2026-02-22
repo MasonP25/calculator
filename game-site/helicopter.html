@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Helicopter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0f0f1a; font-family: 'Segoe UI', Arial, sans-serif; }
+  a.back {
+    position: fixed; top: 14px; left: 14px; z-index: 100;
+    color: #aaa; text-decoration: none; font-size: 15px;
+    background: #1a1a2e; border: 1px solid #2a2a4a;
+    padding: 6px 14px; border-radius: 8px;
+    transition: background .2s, color .2s;
+  }
+  a.back:hover { background: #2a2a4a; color: #fff; }
+  canvas {
+    display: block; margin: 0 auto; background: #0f0f1a;
+    touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back</a>
+<canvas id="c"></canvas>
+
+<script>
+(function() {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // --- Sizing ---
+  const MAX_W = 700;
+  function resize() {
+    const w = Math.min(window.innerWidth, MAX_W);
+    const h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // --- Constants ---
+  const GRAVITY = 0.35;
+  const LIFT = -0.55;
+  const MAX_VY = 7;
+  const HELI_W = 30;
+  const HELI_H = 14;
+  const HELI_X = 90; // fixed x position on screen
+
+  // --- State ---
+  let state = 'menu'; // menu | playing | dead
+  let holding = false;
+  let heliY, vy;
+  let distance, scrollSpeed, frameCount;
+  let ceiling, floor; // arrays of y-values, one per pixel column
+  let ceilTarget, floorTarget; // smooth wander targets
+  let gapRatio; // current cave gap as ratio of canvas height
+  let obstacles; // [{x, y, w, h}]
+  let obstacleTimer;
+  let particles; // [{x, y, age, maxAge, vx, vy}]
+  let bestScore = parseInt(localStorage.getItem('helicopter_best')) || 0;
+  let shakeTimer = 0;
+  let lastScore = 0;
+  let rotorAngle = 0;
+
+  // --- Cave generation helpers ---
+  function initCave() {
+    const W = canvas.width;
+    const H = canvas.height;
+    gapRatio = 0.55;
+    const gap = H * gapRatio;
+    const ceilY = (H - gap) * 0.35;
+    const floorY = ceilY + gap;
+    ceiling = new Array(W + 60);
+    floor = new Array(W + 60);
+    for (let i = 0; i < ceiling.length; i++) {
+      ceiling[i] = ceilY;
+      floor[i] = floorY;
+    }
+    ceilTarget = ceilY;
+    floorTarget = floorY;
+  }
+
+  function generateColumn(index) {
+    const H = canvas.height;
+    // Narrow the gap over time
+    const minGap = 0.28;
+    gapRatio = Math.max(minGap, 0.55 - distance * 0.00012);
+    const gap = H * gapRatio;
+    const margin = 30; // min distance from top/bottom edge
+
+    // Smooth random walk for ceiling
+    if (Math.random() < 0.05) {
+      ceilTarget = margin + Math.random() * (H - gap - margin * 2) * 0.5;
+    }
+    const prevCeil = ceiling[(index - 1 + ceiling.length) % ceiling.length] || ceilTarget;
+    let newCeil = prevCeil + (ceilTarget - prevCeil) * 0.02 + (Math.random() - 0.5) * 1.8;
+    newCeil = Math.max(margin, Math.min(H - gap - margin, newCeil));
+    ceiling[index % ceiling.length] = newCeil;
+
+    // Floor follows ceiling to maintain gap
+    let newFloor = newCeil + gap;
+    // Also add slight independent wander
+    if (Math.random() < 0.05) {
+      floorTarget = newCeil + gap + (Math.random() - 0.5) * 20;
+    }
+    newFloor += (floorTarget - (prevCeil + gap)) * 0.01;
+    newFloor = Math.max(newCeil + gap * 0.85, Math.min(H - margin, newFloor));
+    // Ensure minimum gap
+    if (newFloor - newCeil < gap * 0.85) newFloor = newCeil + gap * 0.85;
+    floor[index % floor.length] = newFloor;
+  }
+
+  // --- Init game ---
+  function startGame() {
+    const H = canvas.height;
+    heliY = H * 0.45;
+    vy = 0;
+    distance = 0;
+    scrollSpeed = 2.2;
+    frameCount = 0;
+    obstacles = [];
+    obstacleTimer = 0;
+    particles = [];
+    shakeTimer = 0;
+    initCave();
+    state = 'playing';
+  }
+
+  // --- Input ---
+  function onDown(e) {
+    if (e) e.preventDefault();
+    if (state === 'menu') { startGame(); holding = true; return; }
+    if (state === 'dead') return;
+    holding = true;
+  }
+  function onUp(e) {
+    if (e) e.preventDefault();
+    holding = false;
+  }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mouseup', onUp);
+  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchend', onUp, { passive: false });
+  canvas.addEventListener('touchcancel', onUp, { passive: false });
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      if (state === 'dead') return;
+      if (state === 'menu') { startGame(); holding = true; return; }
+      holding = true;
+    }
+  });
+  document.addEventListener('keyup', function(e) {
+    if (e.code === 'Space' || e.key === ' ') { holding = false; }
+  });
+
+  // --- Dead overlay click ---
+  canvas.addEventListener('click', function(e) {
+    if (state !== 'dead') return;
+    const W = canvas.width, H = canvas.height;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left);
+    const y = (e.clientY - rect.top);
+    // "Play Again" button region
+    const bx = W / 2 - 80, by = H / 2 + 50, bw = 160, bh = 44;
+    if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
+      state = 'menu';
+    }
+  });
+  canvas.addEventListener('touchstart', function(e) {
+    if (state !== 'dead') return;
+    const W = canvas.width, H = canvas.height;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    const bx = W / 2 - 80, by = H / 2 + 50, bw = 160, bh = 44;
+    if (x >= bx && x <= bx + bw && y >= by && y <= by + bh) {
+      e.preventDefault();
+      state = 'menu';
+    }
+  }, { passive: false });
+
+  // --- Collision ---
+  function heliRect() {
+    return { x: HELI_X - HELI_W / 2, y: heliY - HELI_H / 2, w: HELI_W, h: HELI_H };
+  }
+
+  function checkCollision() {
+    const hr = heliRect();
+    const W = canvas.width;
+    // Check cave walls at helicopter columns
+    for (let px = Math.floor(hr.x); px <= Math.ceil(hr.x + hr.w); px++) {
+      if (px < 0 || px >= W) continue;
+      const ci = px % ceiling.length;
+      const ceilY = ceiling[ci];
+      const floorY = floor[ci];
+      if (hr.y < ceilY || hr.y + hr.h > floorY) return true;
+    }
+    // Check obstacles
+    for (const ob of obstacles) {
+      if (hr.x < ob.x + ob.w && hr.x + hr.w > ob.x &&
+          hr.y < ob.y + ob.h && hr.y + hr.h > ob.y) return true;
+    }
+    return false;
+  }
+
+  // --- Particles ---
+  function spawnParticle() {
+    particles.push({
+      x: HELI_X - HELI_W / 2 - 2 + Math.random() * 4,
+      y: heliY + (Math.random() - 0.5) * HELI_H * 0.6,
+      vx: -scrollSpeed * 0.5 - Math.random() * 0.5,
+      vy: (Math.random() - 0.5) * 0.8,
+      age: 0,
+      maxAge: 18 + Math.random() * 14,
+      size: 1.5 + Math.random() * 2
+    });
+  }
+
+  // --- Spawn obstacle ---
+  function trySpawnObstacle() {
+    const H = canvas.height;
+    const W = canvas.width;
+    const rightIdx = (W + 50) % ceiling.length;
+    const ceilY = ceiling[rightIdx];
+    const floorY = floor[rightIdx];
+    const gapH = floorY - ceilY;
+    const obH = 20 + Math.random() * (gapH * 0.35);
+    const obW = 18 + Math.random() * 16;
+    // Place obstacle attached to ceiling or floor
+    let obY;
+    if (Math.random() < 0.5) {
+      obY = ceilY + 2; // from ceiling
+    } else {
+      obY = floorY - obH - 2; // from floor
+    }
+    obstacles.push({ x: W + 10, y: obY, w: obW, h: obH });
+  }
+
+  // --- Update ---
+  function update() {
+    if (state !== 'playing') return;
+    frameCount++;
+
+    // Physics
+    if (holding) {
+      vy += LIFT;
+    } else {
+      vy += GRAVITY;
+    }
+    vy = Math.max(-MAX_VY, Math.min(MAX_VY, vy));
+    heliY += vy;
+
+    // Scroll & distance
+    scrollSpeed = 2.2 + distance * 0.0008;
+    if (scrollSpeed > 6) scrollSpeed = 6;
+    distance += scrollSpeed * 0.06; // roughly meters
+
+    // Generate new cave columns
+    const W = canvas.width;
+    // Shift cave arrays: we simulate scrolling by shifting indices
+    // Instead, we regenerate the rightmost columns each frame
+    const pixelsToScroll = Math.ceil(scrollSpeed);
+    for (let i = 0; i < pixelsToScroll; i++) {
+      // Shift all arrays left by 1
+      ceiling.push(0);
+      floor.push(0);
+      generateColumn(ceiling.length - 1);
+      ceiling.shift();
+      floor.shift();
+    }
+
+    // Scroll & spawn obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      obstacles[i].x -= scrollSpeed;
+      if (obstacles[i].x + obstacles[i].w < -10) obstacles.splice(i, 1);
+    }
+
+    // Obstacle spawning — none for first 50m
+    if (distance > 50) {
+      obstacleTimer -= scrollSpeed;
+      const minInterval = Math.max(80, 250 - distance * 0.3);
+      if (obstacleTimer <= 0) {
+        trySpawnObstacle();
+        obstacleTimer = minInterval + Math.random() * minInterval * 0.8;
+      }
+    }
+
+    // Particles
+    if (frameCount % 2 === 0) spawnParticle();
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.age++;
+      if (p.age >= p.maxAge) particles.splice(i, 1);
+    }
+
+    // Collision
+    if (checkCollision()) {
+      die();
+    }
+
+    // Shake decay
+    if (shakeTimer > 0) shakeTimer--;
+  }
+
+  function die() {
+    state = 'dead';
+    holding = false;
+    shakeTimer = 12;
+    lastScore = Math.floor(distance);
+    if (lastScore > bestScore) {
+      bestScore = lastScore;
+      localStorage.setItem('helicopter_best', bestScore);
+    }
+    if (lastScore > 0 && window.HallOfFame) window.HallOfFame.submit('helicopter', lastScore);
+    if (window.SFX) window.SFX.death();
+  }
+
+  // --- Draw ---
+  function drawHelicopter() {
+    const x = HELI_X;
+    const y = heliY;
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Tail
+    ctx.fillStyle = '#00a8cc';
+    ctx.beginPath();
+    ctx.moveTo(-HELI_W / 2, -2);
+    ctx.lineTo(-HELI_W / 2 - 12, -8);
+    ctx.lineTo(-HELI_W / 2 - 12, -4);
+    ctx.lineTo(-HELI_W / 2, 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Tail fin
+    ctx.fillStyle = '#008baa';
+    ctx.beginPath();
+    ctx.moveTo(-HELI_W / 2 - 10, -8);
+    ctx.lineTo(-HELI_W / 2 - 14, -14);
+    ctx.lineTo(-HELI_W / 2 - 6, -8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = '#00d4ff';
+    ctx.beginPath();
+    ctx.ellipse(2, 0, HELI_W / 2 + 2, HELI_H / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cockpit
+    ctx.fillStyle = '#66eeff';
+    ctx.beginPath();
+    ctx.ellipse(HELI_W / 2 - 4, -1, 6, 5, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotor
+    rotorAngle += 0.4;
+    const rotorSpan = 22;
+    const rotorOff = Math.sin(rotorAngle) * rotorSpan;
+    ctx.strokeStyle = '#aaeeff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-rotorOff, -HELI_H / 2 - 3);
+    ctx.lineTo(rotorOff, -HELI_H / 2 - 3);
+    ctx.stroke();
+    // Rotor mast
+    ctx.strokeStyle = '#00a8cc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -HELI_H / 2);
+    ctx.lineTo(0, -HELI_H / 2 - 3);
+    ctx.stroke();
+
+    // Skid
+    ctx.strokeStyle = '#008baa';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-8, HELI_H / 2 + 1);
+    ctx.lineTo(10, HELI_H / 2 + 1);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawCave() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Draw ceiling (filled from top to ceiling line)
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    for (let x = 0; x < W; x++) {
+      ctx.lineTo(x, ceiling[x]);
+    }
+    ctx.lineTo(W, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ceiling edge highlight
+    ctx.strokeStyle = '#2a2a4a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      if (x === 0) ctx.moveTo(x, ceiling[x]);
+      else ctx.lineTo(x, ceiling[x]);
+    }
+    ctx.stroke();
+
+    // Draw floor (filled from floor line to bottom)
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x < W; x++) {
+      ctx.lineTo(x, floor[x]);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Floor edge highlight
+    ctx.strokeStyle = '#2a2a4a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      if (x === 0) ctx.moveTo(x, floor[x]);
+      else ctx.lineTo(x, floor[x]);
+    }
+    ctx.stroke();
+  }
+
+  function drawObstacles() {
+    for (const ob of obstacles) {
+      // Glow
+      ctx.shadowColor = '#ff4444';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+      ctx.shadowBlur = 0;
+      // Highlight edge
+      ctx.fillStyle = '#ff7744';
+      ctx.fillRect(ob.x, ob.y, ob.w, 2);
+      ctx.fillRect(ob.x, ob.y, 2, ob.h);
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const alpha = 1 - p.age / p.maxAge;
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.fillStyle = '#00d4ff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * (1 - p.age / p.maxAge * 0.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawScore() {
+    const W = canvas.width;
+    const sc = Math.floor(distance);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(sc + 'm', W - 16, 34);
+  }
+
+  function drawMenu() {
+    const W = canvas.width, H = canvas.height;
+    // Dim overlay
+    ctx.fillStyle = 'rgba(15, 15, 26, 0.85)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Title
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = 'bold 48px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Helicopter', W / 2, H / 2 - 60);
+
+    // Instructions
+    ctx.fillStyle = '#aaa';
+    ctx.font = '18px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Hold to fly', W / 2, H / 2 - 16);
+
+    // Best
+    if (bestScore > 0) {
+      ctx.fillStyle = '#777';
+      ctx.font = '15px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('Best: ' + bestScore + 'm', W / 2, H / 2 + 14);
+    }
+
+    // Start prompt
+    const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 400);
+    ctx.globalAlpha = 0.5 + pulse * 0.5;
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = '16px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Click, tap, or press space to start', W / 2, H / 2 + 56);
+    ctx.globalAlpha = 1;
+
+    // Draw a static helicopter
+    ctx.save();
+    ctx.translate(W / 2, H / 2 - 110);
+    ctx.fillStyle = '#00a8cc';
+    ctx.beginPath();
+    ctx.moveTo(-15, -2); ctx.lineTo(-27, -8); ctx.lineTo(-27, -4); ctx.lineTo(-15, 2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#00d4ff';
+    ctx.beginPath(); ctx.ellipse(2, 0, 17, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#66eeff';
+    ctx.beginPath(); ctx.ellipse(12, -1, 6, 5, 0.15, 0, Math.PI * 2); ctx.fill();
+    const rOff = Math.sin(Date.now() / 60) * 22;
+    ctx.strokeStyle = '#aaeeff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-rOff, -10); ctx.lineTo(rOff, -10); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDead() {
+    const W = canvas.width, H = canvas.height;
+
+    // Overlay
+    ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Game Over
+    ctx.fillStyle = '#ff4444';
+    ctx.font = 'bold 38px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Game Over', W / 2, H / 2 - 40);
+
+    // Score
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(lastScore + 'm', W / 2, H / 2 + 4);
+
+    // Best
+    ctx.fillStyle = '#aaa';
+    ctx.font = '16px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Best: ' + bestScore + 'm', W / 2, H / 2 + 34);
+
+    // Play Again button
+    const bx = W / 2 - 80, by = H / 2 + 50, bw = 160, bh = 44;
+    ctx.fillStyle = '#00d4ff';
+    ctx.strokeStyle = '#00a8cc';
+    ctx.lineWidth = 2;
+    roundRect(ctx, bx, by, bw, bh, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#0f0f1a';
+    ctx.font = 'bold 17px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Play Again', W / 2, by + bh / 2 + 6);
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // --- Main loop ---
+  function loop() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Shake
+    if (shakeTimer > 0) {
+      const s = shakeTimer * 0.8;
+      ctx.save();
+      ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+    }
+
+    if (state === 'playing' || state === 'dead') {
+      update();
+      drawCave();
+      drawObstacles();
+      drawParticles();
+      if (state === 'playing') drawHelicopter();
+      drawScore();
+    }
+
+    if (shakeTimer > 0) ctx.restore();
+
+    if (state === 'menu') drawMenu();
+    if (state === 'dead') drawDead();
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>

@@ -379,7 +379,10 @@ function setScope(scope) {
     { id: 'stickmanhook', name: 'Stickman Hook',    emoji: '\uD83E\uDDF0', unit: 'level',       lower: false },
     { id: 'paperio',      name: 'Paper.io',         emoji: '\uD83D\uDCCE', unit: '%',           lower: false },
     { id: 'fruitmerge',   name: 'Fruit Merge',      emoji: '\uD83C\uDF51', unit: 'score',       lower: false },
-    { id: 'pool',          name: 'Pool',              emoji: '\uD83C\uDFB1', unit: 'streak',      lower: false }
+    { id: 'pool',          name: 'Pool',              emoji: '\uD83C\uDFB1', unit: 'streak',      lower: false },
+    { id: 'dotsboxes',    name: 'Dots & Boxes',      emoji: '\u2716',       unit: 'streak',      lower: false },
+    { id: 'helicopter',   name: 'Helicopter',        emoji: '\uD83D\uDE81', unit: 'meters',      lower: false },
+    { id: 'slope',        name: 'Slope',             emoji: '\u26F7',       unit: 'meters',      lower: false }
   ];
 
   var searchQuery = '';
@@ -623,7 +626,7 @@ function setScope(scope) {
     }
 
     var countEl = document.getElementById('resultCount');
-    var displayTotal = 70;
+    var displayTotal = 73;
     if (searchQuery) {
       countEl.textContent = list.length + ' of ' + displayTotal + ' games';
     } else {

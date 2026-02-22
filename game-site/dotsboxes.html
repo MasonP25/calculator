@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dots &amp; Boxes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+  }
+  h1 { font-size: 2rem; margin-bottom: 0.3rem; }
+  .mode-select { display: flex; gap: 1rem; margin-bottom: 0.8rem; }
+  .mode-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
+  .mode-select button.active { background: #2a1a4e; color: #ffffff; }
+  .diff-select { display: none; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap; justify-content: center; }
+  .diff-select.show { display: flex; }
+  .diff-select button {
+    background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+    padding: 0.35rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    transition: border-color 0.25s, background 0.25s;
+  }
+  .diff-select button:hover, .diff-select button.active { border-color: #7b2ff7; }
+  .diff-select button.active { background: #2a1a4e; color: #ffffff; }
+  .score-display {
+    font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 16px; justify-content: center;
+  }
+  .score-blue { color: #00d4ff; }
+  .score-red { color: #ff4757; }
+  .score-sep { color: #555; }
+  canvas { border-radius: 12px; cursor: pointer; display: block; }
+  .msg { margin-top: 0.8rem; font-size: 1.15rem; min-height: 2rem; text-align: center; }
+  .msg .blue { color: #00d4ff; } .msg .red { color: #ff4757; }
+  button.restart {
+    margin-top: 0.8rem;
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white; border: none; padding: 0.6rem 1.8rem;
+    border-radius: 8px; font-size: 1rem; cursor: pointer;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+  }
+  button.restart:hover { opacity: 0.85; }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+
+  /* Online Mode Styles */
+  .online-panel {
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+    padding: 20px; width: 100%; max-width: 460px; text-align: center; margin-bottom: 0.8rem;
+  }
+  .online-panel h3 { margin-bottom: 15px; color: #e0e0e0; font-size: 1rem; }
+  .online-lobby-btns { display: flex; gap: 12px; justify-content: center; }
+  .online-btn {
+    background: #7b2ff7; color: #fff; border: none; padding: 10px 24px;
+    font-size: 0.95rem; font-weight: 600; font-family: 'Segoe UI', Tahoma, sans-serif;
+    border-radius: 8px; cursor: pointer; transition: background 0.25s, transform 0.15s;
+  }
+  .online-btn:hover { background: #6a22e0; }
+  .online-btn:active { transform: scale(0.97); }
+  .online-btn.secondary { background: #2a2a4a; }
+  .online-btn.secondary:hover { background: #3a3a5a; }
+  .room-code-display {
+    font-size: 2.5rem; font-weight: 700; color: #feca57;
+    letter-spacing: 8px; margin: 15px 0; font-family: monospace;
+  }
+  .waiting-msg { color: #888; font-size: 0.9rem; animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .join-area { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .join-input {
+    background: #0f0f1a; border: 2px solid #2a2a4a; color: #feca57;
+    font-size: 1.8rem; font-weight: 700; font-family: monospace;
+    letter-spacing: 6px; text-align: center; padding: 8px 16px;
+    border-radius: 8px; width: 160px; text-transform: uppercase; outline: none;
+    transition: border-color 0.25s;
+  }
+  .join-input:focus { border-color: #7b2ff7; }
+  .join-input::placeholder { color: #444; letter-spacing: 2px; font-size: 1rem; }
+  .join-error { color: #ff4757; font-size: 0.85rem; }
+  .online-info {
+    background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 12px;
+    padding: 12px 20px; width: 100%; max-width: 460px; text-align: center;
+    font-size: 0.85rem; color: #888; margin-bottom: 0.8rem;
+  }
+  .online-info .room-label { color: #feca57; font-weight: 700; font-family: monospace; letter-spacing: 3px; }
+  .online-info .player-info { margin: 6px 0; }
+  .you-blue { color: #00d4ff; font-weight: 700; }
+  .you-red { color: #ff4757; font-weight: 700; }
+  .leave-btn {
+    background: none; border: 1px solid #ff475766; color: #ff4757;
+    padding: 4px 14px; font-size: 0.8rem; font-family: 'Segoe UI', Tahoma, sans-serif;
+    border-radius: 6px; cursor: pointer; margin-top: 6px; transition: background 0.2s;
+  }
+  .leave-btn:hover { background: #ff475722; }
+  .lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+
+  /* Chat Sidebar */
+  #chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:9999;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
+  #chat-toggle:hover{transform:scale(1.1);}
+  #chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+  #chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:10000;display:flex;flex-direction:column;transition:right 0.3s;}
+  #chat-panel.open{right:0;}
+  #chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #2a2a4a;}
+  #chat-header span{font-weight:700;color:#e0e0e0;font-size:1rem;}
+  #chat-close{background:#2a2a4a;border:none;color:#e0e0e0;font-size:1.1rem;cursor:pointer;padding:4px 10px;border-radius:6px;transition:all .2s}
+  #chat-close:hover{background:#3a3a5a;color:#fff}
+  #chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:#2a2a4a #1a1a2e;}
+  #chat-messages::-webkit-scrollbar{width:6px;}
+  #chat-messages::-webkit-scrollbar-track{background:#1a1a2e;}
+  #chat-messages::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+  .chat-msg .chat-name{color:#feca57;font-weight:700;font-size:0.8rem;margin-right:6px;}
+  .chat-msg .chat-text{color:#e0e0e0;font-size:0.85rem;word-break:break-word;}
+  .chat-msg .chat-time{color:#555;font-size:0.7rem;margin-left:6px;}
+  #chat-input-area{display:flex;gap:6px;padding:10px;border-top:2px solid #2a2a4a;}
+  #chat-input{flex:1;background:#0f0f1a;border:2px solid #2a2a4a;color:#e0e0e0;font-size:0.85rem;font-family:inherit;padding:8px 10px;border-radius:6px;outline:none;}
+  #chat-input:focus{border-color:#7b2ff7;}
+  #chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
+  #chat-send:hover{background:#6a22e0;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:600px;margin:0 auto;padding:10px;">
+<h1>Dots &amp; Boxes</h1>
+<div class="mode-select">
+  <button id="mode2p" class="active">2 Players</button>
+  <button id="modeBot">vs Bot</button>
+  <button id="modeOnline">Online</button>
+</div>
+<div class="diff-select" id="diff-select">
+  <button data-d="easy">Easy</button>
+  <button data-d="medium" class="active">Medium</button>
+  <button data-d="hard">Hard</button>
+</div>
+
+<!-- Online Panel -->
+<div class="online-panel" id="online-panel" style="display:none;">
+  <h3>Online Multiplayer</h3>
+  <div id="online-lobby-btns" class="online-lobby-btns">
+    <button class="online-btn" id="create-game-btn">Create Game</button>
+    <button class="online-btn secondary" id="join-game-btn">Join Game</button>
+  </div>
+  <div id="online-create-area" style="display:none;">
+    <p style="color:#888; font-size:0.85rem; margin-bottom:8px;">Share this code with your friend:</p>
+    <div class="room-code-display" id="room-code-display">----</div>
+    <p class="waiting-msg" id="waiting-msg">Waiting for opponent to join...</p>
+  </div>
+  <div id="online-join-area" class="join-area" style="display:none;">
+    <p style="color:#888; font-size:0.85rem;">Enter room code:</p>
+    <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="CODE">
+    <button class="online-btn" id="join-submit-btn">Join</button>
+    <button class="leave-btn" id="join-back-btn" style="margin-top:4px;">Back</button>
+    <p class="join-error" id="join-error" style="display:none;"></p>
+  </div>
+  <button class="leave-btn" id="online-leave-btn" style="display:none;">Cancel</button>
+</div>
+
+<!-- Online Info (shown during game) -->
+<div class="online-info" id="online-info" style="display:none;">
+  <span>Room: <span class="room-label" id="game-room-code"></span></span>
+  <div class="player-info" id="game-player-info"></div>
+  <button class="leave-btn" id="online-leave-game-btn">Leave Game</button>
+</div>
+
+<!-- Chat Sidebar -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+    <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
+</div>
+
+<div id="game-area" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+<div class="score-display">
+  <span class="score-blue">Blue: <span id="score-p1">0</span></span>
+  <span class="score-sep">|</span>
+  <span class="score-red">Red: <span id="score-p2">0</span></span>
+</div>
+<canvas id="board" width="400" height="400"></canvas>
+<div class="msg" id="msg"><span class="blue">Blue's turn</span></div>
+<button class="restart" id="restart">New Game</button>
+</div>
+</div>
+
+<script>
+(function() {
+// Grid: 5x5 dots = 4x4 boxes
+// Horizontal lines: 5 rows x 4 cols = 20
+// Vertical lines: 4 rows x 5 cols = 20
+// Total lines: 40
+// Boxes: 4x4 = 16
+
+var GRID = 5; // dots per side
+var BOXES = 4; // boxes per side
+var DOT_R = 6;
+var LINE_W = 6;
+var HOVER_ALPHA = 0.45;
+var P1_COLOR = '#00d4ff';
+var P2_COLOR = '#ff4757';
+var P1_FILL = 'rgba(0,212,255,0.2)';
+var P2_FILL = 'rgba(255,71,87,0.2)';
+var BG_COLOR = '#0f0f1a';
+
+var canvas = document.getElementById('board');
+var ctx = canvas.getContext('2d');
+var msgEl = document.getElementById('msg');
+var scoreP1El = document.getElementById('score-p1');
+var scoreP2El = document.getElementById('score-p2');
+
+// State
+var hLines, vLines, boxes; // hLines[row][col], vLines[row][col], boxes[row][col]
+var currentPlayer, gameOver, mode, botDifficulty, thinking;
+var scoreP1, scoreP2;
+var hoverLine; // {type:'h'|'v', row, col} or null
+
+mode = '2p'; botDifficulty = 'medium'; thinking = false;
+
+// Layout calculations
+var padding = 40;
+var cellSize;
+
+function calcLayout() {
+    var w = Math.min(400, window.innerWidth - 40);
+    canvas.width = w; canvas.height = w;
+    cellSize = (w - padding * 2) / BOXES;
+}
+
+function dotX(col) { return padding + col * cellSize; }
+function dotY(row) { return padding + row * cellSize; }
+
+// Initialize game state
+function init() {
+    hLines = Array.from({length: GRID}, function() { return new Array(BOXES).fill(0); });
+    vLines = Array.from({length: BOXES}, function() { return new Array(GRID).fill(0); });
+    boxes = Array.from({length: BOXES}, function() { return new Array(BOXES).fill(0); });
+    currentPlayer = 1;
+    gameOver = false;
+    thinking = false;
+    scoreP1 = 0; scoreP2 = 0;
+    hoverLine = null;
+    updateScoreDisplay();
+    updateTurnMsg();
+    draw();
+}
+
+function updateScoreDisplay() {
+    scoreP1El.textContent = scoreP1;
+    scoreP2El.textContent = scoreP2;
+}
+
+function updateTurnMsg() {
+    if (gameOver) return;
+    if (mode === 'online' && window._dbOnlineState) {
+        var st = window._dbOnlineState;
+        if (!st.playing) {
+            msgEl.innerHTML = '<span style="color:#888;">Waiting for game to start...</span>';
+            return;
+        }
+        var isMyTurn = currentPlayer === st.myRole;
+        var cls = currentPlayer === 1 ? 'blue' : 'red';
+        var colorName = currentPlayer === 1 ? 'Blue' : 'Red';
+        if (isMyTurn) {
+            msgEl.innerHTML = '<span class="' + cls + '">Your turn (' + colorName + ')</span>';
+        } else {
+            var oppName = currentPlayer === 1 ? (st.hostName || 'Blue') : (st.guestName || 'Red');
+            msgEl.innerHTML = '<span class="' + cls + '">' + oppName + '\'s turn (' + colorName + ')</span>';
+        }
+    } else {
+        var name = currentPlayer === 1 ? 'Blue' : 'Red';
+        var cls = currentPlayer === 1 ? 'blue' : 'red';
+        msgEl.innerHTML = '<span class="' + cls + '">' + name + '\'s turn</span>';
+    }
+}
+
+// Drawing
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = BG_COLOR;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw boxes
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (boxes[r][c] !== 0) {
+                var x = dotX(c); var y = dotY(r);
+                ctx.fillStyle = boxes[r][c] === 1 ? P1_FILL : P2_FILL;
+                ctx.fillRect(x, y, cellSize, cellSize);
+                // Draw initial
+                ctx.fillStyle = boxes[r][c] === 1 ? P1_COLOR : P2_COLOR;
+                ctx.font = 'bold ' + Math.floor(cellSize * 0.35) + 'px Segoe UI, sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(boxes[r][c] === 1 ? 'B' : 'R', x + cellSize / 2, y + cellSize / 2);
+            }
+        }
+    }
+
+    // Draw undrawn lines (subtle)
+    ctx.strokeStyle = '#1a1a2e';
+    ctx.lineWidth = 2;
+    // Horizontal
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (!hLines[r][c]) {
+                ctx.beginPath();
+                ctx.moveTo(dotX(c), dotY(r));
+                ctx.lineTo(dotX(c + 1), dotY(r));
+                ctx.stroke();
+            }
+        }
+    }
+    // Vertical
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            if (!vLines[r][c]) {
+                ctx.beginPath();
+                ctx.moveTo(dotX(c), dotY(r));
+                ctx.lineTo(dotX(c), dotY(r + 1));
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Draw drawn lines
+    ctx.lineWidth = LINE_W;
+    ctx.lineCap = 'round';
+    // Horizontal
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (hLines[r][c]) {
+                ctx.strokeStyle = hLines[r][c] === 1 ? P1_COLOR : P2_COLOR;
+                ctx.beginPath();
+                ctx.moveTo(dotX(c), dotY(r));
+                ctx.lineTo(dotX(c + 1), dotY(r));
+                ctx.stroke();
+            }
+        }
+    }
+    // Vertical
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            if (vLines[r][c]) {
+                ctx.strokeStyle = vLines[r][c] === 1 ? P1_COLOR : P2_COLOR;
+                ctx.beginPath();
+                ctx.moveTo(dotX(c), dotY(r));
+                ctx.lineTo(dotX(c), dotY(r + 1));
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Draw hover highlight
+    if (hoverLine && !gameOver && !thinking) {
+        var color = currentPlayer === 1 ? P1_COLOR : P2_COLOR;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = HOVER_ALPHA;
+        ctx.lineWidth = LINE_W + 2;
+        if (hoverLine.type === 'h') {
+            ctx.beginPath();
+            ctx.moveTo(dotX(hoverLine.col), dotY(hoverLine.row));
+            ctx.lineTo(dotX(hoverLine.col + 1), dotY(hoverLine.row));
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(dotX(hoverLine.col), dotY(hoverLine.row));
+            ctx.lineTo(dotX(hoverLine.col), dotY(hoverLine.row + 1));
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0;
+        ctx.lineWidth = LINE_W;
+    }
+
+    // Draw dots on top
+    ctx.fillStyle = '#ffffff';
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < GRID; c++) {
+            ctx.beginPath();
+            ctx.arc(dotX(c), dotY(r), DOT_R, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+// Find nearest undrawn line to mouse position
+function findNearestLine(mx, my) {
+    var best = null;
+    var bestDist = 15; // max detection distance
+
+    // Check horizontal lines
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (hLines[r][c]) continue;
+            var midX = (dotX(c) + dotX(c + 1)) / 2;
+            var midY = dotY(r);
+            var dist = Math.sqrt((mx - midX) * (mx - midX) + (my - midY) * (my - midY));
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = { type: 'h', row: r, col: c };
+            }
+        }
+    }
+
+    // Check vertical lines
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            if (vLines[r][c]) continue;
+            var midX = dotX(c);
+            var midY = (dotY(r) + dotY(r + 1)) / 2;
+            var dist = Math.sqrt((mx - midX) * (mx - midX) + (my - midY) * (my - midY));
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = { type: 'v', row: r, col: c };
+            }
+        }
+    }
+    return best;
+}
+
+// Check if a box is complete (all 4 sides drawn)
+function isBoxComplete(r, c) {
+    return hLines[r][c] && hLines[r + 1][c] && vLines[r][c] && vLines[r][c + 1];
+}
+
+// Place a line, check for box completions, return number of boxes completed
+function placeLine(type, row, col, player) {
+    if (type === 'h') {
+        if (hLines[row][col]) return -1;
+        hLines[row][col] = player;
+    } else {
+        if (vLines[row][col]) return -1;
+        vLines[row][col] = player;
+    }
+
+    var completed = 0;
+
+    if (type === 'h') {
+        // Horizontal line at (row, col) borders box above (row-1, col) and box below (row, col)
+        if (row > 0 && boxes[row - 1][col] === 0 && isBoxComplete(row - 1, col)) {
+            boxes[row - 1][col] = player;
+            completed++;
+        }
+        if (row < BOXES && boxes[row][col] === 0 && isBoxComplete(row, col)) {
+            boxes[row][col] = player;
+            completed++;
+        }
+    } else {
+        // Vertical line at (row, col) borders box left (row, col-1) and box right (row, col)
+        if (col > 0 && boxes[row][col - 1] === 0 && isBoxComplete(row, col - 1)) {
+            boxes[row][col - 1] = player;
+            completed++;
+        }
+        if (col < BOXES && boxes[row][col] === 0 && isBoxComplete(row, col)) {
+            boxes[row][col] = player;
+            completed++;
+        }
+    }
+    return completed;
+}
+
+// Count sides of a box that are drawn
+function boxSideCount(r, c) {
+    var count = 0;
+    if (hLines[r][c]) count++;
+    if (hLines[r + 1][c]) count++;
+    if (vLines[r][c]) count++;
+    if (vLines[r][c + 1]) count++;
+    return count;
+}
+
+// Get all available (undrawn) lines
+function getAvailableLines() {
+    var lines = [];
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (!hLines[r][c]) lines.push({ type: 'h', row: r, col: c });
+        }
+    }
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            if (!vLines[r][c]) lines.push({ type: 'v', row: r, col: c });
+        }
+    }
+    return lines;
+}
+
+// Check if drawing a line would give the opponent a completable box (creates a 3-sided box)
+function wouldCreate3Sided(type, row, col) {
+    // Check adjacent boxes to see if drawing this line makes any of them have 3 sides
+    var adjBoxes = [];
+    if (type === 'h') {
+        if (row > 0) adjBoxes.push([row - 1, col]);
+        if (row < BOXES) adjBoxes.push([row, col]);
+    } else {
+        if (col > 0) adjBoxes.push([row, col - 1]);
+        if (col < BOXES) adjBoxes.push([row, col]);
+    }
+    for (var i = 0; i < adjBoxes.length; i++) {
+        var br = adjBoxes[i][0], bc = adjBoxes[i][1];
+        if (boxes[br][bc] !== 0) continue;
+        var sides = boxSideCount(br, bc);
+        if (sides === 2) return true; // drawing this line would make it 3-sided
+    }
+    return false;
+}
+
+// Check if drawing a line would complete any box
+function wouldComplete(type, row, col) {
+    var adjBoxes = [];
+    if (type === 'h') {
+        if (row > 0) adjBoxes.push([row - 1, col]);
+        if (row < BOXES) adjBoxes.push([row, col]);
+    } else {
+        if (col > 0) adjBoxes.push([row, col - 1]);
+        if (col < BOXES) adjBoxes.push([row, col]);
+    }
+    for (var i = 0; i < adjBoxes.length; i++) {
+        var br = adjBoxes[i][0], bc = adjBoxes[i][1];
+        if (boxes[br][bc] !== 0) continue;
+        if (boxSideCount(br, bc) === 3) return true;
+    }
+    return false;
+}
+
+// Handle making a move (local or bot)
+function makeMove(type, row, col) {
+    if (gameOver || thinking) return false;
+    if (mode === 'online') return false;
+
+    var completed = placeLine(type, row, col, currentPlayer);
+    if (completed < 0) return false;
+
+    if (window.SFX) window.SFX.click();
+
+    if (completed > 0) {
+        scoreP1 = 0; scoreP2 = 0;
+        for (var r = 0; r < BOXES; r++) for (var c = 0; c < BOXES; c++) {
+            if (boxes[r][c] === 1) scoreP1++;
+            if (boxes[r][c] === 2) scoreP2++;
+        }
+        updateScoreDisplay();
+        if (window.SFX) window.SFX.coin();
+    }
+
+    // Check game over
+    if (scoreP1 + scoreP2 === BOXES * BOXES) {
+        gameOver = true;
+        var streakHtml = '';
+        if (scoreP1 > scoreP2) {
+            if (mode === 'bot') {
+                if (window.HallOfFame) {
+                    var sk = window.HallOfFame.winStreak('dotsboxes');
+                    if (sk) {
+                        streakHtml = ' | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
+                        window.HallOfFame.submit('dotsboxes', sk.current);
+                    }
+                }
+            }
+            msgEl.innerHTML = '<span class="blue">Blue wins! (' + scoreP1 + '-' + scoreP2 + ')</span>' + streakHtml;
+            if (window.SFX) window.SFX.win();
+        } else if (scoreP2 > scoreP1) {
+            if (mode === 'bot') {
+                if (window.HallOfFame) {
+                    window.HallOfFame.loseStreak('dotsboxes');
+                }
+            }
+            msgEl.innerHTML = '<span class="red">Red wins! (' + scoreP2 + '-' + scoreP1 + ')</span>';
+            if (window.SFX) window.SFX.fail();
+        } else {
+            msgEl.innerHTML = 'Draw! (' + scoreP1 + '-' + scoreP2 + ')';
+            if (window.SFX) window.SFX.fail();
+        }
+        draw();
+        return true;
+    }
+
+    // Extra turn on completion, otherwise switch
+    if (completed === 0) {
+        currentPlayer = 3 - currentPlayer;
+    }
+    updateTurnMsg();
+    draw();
+
+    // Bot's turn
+    if (mode === 'bot' && currentPlayer === 2 && !gameOver) {
+        thinking = true;
+        setTimeout(botTurn, 350);
+    }
+    return true;
+}
+
+// Mouse events
+canvas.addEventListener('mousemove', function(e) {
+    if (gameOver || thinking) { hoverLine = null; draw(); return; }
+    if (mode === 'online') {
+        var st = window._dbOnlineState;
+        if (!st || !st.playing || currentPlayer !== st.myRole) { hoverLine = null; draw(); return; }
+    }
+    if (mode === 'bot' && currentPlayer === 2) { hoverLine = null; draw(); return; }
+    var rect = canvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    var my = (e.clientY - rect.top) * (canvas.height / rect.height);
+    var line = findNearestLine(mx, my);
+    hoverLine = line;
+    draw();
+});
+
+canvas.addEventListener('mouseleave', function() {
+    hoverLine = null;
+    draw();
+});
+
+canvas.addEventListener('click', function(e) {
+    if (gameOver || thinking) return;
+    var rect = canvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    var my = (e.clientY - rect.top) * (canvas.height / rect.height);
+    var line = findNearestLine(mx, my);
+    if (!line) return;
+
+    if (mode === 'online') {
+        if (window._dbOnlineMoveHandler) window._dbOnlineMoveHandler(line);
+        return;
+    }
+
+    if (mode === 'bot' && currentPlayer === 2) return;
+
+    makeMove(line.type, line.row, line.col);
+});
+
+// Touch support
+canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (gameOver || thinking) return;
+    var touch = e.touches[0];
+    var rect = canvas.getBoundingClientRect();
+    var mx = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    var my = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    var line = findNearestLine(mx, my);
+    if (!line) return;
+
+    if (mode === 'online') {
+        if (window._dbOnlineMoveHandler) window._dbOnlineMoveHandler(line);
+        return;
+    }
+    if (mode === 'bot' && currentPlayer === 2) return;
+    makeMove(line.type, line.row, line.col);
+}, { passive: false });
+
+// === AI ===
+
+function botTurn() {
+    if (gameOver) { thinking = false; return; }
+    var move;
+    if (botDifficulty === 'easy') move = botEasy();
+    else if (botDifficulty === 'hard') move = botHard();
+    else move = botMedium();
+
+    if (!move) { thinking = false; return; }
+
+    var completed = placeLine(move.type, move.row, move.col, 2);
+    if (window.SFX) window.SFX.click();
+
+    if (completed > 0) {
+        scoreP1 = 0; scoreP2 = 0;
+        for (var r = 0; r < BOXES; r++) for (var c = 0; c < BOXES; c++) {
+            if (boxes[r][c] === 1) scoreP1++;
+            if (boxes[r][c] === 2) scoreP2++;
+        }
+        updateScoreDisplay();
+        if (window.SFX) window.SFX.coin();
+    }
+
+    // Check game over
+    if (scoreP1 + scoreP2 === BOXES * BOXES) {
+        gameOver = true;
+        thinking = false;
+        if (scoreP2 > scoreP1) {
+            if (window.HallOfFame) window.HallOfFame.loseStreak('dotsboxes');
+            msgEl.innerHTML = '<span class="red">Red wins! (' + scoreP2 + '-' + scoreP1 + ')</span>';
+            if (window.SFX) window.SFX.fail();
+        } else if (scoreP1 > scoreP2) {
+            if (window.HallOfFame) {
+                var sk = window.HallOfFame.winStreak('dotsboxes');
+                if (sk) {
+                    window.HallOfFame.submit('dotsboxes', sk.current);
+                    msgEl.innerHTML = '<span class="blue">Blue wins! (' + scoreP1 + '-' + scoreP2 + ')</span> | Streak: <span style="color:#00d4ff;font-weight:bold;">' + sk.current + '</span> | Best: <span style="color:#00d4ff;font-weight:bold;">' + sk.best + '</span>';
+                } else {
+                    msgEl.innerHTML = '<span class="blue">Blue wins! (' + scoreP1 + '-' + scoreP2 + ')</span>';
+                }
+            } else {
+                msgEl.innerHTML = '<span class="blue">Blue wins! (' + scoreP1 + '-' + scoreP2 + ')</span>';
+            }
+            if (window.SFX) window.SFX.win();
+        } else {
+            msgEl.innerHTML = 'Draw! (' + scoreP1 + '-' + scoreP2 + ')';
+            if (window.SFX) window.SFX.fail();
+        }
+        draw();
+        return;
+    }
+
+    if (completed > 0) {
+        // Extra turn - bot goes again
+        draw();
+        setTimeout(botTurn, 300);
+        return;
+    }
+
+    // No completion, switch to player
+    currentPlayer = 1;
+    thinking = false;
+    updateTurnMsg();
+    draw();
+}
+
+// Easy: random
+function botEasy() {
+    var lines = getAvailableLines();
+    if (lines.length === 0) return null;
+    return lines[Math.floor(Math.random() * lines.length)];
+}
+
+// Medium: greedy completions, avoid 3-sided, random fallback
+function botMedium() {
+    var lines = getAvailableLines();
+    if (lines.length === 0) return null;
+
+    // 1. Take any completing move
+    for (var i = 0; i < lines.length; i++) {
+        if (wouldComplete(lines[i].type, lines[i].row, lines[i].col)) return lines[i];
+    }
+
+    // 2. Safe moves (don't create 3-sided boxes)
+    var safe = [];
+    for (var i = 0; i < lines.length; i++) {
+        if (!wouldCreate3Sided(lines[i].type, lines[i].row, lines[i].col)) safe.push(lines[i]);
+    }
+    if (safe.length > 0) return safe[Math.floor(Math.random() * safe.length)];
+
+    // 3. All unsafe, pick random
+    return lines[Math.floor(Math.random() * lines.length)];
+}
+
+// Hard: chain-aware strategy
+function botHard() {
+    var lines = getAvailableLines();
+    if (lines.length === 0) return null;
+
+    // 1. Take all completing moves (handled by botTurn loop via extra turns)
+    for (var i = 0; i < lines.length; i++) {
+        if (wouldComplete(lines[i].type, lines[i].row, lines[i].col)) return lines[i];
+    }
+
+    // 2. Safe moves
+    var safe = [];
+    for (var i = 0; i < lines.length; i++) {
+        if (!wouldCreate3Sided(lines[i].type, lines[i].row, lines[i].col)) safe.push(lines[i]);
+    }
+    if (safe.length > 0) return safe[Math.floor(Math.random() * safe.length)];
+
+    // 3. All unsafe - use chain strategy
+    // Find chains: groups of connected boxes with 2 sides drawn
+    // Prefer opening shortest chains, and use double-deal on long chains
+
+    // Build adjacency of unclaimed boxes with >=2 sides
+    var chainBoxes = []; // boxes that are part of chains (2 sides drawn)
+    var allUnclaimed = [];
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            if (boxes[r][c] === 0) {
+                allUnclaimed.push([r, c]);
+                if (boxSideCount(r, c) === 2) chainBoxes.push([r, c]);
+            }
+        }
+    }
+
+    // Find connected chains of 3-sided boxes (boxes that will become capturable)
+    // When we draw a line making a box 3-sided, opponent can capture it.
+    // Adjacent 3-sided boxes form chains.
+    // Simulate: for each unsafe line, figure out which chain it opens
+    var bestMove = null;
+    var bestChainLen = Infinity;
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        // Temporarily draw this line
+        if (line.type === 'h') hLines[line.row][line.col] = 2;
+        else vLines[line.row][line.col] = 2;
+
+        // Find all boxes that now have 3 sides (capturable chain)
+        var chainLen = countChainOpened(line);
+
+        // Undo
+        if (line.type === 'h') hLines[line.row][line.col] = 0;
+        else vLines[line.row][line.col] = 0;
+
+        // Prefer shortest chain
+        if (chainLen < bestChainLen) {
+            bestChainLen = chainLen;
+            bestMove = line;
+        }
+    }
+
+    // Double-deal: if best chain is long (3+), try to find a move that opens it
+    // but allows us to leave 2 boxes for opponent (they must then open next chain)
+    // This is approximated by preferring chains of 1-2 boxes
+    if (bestMove) return bestMove;
+    return lines[Math.floor(Math.random() * lines.length)];
+}
+
+// Count how many boxes become capturable in a chain when a line is drawn
+function countChainOpened(line) {
+    // Find adjacent boxes that now have 3 sides
+    var starts = [];
+    if (line.type === 'h') {
+        if (line.row > 0 && boxes[line.row - 1][line.col] === 0 && boxSideCount(line.row - 1, line.col) === 3)
+            starts.push([line.row - 1, line.col]);
+        if (line.row < BOXES && boxes[line.row][line.col] === 0 && boxSideCount(line.row, line.col) === 3)
+            starts.push([line.row, line.col]);
+    } else {
+        if (line.col > 0 && boxes[line.row][line.col - 1] === 0 && boxSideCount(line.row, line.col - 1) === 3)
+            starts.push([line.row, line.col - 1]);
+        if (line.col < BOXES && boxes[line.row][line.col] === 0 && boxSideCount(line.row, line.col) === 3)
+            starts.push([line.row, line.col]);
+    }
+
+    if (starts.length === 0) return 0;
+
+    // BFS from these starts through connected 3-sided boxes
+    var visited = {};
+    var queue = starts.slice();
+    var count = 0;
+    for (var i = 0; i < starts.length; i++) {
+        visited[starts[i][0] + ',' + starts[i][1]] = true;
+    }
+    while (queue.length > 0) {
+        var curr = queue.shift();
+        count++;
+        var r = curr[0], c = curr[1];
+        // Check neighbors
+        var neighbors = [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+        for (var n = 0; n < neighbors.length; n++) {
+            var nr = neighbors[n][0], nc = neighbors[n][1];
+            if (nr < 0 || nr >= BOXES || nc < 0 || nc >= BOXES) continue;
+            if (visited[nr + ',' + nc]) continue;
+            if (boxes[nr][nc] !== 0) continue;
+            // Check if this neighbor shares an open edge with current and has 3 sides
+            if (boxSideCount(nr, nc) >= 3) {
+                // Check they share an edge (are truly adjacent via the chain)
+                var shareEdge = false;
+                if (nr === r - 1 && nc === c && !hLines[r][c]) shareEdge = true;
+                if (nr === r + 1 && nc === c && !hLines[r + 1][c]) shareEdge = true;
+                if (nc === c - 1 && nr === r && !vLines[r][c]) shareEdge = true;
+                if (nc === c + 1 && nr === r && !vLines[r][c + 1]) shareEdge = true;
+                // Actually for chain counting, adjacent 3-sided boxes are connected if capturing one leads to the next
+                // Simpler: just count all 3-sided connected boxes
+                visited[nr + ',' + nc] = true;
+                queue.push([nr, nc]);
+            }
+        }
+    }
+    return count;
+}
+
+// === Mode switching ===
+var diffSelect = document.getElementById('diff-select');
+var diffBtns = diffSelect.querySelectorAll('button');
+diffBtns.forEach(function(b) {
+    b.addEventListener('click', function() {
+        botDifficulty = b.dataset.d;
+        diffBtns.forEach(function(x) { x.classList.toggle('active', x.dataset.d === botDifficulty); });
+        if (window.SFX) window.SFX.click();
+        init();
+    });
+});
+
+document.getElementById('mode2p').addEventListener('click', function() {
+    if (mode === 'online') leaveOnlineRoom();
+    mode = '2p';
+    updateModeButtons();
+    diffSelect.classList.remove('show');
+    document.getElementById('online-panel').style.display = 'none';
+    document.getElementById('online-info').style.display = 'none';
+    document.getElementById('game-area').style.display = '';
+    init();
+});
+document.getElementById('modeBot').addEventListener('click', function() {
+    if (mode === 'online') leaveOnlineRoom();
+    mode = 'bot';
+    updateModeButtons();
+    diffSelect.classList.add('show');
+    document.getElementById('online-panel').style.display = 'none';
+    document.getElementById('online-info').style.display = 'none';
+    document.getElementById('game-area').style.display = '';
+    init();
+});
+document.getElementById('modeOnline').addEventListener('click', function() {
+    if (mode === 'online') return;
+    mode = 'online';
+    updateModeButtons();
+    diffSelect.classList.remove('show');
+    document.getElementById('online-panel').style.display = '';
+    document.getElementById('online-info').style.display = 'none';
+    document.getElementById('game-area').style.display = 'none';
+    showOnlineLobby();
+});
+
+function updateModeButtons() {
+    document.getElementById('mode2p').classList.toggle('active', mode === '2p');
+    document.getElementById('modeBot').classList.toggle('active', mode === 'bot');
+    document.getElementById('modeOnline').classList.toggle('active', mode === 'online');
+}
+
+document.getElementById('restart').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    if (mode === 'online' && window._dbOnlineState && window._dbOnlineState.roomId) {
+        if (window._dbOnlineNewGameHandler) window._dbOnlineNewGameHandler();
+    } else {
+        init();
+    }
+});
+
+// === Online helpers ===
+function getMyUsername() {
+    return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+function generateRoomCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    var code = '';
+    for (var i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+}
+
+var onlinePanel = document.getElementById('online-panel');
+var onlineLobbyBtns = document.getElementById('online-lobby-btns');
+var onlineCreateArea = document.getElementById('online-create-area');
+var onlineJoinArea = document.getElementById('online-join-area');
+var roomCodeDisplay = document.getElementById('room-code-display');
+var waitingMsg = document.getElementById('waiting-msg');
+var joinCodeInput = document.getElementById('join-code-input');
+var joinError = document.getElementById('join-error');
+var onlineLeaveBtn = document.getElementById('online-leave-btn');
+var onlineInfo = document.getElementById('online-info');
+var gameRoomCode = document.getElementById('game-room-code');
+var gamePlayerInfo = document.getElementById('game-player-info');
+
+function showOnlineLobby() {
+    onlineLobbyBtns.style.display = '';
+    onlineCreateArea.style.display = 'none';
+    onlineJoinArea.style.display = 'none';
+    onlineLeaveBtn.style.display = 'none';
+    onlineInfo.style.display = 'none';
+    joinError.style.display = 'none';
+    joinCodeInput.value = '';
+}
+
+function leaveOnlineRoom() {
+    if (window._dbOnlineUnsubscribe) {
+        window._dbOnlineUnsubscribe();
+        window._dbOnlineUnsubscribe = null;
+    }
+    window._dbOnlineState = null;
+    onlineInfo.style.display = 'none';
+    onlinePanel.style.display = mode === 'online' ? '' : 'none';
+    document.getElementById('game-area').style.display = mode === 'online' ? 'none' : '';
+    showOnlineLobby();
+    resetChat();
+}
+
+// Encode/decode state for Firebase
+function encodeLines() {
+    var s = '';
+    // 0-19: horizontal lines row-major (5 rows x 4 cols)
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            s += hLines[r][c];
+        }
+    }
+    // 20-39: vertical lines row-major (4 rows x 5 cols)
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            s += vLines[r][c];
+        }
+    }
+    return s;
+}
+
+function decodeLines(s) {
+    hLines = Array.from({length: GRID}, function() { return new Array(BOXES).fill(0); });
+    vLines = Array.from({length: BOXES}, function() { return new Array(GRID).fill(0); });
+    for (var r = 0; r < GRID; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            hLines[r][c] = parseInt(s[r * BOXES + c]);
+        }
+    }
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < GRID; c++) {
+            vLines[r][c] = parseInt(s[20 + r * GRID + c]);
+        }
+    }
+}
+
+function encodeBoxes() {
+    var s = '';
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            s += boxes[r][c];
+        }
+    }
+    return s;
+}
+
+function decodeBoxes(s) {
+    boxes = Array.from({length: BOXES}, function() { return new Array(BOXES).fill(0); });
+    for (var r = 0; r < BOXES; r++) {
+        for (var c = 0; c < BOXES; c++) {
+            boxes[r][c] = parseInt(s[r * BOXES + c]);
+        }
+    }
+}
+
+function renderFromOnlineState(data) {
+    decodeLines(data.lines);
+    decodeBoxes(data.boxes);
+    currentPlayer = data.currentPlayer;
+    scoreP1 = data.hostScore || 0;
+    scoreP2 = data.guestScore || 0;
+    updateScoreDisplay();
+    gameOver = false;
+
+    if (data.status === 'done') {
+        gameOver = true;
+        var st = window._dbOnlineState;
+        if (data.winner === 'host') {
+            var isMe = st.myRole === 1;
+            msgEl.innerHTML = '<span class="blue">' + (isMe ? 'You win!' : (st.hostName || 'Blue') + ' wins!') + ' (' + scoreP1 + '-' + scoreP2 + ')</span>';
+            if (isMe) { if (window.SFX) window.SFX.win(); } else { if (window.SFX) window.SFX.fail(); }
+        } else if (data.winner === 'guest') {
+            var isMe = st.myRole === 2;
+            msgEl.innerHTML = '<span class="red">' + (isMe ? 'You win!' : (st.guestName || 'Red') + ' wins!') + ' (' + scoreP2 + '-' + scoreP1 + ')</span>';
+            if (isMe) { if (window.SFX) window.SFX.win(); } else { if (window.SFX) window.SFX.fail(); }
+        } else if (data.winner === 'draw') {
+            msgEl.innerHTML = 'Draw! (' + scoreP1 + '-' + scoreP2 + ')';
+            if (window.SFX) window.SFX.fail();
+        }
+    } else {
+        updateTurnMsg();
+    }
+    draw();
+}
+
+// Wire up online UI
+document.getElementById('create-game-btn').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    if (window._dbOnlineCreateGame) window._dbOnlineCreateGame();
+});
+document.getElementById('join-game-btn').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    onlineLobbyBtns.style.display = 'none';
+    onlineJoinArea.style.display = '';
+    joinCodeInput.focus();
+});
+document.getElementById('join-submit-btn').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    if (window._dbOnlineJoinGame) window._dbOnlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+});
+joinCodeInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        if (window.SFX) window.SFX.click();
+        if (window._dbOnlineJoinGame) window._dbOnlineJoinGame(joinCodeInput.value.trim().toUpperCase());
+    }
+});
+document.getElementById('join-back-btn').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    showOnlineLobby();
+});
+onlineLeaveBtn.addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    leaveOnlineRoom();
+    init();
+});
+document.getElementById('online-leave-game-btn').addEventListener('click', function() {
+    if (window.SFX) window.SFX.click();
+    leaveOnlineRoom();
+    init();
+});
+
+// ===== Chat =====
+var chatPanel = document.getElementById('chat-panel');
+var chatToggle = document.getElementById('chat-toggle');
+var chatClose = document.getElementById('chat-close');
+var chatMessagesEl = document.getElementById('chat-messages');
+var chatInputEl = document.getElementById('chat-input');
+var chatSendBtn = document.getElementById('chat-send');
+var chatBadgeEl = document.getElementById('chat-badge');
+var chatIsOpen = false, chatUnread = 0, chatPrevCount = 0;
+
+chatToggle.addEventListener('click', function() {
+    chatIsOpen = !chatIsOpen; chatPanel.classList.toggle('open', chatIsOpen);
+    if (chatIsOpen) { chatUnread = 0; chatBadgeEl.style.display = 'none'; chatInputEl.focus(); requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; }); }
+});
+chatClose.addEventListener('click', function() { chatIsOpen = false; chatPanel.classList.remove('open'); });
+chatSendBtn.addEventListener('click', function() { if (window._dbChatSend) { var t = chatInputEl.value.trim(); if (t) { chatInputEl.value = ''; window._dbChatSend(t); } } });
+chatInputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter' && window._dbChatSend) { var t = chatInputEl.value.trim(); if (t) { chatInputEl.value = ''; window._dbChatSend(t); } } });
+
+function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderChat(msgs) {
+    if (!msgs) msgs = [];
+    var inRoom = window._dbOnlineState && window._dbOnlineState.roomId;
+    chatToggle.style.display = inRoom ? 'block' : 'none';
+    if (!inRoom) { chatPanel.classList.remove('open'); chatIsOpen = false; return; }
+    if (msgs.length > chatPrevCount && !chatIsOpen) {
+        chatUnread += msgs.length - chatPrevCount;
+        chatBadgeEl.textContent = chatUnread > 99 ? '99+' : chatUnread;
+        chatBadgeEl.style.display = 'flex';
+        if (chatPrevCount > 0 && window.SFX) window.SFX.coin();
+    }
+    chatPrevCount = msgs.length;
+    chatMessagesEl.innerHTML = '';
+    for (var i = 0; i < msgs.length; i++) {
+        var m = msgs[i];
+        var div = document.createElement('div');
+        div.className = 'chat-msg';
+        div.innerHTML = '<span class="chat-name" data-chat-user="' + escHtml(m.name) + '">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
+        chatMessagesEl.appendChild(div);
+    }
+    if (window.ArcadeAvatar && window.ArcadeCoins) {
+        chatMessagesEl.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+            var name = el.dataset.chatUser;
+            if (name && window.ArcadeCoins.getProfile) {
+                window.ArcadeCoins.getProfile(name).then(function(profile) {
+                    if (profile) window.ArcadeAvatar.styleName(el, profile);
+                });
+            }
+        });
+    }
+    requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; });
+}
+
+function resetChat() {
+    chatPrevCount = 0; chatUnread = 0; chatBadgeEl.style.display = 'none';
+    chatMessagesEl.innerHTML = ''; chatToggle.style.display = 'none';
+    chatPanel.classList.remove('open'); chatIsOpen = false;
+}
+
+// Expose for module
+window._dbGame = {
+    getMyUsername: getMyUsername,
+    generateRoomCode: generateRoomCode,
+    showOnlineLobby: showOnlineLobby,
+    leaveOnlineRoom: leaveOnlineRoom,
+    renderFromOnlineState: renderFromOnlineState,
+    init: init,
+    encodeLines: encodeLines,
+    encodeBoxes: encodeBoxes,
+    decodeLines: decodeLines,
+    decodeBoxes: decodeBoxes,
+    placeLine: placeLine,
+    renderChat: renderChat,
+    resetChat: resetChat,
+    get mode() { return mode; },
+    get gameOver() { return gameOver; },
+    get currentPlayer() { return currentPlayer; },
+    get scoreP1() { return scoreP1; },
+    get scoreP2() { return scoreP2; },
+    get hLines() { return hLines; },
+    get vLines() { return vLines; },
+    get boxes() { return boxes; },
+    GRID: GRID,
+    BOXES: BOXES
+};
+
+calcLayout();
+window.addEventListener('resize', function() { calcLayout(); draw(); });
+init();
+})();
+</script>
+
+<!-- Online multiplayer Firebase module -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+};
+
+var app = initializeApp(firebaseConfig, 'db-online');
+var db = getFirestore(app);
+
+var game = window._dbGame;
+
+var onlinePanel = document.getElementById('online-panel');
+var onlineCreateArea = document.getElementById('online-create-area');
+var roomCodeDisplay = document.getElementById('room-code-display');
+var waitingMsg = document.getElementById('waiting-msg');
+var joinError = document.getElementById('join-error');
+var onlineLeaveBtn = document.getElementById('online-leave-btn');
+var onlineInfo = document.getElementById('online-info');
+var gameRoomCode = document.getElementById('game-room-code');
+var gamePlayerInfo = document.getElementById('game-player-info');
+
+function makeEmptyLines() {
+    return '0000000000000000000000000000000000000000';
+}
+function makeEmptyBoxes() {
+    return '0000000000000000';
+}
+
+function startListening(roomId) {
+    if (window._dbOnlineUnsubscribe) window._dbOnlineUnsubscribe();
+
+    var roomRef = doc(db, 'dotsboxes_rooms', roomId);
+    window._dbOnlineUnsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var st = window._dbOnlineState;
+        if (!st || st.roomId !== roomId) return;
+
+        st.hostName = data.hostPlayer || 'Blue';
+        st.guestName = data.guestPlayer || 'Red';
+
+        game.renderChat(data.chat || []);
+
+        if (data.status === 'playing' && !st.playing) {
+            st.playing = true;
+            onlinePanel.style.display = 'none';
+            onlineInfo.style.display = '';
+            document.getElementById('game-area').style.display = '';
+            gameRoomCode.textContent = roomId;
+
+            var opponentName = st.myRole === 1 ? st.guestName : st.hostName;
+            var myColor = st.myRole === 1 ? 'Blue' : 'Red';
+            var roleClass = st.myRole === 1 ? 'you-blue' : 'you-red';
+            gamePlayerInfo.innerHTML = 'You are <span class="' + roleClass + '">' + myColor +
+                '</span> (<span class="lobby-avatar" data-player="' + game.getMyUsername() + '"></span><span class="lobby-name" data-player-name="' + game.getMyUsername() + '">' + game.getMyUsername() + '</span>) vs <span class="lobby-avatar" data-player="' + opponentName + '"></span><span class="lobby-name" data-player-name="' + opponentName + '">' + opponentName + '</span>';
+            if (window.ArcadeAvatar && window.ArcadeCoins) {
+                gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                    var name = el.dataset.player;
+                    if (name && window.ArcadeCoins.getProfile) {
+                        window.ArcadeCoins.getProfile(name).then(function(profile) {
+                            if (profile) {
+                                window.ArcadeAvatar.renderMini(el, profile);
+                                var nameEl = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                                if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        if (data.status === 'playing' || data.status === 'done') {
+            game.renderFromOnlineState(data);
+        }
+    });
+}
+
+window._dbOnlineCreateGame = async function() {
+    var username = game.getMyUsername();
+    var roomCode = game.generateRoomCode();
+
+    document.getElementById('online-lobby-btns').style.display = 'none';
+    onlineCreateArea.style.display = '';
+    onlineLeaveBtn.style.display = '';
+    roomCodeDisplay.textContent = roomCode;
+    waitingMsg.textContent = 'Creating room...';
+    waitingMsg.style.display = '';
+    waitingMsg.style.color = '';
+
+    try {
+        var roomRef = doc(db, 'dotsboxes_rooms', roomCode);
+        var existing = await getDoc(roomRef);
+        if (existing.exists() && existing.data().status !== 'done') {
+            window._dbOnlineCreateGame();
+            return;
+        }
+
+        await setDoc(roomRef, {
+            lines: makeEmptyLines(),
+            boxes: makeEmptyBoxes(),
+            currentPlayer: 1,
+            hostPlayer: username,
+            guestPlayer: '',
+            status: 'waiting',
+            winner: '',
+            hostScore: 0,
+            guestScore: 0,
+            chat: []
+        });
+
+        window._dbOnlineState = {
+            roomId: roomCode,
+            myRole: 1,
+            playing: false,
+            hostName: username,
+            guestName: ''
+        };
+
+        waitingMsg.textContent = 'Waiting for opponent to join...';
+        game.init();
+        startListening(roomCode);
+    } catch (err) {
+        console.error('Create game error:', err);
+        waitingMsg.textContent = 'Error: ' + err.message;
+        waitingMsg.style.color = '#ff4757';
+    }
+};
+
+window._dbOnlineJoinGame = async function(code) {
+    joinError.style.display = 'none';
+    if (!code || code.length !== 4) {
+        joinError.textContent = 'Enter a 4-character room code';
+        joinError.style.display = '';
+        return;
+    }
+
+    try {
+        var roomRef = doc(db, 'dotsboxes_rooms', code);
+        var snapshot = await getDoc(roomRef);
+
+        if (!snapshot.exists()) {
+            joinError.textContent = 'Room not found';
+            joinError.style.display = '';
+            return;
+        }
+
+        var data = snapshot.data();
+        if (data.status !== 'waiting') {
+            joinError.textContent = 'Room is full or game already ended';
+            joinError.style.display = '';
+            return;
+        }
+
+        var username = game.getMyUsername();
+
+        await updateDoc(roomRef, {
+            guestPlayer: username,
+            status: 'playing'
+        });
+
+        window._dbOnlineState = {
+            roomId: code,
+            myRole: 2,
+            playing: true,
+            hostName: data.hostPlayer,
+            guestName: username
+        };
+
+        onlinePanel.style.display = 'none';
+        onlineInfo.style.display = '';
+        document.getElementById('game-area').style.display = '';
+        gameRoomCode.textContent = code;
+        gamePlayerInfo.innerHTML = 'You are <span class="you-red">Red</span> (<span class="lobby-avatar" data-player="' + username + '"></span><span class="lobby-name" data-player-name="' + username + '">' + username + '</span>) vs <span class="lobby-avatar" data-player="' + data.hostPlayer + '"></span><span class="lobby-name" data-player-name="' + data.hostPlayer + '">' + data.hostPlayer + '</span>';
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                var name = el.dataset.player;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) {
+                            window.ArcadeAvatar.renderMini(el, profile);
+                            var nameEl = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                            if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                        }
+                    });
+                }
+            });
+        }
+
+        game.init();
+        startListening(code);
+    } catch (err) {
+        console.error('Join game error:', err);
+        joinError.textContent = 'Error: ' + err.message;
+        joinError.style.display = '';
+    }
+};
+
+window._dbOnlineMoveHandler = async function(line) {
+    var st = window._dbOnlineState;
+    if (!st || !st.playing) return;
+    if (game.gameOver) return;
+    if (game.currentPlayer !== st.myRole) return;
+
+    // Check line is available
+    if (line.type === 'h') {
+        if (game.hLines[line.row][line.col]) return;
+    } else {
+        if (game.vLines[line.row][line.col]) return;
+    }
+
+    // Decode current state, apply move, re-encode
+    var hL = JSON.parse(JSON.stringify(game.hLines));
+    var vL = JSON.parse(JSON.stringify(game.vLines));
+    var bx = JSON.parse(JSON.stringify(game.boxes));
+
+    // Apply the line
+    if (line.type === 'h') hL[line.row][line.col] = st.myRole;
+    else vL[line.row][line.col] = st.myRole;
+
+    // Check box completions
+    var completed = 0;
+    function isComplete(r, c) {
+        return hL[r][c] && hL[r+1][c] && vL[r][c] && vL[r][c+1];
+    }
+
+    if (line.type === 'h') {
+        if (line.row > 0 && bx[line.row-1][line.col] === 0 && isComplete(line.row-1, line.col)) {
+            bx[line.row-1][line.col] = st.myRole;
+            completed++;
+        }
+        if (line.row < game.BOXES && bx[line.row][line.col] === 0 && isComplete(line.row, line.col)) {
+            bx[line.row][line.col] = st.myRole;
+            completed++;
+        }
+    } else {
+        if (line.col > 0 && bx[line.row][line.col-1] === 0 && isComplete(line.row, line.col-1)) {
+            bx[line.row][line.col-1] = st.myRole;
+            completed++;
+        }
+        if (line.col < game.BOXES && bx[line.row][line.col] === 0 && isComplete(line.row, line.col)) {
+            bx[line.row][line.col] = st.myRole;
+            completed++;
+        }
+    }
+
+    // Encode
+    var linesStr = '';
+    for (var r = 0; r < game.GRID; r++) for (var c = 0; c < game.BOXES; c++) linesStr += hL[r][c];
+    for (var r = 0; r < game.BOXES; r++) for (var c = 0; c < game.GRID; c++) linesStr += vL[r][c];
+
+    var boxStr = '';
+    for (var r = 0; r < game.BOXES; r++) for (var c = 0; c < game.BOXES; c++) boxStr += bx[r][c];
+
+    var hostScore = 0, guestScore = 0;
+    for (var r = 0; r < game.BOXES; r++) for (var c = 0; c < game.BOXES; c++) {
+        if (bx[r][c] === 1) hostScore++;
+        if (bx[r][c] === 2) guestScore++;
+    }
+
+    // Extra turn if completed, otherwise switch
+    var nextPlayer = completed > 0 ? st.myRole : (st.myRole === 1 ? 2 : 1);
+    var newStatus = 'playing';
+    var winner = '';
+
+    if (hostScore + guestScore === game.BOXES * game.BOXES) {
+        newStatus = 'done';
+        if (hostScore > guestScore) winner = 'host';
+        else if (guestScore > hostScore) winner = 'guest';
+        else winner = 'draw';
+    }
+
+    try {
+        var roomRef = doc(db, 'dotsboxes_rooms', st.roomId);
+        await updateDoc(roomRef, {
+            lines: linesStr,
+            boxes: boxStr,
+            currentPlayer: nextPlayer,
+            hostScore: hostScore,
+            guestScore: guestScore,
+            status: newStatus,
+            winner: winner
+        });
+    } catch (err) {
+        console.error('Move error:', err);
+    }
+};
+
+window._dbOnlineNewGameHandler = async function() {
+    var st = window._dbOnlineState;
+    if (!st || !st.roomId) return;
+    try {
+        var roomRef = doc(db, 'dotsboxes_rooms', st.roomId);
+        await updateDoc(roomRef, {
+            lines: makeEmptyLines(),
+            boxes: makeEmptyBoxes(),
+            currentPlayer: 1,
+            hostScore: 0,
+            guestScore: 0,
+            status: 'playing',
+            winner: ''
+        });
+    } catch (err) {
+        console.error('New game error:', err);
+    }
+};
+
+// Chat
+window._dbChatSend = async function(text) {
+    var st = window._dbOnlineState;
+    if (!st || !st.roomId || !text) return;
+    try {
+        var roomRef = doc(db, 'dotsboxes_rooms', st.roomId);
+        var snapshot = await getDoc(roomRef);
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var chat = (data.chat || []).slice();
+        var username = game.getMyUsername();
+        var now = new Date();
+        chat.push({ name: username, text: text, time: ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2) });
+        if (chat.length > 50) chat = chat.slice(chat.length - 50);
+        await updateDoc(roomRef, { chat: chat });
+    } catch(e) { console.error('Chat error:', e); }
+};
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
