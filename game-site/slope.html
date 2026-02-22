@@ -36,15 +36,18 @@ body{background:#231F20;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;
 </div>
 
 <script>
+var gameLoaded = false;
+var gameStarted = false;
+
 function UnityProgress(inst, progress) {
   var txt = document.getElementById('loading-text');
   if (txt && typeof progress === 'number') {
     txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
   }
-  if (progress === 1 || progress === 'complete') {
-    // Game is loaded - menu is rendering BEHIND our overlay
-    // Wait for menu to fully appear, then click Play while overlay hides it
-    setTimeout(autoClickPlay, 2500);
+  if ((progress === 1 || progress === 'complete') && !gameLoaded) {
+    gameLoaded = true;
+    // Give Unity time to fully initialize and render the menu
+    setTimeout(startAutoPlay, 3000);
   }
 }
 
@@ -57,87 +60,166 @@ var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/s
   }
 });
 
-function autoClickPlay() {
+function startAutoPlay() {
   var canvas = document.querySelector('#gameContainer canvas');
   if (!canvas) {
-    // Canvas not ready yet, retry
-    setTimeout(autoClickPlay, 500);
+    setTimeout(startAutoPlay, 500);
     return;
   }
 
-  // Try SendMessage approaches first
-  try {
-    // Disable branding elements
-    var brandingObjects = [
-      'Branding', 'BrandingScript', 'Y8Branding',
-      'Branding_Y8', 'Branding_Y8_MoreGames', 'Branding_IDnet',
-      'IDnetObject', 'y8_logo', 'y8_logo_moregames', 'idnet_logo',
-      'PromoScreen'
-    ];
-    for (var i = 0; i < brandingObjects.length; i++) {
-      try { gameInstance.SendMessage(brandingObjects[i], 'SetActive', '0'); } catch(e) {}
-    }
-    try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
-    try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
+  // Phase 1: Disable all branding/promo objects
+  disableBranding();
 
-    // Try direct game start via various object names
-    var gameObjects = ['GameLogic', 'GameManager', 'Game', 'Manager', 'Logic', 'Controller', 'GameController', 'LevelManager'];
-    for (var j = 0; j < gameObjects.length; j++) {
-      try { gameInstance.SendMessage(gameObjects[j], 'HideAllScreens'); } catch(e) {}
-      try { gameInstance.SendMessage(gameObjects[j], 'RestartLevel'); } catch(e) {}
-    }
-  } catch(e) {}
+  // Phase 2: Try SendMessage to start the game directly
+  trySendMessages();
 
-  // Now click the Play button - it's at center of the screen
-  // The Play button in Slope is centered horizontally, roughly in the middle vertically
-  var rect = canvas.getBoundingClientRect();
-  var cx = rect.left + rect.width / 2;
-  var cy = rect.top + rect.height / 2;
+  // Phase 3: After SendMessage attempts, do a precise click on Play button
+  // In the Y8 Slope game, the Play button is a large area roughly centered
+  // horizontally and positioned about 58% down the screen.
+  // The leaderboard icon is a small trophy in the UPPER RIGHT corner.
+  // So we click center-horizontal, slightly above vertical center to hit Play.
+  setTimeout(function() {
+    var rect = canvas.getBoundingClientRect();
+    var cx = rect.left + rect.width * 0.5;
+    // Play button is roughly at 58% from top in the Y8 Slope menu
+    var cy = rect.top + rect.height * 0.58;
+    fireClick(canvas, cx, cy);
+  }, 500);
 
-  // Single precise click at center where Play button is
-  fireClick(canvas, cx, cy);
+  // Phase 4: Try again with a slight offset if first click didn't work
+  setTimeout(function() {
+    if (gameStarted) return;
+    var rect = canvas.getBoundingClientRect();
+    var cx = rect.left + rect.width * 0.5;
+    var cy = rect.top + rect.height * 0.52;
+    fireClick(canvas, cx, cy);
+  }, 1200);
 
-  // Also try slightly above center and below center in case button is offset
-  setTimeout(function() { fireClick(canvas, cx, cy - rect.height * 0.05); }, 150);
-  setTimeout(function() { fireClick(canvas, cx, cy + rect.height * 0.05); }, 300);
+  // Phase 5: One more try at slightly different position
+  setTimeout(function() {
+    if (gameStarted) return;
+    var rect = canvas.getBoundingClientRect();
+    var cx = rect.left + rect.width * 0.5;
+    var cy = rect.top + rect.height * 0.45;
+    fireClick(canvas, cx, cy);
+  }, 2000);
 
-  // Wait for the click to register, then hide the overlay
-  // The game should be starting by now
+  // Phase 6: Try keyboard - some Slope versions start with any keypress
+  setTimeout(function() {
+    if (gameStarted) return;
+    // Simulate Enter key
+    canvas.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
+    }));
+    canvas.dispatchEvent(new KeyboardEvent('keyup', {
+      key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
+    }));
+    // Also try Space
+    canvas.dispatchEvent(new KeyboardEvent('keydown', {
+      key: ' ', code: 'Space', keyCode: 32, bubbles: true
+    }));
+    canvas.dispatchEvent(new KeyboardEvent('keyup', {
+      key: ' ', code: 'Space', keyCode: 32, bubbles: true
+    }));
+  }, 2500);
+
+  // Hide the overlay after attempts - give it enough time
   setTimeout(function() {
     var overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.add('hidden');
     setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
 
-    // After overlay is gone, disable branding again (some may re-enable)
-    setTimeout(disableBranding, 1000);
-    setTimeout(disableBranding, 3000);
-    setTimeout(disableBranding, 6000);
-  }, 800);
+    // Continue disabling branding periodically
+    disableBranding();
+    setTimeout(disableBranding, 2000);
+    setTimeout(disableBranding, 5000);
+    setTimeout(disableBranding, 10000);
+  }, 3000);
+}
+
+function trySendMessages() {
+  if (!gameInstance) return;
+
+  // Try every known method to start the game
+  var startMethods = [
+    'PlayGame', 'StartGame', 'Play', 'Start', 'OnPlayButton',
+    'OnPlayClick', 'OnPlay', 'BeginGame', 'NewGame',
+    'HideAllScreens', 'RestartLevel', 'StartLevel', 'LoadLevel'
+  ];
+  var gameObjects = [
+    'GameLogic', 'CanvasScripts', 'GameManager', 'Game',
+    'Manager', 'Controller', 'GameController', 'LevelManager',
+    'UIManager', 'MenuManager', 'MainMenu'
+  ];
+
+  for (var i = 0; i < gameObjects.length; i++) {
+    for (var j = 0; j < startMethods.length; j++) {
+      try { gameInstance.SendMessage(gameObjects[i], startMethods[j]); } catch(e) {}
+    }
+  }
+
+  // Try PlayMaker FSM events
+  var fsmEvents = ['PLAY', 'START', 'GAME_START', 'BEGIN', 'START_GAME', 'PLAY_GAME'];
+  for (var k = 0; k < fsmEvents.length; k++) {
+    try { gameInstance.SendMessage('PlayMakerFSM', 'SendEvent', fsmEvents[k]); } catch(e) {}
+    try { gameInstance.SendMessage('GameLogic', 'SendEvent', fsmEvents[k]); } catch(e) {}
+  }
+
+  // Hide specific UI screens
+  var screens = ['MainMenuScreen', 'GameOverScreen', 'PromoScreen', 'IDNETLogin',
+    'IdnetSample', 'IdnetWrap', 'Leaderboard', 'LoginPanel'];
+  for (var s = 0; s < screens.length; s++) {
+    try { gameInstance.SendMessage(screens[s], 'SetActive', '0'); } catch(e) {}
+  }
+
+  // Retry SendMessages after a delay
+  setTimeout(function() {
+    for (var i = 0; i < gameObjects.length; i++) {
+      try { gameInstance.SendMessage(gameObjects[i], 'HideAllScreens'); } catch(e) {}
+      try { gameInstance.SendMessage(gameObjects[i], 'RestartLevel'); } catch(e) {}
+      try { gameInstance.SendMessage(gameObjects[i], 'PlayGame'); } catch(e) {}
+    }
+  }, 1000);
 }
 
 function fireClick(el, x, y) {
-  var events = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'];
-  for (var i = 0; i < events.length; i++) {
-    el.dispatchEvent(new PointerEvent(events[i], {
-      bubbles: true, cancelable: true, view: window,
-      clientX: x, clientY: y, button: 0, pointerId: 1,
-      pointerType: 'mouse'
-    }));
-  }
+  // Fire a complete mouse click sequence
+  var common = {
+    bubbles: true, cancelable: true, view: window,
+    clientX: x, clientY: y, button: 0, pointerId: 1,
+    pointerType: 'mouse'
+  };
+  el.dispatchEvent(new PointerEvent('pointerdown', common));
+  el.dispatchEvent(new MouseEvent('mousedown', common));
+  // Small delay between down and up for realism
+  setTimeout(function() {
+    el.dispatchEvent(new PointerEvent('pointerup', common));
+    el.dispatchEvent(new MouseEvent('mouseup', common));
+    el.dispatchEvent(new MouseEvent('click', common));
+  }, 50);
 }
 
 function disableBranding() {
-  try {
-    var objs = ['Branding', 'BrandingScript', 'Y8Branding', 'Branding_Y8',
-      'Branding_Y8_MoreGames', 'Branding_IDnet', 'IDnetObject',
-      'y8_logo', 'y8_logo_moregames', 'idnet_logo', 'PromoScreen'];
-    for (var i = 0; i < objs.length; i++) {
-      try { gameInstance.SendMessage(objs[i], 'SetActive', '0'); } catch(e) {}
-    }
-    try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
-    try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
-  } catch(e) {}
+  if (!gameInstance) return;
+  var objs = ['Branding', 'BrandingScript', 'Y8Branding', 'Branding_Y8',
+    'Branding_Y8_MoreGames', 'Branding_IDnet', 'IDnetObject',
+    'y8_logo', 'y8_logo_moregames', 'idnet_logo', 'PromoScreen',
+    'IDNETLogin', 'IdnetSample', 'IdnetWrap', 'Leaderboard'];
+  for (var i = 0; i < objs.length; i++) {
+    try { gameInstance.SendMessage(objs[i], 'SetActive', '0'); } catch(e) {}
+  }
+  try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
+  try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
 }
+
+// Listen for game state changes - if keys are being pressed,
+// the game has likely started
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+      e.key === 'a' || e.key === 'd') {
+    gameStarted = true;
+  }
+});
 </script>
 
 <script src="sound.js?v=2"></script>
