@@ -88,7 +88,7 @@
     'run 3':'run3','run3':'run3','drift hunters':'drifthunters','snow rider':'snowrider',
     'snow rider 3d':'snowrider','subway surfers':'subway','slope':'slope',
     'champion island':'championisland',
-    'happy wheels':'happywheels','fnaf':'fnaf','five nights at freddys':'fnaf',
+    'fnaf':'fnaf','five nights at freddys':'fnaf',
     'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft'
   };
 
