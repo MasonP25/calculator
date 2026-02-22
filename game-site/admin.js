@@ -89,7 +89,9 @@
     'snow rider 3d':'snowrider','subway surfers':'subway','slope':'slope',
     'champion island':'championisland',
     'fnaf':'fnaf','five nights at freddys':'fnaf',
-    'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft'
+    'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft',
+    'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
+    'bloxd':'bloxd','bloxd.io':'bloxd'
   };
 
   function _resolveGameId(input) {
