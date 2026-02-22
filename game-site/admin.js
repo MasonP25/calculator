@@ -91,7 +91,6 @@
     'fnaf':'fnaf','five nights at freddys':'fnaf',
     'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
-    'frogger':'frogger','pinball':'pinball','tunnel rush':'tunnelrush','tunnelrush':'tunnelrush',
   };
 
   function _resolveGameId(input) {
