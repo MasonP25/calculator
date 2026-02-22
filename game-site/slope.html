@@ -20,11 +20,11 @@ body {
 canvas { display: block; border-radius: 8px; }
 .back {
   position: fixed; top: 16px; left: 16px;
-  color: #00d4ff; text-decoration: none; font-size: 18px;
+  color: #0f0; text-decoration: none; font-size: 18px;
   z-index: 100; font-weight: bold;
-  text-shadow: 0 0 8px rgba(0,212,255,0.5);
+  text-shadow: 0 0 8px rgba(0,255,0,0.5);
 }
-.back:hover { text-shadow: 0 0 16px rgba(0,212,255,0.8); }
+.back:hover { text-shadow: 0 0 16px rgba(0,255,0,0.8); }
 </style>
 </head>
 <body>
@@ -36,128 +36,179 @@ canvas { display: block; border-radius: 8px; }
   const ctx = canvas.getContext('2d');
 
   // --- Sizing ---
+  let W, H;
   function resize() {
-    const maxW = 500, maxH = 700;
-    const w = Math.min(window.innerWidth, maxW);
-    const h = Math.min(window.innerHeight, maxH);
-    canvas.width = w;
-    canvas.height = h;
+    W = Math.min(window.innerWidth, 500);
+    H = Math.min(window.innerHeight, 700);
+    canvas.width = W;
+    canvas.height = H;
   }
   resize();
   window.addEventListener('resize', resize);
 
   // --- Constants ---
-  const BASE_SPEED = 4;
-  const STEER_SPEED = 4.5;
-  const SLOPE_HALF_WIDTH = 1.8;
-  const SEGMENT_LENGTH = 3;
-  const DRAW_DISTANCE = 120;
-  const VP_Y_RATIO = 0.18;
-  const BALL_SCREEN_Y_RATIO = 0.82;
-  const OBSTACLE_SIZE = 0.6;
+  const BASE_SPEED = 5;
+  const MAX_STEER = 5.5;
+  const TRACK_HW = 2.2; // half-width of track in world units
+  const SEG_LEN = 2.5;
+  const NUM_SEGS = 200; // how many segments to generate ahead
+  const FOCAL = 5.5;
+  const VP_Y = 0.12; // vanishing point Y ratio
+  const BALL_Y = 0.78; // ball screen Y ratio
+  const BALL_RAD_WORLD = 0.28;
+  const OBS_SIZE = 0.55;
+
+  // Colors
+  const NEON = '#0f0';
+  const NEON_RGB = '0,255,0';
+  const NEON_DIM = '#0a0';
+  const RED_GLOW = '#ff2222';
+  const RED_RGB = '255,34,34';
+  const TRACK_FILL_A = '#0c1a0c';
+  const TRACK_FILL_B = '#0a130a';
+  const BG_TOP = '#020204';
+  const BG_BOT = '#080812';
 
   // --- State ---
-  let state = 'menu'; // menu, play, over
+  let state = 'menu';
   let distance = 0;
   let bestScore = parseInt(localStorage.getItem('slope_best')) || 0;
-  let ballX = 0;
+  let ballX = 0; // world X relative to track center
   let speed = BASE_SPEED;
   let steerDir = 0;
-  let segments = [];
-  let obstacles = [];
-  let particles = [];
-  let speedLines = [];
   let shakeTimer = 0;
   let lastTime = 0;
-  let nextObstacleDist = 50;
-  let nextGapDist = 200;
+  let deathParticles = [];
+  let coinEarned = false;
 
-  // --- Slope Segment Generation ---
-  // Each segment: { z, curveX } where curveX is the center offset
-  let slopeOffset = 0;
-  let slopeCurveTarget = 0;
-  let slopeCurveVel = 0;
-  let segGenZ = 0;
-  let gapStart = -1, gapEnd = -1;
+  // Track data: array of segment objects
+  let track = [];
+  let trackGenIndex = 0;
+  let curveAccum = 0;
+  let curveTarget = 0;
+  let curveVel = 0;
+  let tiltAccum = 0;
+  let tiltTarget = 0;
+  let narrowAccum = 0;
+  let narrowTarget = 0;
 
-  function generateSegments(upToZ) {
-    while (segGenZ < upToZ) {
-      // Smooth random walk for slope center
-      if (Math.random() < 0.02) {
-        slopeCurveTarget = (Math.random() - 0.5) * 5;
+  // --- Track Generation ---
+  function genSegment(idx) {
+    // Evolve curve
+    if (Math.random() < 0.015 + Math.min(distance * 0.00002, 0.03)) {
+      curveTarget = (Math.random() - 0.5) * 4.5;
+    }
+    curveVel += (curveTarget - curveAccum) * 0.012;
+    curveVel *= 0.96;
+    curveAccum += curveVel;
+
+    // Evolve tilt (banking)
+    if (Math.random() < 0.01) {
+      tiltTarget = (Math.random() - 0.5) * 0.5;
+    }
+    tiltAccum += (tiltTarget - tiltAccum) * 0.03;
+
+    // Evolve narrowing
+    if (Math.random() < 0.008 && distance > 100) {
+      narrowTarget = Math.random() < 0.5 ? 0 : (0.2 + Math.random() * 0.35);
+    }
+    if (Math.random() < 0.02) narrowTarget = 0;
+    narrowAccum += (narrowTarget - narrowAccum) * 0.04;
+
+    // Determine gap
+    let isGap = false;
+    const distAtSeg = idx * SEG_LEN;
+    if (distAtSeg > 120) {
+      // Gaps appear periodically
+      const gapCycle = Math.max(60, 140 - distance * 0.02);
+      const gapPhase = distAtSeg % gapCycle;
+      if (gapPhase < 6 + Math.min(distance * 0.004, 6)) {
+        isGap = true;
       }
-      slopeCurveVel += (slopeCurveTarget - slopeOffset) * 0.005;
-      slopeCurveVel *= 0.97;
-      slopeOffset += slopeCurveVel;
+    }
 
-      segments.push({
-        z: segGenZ,
-        cx: slopeOffset,
-        gap: segGenZ >= gapStart && segGenZ < gapEnd
-      });
-      segGenZ += SEGMENT_LENGTH;
+    // Obstacles
+    let obstacle = null;
+    const obsDist = distAtSeg;
+    if (obsDist > 30 && !isGap) {
+      const freq = Math.max(8, 35 - distance * 0.015);
+      if (idx % Math.max(3, Math.floor(freq / SEG_LEN)) === 0 && Math.random() < 0.55) {
+        // Place obstacle on left or right side, or center
+        const side = Math.random();
+        let ox;
+        const hw = TRACK_HW * (1 - narrowAccum * 0.5);
+        if (side < 0.33) ox = -hw * 0.5;
+        else if (side < 0.66) ox = hw * 0.5;
+        else ox = (Math.random() - 0.5) * hw * 0.8;
+        obstacle = { x: ox, size: OBS_SIZE };
+        // Sometimes double obstacle
+        if (Math.random() < 0.15 + distance * 0.0002) {
+          obstacle.x2 = -ox * 0.7 + (Math.random() - 0.5) * 0.3;
+        }
+      }
+    }
+
+    return {
+      idx: idx,
+      cx: curveAccum,
+      tilt: tiltAccum,
+      narrow: narrowAccum,
+      gap: isGap,
+      obstacle: obstacle
+    };
+  }
+
+  function ensureTrack(ahead) {
+    const needIdx = Math.floor((distance + ahead) / SEG_LEN) + 2;
+    while (trackGenIndex <= needIdx) {
+      track.push(genSegment(trackGenIndex));
+      trackGenIndex++;
+    }
+    // Prune old segments
+    const minIdx = Math.floor(distance / SEG_LEN) - 5;
+    while (track.length > 0 && track[0].idx < minIdx) {
+      track.shift();
     }
   }
 
-  function generateObstacles(upToZ) {
-    while (nextObstacleDist < upToZ) {
-      const freq = Math.max(15, 60 - distance * 0.04);
-      nextObstacleDist += freq + Math.random() * freq * 0.5;
-      // Find segment center at that distance
-      const seg = getSegmentAt(nextObstacleDist);
-      const cx = seg ? seg.cx : 0;
-      const ox = cx + (Math.random() - 0.5) * SLOPE_HALF_WIDTH * 1.2;
-      obstacles.push({ z: nextObstacleDist, x: ox });
+  function getSegByIdx(idx) {
+    for (let i = 0; i < track.length; i++) {
+      if (track[i].idx === idx) return track[i];
     }
+    return null;
   }
 
-  function scheduleGap() {
-    if (distance < 150) { nextGapDist = 200 + Math.random() * 100; return; }
-    const freq = Math.max(80, 200 - distance * 0.05);
-    nextGapDist = distance + freq + Math.random() * freq;
+  function getSegAtDist(d) {
+    const idx = Math.floor(d / SEG_LEN);
+    return getSegByIdx(idx);
   }
 
-  function getSegmentAt(z) {
-    const idx = Math.floor(z / SEGMENT_LENGTH);
-    for (let i = segments.length - 1; i >= 0; i--) {
-      if (Math.floor(segments[i].z / SEGMENT_LENGTH) <= idx) return segments[i];
-    }
-    return segments[0] || { z: 0, cx: 0, gap: false };
-  }
-
-  function getInterpolatedCenter(z) {
-    const idx = z / SEGMENT_LENGTH;
-    const i0 = Math.floor(idx);
-    const frac = idx - i0;
-    let s0 = null, s1 = null;
-    for (let i = 0; i < segments.length; i++) {
-      const si = Math.floor(segments[i].z / SEGMENT_LENGTH);
-      if (si === i0) s0 = segments[i];
-      if (si === i0 + 1) s1 = segments[i];
-    }
-    if (!s0) return 0;
-    if (!s1) return s0.cx;
-    return s0.cx + (s1.cx - s0.cx) * frac;
-  }
-
-  function isGapAt(z) {
-    return z >= gapStart && z < gapEnd;
+  function interpTrack(d) {
+    const fi = d / SEG_LEN;
+    const i0 = Math.floor(fi);
+    const frac = fi - i0;
+    const s0 = getSegByIdx(i0);
+    const s1 = getSegByIdx(i0 + 1);
+    if (!s0) return { cx: 0, tilt: 0, narrow: 0, gap: false };
+    if (!s1) return { cx: s0.cx, tilt: s0.tilt, narrow: s0.narrow, gap: s0.gap };
+    return {
+      cx: s0.cx + (s1.cx - s0.cx) * frac,
+      tilt: s0.tilt + (s1.tilt - s0.tilt) * frac,
+      narrow: s0.narrow + (s1.narrow - s0.narrow) * frac,
+      gap: s0.gap
+    };
   }
 
   // --- Perspective Projection ---
   function project(worldX, worldZ) {
-    const W = canvas.width;
-    const H = canvas.height;
-    const vpX = W / 2;
-    const vpY = H * VP_Y_RATIO;
-    const ballScreenY = H * BALL_SCREEN_Y_RATIO;
-    const focalZ = 8;
-
-    if (worldZ <= 0.01) worldZ = 0.01;
-    const scale = focalZ / (focalZ + worldZ);
-    const sx = vpX + worldX * scale * (W * 0.28);
-    const sy = vpY + (ballScreenY - vpY) * scale;
-    return { x: sx, y: sy, scale: scale };
+    const z = Math.max(worldZ, 0.01);
+    const scale = FOCAL / (FOCAL + z);
+    const vpx = W / 2;
+    const vpy = H * VP_Y;
+    const ballSY = H * BALL_Y;
+    const sx = vpx + worldX * scale * (W * 0.24);
+    const sy = vpy + (ballSY - vpy) * scale;
+    return { x: sx, y: sy, s: scale };
   }
 
   // --- Init / Reset ---
@@ -166,20 +217,19 @@ canvas { display: block; border-radius: 8px; }
     ballX = 0;
     speed = BASE_SPEED;
     steerDir = 0;
-    segments = [];
-    obstacles = [];
-    particles = [];
-    speedLines = [];
     shakeTimer = 0;
-    slopeOffset = 0;
-    slopeCurveTarget = 0;
-    slopeCurveVel = 0;
-    segGenZ = 0;
-    gapStart = -1;
-    gapEnd = -1;
-    nextObstacleDist = 50;
-    nextGapDist = 200;
-    generateSegments(DRAW_DISTANCE + 50);
+    deathParticles = [];
+    track = [];
+    trackGenIndex = 0;
+    curveAccum = 0;
+    curveTarget = 0;
+    curveVel = 0;
+    tiltAccum = 0;
+    tiltTarget = 0;
+    narrowAccum = 0;
+    narrowTarget = 0;
+    coinEarned = false;
+    ensureTrack(NUM_SEGS * SEG_LEN);
     state = 'play';
     lastTime = performance.now();
   }
@@ -194,542 +244,530 @@ canvas { display: block; border-radius: 8px; }
   });
   document.addEventListener('keyup', e => { keys[e.code] = false; });
 
-  let touchLeft = false, touchRight = false;
-  canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    if (state === 'menu') { initGame(); return; }
-    if (state === 'over') { initGame(); return; }
+  let touchL = false, touchR = false;
+  function handleTouches(e) {
+    touchL = false; touchR = false;
     for (const t of e.touches) {
-      if (t.clientX < window.innerWidth / 2) touchLeft = true;
-      else touchRight = true;
-    }
-  });
-  canvas.addEventListener('touchmove', e => {
-    e.preventDefault();
-    touchLeft = false; touchRight = false;
-    for (const t of e.touches) {
-      if (t.clientX < window.innerWidth / 2) touchLeft = true;
-      else touchRight = true;
-    }
-  });
-  canvas.addEventListener('touchend', e => {
-    e.preventDefault();
-    touchLeft = false; touchRight = false;
-    for (const t of e.touches) {
-      if (t.clientX < window.innerWidth / 2) touchLeft = true;
-      else touchRight = true;
-    }
-  });
-  canvas.addEventListener('mousedown', e => {
-    if (state === 'menu') { initGame(); return; }
-    if (state === 'over') { initGame(); return; }
-  });
-
-  // --- Particles ---
-  function spawnDeathParticles() {
-    const bp = project(ballX - getInterpolatedCenter(0), 0);
-    for (let i = 0; i < 30; i++) {
-      particles.push({
-        x: bp.x, y: bp.y,
-        vx: (Math.random() - 0.5) * 8,
-        vy: (Math.random() - 0.5) * 8 - 3,
-        life: 1,
-        color: Math.random() > 0.5 ? '#ff8c00' : '#ffaa33',
-        size: 2 + Math.random() * 4
-      });
+      if (t.clientX < window.innerWidth / 2) touchL = true;
+      else touchR = true;
     }
   }
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (state === 'menu' || state === 'over') { initGame(); return; }
+    handleTouches(e);
+  });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); handleTouches(e); });
+  canvas.addEventListener('touchend', e => { e.preventDefault(); handleTouches(e); });
+  canvas.addEventListener('mousedown', e => {
+    if (state === 'menu' || state === 'over') initGame();
+  });
 
-  function spawnSpeedLine() {
-    const W = canvas.width, H = canvas.height;
-    speedLines.push({
-      x: W * 0.5 + (Math.random() - 0.5) * W * 0.6,
-      y: H * VP_Y_RATIO + Math.random() * 20,
-      len: 0, maxLen: 30 + Math.random() * 60,
-      speed: 6 + Math.random() * 6,
-      alpha: 0.15 + Math.random() * 0.25,
-      angle: Math.PI / 2 + (Math.random() - 0.5) * 0.4
-    });
+  // --- Death Particles ---
+  function spawnDeath(sx, sy) {
+    for (let i = 0; i < 40; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 2 + Math.random() * 6;
+      deathParticles.push({
+        x: sx, y: sy,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 3,
+        life: 1,
+        r: 2 + Math.random() * 4,
+        green: Math.random() > 0.3
+      });
+    }
   }
 
   // --- Update ---
   function update(dt) {
     if (state !== 'play') return;
 
-    speed = BASE_SPEED + distance * 0.003;
+    // Speed increases
+    speed = BASE_SPEED + distance * 0.004 + Math.min(distance * 0.0001, 3);
     const move = speed * dt;
     distance += move;
 
     // Steering
     steerDir = 0;
-    if (keys['ArrowLeft'] || keys['KeyA'] || touchLeft) steerDir = -1;
-    if (keys['ArrowRight'] || keys['KeyD'] || touchRight) steerDir = 1;
-    ballX += steerDir * STEER_SPEED * dt;
+    if (keys['ArrowLeft'] || keys['KeyA'] || touchL) steerDir = -1;
+    if (keys['ArrowRight'] || keys['KeyD'] || touchR) steerDir = 1;
 
-    // Also the ball drifts with the slope curve
-    const centerNow = getInterpolatedCenter(0);
-    const centerAhead = getInterpolatedCenter(move);
-    const curveDrift = centerAhead - centerNow;
-    // Don't auto-drift the ball, player must steer. Instead, slope moves under ball.
+    const steerSpeed = MAX_STEER + speed * 0.12;
+    ballX += steerDir * steerSpeed * dt;
 
-    // Generate more slope if needed
-    generateSegments(distance + DRAW_DISTANCE + 50);
+    // Track tilt pushes ball
+    const tr = interpTrack(distance);
+    ballX += tr.tilt * speed * dt * 0.6;
 
-    // Generate obstacles
-    generateObstacles(distance + DRAW_DISTANCE);
+    // Ensure track ahead
+    ensureTrack(NUM_SEGS * SEG_LEN);
 
-    // Handle gaps
-    if (distance > nextGapDist && gapEnd < distance) {
-      gapStart = distance + 30;
-      gapEnd = gapStart + 8 + Math.random() * 6;
-      scheduleGap();
+    // Track half-width at current position
+    const hw = TRACK_HW * (1 - tr.narrow * 0.5);
+
+    // Off-edge death
+    if (ballX < -hw - 0.1 || ballX > hw + 0.1) {
+      die(); return;
     }
 
-    // Remove old segments
-    segments = segments.filter(s => s.z > distance - 20);
-    obstacles = obstacles.filter(o => o.z > distance - 10);
-
-    // Collision: off-slope
-    const currentCenter = getInterpolatedCenter(distance);
-    const leftEdge = currentCenter - SLOPE_HALF_WIDTH;
-    const rightEdge = currentCenter + SLOPE_HALF_WIDTH;
-    const ballWorld = ballX;
-
-    if (ballWorld < leftEdge || ballWorld > rightEdge) {
-      gameOver();
-      return;
+    // Gap death
+    if (tr.gap) {
+      die(); return;
     }
 
-    // Collision: gap
-    if (isGapAt(distance)) {
-      gameOver();
-      return;
-    }
-
-    // Collision: obstacles
-    for (const obs of obstacles) {
-      const relZ = obs.z - distance;
-      if (relZ > -0.5 && relZ < 1.0) {
-        const dx = Math.abs(ballWorld - obs.x);
-        if (dx < OBSTACLE_SIZE * 0.55 + 0.2) {
-          gameOver();
-          return;
+    // Obstacle collision
+    const curIdx = Math.floor(distance / SEG_LEN);
+    for (let di = -1; di <= 1; di++) {
+      const seg = getSegByIdx(curIdx + di);
+      if (!seg || !seg.obstacle) continue;
+      const segDist = seg.idx * SEG_LEN;
+      const relZ = segDist - distance;
+      if (relZ > 1.5 || relZ < -1.0) continue;
+      const obs = seg.obstacle;
+      const dx = Math.abs(ballX - obs.x);
+      if (dx < OBS_SIZE * 0.5 + BALL_RAD_WORLD && Math.abs(relZ) < OBS_SIZE * 0.7 + BALL_RAD_WORLD) {
+        die(); return;
+      }
+      if (obs.x2 !== undefined) {
+        const dx2 = Math.abs(ballX - obs.x2);
+        if (dx2 < OBS_SIZE * 0.5 + BALL_RAD_WORLD && Math.abs(relZ) < OBS_SIZE * 0.7 + BALL_RAD_WORLD) {
+          die(); return;
         }
       }
     }
 
-    // Speed lines at high speed
-    if (speed > 8 && Math.random() < (speed - 8) * 0.08) {
-      spawnSpeedLine();
-    }
-
-    // Update speed lines
-    for (const sl of speedLines) {
-      sl.len += sl.speed;
-      sl.y += sl.speed * 1.5;
-      sl.alpha *= 0.97;
-    }
-    speedLines = speedLines.filter(sl => sl.alpha > 0.02 && sl.y < canvas.height);
-
-    // Shake decay
     if (shakeTimer > 0) shakeTimer -= dt;
-
-    // Update particles
-    for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.3;
-      p.life -= dt * 1.5;
-    }
-    particles = particles.filter(p => p.life > 0);
   }
 
-  function gameOver() {
+  function die() {
     state = 'over';
     const score = Math.floor(distance);
     if (score > bestScore) {
       bestScore = score;
-      localStorage.setItem('slope_best', bestScore);
+      localStorage.setItem('slope_best', score);
     }
-    shakeTimer = 0.3;
-    spawnDeathParticles();
+    shakeTimer = 0.4;
+    spawnDeath(W / 2, H * BALL_Y);
     if (window.SFX) window.SFX.death();
     if (score > 0 && window.HallOfFame) window.HallOfFame.submit('slope', score);
   }
 
-  // --- Draw ---
+  // --- Drawing ---
   function draw() {
-    const W = canvas.width;
-    const H = canvas.height;
-
     ctx.save();
     if (shakeTimer > 0) {
-      const s = shakeTimer * 15;
+      const s = shakeTimer * 18;
       ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
     }
 
-    // Background
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#050510');
-    bgGrad.addColorStop(0.4, '#0a0a1e');
-    bgGrad.addColorStop(1, '#0f0f1a');
-    ctx.fillStyle = bgGrad;
+    // Background - deep dark
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, BG_TOP);
+    bg.addColorStop(1, BG_BOT);
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Stars
-    if (!draw.stars) {
-      draw.stars = [];
-      for (let i = 0; i < 60; i++) {
-        draw.stars.push({
-          x: Math.random() * 500,
-          y: Math.random() * H * 0.4,
-          r: 0.5 + Math.random() * 1.2,
-          twinkle: Math.random() * Math.PI * 2
-        });
-      }
-    }
-    const now = performance.now() * 0.001;
-    for (const star of draw.stars) {
-      const a = 0.3 + Math.sin(now * 1.5 + star.twinkle) * 0.3;
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.beginPath();
-      ctx.arc(star.x / 500 * W, star.y, star.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Distant stars
+    drawStars();
 
     if (state === 'menu') {
-      drawMenu();
+      drawMenuScene();
       ctx.restore();
       return;
     }
 
-    // Draw slope
-    drawSlope();
-
-    // Draw obstacles
-    drawObstacles();
-
-    // Draw ball
+    drawTrack3D();
     drawBall();
-
-    // Speed lines
-    for (const sl of speedLines) {
-      ctx.save();
-      ctx.globalAlpha = sl.alpha;
-      ctx.strokeStyle = '#00d4ff';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(sl.x, sl.y);
-      ctx.lineTo(sl.x - Math.cos(sl.angle) * sl.len, sl.y - Math.sin(sl.angle) * sl.len);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Particles
-    for (const p of particles) {
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // HUD
+    drawDeathParticles();
     drawHUD();
 
-    // Game over overlay
-    if (state === 'over') {
-      drawGameOver();
-    }
+    if (state === 'over') drawGameOver();
 
     ctx.restore();
   }
 
-  function drawSlope() {
-    const W = canvas.width;
-    const H = canvas.height;
-    const rows = 80;
-
-    for (let i = rows; i >= 0; i--) {
-      const zFar = (i / rows) * DRAW_DISTANCE;
-      const zNear = ((i + 1) / rows) * DRAW_DISTANCE;
-      if (zNear < 0.1) continue;
-
-      const absFar = distance + zFar;
-      const absNear = distance + zNear;
-
-      const centerFar = getInterpolatedCenter(absFar);
-      const centerNear = getInterpolatedCenter(absNear);
-
-      // Check for gap
-      const gapFar = isGapAt(absFar);
-      const gapNear = isGapAt(absNear);
-      if (gapFar && gapNear) continue;
-
-      const leftFar = centerFar - SLOPE_HALF_WIDTH;
-      const rightFar = centerFar + SLOPE_HALF_WIDTH;
-      const leftNear = centerNear - SLOPE_HALF_WIDTH;
-      const rightNear = centerNear + SLOPE_HALF_WIDTH;
-
-      const pLF = project(leftFar - getInterpolatedCenter(distance), zFar);
-      const pRF = project(rightFar - getInterpolatedCenter(distance), zFar);
-      const pLN = project(leftNear - getInterpolatedCenter(distance), zNear);
-      const pRN = project(rightNear - getInterpolatedCenter(distance), zNear);
-
-      // Adjust for ball position offset
-      const ballOffset = ballX - getInterpolatedCenter(distance);
-      const boFar = project(leftFar - ballX, zFar);
-      const boRFar = project(rightFar - ballX, zFar);
-      const boNear = project(leftNear - ballX, zNear);
-      const boRNear = project(rightNear - ballX, zNear);
-
-      // Alternating tile colors
-      const tileIdx = Math.floor(absFar / SEGMENT_LENGTH);
-      const tileColor = tileIdx % 2 === 0 ? '#2a2a4a' : '#1e1e3a';
-
-      // Darken far tiles
-      const depthFade = Math.max(0, 1 - zFar / DRAW_DISTANCE);
-
-      ctx.fillStyle = tileColor;
-      ctx.globalAlpha = 0.3 + depthFade * 0.7;
+  // Stars (cached)
+  let stars = null;
+  function drawStars() {
+    if (!stars) {
+      stars = [];
+      for (let i = 0; i < 80; i++) {
+        stars.push({
+          x: Math.random(), y: Math.random() * 0.45,
+          r: 0.4 + Math.random() * 1.0,
+          phase: Math.random() * 6.28
+        });
+      }
+    }
+    const t = performance.now() * 0.001;
+    for (const s of stars) {
+      const a = 0.2 + Math.sin(t + s.phase) * 0.2;
+      ctx.fillStyle = `rgba(180,200,255,${a})`;
       ctx.beginPath();
-      ctx.moveTo(boFar.x, boFar.y);
-      ctx.lineTo(boRFar.x, boRFar.y);
-      ctx.lineTo(boRNear.x, boRNear.y);
-      ctx.lineTo(boNear.x, boNear.y);
+      ctx.arc(s.x * W, s.y * H, s.r, 0, 6.28);
+      ctx.fill();
+    }
+  }
+
+  // --- 3D Track Drawing ---
+  function drawTrack3D() {
+    const ballTr = interpTrack(distance);
+    const camCX = ballTr.cx; // camera follows track center roughly
+
+    const drawSegs = 110;
+    const stepsPerSeg = 2;
+    const totalSteps = drawSegs * stepsPerSeg;
+    const stepLen = SEG_LEN / stepsPerSeg;
+
+    // Build projected points for left/right edges and center
+    const points = [];
+    for (let i = 0; i <= totalSteps; i++) {
+      const zWorld = i * stepLen;
+      const absDist = distance + zWorld;
+      const tr = interpTrack(absDist);
+      const relCX = tr.cx - camCX - ballX * 0.0; // camera offset: we keep ball centered
+      const hw = TRACK_HW * (1 - tr.narrow * 0.5);
+
+      // Apply tilt: offset left/right edges vertically in screen space
+      const tiltOffset = tr.tilt * 0.3;
+
+      const leftX = relCX - hw - ballX;
+      const rightX = relCX + hw - ballX;
+      const centerX = relCX - ballX;
+
+      const pL = project(leftX, zWorld);
+      const pR = project(rightX, zWorld);
+      const pC = project(centerX, zWorld);
+
+      // Tilt shifts Y slightly
+      pL.y += tiltOffset * pL.s * 40;
+      pR.y -= tiltOffset * pR.s * 40;
+
+      points.push({
+        z: zWorld, absDist, tr,
+        pL, pR, pC, hw,
+        gap: tr.gap,
+        segIdx: Math.floor(absDist / SEG_LEN)
+      });
+    }
+
+    // Draw track segments (far to near)
+    for (let i = points.length - 2; i >= 0; i--) {
+      const far = points[i + 1];
+      const near = points[i];
+
+      if (far.gap && near.gap) continue;
+
+      const depthFade = Math.max(0, 1 - far.z / (drawSegs * SEG_LEN));
+      if (depthFade < 0.01) continue;
+
+      // Track surface
+      const tileAlt = near.segIdx % 2 === 0;
+      ctx.fillStyle = tileAlt ? TRACK_FILL_A : TRACK_FILL_B;
+      ctx.globalAlpha = (0.4 + depthFade * 0.6);
+
+      ctx.beginPath();
+      ctx.moveTo(far.pL.x, far.pL.y);
+      ctx.lineTo(far.pR.x, far.pR.y);
+      ctx.lineTo(near.pR.x, near.pR.y);
+      ctx.lineTo(near.pL.x, near.pL.y);
       ctx.closePath();
       ctx.fill();
 
-      // Center line
-      if (i % 4 === 0 && depthFade > 0.2) {
-        const cFar = project((centerFar - ballX), zFar);
-        const cNear = project((centerNear - ballX), zNear);
-        ctx.strokeStyle = `rgba(0,212,255,${0.08 * depthFade})`;
+      // Grid lines (horizontal every segment boundary)
+      if (near.segIdx !== far.segIdx && depthFade > 0.05) {
+        ctx.strokeStyle = `rgba(${NEON_RGB},${0.15 * depthFade})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(cFar.x, cFar.y);
-        ctx.lineTo(cNear.x, cNear.y);
+        ctx.moveTo(far.pL.x, far.pL.y);
+        ctx.lineTo(far.pR.x, far.pR.y);
         ctx.stroke();
       }
 
-      // Edge glow
-      if (depthFade > 0.05) {
-        ctx.globalAlpha = 0.4 * depthFade;
-        ctx.strokeStyle = '#00d4ff';
+      // Center line dashed
+      if (i % 4 < 2 && depthFade > 0.08) {
+        ctx.strokeStyle = `rgba(${NEON_RGB},${0.07 * depthFade})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(far.pC.x, far.pC.y);
+        ctx.lineTo(near.pC.x, near.pC.y);
+        ctx.stroke();
+      }
+
+      // Neon edge glow (left and right)
+      if (depthFade > 0.03) {
+        const alpha = 0.6 * depthFade;
+        const lw = Math.max(0.5, 2.5 * depthFade);
+
+        // Glow layer (thicker, dimmer)
+        ctx.strokeStyle = `rgba(${NEON_RGB},${alpha * 0.3})`;
+        ctx.lineWidth = lw * 3;
+        ctx.beginPath();
+        ctx.moveTo(far.pL.x, far.pL.y);
+        ctx.lineTo(near.pL.x, near.pL.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(far.pR.x, far.pR.y);
+        ctx.lineTo(near.pR.x, near.pR.y);
+        ctx.stroke();
+
+        // Core line (bright)
+        ctx.strokeStyle = `rgba(${NEON_RGB},${alpha})`;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(far.pL.x, far.pL.y);
+        ctx.lineTo(near.pL.x, near.pL.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(far.pR.x, far.pR.y);
+        ctx.lineTo(near.pR.x, near.pR.y);
+        ctx.stroke();
+      }
+
+      // Gap edge glow - bright neon line at gap boundaries
+      if ((far.gap && !near.gap) || (!far.gap && near.gap)) {
+        const edgeP = far.gap ? near : far;
+        ctx.strokeStyle = `rgba(${NEON_RGB},${0.8 * depthFade})`;
         ctx.lineWidth = 2 * depthFade;
-
+        ctx.shadowColor = NEON;
+        ctx.shadowBlur = 8 * depthFade;
         ctx.beginPath();
-        ctx.moveTo(boFar.x, boFar.y);
-        ctx.lineTo(boNear.x, boNear.y);
+        ctx.moveTo(edgeP.pL.x, edgeP.pL.y);
+        ctx.lineTo(edgeP.pR.x, edgeP.pR.y);
         ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(boRFar.x, boRFar.y);
-        ctx.lineTo(boRNear.x, boRNear.y);
-        ctx.stroke();
+        ctx.shadowBlur = 0;
       }
     }
     ctx.globalAlpha = 1;
+
+    // Draw obstacles on track
+    drawObstacles3D(points);
   }
 
-  function drawObstacles() {
-    // Sort by z descending (far first)
-    const sorted = obstacles.slice().sort((a, b) => b.z - a.z);
-    for (const obs of sorted) {
-      const relZ = obs.z - distance;
-      if (relZ < 0 || relZ > DRAW_DISTANCE) continue;
+  function drawObstacles3D(points) {
+    // Collect visible obstacle segments, draw far to near
+    const obsData = [];
+    const curIdx = Math.floor(distance / SEG_LEN);
+    const aheadIdx = curIdx + 100;
 
-      const relX = obs.x - ballX;
-      const p = project(relX, relZ);
-      const sz = p.scale * OBSTACLE_SIZE * canvas.width * 0.13;
+    for (let si = curIdx; si <= aheadIdx; si++) {
+      const seg = getSegByIdx(si);
+      if (!seg || !seg.obstacle) continue;
+      const segDist = seg.idx * SEG_LEN;
+      const relZ = segDist - distance;
+      if (relZ < -2 || relZ > 250) continue;
+      obsData.push({ seg, relZ, segDist });
+    }
 
-      if (sz < 1) continue;
+    // Sort far to near
+    obsData.sort((a, b) => b.relZ - a.relZ);
 
-      const depthFade = Math.max(0, 1 - relZ / DRAW_DISTANCE);
+    for (const od of obsData) {
+      const { seg, relZ } = od;
+      const obs = seg.obstacle;
+      const depthFade = Math.max(0, 1 - relZ / 250);
+      if (depthFade < 0.02) continue;
 
-      // Shadow
-      ctx.fillStyle = `rgba(255,0,0,${0.15 * depthFade})`;
-      ctx.fillRect(p.x - sz * 0.6, p.y - sz * 0.1, sz * 1.2, sz * 0.3);
-
-      // Block - 3D look
-      const topH = sz * 0.3;
-      ctx.globalAlpha = depthFade;
-
-      // Front face
-      ctx.fillStyle = '#ff4444';
-      ctx.fillRect(p.x - sz / 2, p.y - sz, sz, sz);
-
-      // Top face
-      ctx.fillStyle = '#ff6666';
-      ctx.beginPath();
-      ctx.moveTo(p.x - sz / 2, p.y - sz);
-      ctx.lineTo(p.x - sz / 2 + topH * 0.5, p.y - sz - topH);
-      ctx.lineTo(p.x + sz / 2 + topH * 0.5, p.y - sz - topH);
-      ctx.lineTo(p.x + sz / 2, p.y - sz);
-      ctx.closePath();
-      ctx.fill();
-
-      // Right face
-      ctx.fillStyle = '#cc2222';
-      ctx.beginPath();
-      ctx.moveTo(p.x + sz / 2, p.y - sz);
-      ctx.lineTo(p.x + sz / 2 + topH * 0.5, p.y - sz - topH);
-      ctx.lineTo(p.x + sz / 2 + topH * 0.5, p.y - topH);
-      ctx.lineTo(p.x + sz / 2, p.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // Glow
-      ctx.shadowColor = '#ff4444';
-      ctx.shadowBlur = 10 * depthFade;
-      ctx.fillStyle = 'rgba(255,68,68,0.01)';
-      ctx.fillRect(p.x - sz / 2, p.y - sz, sz, sz);
-      ctx.shadowBlur = 0;
-
-      ctx.globalAlpha = 1;
+      drawOneObstacle(obs.x, relZ, depthFade, seg);
+      if (obs.x2 !== undefined) {
+        drawOneObstacle(obs.x2, relZ, depthFade, seg);
+      }
     }
   }
 
-  function drawBall() {
-    const W = canvas.width;
-    const H = canvas.height;
-    const ballScreenX = W / 2;
-    const ballScreenY = H * BALL_SCREEN_Y_RATIO;
-    const radius = 14;
+  function drawOneObstacle(ox, relZ, depthFade, seg) {
+    const ballTr = interpTrack(distance);
+    const relOX = ox + seg.cx - ballTr.cx - ballX;
+    const p = project(relOX, relZ);
+    const sz = p.s * OBS_SIZE * W * 0.14;
+    if (sz < 1.5) return;
 
-    // Shadow on slope
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.globalAlpha = depthFade;
+
+    // Shadow on ground
+    ctx.fillStyle = `rgba(${RED_RGB},${0.2 * depthFade})`;
     ctx.beginPath();
-    ctx.ellipse(ballScreenX, ballScreenY + radius * 0.3, radius * 1.2, radius * 0.35, 0, 0, Math.PI * 2);
+    ctx.ellipse(p.x, p.y + sz * 0.05, sz * 0.7, sz * 0.15, 0, 0, 6.28);
     ctx.fill();
 
-    // Ball glow
-    const glow = ctx.createRadialGradient(ballScreenX, ballScreenY, 0, ballScreenX, ballScreenY, radius * 2.5);
-    glow.addColorStop(0, 'rgba(255,140,0,0.3)');
-    glow.addColorStop(1, 'rgba(255,140,0,0)');
-    ctx.fillStyle = glow;
+    // Front face
+    const topH = sz * 0.35;
+    ctx.fillStyle = '#cc1111';
+    ctx.fillRect(p.x - sz / 2, p.y - sz, sz, sz);
+
+    // Top face
+    ctx.fillStyle = '#ff3333';
     ctx.beginPath();
-    ctx.arc(ballScreenX, ballScreenY, radius * 2.5, 0, Math.PI * 2);
+    ctx.moveTo(p.x - sz / 2, p.y - sz);
+    ctx.lineTo(p.x - sz / 2 + topH * 0.45, p.y - sz - topH);
+    ctx.lineTo(p.x + sz / 2 + topH * 0.45, p.y - sz - topH);
+    ctx.lineTo(p.x + sz / 2, p.y - sz);
+    ctx.closePath();
     ctx.fill();
 
-    // Ball body
-    const ballGrad = ctx.createRadialGradient(
-      ballScreenX - radius * 0.3, ballScreenY - radius * 0.3, radius * 0.1,
-      ballScreenX, ballScreenY, radius
-    );
-    ballGrad.addColorStop(0, '#ffbb44');
-    ballGrad.addColorStop(0.6, '#ff8c00');
-    ballGrad.addColorStop(1, '#cc6600');
-    ctx.fillStyle = ballGrad;
+    // Right face
+    ctx.fillStyle = '#991111';
     ctx.beginPath();
-    ctx.arc(ballScreenX, ballScreenY, radius, 0, Math.PI * 2);
+    ctx.moveTo(p.x + sz / 2, p.y);
+    ctx.lineTo(p.x + sz / 2, p.y - sz);
+    ctx.lineTo(p.x + sz / 2 + topH * 0.45, p.y - sz - topH);
+    ctx.lineTo(p.x + sz / 2 + topH * 0.45, p.y - topH);
+    ctx.closePath();
     ctx.fill();
 
-    // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.beginPath();
-    ctx.arc(ballScreenX - radius * 0.25, ballScreenY - radius * 0.25, radius * 0.4, 0, Math.PI * 2);
-    ctx.fill();
+    // Glow
+    ctx.shadowColor = RED_GLOW;
+    ctx.shadowBlur = 12 * depthFade;
+    ctx.fillStyle = `rgba(${RED_RGB},0.02)`;
+    ctx.fillRect(p.x - sz / 2, p.y - sz, sz, sz);
+    ctx.shadowBlur = 0;
+
+    // Edge lines
+    ctx.strokeStyle = `rgba(${RED_RGB},${0.5 * depthFade})`;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(p.x - sz / 2, p.y - sz, sz, sz);
+
+    ctx.globalAlpha = 1;
   }
 
+  // --- Ball ---
+  function drawBall() {
+    const bx = W / 2;
+    const by = H * BALL_Y;
+    const r = 15;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(bx, by + r * 0.4, r * 1.3, r * 0.3, 0, 0, 6.28);
+    ctx.fill();
+
+    // Outer glow
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = 'rgba(0,255,0,0.08)';
+    ctx.beginPath();
+    ctx.arc(bx, by, r * 2.2, 0, 6.28);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Inner glow ring
+    const glowGrad = ctx.createRadialGradient(bx, by, r * 0.3, bx, by, r * 1.8);
+    glowGrad.addColorStop(0, 'rgba(0,255,0,0.25)');
+    glowGrad.addColorStop(0.6, 'rgba(0,255,0,0.08)');
+    glowGrad.addColorStop(1, 'rgba(0,255,0,0)');
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(bx, by, r * 1.8, 0, 6.28);
+    ctx.fill();
+
+    // Ball body gradient
+    const ballGrad = ctx.createRadialGradient(bx - r * 0.3, by - r * 0.35, r * 0.1, bx, by, r);
+    ballGrad.addColorStop(0, '#88ff88');
+    ballGrad.addColorStop(0.4, '#22dd22');
+    ballGrad.addColorStop(0.8, '#00aa00');
+    ballGrad.addColorStop(1, '#006600');
+    ctx.fillStyle = ballGrad;
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, 6.28);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Specular highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.arc(bx - r * 0.25, by - r * 0.3, r * 0.35, 0, 6.28);
+    ctx.fill();
+
+    // Rolling lines (subtle rotating arcs)
+    const rot = distance * 0.8;
+    ctx.strokeStyle = 'rgba(0,180,0,0.25)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+      const a = rot + i * 2.09;
+      ctx.beginPath();
+      ctx.arc(bx, by, r * 0.7, a, a + 0.8);
+      ctx.stroke();
+    }
+  }
+
+  // --- Death Particles ---
+  function drawDeathParticles() {
+    for (const p of deathParticles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.25;
+      p.life -= 0.018;
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.green ? NEON : '#88ff88';
+      ctx.shadowColor = NEON;
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, 6.28);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    deathParticles = deathParticles.filter(p => p.life > 0);
+  }
+
+  // --- HUD ---
   function drawHUD() {
-    const W = canvas.width;
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 22px Segoe UI, Arial, sans-serif';
+    // Score
     ctx.textAlign = 'center';
-    ctx.fillText(Math.floor(distance) + ' m', W / 2, 40);
+    ctx.font = 'bold 26px Segoe UI, Arial, sans-serif';
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(Math.floor(distance) + ' m', W / 2, 38);
+    ctx.shadowBlur = 0;
 
     // Speed indicator
-    ctx.font = '13px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = speed > 10 ? '#ff4444' : '#00d4ff';
-    ctx.fillText('Speed: ' + speed.toFixed(1), W / 2, 60);
-  }
-
-  function drawMenu() {
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Animated slope preview in background
-    drawMenuSlope();
-
-    // Overlay
-    ctx.fillStyle = 'rgba(15,15,26,0.6)';
-    ctx.fillRect(0, 0, W, H);
-
-    // Title
-    ctx.save();
-    const pulse = 1 + Math.sin(performance.now() * 0.003) * 0.03;
-    ctx.translate(W / 2, H * 0.28);
-    ctx.scale(pulse, pulse);
-
-    ctx.font = 'bold 64px Segoe UI, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Title glow
-    ctx.shadowColor = '#00d4ff';
-    ctx.shadowBlur = 30;
-    ctx.fillStyle = '#00d4ff';
-    ctx.fillText('SLOPE', 0, 0);
-    ctx.shadowBlur = 0;
-    ctx.restore();
-
-    // Ball icon
-    const bx = W / 2, by = H * 0.42;
-    const bgr = ctx.createRadialGradient(bx - 4, by - 4, 2, bx, by, 18);
-    bgr.addColorStop(0, '#ffbb44');
-    bgr.addColorStop(1, '#cc6600');
-    ctx.fillStyle = bgr;
-    ctx.beginPath();
-    ctx.arc(bx, by, 18, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Instructions
-    ctx.font = '18px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = '#8888aa';
-    ctx.textAlign = 'center';
-    ctx.fillText('Arrow Keys / A-D to steer', W / 2, H * 0.54);
-    ctx.fillText('Tap left/right on mobile', W / 2, H * 0.59);
-
-    // Best score
-    if (bestScore > 0) {
-      ctx.font = 'bold 16px Segoe UI, Arial, sans-serif';
-      ctx.fillStyle = '#ffaa00';
-      ctx.fillText('Best: ' + bestScore + ' m', W / 2, H * 0.67);
+    const sp = speed.toFixed(1);
+    ctx.font = '14px Segoe UI, Arial, sans-serif';
+    const fast = speed > 12;
+    ctx.fillStyle = fast ? '#ff4444' : NEON;
+    if (fast) {
+      ctx.shadowColor = '#ff4444';
+      ctx.shadowBlur = 6;
     }
+    ctx.fillText('Speed: ' + sp, W / 2, 58);
+    ctx.shadowBlur = 0;
 
-    // Start prompt
-    const blink = Math.sin(performance.now() * 0.004) * 0.4 + 0.6;
-    ctx.globalAlpha = blink;
-    ctx.font = 'bold 20px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = '#00d4ff';
-    ctx.fillText('Press any key or tap to start', W / 2, H * 0.78);
-    ctx.globalAlpha = 1;
+    // Best score (top right)
+    if (bestScore > 0) {
+      ctx.textAlign = 'right';
+      ctx.font = '13px Segoe UI, Arial, sans-serif';
+      ctx.fillStyle = '#888';
+      ctx.fillText('Best: ' + bestScore + ' m', W - 14, 30);
+    }
   }
 
-  let menuSlopeAnim = 0;
-  function drawMenuSlope() {
-    menuSlopeAnim += 0.02;
-    const W = canvas.width;
-    const H = canvas.height;
-    const rows = 40;
-    for (let i = rows; i >= 0; i--) {
-      const zFar = (i / rows) * 80;
-      const zNear = ((i + 1) / rows) * 80;
+  // --- Menu ---
+  let menuAnim = 0;
+  function drawMenuScene() {
+    menuAnim += 0.015;
 
-      const waveFar = Math.sin((zFar + menuSlopeAnim * 30) * 0.05) * 1.5;
-      const waveNear = Math.sin((zNear + menuSlopeAnim * 30) * 0.05) * 1.5;
+    // Draw a preview track
+    const fakeSegs = 80;
+    for (let i = fakeSegs; i >= 1; i--) {
+      const zFar = i * 1.5;
+      const zNear = (i - 1) * 1.5;
+      const waveFar = Math.sin((zFar + menuAnim * 40) * 0.06) * 2;
+      const waveNear = Math.sin((zNear + menuAnim * 40) * 0.06) * 2;
+      const depthFade = Math.max(0, 1 - zFar / (fakeSegs * 1.5));
 
-      const pLF = project(waveFar - SLOPE_HALF_WIDTH, zFar);
-      const pRF = project(waveFar + SLOPE_HALF_WIDTH, zFar);
-      const pLN = project(waveNear - SLOPE_HALF_WIDTH, zNear);
-      const pRN = project(waveNear + SLOPE_HALF_WIDTH, zNear);
+      const pLF = project(waveFar - TRACK_HW, zFar);
+      const pRF = project(waveFar + TRACK_HW, zFar);
+      const pLN = project(waveNear - TRACK_HW, zNear);
+      const pRN = project(waveNear + TRACK_HW, zNear);
 
-      const tileColor = i % 2 === 0 ? '#2a2a4a' : '#1e1e3a';
-      const depthFade = Math.max(0, 1 - zFar / 80);
-      ctx.fillStyle = tileColor;
-      ctx.globalAlpha = 0.2 + depthFade * 0.4;
+      ctx.fillStyle = i % 2 === 0 ? TRACK_FILL_A : TRACK_FILL_B;
+      ctx.globalAlpha = 0.25 + depthFade * 0.35;
       ctx.beginPath();
       ctx.moveTo(pLF.x, pLF.y);
       ctx.lineTo(pRF.x, pRF.y);
@@ -738,73 +776,167 @@ canvas { display: block; border-radius: 8px; }
       ctx.closePath();
       ctx.fill();
 
-      if (depthFade > 0.1) {
-        ctx.globalAlpha = 0.2 * depthFade;
-        ctx.strokeStyle = '#00d4ff';
+      if (depthFade > 0.08) {
+        ctx.globalAlpha = 0.25 * depthFade;
+        ctx.strokeStyle = NEON;
         ctx.lineWidth = 1.5 * depthFade;
-        ctx.beginPath();
-        ctx.moveTo(pLF.x, pLF.y);
-        ctx.lineTo(pLN.x, pLN.y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(pRF.x, pRF.y);
-        ctx.lineTo(pRN.x, pRN.y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pLF.x, pLF.y); ctx.lineTo(pLN.x, pLN.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pRF.x, pRF.y); ctx.lineTo(pRN.x, pRN.y); ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
+
+    // Overlay
+    ctx.fillStyle = 'rgba(4,4,10,0.5)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Title
+    ctx.save();
+    const pulse = 1 + Math.sin(performance.now() * 0.003) * 0.04;
+    ctx.translate(W / 2, H * 0.24);
+    ctx.scale(pulse, pulse);
+    ctx.font = 'bold 68px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 40;
+    ctx.fillStyle = NEON;
+    ctx.fillText('SLOPE', 0, 0);
+    ctx.shadowBlur = 15;
+    ctx.fillText('SLOPE', 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Ball icon
+    const bx = W / 2, by = H * 0.38;
+    const bgr = ctx.createRadialGradient(bx - 4, by - 4, 2, bx, by, 20);
+    bgr.addColorStop(0, '#88ff88');
+    bgr.addColorStop(0.5, '#00cc00');
+    bgr.addColorStop(1, '#006600');
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = bgr;
+    ctx.beginPath();
+    ctx.arc(bx, by, 20, 0, 6.28);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Specular
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.arc(bx - 6, by - 6, 7, 0, 6.28);
+    ctx.fill();
+
+    // Instructions
+    ctx.font = '17px Segoe UI, Arial, sans-serif';
+    ctx.fillStyle = '#7a7a9a';
+    ctx.textAlign = 'center';
+    ctx.fillText('Arrow Keys / A-D to steer', W / 2, H * 0.50);
+    ctx.fillText('Tap left/right on mobile', W / 2, H * 0.55);
+
+    // Best score
+    if (bestScore > 0) {
+      ctx.font = 'bold 16px Segoe UI, Arial, sans-serif';
+      ctx.fillStyle = NEON;
+      ctx.shadowColor = NEON;
+      ctx.shadowBlur = 8;
+      ctx.fillText('Best: ' + bestScore + ' m', W / 2, H * 0.63);
+      ctx.shadowBlur = 0;
+    }
+
+    // Start prompt
+    const blink = Math.sin(performance.now() * 0.004) * 0.4 + 0.6;
+    ctx.globalAlpha = blink;
+    ctx.font = 'bold 20px Segoe UI, Arial, sans-serif';
+    ctx.fillStyle = NEON;
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 12;
+    ctx.fillText('Press any key or tap to start', W / 2, H * 0.76);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
   }
 
+  // --- Game Over ---
   function drawGameOver() {
-    const W = canvas.width;
-    const H = canvas.height;
     const score = Math.floor(distance);
 
-    // Dim overlay
-    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    ctx.fillStyle = 'rgba(4,4,10,0.7)';
     ctx.fillRect(0, 0, W, H);
 
     // Panel
-    const pw = 280, ph = 220;
+    const pw = 280, ph = 230;
     const px = (W - pw) / 2, py = (H - ph) / 2 - 20;
-    ctx.fillStyle = '#1a1a2e';
-    ctx.strokeStyle = '#2a2a4a';
+    ctx.fillStyle = '#0a0a18';
+    ctx.strokeStyle = NEON_DIM;
     ctx.lineWidth = 2;
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 15;
     ctx.beginPath();
-    ctx.roundRect(px, py, pw, ph, 12);
+    roundRect(ctx, px, py, pw, ph, 12);
     ctx.fill();
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
     ctx.textAlign = 'center';
 
     // Title
-    ctx.font = 'bold 28px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = '#ff4444';
-    ctx.fillText('Game Over', W / 2, py + 45);
+    ctx.font = 'bold 30px Segoe UI, Arial, sans-serif';
+    ctx.fillStyle = '#ff3333';
+    ctx.shadowColor = '#ff3333';
+    ctx.shadowBlur = 10;
+    ctx.fillText('Game Over', W / 2, py + 48);
+    ctx.shadowBlur = 0;
 
     // Score
-    ctx.font = 'bold 36px Segoe UI, Arial, sans-serif';
+    ctx.font = 'bold 40px Segoe UI, Arial, sans-serif';
     ctx.fillStyle = '#fff';
-    ctx.fillText(score + ' m', W / 2, py + 95);
+    ctx.fillText(score + ' m', W / 2, py + 100);
 
     // Best
     ctx.font = '16px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = '#ffaa00';
-    ctx.fillText('Best: ' + bestScore + ' m', W / 2, py + 125);
+    ctx.fillStyle = NEON;
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 6;
+    ctx.fillText('Best: ' + bestScore + ' m', W / 2, py + 130);
+    ctx.shadowBlur = 0;
 
-    // Play again button
+    // New best indicator
+    if (score >= bestScore && score > 0) {
+      ctx.font = 'bold 14px Segoe UI, Arial, sans-serif';
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText('NEW BEST!', W / 2, py + 152);
+    }
+
+    // Play again
     const bw = 180, bh = 44;
-    const bx = (W - bw) / 2, by = py + 148;
+    const bbx = (W - bw) / 2, bby = py + 168;
     const blink = Math.sin(performance.now() * 0.005) * 0.15 + 0.85;
     ctx.globalAlpha = blink;
-    ctx.fillStyle = '#00d4ff';
+    ctx.fillStyle = NEON;
+    ctx.shadowColor = NEON;
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, 8);
+    roundRect(ctx, bbx, bby, bw, bh, 8);
     ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
     ctx.font = 'bold 18px Segoe UI, Arial, sans-serif';
-    ctx.fillStyle = '#0f0f1a';
-    ctx.fillText('Play Again', W / 2, by + 29);
+    ctx.fillStyle = '#0a0a18';
+    ctx.fillText('Play Again', W / 2, bby + 29);
+  }
+
+  // roundRect helper
+  function roundRect(c, x, y, w, h, r) {
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
   }
 
   // --- Game Loop ---
@@ -812,33 +944,12 @@ canvas { display: block; border-radius: 8px; }
     requestAnimationFrame(loop);
     const dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
-
-    if (state === 'play') {
-      update(dt);
-    }
+    if (state === 'play') update(dt);
     draw();
   }
 
   lastTime = performance.now();
   requestAnimationFrame(loop);
-
-  // roundRect polyfill for older browsers
-  if (!CanvasRenderingContext2D.prototype.roundRect) {
-    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-      if (typeof r === 'number') r = [r, r, r, r];
-      this.moveTo(x + r[0], y);
-      this.lineTo(x + w - r[1], y);
-      this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
-      this.lineTo(x + w, y + h - r[2]);
-      this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
-      this.lineTo(x + r[3], y + h);
-      this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
-      this.lineTo(x, y + r[0]);
-      this.quadraticCurveTo(x, y, x + r[0], y);
-      this.closePath();
-      return this;
-    };
-  }
 })();
 </script>
 <script src="sound.js?v=2"></script>
