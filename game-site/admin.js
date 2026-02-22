@@ -84,7 +84,7 @@
     'galaga':'galaga','crossword':'crossword','block blast':'blockblast',
     'stickman hook':'stickmanhook','paper.io':'paperio','fruit merge':'fruitmerge',
     'pool':'pool','sand fall':'sandfall','dots & boxes':'dotsboxes','dots and boxes':'dotsboxes',
-    'helicopter':'helicopter','slope':'slope'
+    'helicopter':'helicopter'
   };
 
   function _resolveGameId(input) {
