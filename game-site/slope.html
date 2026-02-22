@@ -7,37 +7,56 @@
 <script src="slope-build/TemplateData/unityloader41.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#231F20;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;height:100vh}
-.back{position:fixed;top:16px;left:16px;color:#0f0;text-decoration:none;font-size:18px;z-index:10001;font-weight:bold;text-shadow:0 0 8px rgba(0,255,0,0.5)}
-.back:hover{text-shadow:0 0 16px rgba(0,255,0,0.8)}
-.webgl-content{width:100%;height:100vh}
-#gameContainer{width:100%;height:100%;margin:0}
+body{background:#0f0f1a;overflow-y:auto;overflow-x:hidden;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:1rem}
+a.back{position:fixed;top:14px;left:14px;z-index:10001;color:#aaa;text-decoration:none;font-size:15px;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;transition:background .2s,color .2s}
+a.back:hover{background:#2a2a4a;color:#fff}
+h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(0,255,0,0.4);text-align:center}
+#game-wrapper{position:relative;width:100%;max-width:960px;aspect-ratio:16/9;border:2px solid #2a2a4a;border-radius:12px;overflow:hidden;background:#231F20;box-shadow:0 0 30px rgba(0,0,0,0.6)}
+#gameContainer{width:100%;height:100%}
+#gameContainer canvas{width:100%!important;height:100%!important}
 #gameContainer .logo,
 #gameContainer .progress{display:none!important}
-#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s}
+#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;transition:opacity 0.6s;border-radius:12px}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
-#loading-overlay h1{color:#0f0;font-size:48px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:30px}
-.loader{width:40px;height:40px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
+#loading-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:20px}
+.loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#loading-text{color:#888;margin-top:15px;font-size:14px}
+#loading-text{color:#888;margin-top:12px;font-size:13px}
+#gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
+#gameover-overlay.visible{display:flex}
+#gameover-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:8px}
+#gameover-score{color:#ccc;font-size:20px;margin-bottom:24px}
+#play-again-btn{background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4)}
+#play-again-btn:hover{background:#0f0;color:#111;text-shadow:none;box-shadow:0 0 20px rgba(0,255,0,0.5)}
 </style>
 </head>
 <body>
 <a class="back" href="index.html">&larr; Back</a>
+<h1 class="title">SLOPE</h1>
 
-<div id="loading-overlay">
-  <h1>SLOPE</h1>
-  <div class="loader"></div>
-  <div id="loading-text">Loading game...</div>
-</div>
+<div id="game-wrapper">
+  <div id="loading-overlay">
+    <h2>SLOPE</h2>
+    <div class="loader"></div>
+    <div id="loading-text">Loading game...</div>
+  </div>
 
-<div class="webgl-content">
+  <div id="gameover-overlay">
+    <h2>GAME OVER</h2>
+    <div id="gameover-score"></div>
+    <button id="play-again-btn">Play Again</button>
+  </div>
+
   <div id="gameContainer"></div>
 </div>
 
 <script>
 var gameLoaded = false;
 var gameStarted = false;
+var gameActive = false;
+var lastInputTime = 0;
+var deathCheckInterval = null;
+var scoreAtDeath = 0;
 
 function UnityProgress(inst, progress) {
   var txt = document.getElementById('loading-text');
@@ -46,7 +65,6 @@ function UnityProgress(inst, progress) {
   }
   if ((progress === 1 || progress === 'complete') && !gameLoaded) {
     gameLoaded = true;
-    // Give Unity time to fully initialize and render the menu
     setTimeout(startAutoPlay, 3000);
   }
 }
@@ -67,80 +85,124 @@ function startAutoPlay() {
     return;
   }
 
-  // Phase 1: Disable all branding/promo objects
+  // Disable branding
   disableBranding();
-
-  // Phase 2: Try SendMessage to start the game directly
   trySendMessages();
 
-  // Phase 3: After SendMessage attempts, do a precise click on Play button
-  // In the Y8 Slope game, the Play button is a large area roughly centered
-  // horizontally and positioned about 58% down the screen.
-  // The leaderboard icon is a small trophy in the UPPER RIGHT corner.
-  // So we click center-horizontal, slightly above vertical center to hit Play.
+  // Click Play button at 58% vertical (where Play is in Y8 Slope)
   setTimeout(function() {
     var rect = canvas.getBoundingClientRect();
-    var cx = rect.left + rect.width * 0.5;
-    // Play button is roughly at 58% from top in the Y8 Slope menu
-    var cy = rect.top + rect.height * 0.58;
-    fireClick(canvas, cx, cy);
+    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.58);
   }, 500);
 
-  // Phase 4: Try again with a slight offset if first click didn't work
   setTimeout(function() {
     if (gameStarted) return;
     var rect = canvas.getBoundingClientRect();
-    var cx = rect.left + rect.width * 0.5;
-    var cy = rect.top + rect.height * 0.52;
-    fireClick(canvas, cx, cy);
+    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.52);
   }, 1200);
 
-  // Phase 5: One more try at slightly different position
   setTimeout(function() {
     if (gameStarted) return;
     var rect = canvas.getBoundingClientRect();
-    var cx = rect.left + rect.width * 0.5;
-    var cy = rect.top + rect.height * 0.45;
-    fireClick(canvas, cx, cy);
+    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.45);
   }, 2000);
 
-  // Phase 6: Try keyboard - some Slope versions start with any keypress
+  // Try keyboard
   setTimeout(function() {
     if (gameStarted) return;
-    // Simulate Enter key
-    canvas.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
-    }));
-    canvas.dispatchEvent(new KeyboardEvent('keyup', {
-      key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
-    }));
-    // Also try Space
-    canvas.dispatchEvent(new KeyboardEvent('keydown', {
-      key: ' ', code: 'Space', keyCode: 32, bubbles: true
-    }));
-    canvas.dispatchEvent(new KeyboardEvent('keyup', {
-      key: ' ', code: 'Space', keyCode: 32, bubbles: true
-    }));
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+    canvas.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
   }, 2500);
 
-  // Hide the overlay after attempts - give it enough time
+  // Hide loading overlay
   setTimeout(function() {
     var overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.add('hidden');
     setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
-
-    // Continue disabling branding periodically
     disableBranding();
     setTimeout(disableBranding, 2000);
     setTimeout(disableBranding, 5000);
-    setTimeout(disableBranding, 10000);
   }, 3000);
+
+  // Start monitoring for game over
+  startDeathDetection();
 }
+
+// --- Game Over Detection ---
+// When the player is actively playing, arrow keys are pressed frequently.
+// When they die, input stops. We detect this transition.
+function startDeathDetection() {
+  deathCheckInterval = setInterval(function() {
+    if (!gameActive) return;
+    var now = Date.now();
+    // If player was active but no input for 1.5 seconds, likely dead
+    if (lastInputTime > 0 && (now - lastInputTime) > 1500) {
+      showGameOver();
+    }
+  }, 500);
+}
+
+function showGameOver() {
+  gameActive = false;
+  var overlay = document.getElementById('gameover-overlay');
+  if (overlay) overlay.classList.add('visible');
+
+  // Try to read score from Unity (may not work, but worth trying)
+  try {
+    // The score display in Slope is usually a distance counter
+    // We'll show a generic message if we can't get it
+  } catch(e) {}
+
+  var scoreEl = document.getElementById('gameover-score');
+  if (scoreEl) scoreEl.textContent = '';
+
+  // Play death sound
+  if (window.SFX && window.SFX.death) window.SFX.death();
+}
+
+function restartGame() {
+  var overlay = document.getElementById('gameover-overlay');
+  if (overlay) overlay.classList.remove('visible');
+
+  gameActive = false;
+  gameStarted = false;
+  lastInputTime = 0;
+
+  // Try SendMessage to restart
+  if (gameInstance) {
+    var objects = ['GameLogic', 'CanvasScripts', 'GameManager', 'Game'];
+    for (var i = 0; i < objects.length; i++) {
+      try { gameInstance.SendMessage(objects[i], 'RestartLevel'); } catch(e) {}
+      try { gameInstance.SendMessage(objects[i], 'HideAllScreens'); } catch(e) {}
+      try { gameInstance.SendMessage(objects[i], 'PlayGame'); } catch(e) {}
+    }
+  }
+
+  // Also click the canvas where the restart/play button would be
+  var canvas = document.querySelector('#gameContainer canvas');
+  if (canvas) {
+    var rect = canvas.getBoundingClientRect();
+    // Click center area multiple times with slight offsets
+    setTimeout(function() {
+      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.58);
+    }, 200);
+    setTimeout(function() {
+      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.52);
+    }, 600);
+    setTimeout(function() {
+      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.45);
+    }, 1000);
+  }
+
+  disableBranding();
+  setTimeout(disableBranding, 1000);
+  setTimeout(disableBranding, 3000);
+}
+
+document.getElementById('play-again-btn').addEventListener('click', restartGame);
 
 function trySendMessages() {
   if (!gameInstance) return;
-
-  // Try every known method to start the game
   var startMethods = [
     'PlayGame', 'StartGame', 'Play', 'Start', 'OnPlayButton',
     'OnPlayClick', 'OnPlay', 'BeginGame', 'NewGame',
@@ -151,39 +213,30 @@ function trySendMessages() {
     'Manager', 'Controller', 'GameController', 'LevelManager',
     'UIManager', 'MenuManager', 'MainMenu'
   ];
-
   for (var i = 0; i < gameObjects.length; i++) {
     for (var j = 0; j < startMethods.length; j++) {
       try { gameInstance.SendMessage(gameObjects[i], startMethods[j]); } catch(e) {}
     }
   }
-
-  // Try PlayMaker FSM events
-  var fsmEvents = ['PLAY', 'START', 'GAME_START', 'BEGIN', 'START_GAME', 'PLAY_GAME'];
+  var fsmEvents = ['PLAY', 'START', 'GAME_START', 'BEGIN', 'START_GAME'];
   for (var k = 0; k < fsmEvents.length; k++) {
     try { gameInstance.SendMessage('PlayMakerFSM', 'SendEvent', fsmEvents[k]); } catch(e) {}
     try { gameInstance.SendMessage('GameLogic', 'SendEvent', fsmEvents[k]); } catch(e) {}
   }
-
-  // Hide specific UI screens
   var screens = ['MainMenuScreen', 'GameOverScreen', 'PromoScreen', 'IDNETLogin',
     'IdnetSample', 'IdnetWrap', 'Leaderboard', 'LoginPanel'];
   for (var s = 0; s < screens.length; s++) {
     try { gameInstance.SendMessage(screens[s], 'SetActive', '0'); } catch(e) {}
   }
-
-  // Retry SendMessages after a delay
   setTimeout(function() {
     for (var i = 0; i < gameObjects.length; i++) {
       try { gameInstance.SendMessage(gameObjects[i], 'HideAllScreens'); } catch(e) {}
       try { gameInstance.SendMessage(gameObjects[i], 'RestartLevel'); } catch(e) {}
-      try { gameInstance.SendMessage(gameObjects[i], 'PlayGame'); } catch(e) {}
     }
   }, 1000);
 }
 
 function fireClick(el, x, y) {
-  // Fire a complete mouse click sequence
   var common = {
     bubbles: true, cancelable: true, view: window,
     clientX: x, clientY: y, button: 0, pointerId: 1,
@@ -191,7 +244,6 @@ function fireClick(el, x, y) {
   };
   el.dispatchEvent(new PointerEvent('pointerdown', common));
   el.dispatchEvent(new MouseEvent('mousedown', common));
-  // Small delay between down and up for realism
   setTimeout(function() {
     el.dispatchEvent(new PointerEvent('pointerup', common));
     el.dispatchEvent(new MouseEvent('mouseup', common));
@@ -212,12 +264,23 @@ function disableBranding() {
   try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
 }
 
-// Listen for game state changes - if keys are being pressed,
-// the game has likely started
+// Track gameplay input to detect game over
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-      e.key === 'a' || e.key === 'd') {
-    gameStarted = true;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd') {
+    if (!gameStarted) {
+      gameStarted = true;
+      gameActive = true;
+    }
+    lastInputTime = Date.now();
+    gameActive = true;
+  }
+});
+
+// Also track touch for mobile
+document.addEventListener('touchstart', function(e) {
+  if (gameStarted) {
+    lastInputTime = Date.now();
+    gameActive = true;
   }
 });
 </script>
