@@ -87,8 +87,7 @@
     'helicopter':'helicopter',
     'run 3':'run3','run3':'run3','drift hunters':'drifthunters','snow rider':'snowrider',
     'snow rider 3d':'snowrider','subway surfers':'subway','slope':'slope',
-    'celeste':'celeste','celeste classic':'celeste','cookie clicker':'cookieclicker',
-    'champion island':'championisland','zelda 3d':'zelda3d','zelda':'zelda3d'
+    'champion island':'championisland'
   };
 
   function _resolveGameId(input) {
