@@ -84,7 +84,12 @@
     'galaga':'galaga','crossword':'crossword','block blast':'blockblast',
     'stickman hook':'stickmanhook','paper.io':'paperio','fruit merge':'fruitmerge',
     'pool':'pool','sand fall':'sandfall','dots & boxes':'dotsboxes','dots and boxes':'dotsboxes',
-    'helicopter':'helicopter'
+    'helicopter':'helicopter',
+    'run 3':'run3','run3':'run3','cut the rope':'cuttherope','temple run':'templerun',
+    'temple run 2':'templerun','drift hunters':'drifthunters','snow rider':'snowrider',
+    'snow rider 3d':'snowrider','getaway shootout':'getaway','retro bowl':'retrobowl',
+    'subway surfers':'subway','fireboy watergirl 3':'fbw3','fbw3':'fbw3',
+    'fireboy watergirl 5':'fbw5','fbw5':'fbw5'
   };
 
   function _resolveGameId(input) {
