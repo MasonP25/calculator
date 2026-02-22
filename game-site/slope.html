@@ -129,7 +129,30 @@ function enableClickThrough() {
   menuReady = true;
   canvas.focus();
 
-  // Start monitoring for game start
+  // When user clicks through the overlay, the game should start
+  // Hide overlay shortly after click since the game will be running
+  document.getElementById('game-wrapper').addEventListener('click', function onWrapperClick() {
+    if (!menuReady || gameStarted) return;
+    // User clicked - their click went through to Unity's Play button
+    // Hide overlay after a short delay to let the game start
+    setTimeout(function() {
+      var ov = document.getElementById('loading-overlay');
+      if (ov && !gameStarted) {
+        // Game hasn't detected arrow keys yet, but click went through
+        // Hide overlay so user can see and play
+        gameStarted = true;
+        gameActive = true;
+        startTimer();
+        ov.classList.add('hidden');
+        setTimeout(function() { ov.style.display = 'none'; }, 600);
+        disableBranding();
+        setTimeout(disableBranding, 2000);
+      }
+    }, 1500);
+    document.getElementById('game-wrapper').removeEventListener('click', onWrapperClick);
+  });
+
+  // Start monitoring for game over
   startDeathDetection();
 }
 
