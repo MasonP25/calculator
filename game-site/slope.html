@@ -79,13 +79,16 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   var timerInterval = null;
 
   // ---- Load Unity game directly (not iframe) ----
+  var loadFallbackTimer = null;
+
   function UnityProgress(inst, progress) {
     var txt = document.getElementById('loading-text');
     if (txt && typeof progress === 'number') {
       txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
     }
-    if ((progress === 1 || progress === 'complete') && !gameLoaded) {
+    if ((progress >= 0.9 || progress === 'complete') && !gameLoaded) {
       gameLoaded = true;
+      if (loadFallbackTimer) clearTimeout(loadFallbackTimer);
       setTimeout(onGameLoaded, 2000);
     }
   }
@@ -99,6 +102,14 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
       }
     }
   });
+
+  // Hard fallback — if progress never reaches 90%, show Play after 15s
+  loadFallbackTimer = setTimeout(function() {
+    if (!gameLoaded) {
+      gameLoaded = true;
+      onGameLoaded();
+    }
+  }, 15000);
 
   // ---- Game loaded: show Play button ----
   function onGameLoaded() {
