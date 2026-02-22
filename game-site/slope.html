@@ -124,17 +124,34 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     disableBranding();
   }
 
-  // ---- Play button: make overlay click-through ----
-  // Overlay stays VISUALLY OPAQUE but pointer-events:none
-  // so user's REAL click passes through to Unity's Play button on the canvas.
-  // This works because the canvas is on our page (not in an iframe).
+  // ---- Play button: hide overlay + click Unity's canvas ----
   document.getElementById('play-btn').addEventListener('click', function() {
     var overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.style.pointerEvents = 'none';
+    if (overlay) {
+      overlay.classList.add('hidden');
+      setTimeout(function() { overlay.style.display = 'none'; }, 600);
+    }
 
-    // Focus the canvas
+    // Try to click Unity's Play button on the canvas
     var canvas = document.querySelector('#gameContainer canvas');
-    if (canvas) canvas.focus();
+    if (canvas) {
+      canvas.focus();
+      var rect = canvas.getBoundingClientRect();
+      var cx = rect.width / 2;
+      var cy = rect.height / 2;
+      // Send mousedown + mouseup to simulate a click at center
+      setTimeout(function() {
+        canvas.dispatchEvent(new MouseEvent('mousedown', {
+          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
+        }));
+        canvas.dispatchEvent(new MouseEvent('mouseup', {
+          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
+        }));
+        canvas.dispatchEvent(new MouseEvent('click', {
+          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
+        }));
+      }, 300);
+    }
   });
 
   // ---- Arrow keys = game actually started, hide overlay ----
