@@ -4,6 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Slope</title>
+<!-- Stub out external services the game tries to load -->
+<script>
+// Stub Google Analytics
+window.dataLayer = [];
+function gtag(){ dataLayer.push(arguments); }
+// Stub ad SDK
+window.adsbygoogle = [];
+window.__게 = {};
+// Stub IDnet/Y8 SDK
+window.idAsyncInit = function(){};
+window.ID = { Event: { CONNECT: 'connect' }, init: function(){}, submit: function(){}, getAuth: function(){ return null; }, api: function(){} };
+window.BlacklistAPI = { isBlacklisted: function(){ return false; } };
+// Stub Plausible
+window.plausible = function(){};
+// Prevent service worker registration
+if(navigator.serviceWorker){ navigator.serviceWorker.register = function(){ return Promise.resolve(); }; }
+// Suppress common console errors
+window.addEventListener('error', function(e){
+  if(e.filename && (e.filename.indexOf('adsbygoogle') !== -1 || e.filename.indexOf('gtag') !== -1 || e.filename.indexOf('plausible') !== -1 || e.filename.indexOf('idnet') !== -1)) {
+    e.preventDefault();
+  }
+});
+</script>
 <script src="slope-build/TemplateData/unityloader41.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
