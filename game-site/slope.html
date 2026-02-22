@@ -18,18 +18,22 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 #our-score{color:#0f0;font-size:16px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif;opacity:0;transition:opacity 0.3s}
 #our-score.visible{opacity:1}
 
-/* Loading overlay */
+/* Loading overlay - stays visually opaque to hide ugly menu */
 #loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;border-radius:12px;transition:opacity 0.4s}
+#loading-overlay.click-through{pointer-events:none}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
 #loading-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:20px}
 .loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading-text{color:#888;margin-top:12px;font-size:13px}
-#click-prompt{display:none;background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4);margin-top:20px}
-#click-prompt:hover{background:#0f0;color:#111;text-shadow:none;box-shadow:0 0 20px rgba(0,255,0,0.5)}
+#play-btn{display:none;background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4);margin-top:20px}
+#play-btn:hover{background:#0f0;color:#111;text-shadow:none;box-shadow:0 0 20px rgba(0,255,0,0.5)}
+#click-start{display:none;color:#0f0;font-size:20px;margin-top:20px;animation:pulse 1.5s ease-in-out infinite;pointer-events:none}
+/* Click-through zone in center of overlay where Unity's Play button is */
+#click-zone{display:none;position:absolute;top:35%;left:30%;width:40%;height:30%;pointer-events:none;cursor:pointer;border:2px solid rgba(0,255,0,0.15);border-radius:12px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-/* Game over overlay */
+/* Game over overlay - covers leaderboard popup */
 #gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
 #gameover-overlay.visible{display:flex}
 #gameover-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:8px}
@@ -44,12 +48,14 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 <h1 class="title">SLOPE</h1>
 
 <div id="game-wrapper">
-  <!-- Loading overlay - covers ugly menu -->
+  <!-- Loading overlay - covers ugly menu at all times until game actually starts -->
   <div id="loading-overlay">
     <h2>SLOPE</h2>
     <div class="loader" id="load-spinner"></div>
     <div id="loading-text">Loading game...</div>
-    <button id="click-prompt">Play</button>
+    <button id="play-btn">Play</button>
+    <div id="click-start">Click the center to start</div>
+    <div id="click-zone"></div>
   </div>
 
   <!-- Game over overlay - covers leaderboard popup -->
@@ -78,32 +84,62 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   var currentTime = 0;
   var timerInterval = null;
   var iframeLoadTimer = null;
+  var readyToPlay = false;
 
-  // --- Show Play button after iframe likely loaded ---
+  // --- Phase 1: Wait for iframe to load, then show Play button ---
   function waitForLoad() {
     iframeLoadTimer = setTimeout(function() {
       var spinner = document.getElementById('load-spinner');
       var loadText = document.getElementById('loading-text');
-      var clickPrompt = document.getElementById('click-prompt');
+      var playBtn = document.getElementById('play-btn');
 
       if (spinner) spinner.style.display = 'none';
       if (loadText) loadText.style.display = 'none';
-      if (clickPrompt) clickPrompt.style.display = 'block';
+      if (playBtn) playBtn.style.display = 'block';
     }, 4000);
   }
   waitForLoad();
 
-  // --- Play button hides overlay so user can interact with iframe ---
-  document.getElementById('click-prompt').addEventListener('click', function() {
+  // --- Phase 2: Play button clicked ---
+  // Overlay becomes click-through but stays VISUALLY OPAQUE
+  // so user never sees the ugly menu. Text changes to "Click to start".
+  // Their next click passes through the overlay to Unity's Play button.
+  document.getElementById('play-btn').addEventListener('click', function() {
+    var playBtn = document.getElementById('play-btn');
+    var clickStart = document.getElementById('click-start');
+    var overlay = document.getElementById('loading-overlay');
+
+    if (playBtn) playBtn.style.display = 'none';
+    if (clickStart) clickStart.style.display = 'block';
+
+    // Only make the center zone click-through (where Unity's Play button is)
+    // Rest of overlay stays solid so clicking elsewhere does nothing
+    var clickZone = document.getElementById('click-zone');
+    if (clickZone) clickZone.style.display = 'block';
+
+    readyToPlay = true;
+
+    // Focus iframe so it receives keyboard input
+    var frame = document.getElementById('game-frame');
+    if (frame) frame.focus();
+  });
+
+  // --- Phase 3: Arrow keys detected = game actually started ---
+  // NOW we hide the overlay and start the timer
+  function onGameStart() {
+    if (gameStarted) return;
+    gameStarted = true;
+    gameActive = true;
+    startTimer();
+
     var overlay = document.getElementById('loading-overlay');
     if (overlay) {
       overlay.classList.add('hidden');
       setTimeout(function() { overlay.style.display = 'none'; }, 500);
     }
-    // Focus the iframe so key events reach the game
-    var frame = document.getElementById('game-frame');
-    if (frame) frame.focus();
-  });
+
+    startDeathDetection();
+  }
 
   // --- Timer ---
   function startTimer() {
@@ -119,23 +155,6 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   function stopTimer() {
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     currentTime = (Date.now() - startTime) / 1000;
-  }
-
-  // --- Game Start Detection ---
-  function onGameStart() {
-    if (gameStarted) return;
-    gameStarted = true;
-    gameActive = true;
-    startTimer();
-
-    // Hide loading overlay
-    var overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.add('hidden');
-      setTimeout(function() { overlay.style.display = 'none'; }, 500);
-    }
-
-    startDeathDetection();
   }
 
   // --- Death Detection ---
@@ -187,6 +206,7 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   }
 
   // --- Play Again ---
+  // Full reset: reload iframe, show loading overlay, go through all phases again
   document.getElementById('play-again-btn').addEventListener('click', function(e) {
     e.stopPropagation();
 
@@ -195,6 +215,7 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     gameActive = false;
     lastInputTime = 0;
     currentTime = 0;
+    readyToPlay = false;
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     if (deathCheckInterval) { clearInterval(deathCheckInterval); deathCheckInterval = null; }
     if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
@@ -203,28 +224,33 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     var goOverlay = document.getElementById('gameover-overlay');
     if (goOverlay) goOverlay.classList.remove('visible');
 
-    // Reset and show loading overlay
+    // Reset and show loading overlay with spinner
     var loadOverlay = document.getElementById('loading-overlay');
     var spinner = document.getElementById('load-spinner');
     var loadText = document.getElementById('loading-text');
-    var clickPrompt = document.getElementById('click-prompt');
+    var playBtn = document.getElementById('play-btn');
+    var clickStart = document.getElementById('click-start');
     var scoreEl = document.getElementById('our-score');
 
     if (scoreEl) { scoreEl.textContent = '0.0s'; scoreEl.classList.remove('visible'); }
     if (spinner) spinner.style.display = 'block';
     if (loadText) { loadText.style.display = 'block'; loadText.textContent = 'Loading game...'; }
-    if (clickPrompt) clickPrompt.style.display = 'none';
+    if (playBtn) playBtn.style.display = 'none';
+    if (clickStart) clickStart.style.display = 'none';
+    var clickZone = document.getElementById('click-zone');
+    if (clickZone) clickZone.style.display = 'none';
 
     if (loadOverlay) {
       loadOverlay.classList.remove('hidden');
       loadOverlay.style.display = 'flex';
+      loadOverlay.style.opacity = '1';
     }
 
     // Reload iframe
     var frame = document.getElementById('game-frame');
     if (frame) frame.src = 'https://sz-games.github.io/slope/';
 
-    // Wait for reload then show click to play
+    // Wait for reload then show Play button again
     waitForLoad();
   });
 
