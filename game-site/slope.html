@@ -74,16 +74,23 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   var currentTime = 0;
   var timerInterval = null;
 
-  // Show Play button after iframe has had time to load
+  // Show Play button after iframe has had time to load (8 seconds)
   setTimeout(function() {
     document.getElementById('load-spinner').style.display = 'none';
     document.getElementById('loading-text').style.display = 'none';
     document.getElementById('play-btn').style.display = 'block';
-  }, 5000);
+  }, 8000);
 
-  // Play button — hide overlay so user can interact with the game
-  document.getElementById('play-btn').addEventListener('click', function() {
-    document.getElementById('loading-overlay').classList.add('hidden');
+  // On mousedown, instantly hide overlay (display:none).
+  // The mouseup that follows will land on the iframe underneath,
+  // hitting Unity's Play button at the same position.
+  document.getElementById('play-btn').addEventListener('mousedown', function() {
+    document.getElementById('loading-overlay').style.display = 'none';
+  });
+  // Same for touch
+  document.getElementById('play-btn').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    document.getElementById('loading-overlay').style.display = 'none';
   });
 
   // Timer
