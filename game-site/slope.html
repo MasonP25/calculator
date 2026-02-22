@@ -22,7 +22,7 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 .loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading-text{color:#888;margin-top:12px;font-size:13px}
-#gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
+#gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
 #gameover-overlay.visible{display:flex}
 #gameover-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:8px}
 #gameover-score{color:#ccc;font-size:20px;margin-bottom:24px}
@@ -161,42 +161,62 @@ function showGameOver() {
 }
 
 function restartGame() {
-  var overlay = document.getElementById('gameover-overlay');
-  if (overlay) overlay.classList.remove('visible');
-
+  // Keep our overlay visible while we get the game restarted behind it
   gameActive = false;
   gameStarted = false;
   lastInputTime = 0;
 
-  // Try SendMessage to restart
+  var canvas = document.querySelector('#gameContainer canvas');
+  if (!canvas) return;
+  var rect = canvas.getBoundingClientRect();
+
+  // The Unity game over screen has its own buttons. We need to:
+  // 1. Click through Unity's menu/play button to get back to gameplay
+  // 2. Only THEN hide our overlay
+
+  // Try SendMessage restart methods
   if (gameInstance) {
     var objects = ['GameLogic', 'CanvasScripts', 'GameManager', 'Game'];
     for (var i = 0; i < objects.length; i++) {
       try { gameInstance.SendMessage(objects[i], 'RestartLevel'); } catch(e) {}
       try { gameInstance.SendMessage(objects[i], 'HideAllScreens'); } catch(e) {}
       try { gameInstance.SendMessage(objects[i], 'PlayGame'); } catch(e) {}
+      try { gameInstance.SendMessage(objects[i], 'StartGame'); } catch(e) {}
     }
   }
 
-  // Also click the canvas where the restart/play button would be
-  var canvas = document.querySelector('#gameContainer canvas');
-  if (canvas) {
-    var rect = canvas.getBoundingClientRect();
-    // Click center area multiple times with slight offsets
-    setTimeout(function() {
-      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.58);
-    }, 200);
-    setTimeout(function() {
-      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.52);
-    }, 600);
-    setTimeout(function() {
-      fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.45);
-    }, 1000);
+  disableBranding();
+
+  // Unity's game-over screen likely has a "Menu" or "Play Again" button.
+  // After death, the game goes to its menu. We need to click through that menu's
+  // Play button just like we do at initial load.
+  // First, wait a moment for the Unity menu to appear after our SendMessage calls
+  // Then click the Play button position (same as initial auto-play)
+  var clickSequence = [
+    { delay: 300, yPct: 0.58 },  // Play button position
+    { delay: 800, yPct: 0.52 },  // Slightly higher
+    { delay: 1300, yPct: 0.45 }, // Even higher
+    { delay: 1800, yPct: 0.58 }, // Try play button again
+    { delay: 2300, yPct: 0.52 }, // One more try
+  ];
+
+  for (var c = 0; c < clickSequence.length; c++) {
+    (function(delay, yPct) {
+      setTimeout(function() {
+        rect = canvas.getBoundingClientRect();
+        fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * yPct);
+      }, delay);
+    })(clickSequence[c].delay, clickSequence[c].yPct);
   }
 
-  disableBranding();
-  setTimeout(disableBranding, 1000);
-  setTimeout(disableBranding, 3000);
+  // After clicking sequence, hide our overlay
+  setTimeout(function() {
+    var overlay = document.getElementById('gameover-overlay');
+    if (overlay) overlay.classList.remove('visible');
+    disableBranding();
+    setTimeout(disableBranding, 2000);
+    setTimeout(disableBranding, 5000);
+  }, 2800);
 }
 
 document.getElementById('play-again-btn').addEventListener('click', restartGame);
