@@ -19,12 +19,17 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 /* Bar covering Unity's built-in score at top center */
 #score-cover{position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:48px;background:#231F20;z-index:10;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;pointer-events:none}
 #our-score{color:#0f0;font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif}
-#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;transition:opacity 0.6s;border-radius:12px}
+/* Loading overlay - blocks view while loading, then becomes click-through */
+#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;transition:opacity 0.5s;border-radius:12px}
+#loading-overlay.click-through{pointer-events:none;cursor:pointer}
 #loading-overlay.hidden{opacity:0;pointer-events:none}
 #loading-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:20px}
 .loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading-text{color:#888;margin-top:12px;font-size:13px}
+#click-prompt{display:none;color:#0f0;font-size:20px;margin-top:20px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+/* Game over overlay */
 #gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
 #gameover-overlay.visible{display:flex}
 #gameover-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:8px}
@@ -41,8 +46,9 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 <div id="game-wrapper">
   <div id="loading-overlay">
     <h2>SLOPE</h2>
-    <div class="loader"></div>
+    <div class="loader" id="load-spinner"></div>
     <div id="loading-text">Loading game...</div>
+    <div id="click-prompt">Click here to play</div>
   </div>
 
   <div id="gameover-overlay">
@@ -66,6 +72,7 @@ var gameStarted = false;
 var gameActive = false;
 var lastInputTime = 0;
 var deathCheckInterval = null;
+var menuReady = false;
 
 // Timer-based scoring
 var startTime = 0;
@@ -79,9 +86,8 @@ function UnityProgress(inst, progress) {
   }
   if ((progress === 1 || progress === 'complete') && !gameLoaded) {
     gameLoaded = true;
-    // Start clicking early (1s) - on cached reloads Unity loads fast
-    // The interval will keep retrying so early start is fine
-    setTimeout(startAutoPlay, 1000);
+    // Wait for menu to render, then make overlay click-through
+    setTimeout(enableClickThrough, 2000);
   }
 }
 
@@ -94,59 +100,36 @@ var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/s
   }
 });
 
-var autoPlayAttempt = 0;
-var autoPlayInterval = null;
-
-function startAutoPlay() {
+function enableClickThrough() {
   var canvas = document.querySelector('#gameContainer canvas');
   if (!canvas) {
-    setTimeout(startAutoPlay, 500);
+    setTimeout(enableClickThrough, 500);
     return;
   }
 
+  // Disable branding
   disableBranding();
-  trySendMessages();
 
-  autoPlayAttempt = 0;
-  autoPlayInterval = setInterval(function() {
-    if (gameStarted) {
-      clearInterval(autoPlayInterval);
-      autoPlayInterval = null;
-      var overlay = document.getElementById('loading-overlay');
-      if (overlay) overlay.classList.add('hidden');
-      setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
-      disableBranding();
-      setTimeout(disableBranding, 2000);
-      setTimeout(disableBranding, 5000);
-      return;
-    }
+  // The overlay stays visually opaque (user can't see the ugly menu)
+  // but becomes pointer-events:none so their REAL click passes through
+  // to Unity's Play button underneath
+  var overlay = document.getElementById('loading-overlay');
+  var spinner = document.getElementById('load-spinner');
+  var loadText = document.getElementById('loading-text');
+  var clickPrompt = document.getElementById('click-prompt');
 
-    autoPlayAttempt++;
-    var rect = canvas.getBoundingClientRect();
-    var cx = rect.left + rect.width * 0.5;
-    // Try many positions - the Play button location varies
-    var yPositions = [0.58, 0.52, 0.45, 0.50, 0.55, 0.40, 0.62, 0.48, 0.35, 0.65];
-    var yPct = yPositions[autoPlayAttempt % yPositions.length];
-    fireClick(canvas, cx, rect.top + rect.height * yPct);
-    // Also try slightly left and right of center on some attempts
-    if (autoPlayAttempt % 3 === 0) {
-      fireClick(canvas, cx - rect.width * 0.1, rect.top + rect.height * yPct);
-      fireClick(canvas, cx + rect.width * 0.1, rect.top + rect.height * yPct);
-    }
-    canvas.focus();
+  // Switch from "Loading..." to "Click to Play"
+  if (spinner) spinner.style.display = 'none';
+  if (loadText) loadText.style.display = 'none';
+  if (clickPrompt) clickPrompt.style.display = 'block';
 
-    if (autoPlayAttempt % 5 === 0) trySendMessages();
-    disableBranding();
+  // Make overlay click-through - user's real click goes to Unity canvas
+  if (overlay) overlay.classList.add('click-through');
 
-    if (autoPlayAttempt >= 40) {
-      clearInterval(autoPlayInterval);
-      autoPlayInterval = null;
-      var overlay = document.getElementById('loading-overlay');
-      if (overlay) overlay.classList.add('hidden');
-      setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
-    }
-  }, 500);
+  menuReady = true;
+  canvas.focus();
 
+  // Start monitoring for game start
   startDeathDetection();
 }
 
@@ -170,6 +153,7 @@ function stopTimer() {
 
 // --- Game Over Detection ---
 function startDeathDetection() {
+  if (deathCheckInterval) return;
   deathCheckInterval = setInterval(function() {
     if (!gameActive) return;
     var now = Date.now();
@@ -201,7 +185,7 @@ function showGameOver() {
     try {
       var scores = HallOfFame.getScores('slope');
       if (scores && scores.length > 0) {
-        var best = scores[0].score; // sorted highest first
+        var best = scores[0].score;
         if (finalScore >= best) {
           bestEl.textContent = 'New Best!';
           bestEl.style.color = '#0f0';
@@ -229,56 +213,6 @@ function restartGame() {
 
 document.getElementById('play-again-btn').addEventListener('click', restartGame);
 
-function trySendMessages() {
-  if (!gameInstance) return;
-  var startMethods = [
-    'PlayGame', 'StartGame', 'Play', 'Start', 'OnPlayButton',
-    'OnPlayClick', 'OnPlay', 'BeginGame', 'NewGame',
-    'HideAllScreens', 'RestartLevel', 'StartLevel', 'LoadLevel'
-  ];
-  var gameObjects = [
-    'GameLogic', 'CanvasScripts', 'GameManager', 'Game',
-    'Manager', 'Controller', 'GameController', 'LevelManager',
-    'UIManager', 'MenuManager', 'MainMenu'
-  ];
-  for (var i = 0; i < gameObjects.length; i++) {
-    for (var j = 0; j < startMethods.length; j++) {
-      try { gameInstance.SendMessage(gameObjects[i], startMethods[j]); } catch(e) {}
-    }
-  }
-  var fsmEvents = ['PLAY', 'START', 'GAME_START', 'BEGIN', 'START_GAME'];
-  for (var k = 0; k < fsmEvents.length; k++) {
-    try { gameInstance.SendMessage('PlayMakerFSM', 'SendEvent', fsmEvents[k]); } catch(e) {}
-    try { gameInstance.SendMessage('GameLogic', 'SendEvent', fsmEvents[k]); } catch(e) {}
-  }
-  var screens = ['MainMenuScreen', 'GameOverScreen', 'PromoScreen', 'IDNETLogin',
-    'IdnetSample', 'IdnetWrap', 'Leaderboard', 'LoginPanel'];
-  for (var s = 0; s < screens.length; s++) {
-    try { gameInstance.SendMessage(screens[s], 'SetActive', '0'); } catch(e) {}
-  }
-  setTimeout(function() {
-    for (var i = 0; i < gameObjects.length; i++) {
-      try { gameInstance.SendMessage(gameObjects[i], 'HideAllScreens'); } catch(e) {}
-      try { gameInstance.SendMessage(gameObjects[i], 'RestartLevel'); } catch(e) {}
-    }
-  }, 1000);
-}
-
-function fireClick(el, x, y) {
-  var common = {
-    bubbles: true, cancelable: true, view: window,
-    clientX: x, clientY: y, button: 0, pointerId: 1,
-    pointerType: 'mouse'
-  };
-  el.dispatchEvent(new PointerEvent('pointerdown', common));
-  el.dispatchEvent(new MouseEvent('mousedown', common));
-  setTimeout(function() {
-    el.dispatchEvent(new PointerEvent('pointerup', common));
-    el.dispatchEvent(new MouseEvent('mouseup', common));
-    el.dispatchEvent(new MouseEvent('click', common));
-  }, 50);
-}
-
 function disableBranding() {
   if (!gameInstance) return;
   var objs = ['Branding', 'BrandingScript', 'Y8Branding', 'Branding_Y8',
@@ -299,6 +233,15 @@ document.addEventListener('keydown', function(e) {
       gameStarted = true;
       gameActive = true;
       startTimer();
+      // Hide the loading overlay now that the game is running
+      var overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        setTimeout(function() { overlay.style.display = 'none'; }, 600);
+      }
+      disableBranding();
+      setTimeout(disableBranding, 2000);
+      setTimeout(disableBranding, 5000);
     }
     lastInputTime = Date.now();
     gameActive = true;
@@ -310,6 +253,13 @@ document.addEventListener('touchstart', function(e) {
     gameStarted = true;
     gameActive = true;
     startTimer();
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      setTimeout(function() { overlay.style.display = 'none'; }, 600);
+    }
+    disableBranding();
+    setTimeout(disableBranding, 2000);
   }
   if (gameStarted) {
     lastInputTime = Date.now();
