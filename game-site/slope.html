@@ -16,9 +16,10 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 #gameContainer canvas{width:100%!important;height:100%!important}
 #gameContainer .logo,
 #gameContainer .progress{display:none!important}
-/* Bar covering Unity's built-in score at top center */
-#score-cover{position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:48px;background:#231F20;z-index:10;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;pointer-events:none}
-#our-score{color:#0f0;font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif}
+/* Bar covering Unity's built-in score at top */
+#score-cover{position:absolute;top:0;left:0;width:100%;height:60%;background:transparent;z-index:10;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;pointer-events:none}
+#score-cover-bg{position:absolute;top:0;left:50%;transform:translateX(-50%);width:260px;height:52px;background:#231F20;border-radius:0 0 10px 10px}
+#our-score{position:relative;color:#0f0;font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif;z-index:1;padding-top:10px}
 /* Loading overlay - blocks view while loading, then becomes click-through */
 #loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;transition:opacity 0.5s;border-radius:12px}
 #loading-overlay.click-through{pointer-events:none;cursor:pointer}
@@ -60,6 +61,7 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 
   <!-- Covers Unity's built-in score, shows our timer instead -->
   <div id="score-cover">
+    <div id="score-cover-bg"></div>
     <span id="our-score">0.0s</span>
   </div>
 
@@ -175,15 +177,42 @@ function stopTimer() {
 }
 
 // --- Game Over Detection ---
+// Use canvas pixel sampling to detect game over screen
+// The game over screen in Slope turns mostly dark/black
+// We also check for prolonged keyboard inactivity as backup
 function startDeathDetection() {
   if (deathCheckInterval) return;
   deathCheckInterval = setInterval(function() {
     if (!gameActive) return;
     var now = Date.now();
-    if (lastInputTime > 0 && (now - lastInputTime) > 1500) {
-      showGameOver();
+    // Only trigger game over if no input for 5 seconds
+    // (player could be going straight without pressing keys)
+    if (lastInputTime > 0 && (now - lastInputTime) > 5000) {
+      // Double-check by sampling canvas - if game over screen is showing,
+      // the center of canvas will be very dark
+      var canvas = document.querySelector('#gameContainer canvas');
+      if (canvas) {
+        try {
+          var ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+          if (ctx) {
+            var pixel = new Uint8Array(4);
+            var w = canvas.width, h = canvas.height;
+            ctx.readPixels(w/2, h/2, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, pixel);
+            // If center pixel is very dark, likely game over screen
+            var brightness = pixel[0] + pixel[1] + pixel[2];
+            if (brightness < 100) {
+              showGameOver();
+              return;
+            }
+          }
+        } catch(e) {}
+      }
+      // Fallback: if no input for 8 seconds, assume dead
+      if ((now - lastInputTime) > 8000) {
+        showGameOver();
+      }
     }
-  }, 500);
+  }, 1000);
 }
 
 function showGameOver() {
@@ -225,7 +254,8 @@ function showGameOver() {
   if (window.SFX && window.SFX.death) window.SFX.death();
 }
 
-function restartGame() {
+function restartGame(e) {
+  e.stopPropagation(); // Don't trigger the game-wrapper click listener
   var btn = document.getElementById('play-again-btn');
   if (btn) {
     btn.disabled = true;
@@ -247,47 +277,55 @@ function disableBranding() {
   }
   try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
   try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
+  // Try to hide Unity's score/HUD
+  var scoreObjs = ['ScoreText', 'Score', 'ScoreUI', 'HUD', 'HUDCanvas',
+    'UICanvas', 'ScoreCanvas', 'InGameUI', 'GameHUD', 'GameUI'];
+  for (var s = 0; s < scoreObjs.length; s++) {
+    try { gameInstance.SendMessage(scoreObjs[s], 'SetActive', '0'); } catch(e) {}
+  }
 }
 
 // Track gameplay input
+function onGameStart() {
+  if (gameStarted) return;
+  gameStarted = true;
+  gameActive = true;
+  startTimer();
+  var overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    setTimeout(function() { overlay.style.display = 'none'; }, 600);
+  }
+  disableBranding();
+  setTimeout(disableBranding, 2000);
+  setTimeout(disableBranding, 5000);
+}
+
 document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd') {
-    if (!gameStarted) {
-      gameStarted = true;
-      gameActive = true;
-      startTimer();
-      // Hide the loading overlay now that the game is running
-      var overlay = document.getElementById('loading-overlay');
-      if (overlay) {
-        overlay.classList.add('hidden');
-        setTimeout(function() { overlay.style.display = 'none'; }, 600);
-      }
-      disableBranding();
-      setTimeout(disableBranding, 2000);
-      setTimeout(disableBranding, 5000);
-    }
+    onGameStart();
     lastInputTime = Date.now();
     gameActive = true;
   }
 });
 
-document.addEventListener('touchstart', function(e) {
-  if (gameLoaded && !gameStarted) {
-    gameStarted = true;
-    gameActive = true;
-    startTimer();
-    var overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.add('hidden');
-      setTimeout(function() { overlay.style.display = 'none'; }, 600);
-    }
-    disableBranding();
-    setTimeout(disableBranding, 2000);
+// Also keep alive timer on keyup (for when holding a key)
+document.addEventListener('keyup', function(e) {
+  if (gameStarted && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd')) {
+    lastInputTime = Date.now();
   }
+});
+
+document.addEventListener('touchstart', function(e) {
+  if (gameLoaded) onGameStart();
   if (gameStarted) {
     lastInputTime = Date.now();
     gameActive = true;
   }
+});
+
+document.addEventListener('touchend', function(e) {
+  if (gameStarted) lastInputTime = Date.now();
 });
 </script>
 
