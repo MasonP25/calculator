@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Slope</title>
-<script src="slope-build/TemplateData/unityloader41.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;overflow-y:auto;overflow-x:hidden;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:1rem}
@@ -12,23 +11,21 @@ a.back{position:fixed;top:14px;left:14px;z-index:10001;color:#aaa;text-decoratio
 a.back:hover{background:#2a2a4a;color:#fff}
 h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(0,255,0,0.4);text-align:center}
 #game-wrapper{position:relative;width:100%;max-width:960px;aspect-ratio:16/9;border:2px solid #2a2a4a;border-radius:12px;overflow:hidden;background:#231F20;box-shadow:0 0 30px rgba(0,0,0,0.6)}
-#gameContainer{width:100%;height:100%}
-#gameContainer canvas{width:100%!important;height:100%!important}
-#gameContainer .logo,#gameContainer .progress{display:none!important}
+#game-wrapper iframe{width:100%;height:100%;border:none}
 
 /* Score cover bar */
 #score-cover{position:absolute;top:0;left:0;width:100%;height:36px;background:#231F20;z-index:10;display:flex;align-items:center;justify-content:center;pointer-events:none}
 #our-score{color:#0f0;font-size:16px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);opacity:0;transition:opacity 0.3s}
 #our-score.visible{opacity:1}
 
-/* Loading overlay — pointer-events:none lets clicks pass to Unity canvas */
-#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;border-radius:12px;transition:opacity 0.5s}
-#loading-overlay.hidden{opacity:0;pointer-events:none}
+/* Loading overlay */
+#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;border-radius:12px}
+#loading-overlay.hidden{display:none}
 #loading-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:20px}
 .loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #loading-text{color:#888;margin-top:12px;font-size:13px}
-#play-btn{display:none;background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4);margin-top:20px;pointer-events:auto}
+#play-btn{display:none;background:none;border:2px solid #0f0;color:#0f0;font-size:20px;padding:12px 40px;border-radius:8px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:2px;transition:all 0.2s;text-shadow:0 0 8px rgba(0,255,0,0.4);margin-top:20px}
 #play-btn:hover{background:#0f0;color:#111;text-shadow:none;box-shadow:0 0 20px rgba(0,255,0,0.5)}
 
 /* Game over overlay */
@@ -64,12 +61,11 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     <span id="our-score">0.0s</span>
   </div>
 
-  <div id="gameContainer"></div>
+  <iframe id="game-frame" src="https://sz-games.github.io/slope/" allowfullscreen></iframe>
 </div>
 
 <script>
 (function() {
-  var gameLoaded = false;
   var gameStarted = false;
   var gameActive = false;
   var lastInputTime = 0;
@@ -78,90 +74,26 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
   var currentTime = 0;
   var timerInterval = null;
 
-  // ---- Load Unity game directly (not iframe) ----
-  var loadFallbackTimer = null;
+  // Show Play button after iframe has had time to load
+  setTimeout(function() {
+    document.getElementById('load-spinner').style.display = 'none';
+    document.getElementById('loading-text').style.display = 'none';
+    document.getElementById('play-btn').style.display = 'block';
+  }, 5000);
 
-  function UnityProgress(inst, progress) {
-    var txt = document.getElementById('loading-text');
-    if (txt && typeof progress === 'number') {
-      txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
-    }
-    if ((progress === 1 || progress === 'complete') && !gameLoaded) {
-      gameLoaded = true;
-      if (loadFallbackTimer) clearTimeout(loadFallbackTimer);
-      // Wait 4s for Unity to fully initialize before showing Play
-      setTimeout(onGameLoaded, 4000);
-    }
-  }
-  window.UnityProgress = UnityProgress;
-
-  var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/slope.json', {
-    onProgress: UnityProgress,
-    Module: {
-      onRuntimeInitialized: function() {
-        UnityProgress(gameInstance, 'complete');
-      }
-    }
-  });
-
-  // Hard fallback — if progress never reaches 100%, show Play after 12s
-  loadFallbackTimer = setTimeout(function() {
-    if (!gameLoaded) {
-      gameLoaded = true;
-      onGameLoaded();
-    }
-  }, 12000);
-
-  // ---- Game loaded: show Play button ----
-  function onGameLoaded() {
-    var spinner = document.getElementById('load-spinner');
-    var loadText = document.getElementById('loading-text');
-    var playBtn = document.getElementById('play-btn');
-
-    if (spinner) spinner.style.display = 'none';
-    if (loadText) loadText.style.display = 'none';
-    if (playBtn) playBtn.style.display = 'block';
-
-    disableBranding();
-  }
-
-  // ---- Play button: just hide overlay, user clicks Unity's Play themselves ----
+  // Play button — hide overlay so user can interact with the game
   document.getElementById('play-btn').addEventListener('click', function() {
-    var overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.add('hidden');
-      setTimeout(function() { overlay.style.display = 'none'; }, 600);
-    }
-    var canvas = document.querySelector('#gameContainer canvas');
-    if (canvas) canvas.focus();
+    document.getElementById('loading-overlay').classList.add('hidden');
   });
 
-  // ---- Arrow keys = game actually started, hide overlay ----
-  function onGameStart() {
-    if (gameStarted) return;
-    gameStarted = true;
-    gameActive = true;
-
-    var overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.add('hidden');
-      setTimeout(function() { overlay.style.display = 'none'; }, 600);
-    }
-
-    startTimer();
-    disableBranding();
-    setTimeout(disableBranding, 2000);
-    startDeathDetection();
-  }
-
-  // ---- Timer ----
+  // Timer
   function startTimer() {
     startTime = Date.now();
     var scoreEl = document.getElementById('our-score');
-    if (scoreEl) scoreEl.classList.add('visible');
+    scoreEl.classList.add('visible');
     timerInterval = setInterval(function() {
       currentTime = (Date.now() - startTime) / 1000;
-      if (scoreEl) scoreEl.textContent = currentTime.toFixed(1) + 's';
+      scoreEl.textContent = currentTime.toFixed(1) + 's';
     }, 100);
   }
 
@@ -170,7 +102,16 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     currentTime = (Date.now() - startTime) / 1000;
   }
 
-  // ---- Death detection ----
+  // Arrow keys = game started
+  function onGameStart() {
+    if (gameStarted) return;
+    gameStarted = true;
+    gameActive = true;
+    startTimer();
+    startDeathDetection();
+  }
+
+  // Death detection
   function startDeathDetection() {
     if (deathCheckInterval) clearInterval(deathCheckInterval);
     deathCheckInterval = setInterval(function() {
@@ -181,69 +122,45 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     }, 1000);
   }
 
-  // ---- Game Over ----
+  // Game Over
   function showGameOver() {
     if (!gameActive) return;
     gameActive = false;
     stopTimer();
 
     var finalScore = Math.round(currentTime);
-    var overlay = document.getElementById('gameover-overlay');
-    if (overlay) overlay.classList.add('visible');
-
-    var timeEl = document.getElementById('gameover-time');
-    if (timeEl) timeEl.textContent = currentTime.toFixed(1) + ' seconds';
+    document.getElementById('gameover-overlay').classList.add('visible');
+    document.getElementById('gameover-time').textContent = currentTime.toFixed(1) + ' seconds';
 
     if (finalScore > 0) {
       try { HallOfFame.submit('slope', finalScore); } catch(e) {}
     }
 
     var bestEl = document.getElementById('gameover-best');
-    if (bestEl) {
-      try {
-        var scores = HallOfFame.getScores('slope');
-        if (scores && scores.length > 0) {
-          var best = scores[0].score;
-          if (finalScore >= best) {
-            bestEl.textContent = 'New Best!';
-            bestEl.style.color = '#0f0';
-          } else {
-            bestEl.textContent = 'Best: ' + best + 's';
-            bestEl.style.color = '#888';
-          }
+    try {
+      var scores = HallOfFame.getScores('slope');
+      if (scores && scores.length > 0) {
+        var best = scores[0].score;
+        if (finalScore >= best) {
+          bestEl.textContent = 'New Best!';
+          bestEl.style.color = '#0f0';
+        } else {
+          bestEl.textContent = 'Best: ' + best + 's';
+          bestEl.style.color = '#888';
         }
-      } catch(e) { bestEl.textContent = ''; }
-    }
+      }
+    } catch(e) { bestEl.textContent = ''; }
 
     if (window.SFX && window.SFX.death) window.SFX.death();
   }
 
-  // ---- Play Again ----
+  // Play Again — reload page for clean restart
   document.getElementById('play-again-btn').addEventListener('click', function(e) {
     e.stopPropagation();
-    var btn = document.getElementById('play-again-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loader" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:10px"></span> Restarting...';
-    }
-    setTimeout(function() { location.reload(); }, 300);
+    location.reload();
   });
 
-  // ---- Disable branding ----
-  function disableBranding() {
-    if (!gameInstance) return;
-    var objs = ['Branding', 'BrandingScript', 'Y8Branding', 'Branding_Y8',
-      'Branding_Y8_MoreGames', 'Branding_IDnet', 'IDnetObject',
-      'y8_logo', 'y8_logo_moregames', 'idnet_logo', 'PromoScreen',
-      'IDNETLogin', 'IdnetSample', 'IdnetWrap', 'Leaderboard'];
-    for (var i = 0; i < objs.length; i++) {
-      try { gameInstance.SendMessage(objs[i], 'SetActive', '0'); } catch(e) {}
-    }
-    try { gameInstance.SendMessage('Branding', 'DisableMoreGames'); } catch(e) {}
-    try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
-  }
-
-  // ---- Input tracking ----
+  // Input tracking
   document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
         e.key === 'a' || e.key === 'd' || e.key === 'A' || e.key === 'D') {
