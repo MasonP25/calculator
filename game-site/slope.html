@@ -4,597 +4,102 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Slope</title>
+<script src="slope-build/TemplateData/unityloader41.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#111;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;height:100vh;touch-action:none;user-select:none}
-canvas{display:block;width:100vw;height:100vh}
+body{background:#231F20;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;height:100vh}
 .back{position:fixed;top:16px;left:16px;color:#0f0;text-decoration:none;font-size:18px;z-index:10001;font-weight:bold;text-shadow:0 0 8px rgba(0,255,0,0.5)}
 .back:hover{text-shadow:0 0 16px rgba(0,255,0,0.8)}
+.webgl-content{width:100%;height:100vh}
+#gameContainer{width:100%;height:100%;margin:0}
+/* Hide Unity's default loading screen completely */
+#gameContainer .logo,
+#gameContainer .progress{display:none!important}
+/* Custom loading overlay */
+#loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.5s}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+#loading-overlay h1{color:#0f0;font-size:48px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:30px}
+.loader{width:40px;height:40px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-text{color:#888;margin-top:15px;font-size:14px}
 </style>
 </head>
 <body>
 <a class="back" href="index.html">&larr; Back</a>
-<canvas id="c"></canvas>
+
+<div id="loading-overlay">
+  <h1>SLOPE</h1>
+  <div class="loader"></div>
+  <div id="loading-text">Loading game...</div>
+</div>
+
+<div class="webgl-content">
+  <div id="gameContainer"></div>
+</div>
+
 <script>
-(function(){
-var C=document.getElementById('c'),X=C.getContext('2d');
-var W,H;
-function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight}
-resize();window.addEventListener('resize',resize);
-
-// ── GAME CONFIG ──
-var GRAVITY=35;
-var BALL_R=0.3;
-var TRACK_W=3.8; // full width
-var SEG=1.8;
-var FOV=4.8;
-var HORIZON=0.08;
-var BALL_SY=0.74;
-var BASE_SPD=6;
-var STEER_SPD=6;
-
-// ── STATE ──
-var mode='menu'; // menu|play|dead
-var dist=0,best=parseInt(localStorage.getItem('slope_best'))||0;
-var bx=0,by=0,bvy=0,air=false;
-var spd=BASE_SPD,steer=0;
-var shake=0,lastT=0;
-var parts=[];
-
-// Track segments
-var segs=[],segI=0;
-var cvA=0,cvT=0,cvV=0; // curve
-var htA=0,htV=0,htT=0; // height
-var tiltA=0,tiltT=0;
-
-// ── SEGMENT GEN ──
-function genSeg(i){
-  var d=i*SEG;
-  // Curves get sharper over time
-  var diff=Math.min(dist/400,1);
-  if(Math.random()<0.025+diff*0.03) cvT=(Math.random()-0.5)*(4+diff*3);
-  cvV+=(cvT-cvA)*0.018;cvV*=0.94;cvA+=cvV;
-
-  // Height - mostly downhill with bumps
-  if(Math.random()<0.02){
-    htT=htA-(1.5+Math.random()*3);
-    if(Math.random()<0.12) htT=htA+Math.random()*1.5;
-  }
-  htV+=(htT-htA)*0.01;htV*=0.96;htA+=htV;
-
-  // Tilt
-  if(Math.random()<0.015) tiltT=(Math.random()-0.5)*0.45;
-  tiltA+=(tiltT-tiltA)*0.035;
-
-  // Gap
-  var gap=false;
-  if(d>90){
-    var cyc=Math.max(35,100-dist*0.03);
-    var gl=3.5+Math.min(dist*0.004,5);
-    var ph=d%cyc;
-    if(ph<gl) gap=true;
-    // Drop height at gap start
-    if(ph<SEG&&ph<1){htA-=2.5+Math.random()*2;htT=htA}
-  }
-
-  // Obstacles - frequent and varied
-  var obs=null;
-  if(d>20&&!gap){
-    var freq=Math.max(3,14-dist*0.01);
-    var si=Math.max(2,Math.floor(freq/SEG));
-    if(i%si===0&&Math.random()<0.75){
-      var hw=TRACK_W/2;
-      var r=Math.random();
-      if(r<0.3){
-        // Single block left or right
-        var side=Math.random()<0.5?-1:1;
-        obs={t:'block',x:side*hw*0.45,w:0.6,h:0.6};
-      }else if(r<0.5){
-        // Wall blocking one side
-        var left=Math.random()<0.5;
-        obs={t:'wall',x:left?-hw*0.25:hw*0.25,w:hw*0.9,h:0.7,left:left};
-      }else if(r<0.65){
-        // Center block - go around either side
-        obs={t:'block',x:(Math.random()-0.5)*0.5,w:0.7,h:0.65};
-      }else if(r<0.78){
-        // Double blocks with gap
-        var gx=(Math.random()-0.5)*hw*0.5;
-        obs={t:'dbl',x:gx,gw:0.65+(1-diff)*0.25};
-      }else if(r<0.88){
-        // Two pillars
-        var sp=hw*0.55;
-        obs={t:'2pil',spacing:sp,w:0.2,h:0.9};
-      }else{
-        // Offset block
-        obs={t:'block',x:(Math.random()<0.5?-1:1)*hw*0.5,w:0.55,h:0.55};
-      }
+// Custom progress handler - no Unity logo/bar, just our overlay
+function UnityProgress(inst, progress) {
+  var txt = document.getElementById('loading-text');
+  if (txt) {
+    if (typeof progress === 'number') {
+      txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
+    }
+    if (progress === 1 || progress === 'complete') {
+      // Game loaded - hide loading, auto-start game
+      setTimeout(function() {
+        var overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 600);
+        // Try to skip main menu and start game directly
+        tryAutoStart();
+      }, 500);
     }
   }
-
-  return{i:i,cx:cvA,ht:htA,tilt:tiltA,gap:gap,obs:obs};
 }
 
-function ensureSegs(ahead){
-  var need=Math.floor((dist+ahead)/SEG)+3;
-  while(segI<=need){segs.push(genSeg(segI));segI++}
-  var mn=Math.floor(dist/SEG)-6;
-  while(segs.length>0&&segs[0].i<mn) segs.shift();
-}
-
-function segAt(i){for(var j=0;j<segs.length;j++) if(segs[j].i===i) return segs[j]; return null}
-
-function lerp(d){
-  var fi=d/SEG,i0=Math.floor(fi),f=fi-i0;
-  var a=segAt(i0),b=segAt(i0+1);
-  if(!a) return{cx:0,ht:0,tilt:0,gap:false};
-  if(!b) return{cx:a.cx,ht:a.ht,tilt:a.tilt,gap:a.gap};
-  return{cx:a.cx+(b.cx-a.cx)*f,ht:a.ht+(b.ht-a.ht)*f,tilt:a.tilt+(b.tilt-a.tilt)*f,gap:a.gap};
-}
-
-// ── PROJECT ──
-function proj(wx,wz,wy){
-  var z=Math.max(wz,0.01);
-  var sc=FOV/(FOV+z);
-  var vx=W/2,vy=H*HORIZON;
-  var bsy=H*BALL_SY;
-  var sx=vx+wx*sc*(W*0.2);
-  var sy=vy+(bsy-vy)*sc;
-  sy-=(wy||0)*sc*(W*0.16);
-  return{x:sx,y:sy,s:sc};
-}
-
-// ── INIT ──
-function init(){
-  dist=0;bx=0;by=0;bvy=0;air=false;
-  spd=BASE_SPD;steer=0;shake=0;parts=[];
-  segs=[];segI=0;cvA=0;cvT=0;cvV=0;
-  htA=0;htV=0;htT=0;tiltA=0;tiltT=0;
-  ensureSegs(450);mode='play';lastT=performance.now();
-}
-
-// ── INPUT ──
-var K={};
-document.addEventListener('keydown',function(e){
-  K[e.code]=true;
-  if(mode==='menu'){init();e.preventDefault();return}
-  if(mode==='dead'&&(e.code==='Space'||e.code==='Enter')){init();e.preventDefault()}
-  if(['ArrowLeft','ArrowRight','KeyA','KeyD','Space','Enter'].indexOf(e.code)!==-1) e.preventDefault();
+var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/slope.json', {
+  onProgress: UnityProgress,
+  Module: {
+    onRuntimeInitialized: function() {
+      UnityProgress(gameInstance, 'complete');
+    }
+  }
 });
-document.addEventListener('keyup',function(e){K[e.code]=false});
 
-var tL=false,tR=false;
-function tch(e){tL=false;tR=false;for(var i=0;i<e.touches.length;i++){var t=e.touches[i];if(t.clientX<W/2)tL=true;else tR=true}}
-C.addEventListener('touchstart',function(e){e.preventDefault();if(mode==='menu'||mode==='dead'){init();return}tch(e)});
-C.addEventListener('touchmove',function(e){e.preventDefault();tch(e)});
-C.addEventListener('touchend',function(e){e.preventDefault();tch(e)});
-C.addEventListener('mousedown',function(){if(mode==='menu'||mode==='dead')init()});
+// Try multiple approaches to skip the menu and start gameplay
+function tryAutoStart() {
+  var attempts = 0;
+  var interval = setInterval(function() {
+    attempts++;
+    try {
+      // Try SendMessage to known game objects to start the game
+      gameInstance.SendMessage('GameManager', 'RestartLevel');
+      gameInstance.SendMessage('GameManager', 'StartGame');
+      gameInstance.SendMessage('MainMenuScreen', 'OnPlayClick');
+      gameInstance.SendMessage('Canvas', 'RestartLevel');
 
-// ── UPDATE ──
-function update(dt){
-  if(mode!=='play') return;
-  spd=BASE_SPD+dist*0.006+Math.min(dist*0.00015,5);
-  dist+=spd*dt;
+      // Simulate a mouse click in the center of the canvas to hit "Play" button
+      var canvas = document.querySelector('#gameContainer canvas');
+      if (canvas) {
+        var rect = canvas.getBoundingClientRect();
+        var cx = rect.width / 2;
+        var cy = rect.height / 2;
+        // Click slightly below center where Play button typically is
+        ['mousedown', 'mouseup', 'click'].forEach(function(type) {
+          canvas.dispatchEvent(new MouseEvent(type, {
+            bubbles: true, cancelable: true, view: window,
+            clientX: rect.left + cx, clientY: rect.top + cy + 20
+          }));
+        });
+      }
+    } catch(e) {}
 
-  steer=0;
-  if(K['ArrowLeft']||K['KeyA']||tL) steer=-1;
-  if(K['ArrowRight']||K['KeyD']||tR) steer=1;
-  bx+=steer*(STEER_SPD+spd*0.12)*dt;
-
-  var tr=lerp(dist);
-  // Tilt pushes ball
-  bx+=tr.tilt*spd*dt*0.5;
-
-  ensureSegs(450);
-
-  // Gravity
-  if(tr.gap){
-    air=true;
-    bvy-=GRAVITY*dt;
-    by+=bvy*dt;
-  }else{
-    if(air){
-      bvy-=GRAVITY*dt;
-      by+=bvy*dt;
-      if(by<=0){by=0;bvy=0;air=false}
-    }else{
-      by=0;bvy=0;
-      // Detect drops → launch
-      var ah=lerp(dist+spd*dt*2);
-      var hd=ah.ht-tr.ht;
-      if(hd<-0.4*dt*spd){bvy=hd*0.12;air=true}
-    }
-  }
-
-  // Death: fell too far
-  if(by<-15){die();return}
-
-  // Off edge
-  var hw=TRACK_W/2;
-  if(!air||!tr.gap){
-    if(bx<-hw-0.15||bx>hw+0.15){die();return}
-  }
-
-  // Obstacle collision
-  var ci=Math.floor(dist/SEG);
-  for(var di=-1;di<=2;di++){
-    var sg=segAt(ci+di);
-    if(!sg||!sg.obs) continue;
-    var rz=sg.i*SEG-dist;
-    if(rz>2||rz<-1.5) continue;
-    if(hitTest(sg.obs,rz)){die();return}
-  }
-
-  if(shake>0) shake-=dt;
+    if (attempts > 15) clearInterval(interval);
+  }, 800);
 }
-
-function hitTest(o,rz){
-  var hr=BALL_R+0.12;
-  if(Math.abs(rz)>1.3) return false;
-  if(by>((o.h||0.6)+0.1)) return false;
-  var hw=TRACK_W/2;
-
-  switch(o.t){
-    case'block':
-      return Math.abs(bx-o.x)<(o.w/2+hr)&&Math.abs(rz)<(o.w/2+hr);
-    case'wall':
-      if(Math.abs(rz)>hr+0.3) return false;
-      return o.left?bx<o.x+o.w/2+0.05:bx>o.x-o.w/2-0.05;
-    case'dbl':
-      if(Math.abs(rz)>hr+0.3) return false;
-      var gl=o.x-o.gw/2,gr=o.x+o.gw/2;
-      return!(bx>gl+hr*0.4&&bx<gr-hr*0.4);
-    case'2pil':
-      if(Math.abs(rz)>hr+0.15) return false;
-      for(var p=-1;p<=1;p+=2) if(Math.abs(bx-p*o.spacing)<(o.w/2+hr)) return true;
-      return false;
-  }
-  return false;
-}
-
-function die(){
-  mode='dead';
-  var sc=Math.floor(dist);
-  if(sc>best){best=sc;localStorage.setItem('slope_best',sc)}
-  shake=0.5;
-  // Particles
-  for(var i=0;i<50;i++){
-    var a=Math.random()*6.28,s=2+Math.random()*8;
-    parts.push({x:W/2,y:H*BALL_SY,vx:Math.cos(a)*s,vy:Math.sin(a)*s-5,life:1,r:2+Math.random()*4,g:Math.random()>0.2});
-  }
-  if(window.SFX) window.SFX.death();
-  if(sc>0&&window.HallOfFame) window.HallOfFame.submit('slope',sc);
-}
-
-// ── DRAW ──
-function draw(){
-  X.save();
-  if(shake>0){var s=shake*22;X.translate((Math.random()-0.5)*s,(Math.random()-0.5)*s)}
-
-  // Background
-  var bg=X.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#050508');bg.addColorStop(1,'#0a0a12');
-  X.fillStyle=bg;X.fillRect(0,0,W,H);
-
-  // Stars
-  drawStars();
-
-  if(mode==='menu'){drawMenu();X.restore();return}
-
-  drawTrack();
-  if(mode==='play') drawBall();
-  drawParts();
-  drawHUD();
-  if(mode==='dead') drawDead();
-  X.restore();
-}
-
-var _stars=null;
-function drawStars(){
-  if(!_stars){_stars=[];for(var i=0;i<80;i++)_stars.push({x:Math.random(),y:Math.random()*0.45,r:0.3+Math.random(),p:Math.random()*6.28})}
-  var t=performance.now()*0.001;
-  for(var i=0;i<_stars.length;i++){var s=_stars[i];
-    X.fillStyle='rgba(160,180,255,'+(0.2+Math.sin(t+s.p)*0.15)+')';
-    X.beginPath();X.arc(s.x*W,s.y*H,s.r,0,6.28);X.fill();
-  }
-}
-
-function drawTrack(){
-  var cam=lerp(dist);
-  var steps=360,stepL=SEG/3;
-  var pts=[];
-  for(var i=0;i<=steps;i++){
-    var z=i*stepL,ad=dist+z,tr=lerp(ad);
-    var hw=TRACK_W/2;
-    var rx=tr.cx-cam.cx-bx;
-    var rh=tr.ht-cam.ht;
-    var tOff=tr.tilt*0.22;
-    var pL=proj(rx-hw,z,rh);var pR=proj(rx+hw,z,rh);var pC=proj(rx,z,rh);
-    pL.y+=tOff*pL.s*30;pR.y-=tOff*pR.s*30;
-    pts.push({z:z,ad:ad,tr:tr,pL:pL,pR:pR,pC:pC,gap:tr.gap,si:Math.floor(ad/SEG),rh:rh});
-  }
-
-  // Draw far→near
-  for(var i=pts.length-2;i>=0;i--){
-    var f=pts[i+1],n=pts[i];
-    if(f.gap&&n.gap) continue;
-    var df=Math.max(0,1-f.z/(steps*stepL*0.75));
-    if(df<0.01) continue;
-
-    // Smooth track color - single dark green, brightens near camera
-    var b=0.06+df*0.14;
-    X.fillStyle='rgb('+Math.floor(b*30)+','+Math.floor(b*70)+','+Math.floor(b*35)+')';
-    X.globalAlpha=0.55+df*0.45;
-    X.beginPath();X.moveTo(f.pL.x,f.pL.y);X.lineTo(f.pR.x,f.pR.y);X.lineTo(n.pR.x,n.pR.y);X.lineTo(n.pL.x,n.pL.y);X.closePath();X.fill();
-
-    // Faint grid line at segment boundaries
-    if(n.si!==f.si&&df>0.1){
-      X.strokeStyle='rgba(0,255,0,'+(0.05*df)+')';X.lineWidth=0.5;
-      X.beginPath();X.moveTo(f.pL.x,f.pL.y);X.lineTo(f.pR.x,f.pR.y);X.stroke();
-    }
-
-    // Edge glow
-    if(df>0.04){
-      var ea=0.45*df,ew=Math.max(0.5,1.8*df);
-      // Outer glow
-      X.strokeStyle='rgba(0,255,0,'+(ea*0.18)+')';X.lineWidth=ew*4;
-      X.beginPath();X.moveTo(f.pL.x,f.pL.y);X.lineTo(n.pL.x,n.pL.y);X.stroke();
-      X.beginPath();X.moveTo(f.pR.x,f.pR.y);X.lineTo(n.pR.x,n.pR.y);X.stroke();
-      // Core
-      X.strokeStyle='rgba(0,255,0,'+ea+')';X.lineWidth=ew;
-      X.beginPath();X.moveTo(f.pL.x,f.pL.y);X.lineTo(n.pL.x,n.pL.y);X.stroke();
-      X.beginPath();X.moveTo(f.pR.x,f.pR.y);X.lineTo(n.pR.x,n.pR.y);X.stroke();
-    }
-
-    // Gap boundary
-    if((f.gap&&!n.gap)||(!f.gap&&n.gap)){
-      var ep=f.gap?n:f;
-      X.strokeStyle='rgba(0,255,0,'+(0.65*df)+')';X.lineWidth=2.5*df;
-      X.shadowColor='#0f0';X.shadowBlur=10*df;
-      X.beginPath();X.moveTo(ep.pL.x,ep.pL.y);X.lineTo(ep.pR.x,ep.pR.y);X.stroke();
-      X.shadowBlur=0;
-    }
-  }
-  X.globalAlpha=1;
-
-  // Obstacles
-  var cam2=lerp(dist);
-  var ci=Math.floor(dist/SEG);
-  var oList=[];
-  for(var si=ci;si<=ci+120;si++){
-    var sg=segAt(si);if(!sg||!sg.obs) continue;
-    var rz=sg.i*SEG-dist;if(rz<-2||rz>300) continue;
-    oList.push({sg:sg,rz:rz});
-  }
-  oList.sort(function(a,b){return b.rz-a.rz});
-  for(var oi=0;oi<oList.length;oi++){
-    var o=oList[oi],sg=o.sg,rz=o.rz,ob=sg.obs;
-    var df=Math.max(0,1-rz/280);if(df<0.02) continue;
-    var rh=sg.ht-cam2.ht;
-    var ox=sg.cx-cam2.cx-bx;
-
-    switch(ob.t){
-      case'block':
-        drawObs(ox+ob.x,rz,rh,ob.w,ob.h||0.6,df);break;
-      case'wall':
-        drawWallObs(ox+ob.x,rz,rh,ob.w,ob.h,df,ob.left);break;
-      case'dbl':
-        var hw=TRACK_W/2;
-        var lw=ob.x-ob.gw/2+hw;
-        if(lw>0.3) drawObs(ox+(-hw+ob.x-ob.gw/2)/2,rz,rh,lw*0.42,ob.h||0.55,df);
-        var rw=hw-ob.x-ob.gw/2;
-        if(rw>0.3) drawObs(ox+(ob.x+ob.gw/2+hw)/2,rz,rh,rw*0.42,ob.h||0.55,df);
-        break;
-      case'2pil':
-        drawObs(ox-ob.spacing,rz,rh,ob.w,ob.h,df);
-        drawObs(ox+ob.spacing,rz,rh,ob.w,ob.h,df);
-        break;
-    }
-  }
-}
-
-function drawObs(ox,oz,oy,w,h,fade){
-  var p=proj(ox,oz,oy);
-  var sw=p.s*w*W*0.14;var sh=p.s*h*W*0.18;
-  if(sw<1) return;
-  X.globalAlpha=fade;
-
-  // Shadow
-  X.fillStyle='rgba(255,30,30,'+(0.12*fade)+')';
-  X.beginPath();X.ellipse(p.x,p.y+sw*0.04,sw*0.65,sw*0.1,0,0,6.28);X.fill();
-
-  // Front
-  X.fillStyle='#cc1111';X.fillRect(p.x-sw/2,p.y-sh,sw,sh);
-  // Top
-  var th=sh*0.28;
-  X.fillStyle='#ff3838';X.beginPath();
-  X.moveTo(p.x-sw/2,p.y-sh);X.lineTo(p.x-sw/2+th*0.4,p.y-sh-th);
-  X.lineTo(p.x+sw/2+th*0.4,p.y-sh-th);X.lineTo(p.x+sw/2,p.y-sh);X.closePath();X.fill();
-  // Right
-  X.fillStyle='#991010';X.beginPath();
-  X.moveTo(p.x+sw/2,p.y);X.lineTo(p.x+sw/2,p.y-sh);
-  X.lineTo(p.x+sw/2+th*0.4,p.y-sh-th);X.lineTo(p.x+sw/2+th*0.4,p.y-th);X.closePath();X.fill();
-
-  // Glow
-  X.shadowColor='#f22';X.shadowBlur=8*fade;
-  X.strokeStyle='rgba(255,40,40,'+(0.3*fade)+')';X.lineWidth=1;
-  X.strokeRect(p.x-sw/2,p.y-sh,sw,sh);X.shadowBlur=0;
-  X.globalAlpha=1;
-}
-
-function drawWallObs(ox,oz,oy,w,h,fade,isLeft){
-  var p=proj(ox,oz,oy);
-  var sw=p.s*w*W*0.12;var sh=p.s*h*W*0.16;
-  if(sw<1) return;
-  X.globalAlpha=fade;
-  X.fillStyle='#bb1515';
-  if(isLeft) X.fillRect(p.x-sw,p.y-sh,sw,sh);
-  else X.fillRect(p.x,p.y-sh,sw,sh);
-  var th=sh*0.22;
-  X.fillStyle='#ee3333';X.beginPath();
-  if(isLeft){X.moveTo(p.x-sw,p.y-sh);X.lineTo(p.x-sw+th*0.3,p.y-sh-th);X.lineTo(p.x+th*0.3,p.y-sh-th);X.lineTo(p.x,p.y-sh)}
-  else{X.moveTo(p.x,p.y-sh);X.lineTo(p.x+th*0.3,p.y-sh-th);X.lineTo(p.x+sw+th*0.3,p.y-sh-th);X.lineTo(p.x+sw,p.y-sh)}
-  X.closePath();X.fill();
-  X.shadowColor='#f22';X.shadowBlur=6*fade;
-  X.strokeStyle='rgba(255,40,40,'+(0.25*fade)+')';X.lineWidth=1;
-  if(isLeft) X.strokeRect(p.x-sw,p.y-sh,sw,sh);else X.strokeRect(p.x,p.y-sh,sw,sh);
-  X.shadowBlur=0;X.globalAlpha=1;
-}
-
-function drawBall(){
-  var bsx=W/2,bsy=H*BALL_SY-by*22;
-  var r=13;
-
-  // Shadow
-  var sa=air?Math.max(0.05,0.4-by*0.04):0.4;
-  X.fillStyle='rgba(0,0,0,'+sa+')';X.beginPath();
-  var ss=air?Math.max(0.3,1-by*0.07):1;
-  X.ellipse(bsx,H*BALL_SY+r*0.35,r*1.2*ss,r*0.2*ss,0,0,6.28);X.fill();
-
-  // Glow
-  X.shadowColor='#0f0';X.shadowBlur=20;
-  X.fillStyle='rgba(0,255,0,0.05)';X.beginPath();X.arc(bsx,bsy,r*1.8,0,6.28);X.fill();X.shadowBlur=0;
-
-  // Ball
-  var g=X.createRadialGradient(bsx-r*0.3,bsy-r*0.3,r*0.05,bsx,bsy,r);
-  g.addColorStop(0,'#aaffaa');g.addColorStop(0.3,'#44ee44');g.addColorStop(0.7,'#00bb00');g.addColorStop(1,'#005500');
-  X.fillStyle=g;X.shadowColor='#0f0';X.shadowBlur=14;
-  X.beginPath();X.arc(bsx,bsy,r,0,6.28);X.fill();X.shadowBlur=0;
-
-  // Highlight
-  X.fillStyle='rgba(255,255,255,0.3)';X.beginPath();X.arc(bsx-r*0.25,bsy-r*0.28,r*0.3,0,6.28);X.fill();
-
-  // Roll lines
-  var rot=dist*1.0;
-  X.strokeStyle='rgba(0,160,0,0.2)';X.lineWidth=1;
-  for(var i=0;i<3;i++){var a=rot+i*2.09;X.beginPath();X.arc(bsx,bsy,r*0.6,a,a+0.6);X.stroke()}
-}
-
-function drawParts(){
-  for(var i=0;i<parts.length;i++){var p=parts[i];
-    p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.life-=0.016;
-    if(p.life<=0) continue;
-    X.globalAlpha=p.life;X.fillStyle=p.g?'#0f0':'#8f8';
-    X.shadowColor='#0f0';X.shadowBlur=5;
-    X.beginPath();X.arc(p.x,p.y,p.r*p.life,0,6.28);X.fill();
-  }
-  X.shadowBlur=0;X.globalAlpha=1;
-  parts=parts.filter(function(p){return p.life>0});
-}
-
-function drawHUD(){
-  X.textAlign='center';
-  X.font='bold 28px Segoe UI,Arial,sans-serif';
-  X.shadowColor='#0f0';X.shadowBlur=10;X.fillStyle='#fff';
-  X.fillText(Math.floor(dist)+' m',W/2,40);X.shadowBlur=0;
-
-  var sp=spd.toFixed(1);
-  X.font='13px Segoe UI,Arial,sans-serif';
-  X.fillStyle=spd>16?'#f44':'rgba(0,255,0,0.5)';
-  if(spd>16){X.shadowColor='#f44';X.shadowBlur=5}
-  X.fillText('Speed: '+sp,W/2,60);X.shadowBlur=0;
-
-  if(best>0){X.textAlign='right';X.font='13px Segoe UI,Arial,sans-serif';X.fillStyle='#555';X.fillText('Best: '+best+' m',W-14,32)}
-}
-
-function drawMenu(){
-  var mA=performance.now()*0.0003;
-  // Preview track
-  for(var i=80;i>=1;i--){
-    var zF=i*1.5,zN=(i-1)*1.5;
-    var wF=Math.sin((zF+mA*130)*0.05)*2;
-    var wN=Math.sin((zN+mA*130)*0.05)*2;
-    var df=Math.max(0,1-zF/120);
-    var hw=TRACK_W/2;
-    var lf=proj(wF-hw,zF,0),rf=proj(wF+hw,zF,0);
-    var ln=proj(wN-hw,zN,0),rn=proj(wN+hw,zN,0);
-    var b=0.06+df*0.1;
-    X.fillStyle='rgb('+Math.floor(b*30)+','+Math.floor(b*70)+','+Math.floor(b*35)+')';
-    X.globalAlpha=0.3+df*0.35;
-    X.beginPath();X.moveTo(lf.x,lf.y);X.lineTo(rf.x,rf.y);X.lineTo(rn.x,rn.y);X.lineTo(ln.x,ln.y);X.closePath();X.fill();
-    if(df>0.08){X.globalAlpha=0.18*df;X.strokeStyle='#0f0';X.lineWidth=1.5*df;
-      X.beginPath();X.moveTo(lf.x,lf.y);X.lineTo(ln.x,ln.y);X.stroke();
-      X.beginPath();X.moveTo(rf.x,rf.y);X.lineTo(rn.x,rn.y);X.stroke();
-    }
-  }
-  X.globalAlpha=1;
-
-  X.fillStyle='rgba(4,4,10,0.4)';X.fillRect(0,0,W,H);
-
-  // Title
-  X.save();
-  var p=1+Math.sin(performance.now()*0.003)*0.04;
-  X.translate(W/2,H*0.2);X.scale(p,p);
-  X.font='bold 72px Segoe UI,Arial,sans-serif';X.textAlign='center';X.textBaseline='middle';
-  X.shadowColor='#0f0';X.shadowBlur=45;X.fillStyle='#0f0';
-  X.fillText('SLOPE',0,0);X.shadowBlur=15;X.fillText('SLOPE',0,0);X.shadowBlur=0;
-  X.restore();
-
-  // Ball
-  var bxx=W/2,byy=H*0.34;
-  var gr=X.createRadialGradient(bxx-4,byy-4,2,bxx,byy,22);
-  gr.addColorStop(0,'#8f8');gr.addColorStop(0.5,'#0c0');gr.addColorStop(1,'#060');
-  X.shadowColor='#0f0';X.shadowBlur=22;X.fillStyle=gr;
-  X.beginPath();X.arc(bxx,byy,22,0,6.28);X.fill();X.shadowBlur=0;
-  X.fillStyle='rgba(255,255,255,0.3)';X.beginPath();X.arc(bxx-7,byy-7,7,0,6.28);X.fill();
-
-  X.font='17px Segoe UI,Arial,sans-serif';X.fillStyle='#7a7a9a';X.textAlign='center';
-  X.fillText('Arrow Keys / A-D to steer',W/2,H*0.46);
-  X.fillText('Tap left/right on mobile',W/2,H*0.51);
-
-  if(best>0){X.font='bold 16px Segoe UI,Arial,sans-serif';X.fillStyle='#0f0';X.shadowColor='#0f0';X.shadowBlur=8;X.fillText('Best: '+best+' m',W/2,H*0.59);X.shadowBlur=0}
-
-  var bl=Math.sin(performance.now()*0.004)*0.4+0.6;
-  X.globalAlpha=bl;X.font='bold 20px Segoe UI,Arial,sans-serif';X.fillStyle='#0f0';
-  X.shadowColor='#0f0';X.shadowBlur=12;
-  X.fillText('Press any key or tap to start',W/2,H*0.72);X.shadowBlur=0;X.globalAlpha=1;
-}
-
-function drawDead(){
-  var sc=Math.floor(dist);
-  X.fillStyle='rgba(4,4,10,0.7)';X.fillRect(0,0,W,H);
-
-  var pw=280,ph=230,px=(W-pw)/2,py=(H-ph)/2-20;
-  X.fillStyle='#0a0a18';X.strokeStyle='#0a3';X.lineWidth=2;
-  X.shadowColor='#0f0';X.shadowBlur=15;
-  X.beginPath();rr(X,px,py,pw,ph,12);X.fill();X.stroke();X.shadowBlur=0;
-
-  X.textAlign='center';
-  X.font='bold 30px Segoe UI,Arial,sans-serif';X.fillStyle='#f33';X.shadowColor='#f33';X.shadowBlur=10;
-  X.fillText('Game Over',W/2,py+48);X.shadowBlur=0;
-
-  X.font='bold 40px Segoe UI,Arial,sans-serif';X.fillStyle='#fff';
-  X.fillText(sc+' m',W/2,py+100);
-
-  X.font='16px Segoe UI,Arial,sans-serif';X.fillStyle='#0f0';X.shadowColor='#0f0';X.shadowBlur=6;
-  X.fillText('Best: '+best+' m',W/2,py+130);X.shadowBlur=0;
-
-  if(sc>=best&&sc>0){X.font='bold 14px Segoe UI,Arial,sans-serif';X.fillStyle='#fc0';X.fillText('NEW BEST!',W/2,py+152)}
-
-  var bw=180,bh=44,bbx=(W-bw)/2,bby=py+168;
-  var bl2=Math.sin(performance.now()*0.005)*0.15+0.85;
-  X.globalAlpha=bl2;X.fillStyle='#0f0';X.shadowColor='#0f0';X.shadowBlur=12;
-  X.beginPath();rr(X,bbx,bby,bw,bh,8);X.fill();X.shadowBlur=0;X.globalAlpha=1;
-  X.font='bold 18px Segoe UI,Arial,sans-serif';X.fillStyle='#0a0a18';X.fillText('Play Again',W/2,bby+29);
-}
-
-function rr(c,x,y,w,h,r){
-  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
-  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);
-  c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();
-}
-
-// ── LOOP ──
-function loop(t){
-  requestAnimationFrame(loop);
-  var dt=Math.min((t-lastT)/1000,0.05);lastT=t;
-  if(mode==='play') update(dt);
-  draw();
-}
-lastT=performance.now();
-requestAnimationFrame(loop);
-})();
 </script>
+
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
