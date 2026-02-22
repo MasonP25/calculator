@@ -86,10 +86,11 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     if (txt && typeof progress === 'number') {
       txt.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
     }
-    if ((progress >= 0.9 || progress === 'complete') && !gameLoaded) {
+    if ((progress === 1 || progress === 'complete') && !gameLoaded) {
       gameLoaded = true;
       if (loadFallbackTimer) clearTimeout(loadFallbackTimer);
-      setTimeout(onGameLoaded, 2000);
+      // Wait 4s for Unity to fully initialize before showing Play
+      setTimeout(onGameLoaded, 4000);
     }
   }
   window.UnityProgress = UnityProgress;
@@ -103,13 +104,13 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     }
   });
 
-  // Hard fallback — if progress never reaches 90%, show Play after 15s
+  // Hard fallback — if progress never reaches 100%, show Play after 12s
   loadFallbackTimer = setTimeout(function() {
     if (!gameLoaded) {
       gameLoaded = true;
       onGameLoaded();
     }
-  }, 15000);
+  }, 12000);
 
   // ---- Game loaded: show Play button ----
   function onGameLoaded() {
@@ -124,34 +125,15 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     disableBranding();
   }
 
-  // ---- Play button: hide overlay + click Unity's canvas ----
+  // ---- Play button: just hide overlay, user clicks Unity's Play themselves ----
   document.getElementById('play-btn').addEventListener('click', function() {
     var overlay = document.getElementById('loading-overlay');
     if (overlay) {
       overlay.classList.add('hidden');
       setTimeout(function() { overlay.style.display = 'none'; }, 600);
     }
-
-    // Try to click Unity's Play button on the canvas
     var canvas = document.querySelector('#gameContainer canvas');
-    if (canvas) {
-      canvas.focus();
-      var rect = canvas.getBoundingClientRect();
-      var cx = rect.width / 2;
-      var cy = rect.height / 2;
-      // Send mousedown + mouseup to simulate a click at center
-      setTimeout(function() {
-        canvas.dispatchEvent(new MouseEvent('mousedown', {
-          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
-        }));
-        canvas.dispatchEvent(new MouseEvent('mouseup', {
-          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
-        }));
-        canvas.dispatchEvent(new MouseEvent('click', {
-          bubbles: true, clientX: rect.left + cx, clientY: rect.top + cy
-        }));
-      }, 300);
-    }
+    if (canvas) canvas.focus();
   });
 
   // ---- Arrow keys = game actually started, hide overlay ----
