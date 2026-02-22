@@ -89,6 +89,9 @@ var gameInstance = UnityLoader.instantiate('gameContainer', 'slope-build/Build/s
   }
 });
 
+var autoPlayAttempt = 0;
+var autoPlayInterval = null;
+
 function startAutoPlay() {
   var canvas = document.querySelector('#gameContainer canvas');
   if (!canvas) {
@@ -100,40 +103,50 @@ function startAutoPlay() {
   disableBranding();
   trySendMessages();
 
-  // Click Play button at 58% vertical (where Play is in Y8 Slope)
-  setTimeout(function() {
+  // Keep clicking Play until the game actually starts (detected by arrow key input)
+  // This handles both fast cached loads and slow first loads
+  autoPlayAttempt = 0;
+  autoPlayInterval = setInterval(function() {
+    if (gameStarted) {
+      // Game started! Stop clicking and hide overlay
+      clearInterval(autoPlayInterval);
+      autoPlayInterval = null;
+      var overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
+      disableBranding();
+      setTimeout(disableBranding, 2000);
+      setTimeout(disableBranding, 5000);
+      return;
+    }
+
+    autoPlayAttempt++;
     var rect = canvas.getBoundingClientRect();
-    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.58);
-  }, 500);
+    var cx = rect.left + rect.width * 0.5;
 
-  setTimeout(function() {
-    if (gameStarted) return;
-    var rect = canvas.getBoundingClientRect();
-    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.52);
-  }, 1200);
+    // Cycle through different Y positions each attempt
+    var yPositions = [0.58, 0.52, 0.45, 0.50, 0.55];
+    var yPct = yPositions[autoPlayAttempt % yPositions.length];
+    fireClick(canvas, cx, rect.top + rect.height * yPct);
 
-  setTimeout(function() {
-    if (gameStarted) return;
-    var rect = canvas.getBoundingClientRect();
-    fireClick(canvas, rect.left + rect.width * 0.5, rect.top + rect.height * 0.45);
-  }, 2000);
+    // Make sure canvas has focus so it receives the clicks
+    canvas.focus();
 
-  // Try keyboard
-  setTimeout(function() {
-    if (gameStarted) return;
-    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
-    canvas.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
-  }, 2500);
-
-  // Hide loading overlay
-  setTimeout(function() {
-    var overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.classList.add('hidden');
-    setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
+    // Also retry SendMessage periodically
+    if (autoPlayAttempt % 5 === 0) {
+      trySendMessages();
+    }
     disableBranding();
-    setTimeout(disableBranding, 2000);
-    setTimeout(disableBranding, 5000);
-  }, 3000);
+
+    // Safety: stop after 30 seconds (60 attempts) and just show the game
+    if (autoPlayAttempt >= 60) {
+      clearInterval(autoPlayInterval);
+      autoPlayInterval = null;
+      var overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      setTimeout(function() { if (overlay) overlay.style.display = 'none'; }, 700);
+    }
+  }, 500);
 
   // Start monitoring for game over
   startDeathDetection();
@@ -261,14 +274,21 @@ function disableBranding() {
   try { gameInstance.SendMessage('Y8Branding', 'DisableY8Link'); } catch(e) {}
 }
 
-// Track gameplay input to detect game over
+// Track gameplay input to detect game start and game over
 document.addEventListener('keydown', function(e) {
+  // Arrow keys and WASD indicate the player is actively in the game
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd') {
     if (!gameStarted) {
       gameStarted = true;
       gameActive = true;
     }
     lastInputTime = Date.now();
+    gameActive = true;
+  }
+  // ANY key press after loading could mean the game is running
+  // (the ball starts rolling and user is trying to steer)
+  if (gameLoaded && !gameStarted && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    gameStarted = true;
     gameActive = true;
   }
 });
