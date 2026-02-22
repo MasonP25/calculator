@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pinball</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:60px 20px 20px}
+  h1{font-size:2.2rem;margin-bottom:1rem;background:linear-gradient(90deg,#e74c3c,#f39c12);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
+  canvas{border:2px solid #2a2a4a;border-radius:12px;display:block;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+  a.back{position:fixed;top:14px;left:14px;z-index:10001;color:#aaa;text-decoration:none;font-size:15px;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;transition:background .2s,color .2s}
+  a.back:hover{background:#2a2a4a;color:#fff}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Pinball</h1>
+<canvas id="c" width="400" height="700"></canvas>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+let ball,score,bestScore=0,balls,state='menu';
+let leftFlip=0,rightFlip=0,leftTarget=0,rightTarget=0;
+const GRAVITY=0.15,FRICTION=0.999,BALL_R=8;
+const bumpers=[
+  {x:120,y:200,r:25,color:'#e74c3c',pts:100,flash:0},
+  {x:280,y:200,r:25,color:'#3498db',pts:100,flash:0},
+  {x:200,y:280,r:25,color:'#2ecc71',pts:100,flash:0},
+  {x:140,y:360,r:20,color:'#9b59b6',pts:150,flash:0},
+  {x:260,y:360,r:20,color:'#f39c12',pts:150,flash:0},
+];
+const targets=[
+  {x:80,y:140,w:40,h:8,color:'#e74c3c',pts:50,hit:false},
+  {x:160,y:120,w:40,h:8,color:'#f39c12',pts:50,hit:false},
+  {x:240,y:120,w:40,h:8,color:'#2ecc71',pts:50,hit:false},
+  {x:320,y:140,w:40,h:8,color:'#3498db',pts:50,hit:false},
+];
+// Flippers
+const LF={px:130,py:620,len:70,angle:0.4};
+const RF={px:270,py:620,len:70,angle:Math.PI-0.4};
+
+function resetBall(){
+  ball={x:370,y:500,vx:-2-Math.random()*2,vy:-8-Math.random()*3};
+}
+function reset(){
+  score=0;balls=3;
+  targets.forEach(t=>t.hit=false);
+  bumpers.forEach(b=>b.flash=0);
+  resetBall();
+}
+
+let keys={};
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if((state==='menu'||state==='dead')&&(e.code==='Space'||e.code==='Enter')){
+    reset();state='play';
+  }
+  e.preventDefault();
+});
+document.addEventListener('keyup',e=>{keys[e.code]=false;});
+canvas.addEventListener('click',()=>{
+  if(state==='menu'||state==='dead'){reset();state='play';}
+});
+
+function flipperTip(f,angle){
+  return{x:f.px+Math.cos(angle)*f.len,y:f.py+Math.sin(angle)*f.len};
+}
+
+function update(){
+  if(state!=='play')return;
+  // Flipper control
+  leftTarget=keys['ArrowLeft']||keys['KeyA']||keys['ShiftLeft']||keys['KeyZ']?1:0;
+  rightTarget=keys['ArrowRight']||keys['KeyD']||keys['ShiftRight']||keys['Slash']?1:0;
+  leftFlip+=(leftTarget-leftFlip)*0.3;
+  rightFlip+=(rightTarget-rightFlip)*0.3;
+
+  // Ball physics
+  ball.vy+=GRAVITY;
+  ball.vx*=FRICTION;
+  ball.vy*=FRICTION;
+  ball.x+=ball.vx;
+  ball.y+=ball.vy;
+
+  // Walls
+  if(ball.x<BALL_R+20){ball.x=BALL_R+20;ball.vx=Math.abs(ball.vx)*0.8;}
+  if(ball.x>W-BALL_R-20){ball.x=W-BALL_R-20;ball.vx=-Math.abs(ball.vx)*0.8;}
+  if(ball.y<BALL_R+10){ball.y=BALL_R+10;ball.vy=Math.abs(ball.vy)*0.8;}
+
+  // Drain
+  if(ball.y>H+20){
+    balls--;
+    if(balls<=0){
+      state='dead';
+      bestScore=Math.max(bestScore,score);
+      if(typeof HallOfFame!=='undefined')HallOfFame.submit('pinball',score);
+    }else{
+      resetBall();
+    }
+  }
+
+  // Bumpers
+  for(let b of bumpers){
+    let dx=ball.x-b.x,dy=ball.y-b.y;
+    let dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<BALL_R+b.r){
+      let angle=Math.atan2(dy,dx);
+      let speed=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy);
+      ball.vx=Math.cos(angle)*Math.max(speed,5);
+      ball.vy=Math.sin(angle)*Math.max(speed,5);
+      ball.x=b.x+Math.cos(angle)*(BALL_R+b.r+1);
+      ball.y=b.y+Math.sin(angle)*(BALL_R+b.r+1);
+      score+=b.pts;b.flash=1;
+    }
+    if(b.flash>0)b.flash-=0.05;
+  }
+
+  // Targets
+  for(let t of targets){
+    if(t.hit)continue;
+    if(ball.x>t.x&&ball.x<t.x+t.w&&ball.y>t.y-BALL_R&&ball.y<t.y+t.h+BALL_R){
+      t.hit=true;score+=t.pts;ball.vy=-Math.abs(ball.vy);
+    }
+  }
+  if(targets.every(t=>t.hit)){
+    score+=500;
+    targets.forEach(t=>t.hit=false);
+  }
+
+  // Flippers collision
+  checkFlipper(LF,-0.4-leftFlip*0.8,ball);
+  checkFlipper(RF,Math.PI+0.4+rightFlip*0.8,ball);
+
+  // Angled walls at bottom
+  let wallY1=550,wallY2=H;
+  // Left wall
+  if(ball.x<130&&ball.y>wallY1){
+    let wallX=20+(ball.y-wallY1)/(wallY2-wallY1)*100;
+    if(ball.x<wallX+BALL_R){
+      ball.x=wallX+BALL_R;
+      ball.vx=Math.abs(ball.vx)*0.6;
+      ball.vy-=1;
+    }
+  }
+  // Right wall
+  if(ball.x>270&&ball.y>wallY1){
+    let wallX=W-20-(ball.y-wallY1)/(wallY2-wallY1)*100;
+    if(ball.x>wallX-BALL_R){
+      ball.x=wallX-BALL_R;
+      ball.vx=-Math.abs(ball.vx)*0.6;
+      ball.vy-=1;
+    }
+  }
+}
+
+function checkFlipper(f,angle,b){
+  let tip=flipperTip(f,angle);
+  let dx=tip.x-f.px,dy=tip.y-f.py;
+  let len=Math.sqrt(dx*dx+dy*dy);
+  let nx=-dy/len,ny=dx/len;
+  let bx=b.x-f.px,by=b.y-f.py;
+  let proj=(bx*dx+by*dy)/len;
+  let perp=bx*nx+by*ny;
+  if(proj>-5&&proj<len+5&&Math.abs(perp)<BALL_R+6){
+    let flipSpeed=f===LF?leftFlip:rightFlip;
+    b.vy=-Math.abs(b.vy)*0.8-(flipSpeed>0.5?8:2);
+    b.vx+=(f===LF?3:-3)*flipSpeed;
+    b.y=f.py+ny*(BALL_R+7)+proj/len*dy;
+  }
+}
+
+function draw(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  // Side walls
+  ctx.fillStyle='#1a1a3a';
+  ctx.fillRect(0,0,20,H);ctx.fillRect(W-20,0,20,H);
+  ctx.fillRect(0,0,W,10);
+  // Angled bottom walls
+  ctx.strokeStyle='#3a3a6a';ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(20,550);ctx.lineTo(120,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W-20,550);ctx.lineTo(W-120,H);ctx.stroke();
+
+  // Targets
+  for(let t of targets){
+    ctx.fillStyle=t.hit?'#333':t.color;
+    ctx.fillRect(t.x,t.y,t.w,t.h);
+    if(!t.hit){
+      ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.fillRect(t.x,t.y,t.w,3);
+    }
+  }
+
+  // Bumpers
+  for(let b of bumpers){
+    let glow=b.flash;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle=b.color;ctx.fill();
+    if(glow>0){
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r+glow*10,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${glow*0.3})`;ctx.fill();
+    }
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r-5,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 12px Segoe UI';ctx.textAlign='center';
+    ctx.fillText(b.pts,b.x,b.y+4);
+  }
+
+  // Flippers
+  drawFlipper(LF,-0.4-leftFlip*0.8);
+  drawFlipper(RF,Math.PI+0.4+rightFlip*0.8);
+
+  // Ball
+  if(state==='play'){
+    ctx.beginPath();ctx.arc(ball.x,ball.y,BALL_R,0,Math.PI*2);
+    ctx.fillStyle='#ecf0f1';ctx.fill();
+    ctx.beginPath();ctx.arc(ball.x-2,ball.y-2,BALL_R/2,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fill();
+    // Trail
+    ctx.beginPath();ctx.arc(ball.x,ball.y,BALL_R+3,0,Math.PI*2);
+    ctx.fillStyle='rgba(236,240,241,0.1)';ctx.fill();
+  }
+
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='bold 18px Segoe UI';ctx.textAlign='left';
+  ctx.fillText('Score: '+score,30,35);
+  ctx.textAlign='right';
+  ctx.fillText('Balls: '+'⚪'.repeat(Math.max(0,balls)),W-30,35);
+
+  // Overlays
+  if(state==='menu'){
+    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#f39c12';ctx.font='bold 48px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('PINBALL',W/2,H/2-60);
+    ctx.fillStyle='#aaa';ctx.font='18px Segoe UI';
+    ctx.fillText('Click or Space to launch',W/2,H/2);
+    ctx.fillText('Left/A or Z = Left flipper',W/2,H/2+30);
+    ctx.fillText('Right/D or / = Right flipper',W/2,H/2+60);
+  }
+  if(state==='dead'){
+    ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#e74c3c';ctx.font='bold 42px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('GAME OVER',W/2,H/2-50);
+    ctx.fillStyle='#fff';ctx.font='24px Segoe UI';
+    ctx.fillText('Score: '+score,W/2,H/2);
+    ctx.fillText('Best: '+bestScore,W/2,H/2+35);
+    ctx.fillStyle='#aaa';ctx.font='18px Segoe UI';
+    ctx.fillText('Click or Space to retry',W/2,H/2+75);
+  }
+}
+
+function drawFlipper(f,angle){
+  let tip=flipperTip(f,angle);
+  ctx.strokeStyle='#ecf0f1';ctx.lineWidth=12;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(f.px,f.py);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=6;
+  ctx.beginPath();ctx.moveTo(f.px,f.py);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
