@@ -13,10 +13,21 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 #game-wrapper{position:relative;width:100%;max-width:960px;aspect-ratio:16/9;border:2px solid #2a2a4a;border-radius:12px;overflow:hidden;background:#231F20;box-shadow:0 0 30px rgba(0,0,0,0.6)}
 #game-wrapper iframe{width:100%;height:100%;border:none}
 
-/* Score cover - hides Unity's built-in score, shows our timer */
-#score-cover{position:absolute;top:0;left:0;width:100%;height:60%;background:transparent;z-index:10;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;pointer-events:none}
-#score-cover-bg{position:absolute;top:0;left:50%;transform:translateX(-50%);width:260px;height:52px;background:#231F20;border-radius:0 0 10px 10px}
-#our-score{position:relative;color:#0f0;font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif;z-index:1;padding-top:10px}
+/* Score cover bar - thin strip across full width to hide Unity score */
+#score-cover{position:absolute;top:0;left:0;width:100%;height:36px;background:#231F20;z-index:10;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#our-score{color:#0f0;font-size:16px;font-weight:bold;text-shadow:0 0 10px rgba(0,255,0,0.5);font-family:'Segoe UI',Arial,sans-serif;opacity:0;transition:opacity 0.3s}
+#our-score.visible{opacity:1}
+
+/* Loading overlay */
+#loading-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;border-radius:12px;transition:opacity 0.4s}
+#loading-overlay.click-through{pointer-events:none}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+#loading-overlay h2{color:#0f0;font-size:36px;text-shadow:0 0 30px rgba(0,255,0,0.6);margin-bottom:20px}
+.loader{width:36px;height:36px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-text{color:#888;margin-top:12px;font-size:13px}
+#click-prompt{display:none;color:#0f0;font-size:20px;margin-top:20px;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
 /* Game over overlay */
 #gameover-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:15;border-radius:12px}
@@ -33,6 +44,15 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 <h1 class="title">SLOPE</h1>
 
 <div id="game-wrapper">
+  <!-- Loading overlay - covers ugly menu -->
+  <div id="loading-overlay">
+    <h2>SLOPE</h2>
+    <div class="loader" id="load-spinner"></div>
+    <div id="loading-text">Loading game...</div>
+    <div id="click-prompt">Click here to play</div>
+  </div>
+
+  <!-- Game over overlay - covers leaderboard popup -->
   <div id="gameover-overlay">
     <h2>GAME OVER</h2>
     <div id="gameover-time"></div>
@@ -40,9 +60,8 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
     <button id="play-again-btn">Play Again</button>
   </div>
 
-  <!-- Covers Unity's built-in score, shows our timer instead -->
+  <!-- Thin bar covering Unity's score -->
   <div id="score-cover">
-    <div id="score-cover-bg"></div>
     <span id="our-score">0.0s</span>
   </div>
 
@@ -50,157 +69,202 @@ h1.title{color:#0f0;font-size:28px;margin:10px 0 12px;text-shadow:0 0 20px rgba(
 </div>
 
 <script>
-var gameStarted = false;
-var gameActive = false;
-var lastInputTime = 0;
-var deathCheckInterval = null;
+(function() {
+  var gameStarted = false;
+  var gameActive = false;
+  var lastInputTime = 0;
+  var deathCheckInterval = null;
+  var startTime = 0;
+  var currentTime = 0;
+  var timerInterval = null;
+  var iframeLoadTimer = null;
 
-// Timer-based scoring
-var startTime = 0;
-var currentTime = 0;
-var timerInterval = null;
+  // --- Show "Click to Play" after iframe likely loaded ---
+  function waitForLoad() {
+    iframeLoadTimer = setTimeout(function() {
+      var spinner = document.getElementById('load-spinner');
+      var loadText = document.getElementById('loading-text');
+      var clickPrompt = document.getElementById('click-prompt');
+      var overlay = document.getElementById('loading-overlay');
 
-// --- Timer ---
-function startTimer() {
-  startTime = Date.now();
-  var scoreEl = document.getElementById('our-score');
-  timerInterval = setInterval(function() {
-    currentTime = ((Date.now() - startTime) / 1000);
-    if (scoreEl) scoreEl.textContent = currentTime.toFixed(1) + 's';
-  }, 100);
-}
+      if (spinner) spinner.style.display = 'none';
+      if (loadText) loadText.style.display = 'none';
+      if (clickPrompt) clickPrompt.style.display = 'block';
 
-function stopTimer() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
+      // Make overlay click-through so real click reaches iframe Play button
+      if (overlay) overlay.classList.add('click-through');
+    }, 4000);
   }
-  currentTime = ((Date.now() - startTime) / 1000);
-}
+  waitForLoad();
 
-// --- Game Start Detection ---
-function onGameStart() {
-  if (gameStarted) return;
-  gameStarted = true;
-  gameActive = true;
-  startTimer();
-  startDeathDetection();
-}
+  // --- When user clicks through overlay onto iframe's Play ---
+  document.getElementById('game-wrapper').addEventListener('click', function handleClick() {
+    var overlay = document.getElementById('loading-overlay');
+    if (!overlay || !overlay.classList.contains('click-through')) return;
+    if (gameStarted) return;
 
-// --- Game Over Detection ---
-// Monitor keyboard input - if no arrow/WASD keys for a while, player likely died
-function startDeathDetection() {
-  if (deathCheckInterval) return;
-  deathCheckInterval = setInterval(function() {
-    if (!gameActive) return;
-    var now = Date.now();
-    // If no input for 6 seconds after game started, likely dead
-    if (lastInputTime > 0 && (now - lastInputTime) > 6000) {
-      showGameOver();
-    }
-  }, 1000);
-}
-
-function showGameOver() {
-  if (!gameActive) return;
-  gameActive = false;
-  stopTimer();
-
-  var finalScore = Math.round(currentTime);
-  var overlay = document.getElementById('gameover-overlay');
-  if (overlay) overlay.classList.add('visible');
-
-  var timeEl = document.getElementById('gameover-time');
-  if (timeEl) timeEl.textContent = currentTime.toFixed(1) + ' seconds';
-
-  // Submit to leaderboard
-  if (finalScore > 0) {
-    try { HallOfFame.submit('slope', finalScore); } catch(e) {}
-  }
-
-  // Show best score
-  var bestEl = document.getElementById('gameover-best');
-  if (bestEl) {
-    try {
-      var scores = HallOfFame.getScores('slope');
-      if (scores && scores.length > 0) {
-        var best = scores[0].score;
-        if (finalScore >= best) {
-          bestEl.textContent = 'New Best!';
-          bestEl.style.color = '#0f0';
-        } else {
-          bestEl.textContent = 'Best: ' + best + 's';
-          bestEl.style.color = '#888';
+    // User clicked through to Unity's Play button
+    // Hide overlay after short delay to let game start
+    setTimeout(function() {
+      if (!gameStarted) {
+        // Hasn't pressed arrow keys yet but click went through
+        var ov = document.getElementById('loading-overlay');
+        if (ov) {
+          ov.classList.add('hidden');
+          setTimeout(function() { ov.style.display = 'none'; }, 500);
         }
       }
-    } catch(e) {
-      bestEl.textContent = '';
+    }, 2000);
+  });
+
+  // --- Timer ---
+  function startTimer() {
+    startTime = Date.now();
+    var scoreEl = document.getElementById('our-score');
+    if (scoreEl) scoreEl.classList.add('visible');
+    timerInterval = setInterval(function() {
+      currentTime = (Date.now() - startTime) / 1000;
+      if (scoreEl) scoreEl.textContent = currentTime.toFixed(1) + 's';
+    }, 100);
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    currentTime = (Date.now() - startTime) / 1000;
+  }
+
+  // --- Game Start Detection ---
+  function onGameStart() {
+    if (gameStarted) return;
+    gameStarted = true;
+    gameActive = true;
+    startTimer();
+
+    // Hide loading overlay
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      setTimeout(function() { overlay.style.display = 'none'; }, 500);
     }
+
+    startDeathDetection();
   }
 
-  if (window.SFX && window.SFX.death) window.SFX.death();
-}
-
-// --- Play Again ---
-function restartGame(e) {
-  e.stopPropagation();
-  var btn = document.getElementById('play-again-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span style="display:inline-block;width:20px;height:20px;border:3px solid transparent;border-top:3px solid #0f0;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:10px"></span> Restarting...';
+  // --- Death Detection ---
+  function startDeathDetection() {
+    if (deathCheckInterval) clearInterval(deathCheckInterval);
+    deathCheckInterval = setInterval(function() {
+      if (!gameActive) return;
+      var now = Date.now();
+      if (lastInputTime > 0 && (now - lastInputTime) > 6000) {
+        showGameOver();
+      }
+    }, 1000);
   }
-  // Reload the iframe to restart the game
-  var frame = document.getElementById('game-frame');
-  if (frame) frame.src = frame.src;
 
-  // Reset state
-  gameStarted = false;
-  gameActive = false;
-  lastInputTime = 0;
-  currentTime = 0;
-  if (deathCheckInterval) { clearInterval(deathCheckInterval); deathCheckInterval = null; }
+  function showGameOver() {
+    if (!gameActive) return;
+    gameActive = false;
+    stopTimer();
 
-  var scoreEl = document.getElementById('our-score');
-  if (scoreEl) scoreEl.textContent = '0.0s';
-
-  // Hide game over overlay after short delay
-  setTimeout(function() {
+    var finalScore = Math.round(currentTime);
     var overlay = document.getElementById('gameover-overlay');
-    if (overlay) overlay.classList.remove('visible');
-    if (btn) { btn.disabled = false; btn.textContent = 'Play Again'; }
-  }, 1000);
-}
+    if (overlay) overlay.classList.add('visible');
 
-document.getElementById('play-again-btn').addEventListener('click', restartGame);
+    var timeEl = document.getElementById('gameover-time');
+    if (timeEl) timeEl.textContent = currentTime.toFixed(1) + ' seconds';
 
-// --- Input Tracking ---
-// Listen for arrow keys / WASD to detect gameplay
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd' ||
-      e.key === 'A' || e.key === 'D') {
-    onGameStart();
-    lastInputTime = Date.now();
-    gameActive = true;
+    if (finalScore > 0) {
+      try { HallOfFame.submit('slope', finalScore); } catch(e) {}
+    }
+
+    var bestEl = document.getElementById('gameover-best');
+    if (bestEl) {
+      try {
+        var scores = HallOfFame.getScores('slope');
+        if (scores && scores.length > 0) {
+          var best = scores[0].score;
+          if (finalScore >= best) {
+            bestEl.textContent = 'New Best!';
+            bestEl.style.color = '#0f0';
+          } else {
+            bestEl.textContent = 'Best: ' + best + 's';
+            bestEl.style.color = '#888';
+          }
+        }
+      } catch(e) { bestEl.textContent = ''; }
+    }
+
+    if (window.SFX && window.SFX.death) window.SFX.death();
   }
-});
 
-document.addEventListener('keyup', function(e) {
-  if (gameStarted && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-      e.key === 'a' || e.key === 'd' || e.key === 'A' || e.key === 'D')) {
-    lastInputTime = Date.now();
-  }
-});
+  // --- Play Again ---
+  document.getElementById('play-again-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
 
-// Touch input tracking
-document.addEventListener('touchstart', function() {
-  if (gameStarted) {
-    lastInputTime = Date.now();
-    gameActive = true;
-  }
-});
-document.addEventListener('touchend', function() {
-  if (gameStarted) lastInputTime = Date.now();
-});
+    // Reset all state
+    gameStarted = false;
+    gameActive = false;
+    lastInputTime = 0;
+    currentTime = 0;
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    if (deathCheckInterval) { clearInterval(deathCheckInterval); deathCheckInterval = null; }
+    if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
+
+    // Hide game over overlay
+    var goOverlay = document.getElementById('gameover-overlay');
+    if (goOverlay) goOverlay.classList.remove('visible');
+
+    // Reset and show loading overlay
+    var loadOverlay = document.getElementById('loading-overlay');
+    var spinner = document.getElementById('load-spinner');
+    var loadText = document.getElementById('loading-text');
+    var clickPrompt = document.getElementById('click-prompt');
+    var scoreEl = document.getElementById('our-score');
+
+    if (scoreEl) { scoreEl.textContent = '0.0s'; scoreEl.classList.remove('visible'); }
+    if (spinner) spinner.style.display = 'block';
+    if (loadText) { loadText.style.display = 'block'; loadText.textContent = 'Loading game...'; }
+    if (clickPrompt) clickPrompt.style.display = 'none';
+
+    if (loadOverlay) {
+      loadOverlay.classList.remove('click-through');
+      loadOverlay.classList.remove('hidden');
+      loadOverlay.style.display = 'flex';
+    }
+
+    // Reload iframe
+    var frame = document.getElementById('game-frame');
+    if (frame) frame.src = 'https://sz-games.github.io/slope/';
+
+    // Wait for reload then show click to play
+    waitForLoad();
+  });
+
+  // --- Input Tracking ---
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+        e.key === 'a' || e.key === 'd' || e.key === 'A' || e.key === 'D') {
+      onGameStart();
+      lastInputTime = Date.now();
+      if (gameStarted) gameActive = true;
+    }
+  });
+
+  document.addEventListener('keyup', function(e) {
+    if (gameStarted && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+        e.key === 'a' || e.key === 'd' || e.key === 'A' || e.key === 'D')) {
+      lastInputTime = Date.now();
+    }
+  });
+
+  document.addEventListener('touchstart', function() {
+    if (gameStarted) { lastInputTime = Date.now(); gameActive = true; }
+  });
+  document.addEventListener('touchend', function() {
+    if (gameStarted) lastInputTime = Date.now();
+  });
+})();
 </script>
 
 <script src="sound.js?v=2"></script>
