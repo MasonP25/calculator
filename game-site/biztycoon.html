@@ -259,19 +259,16 @@ function getPerSec() {
   return perSec;
 }
 
+var NUM_SUFFIXES = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc','QaDc','QiDc','SxDc','SpDc','ODc','NDc','Vg','UVg','DVg','TVg','QaVg','QiVg','SxVg','SpVg','OVg','NVg','Tg'];
 function fmt(n) {
-  if (n >= 1e33) return (n / 1e33).toFixed(2) + 'Dc';
-  if (n >= 1e30) return (n / 1e30).toFixed(2) + 'No';
-  if (n >= 1e27) return (n / 1e27).toFixed(2) + 'Oc';
-  if (n >= 1e24) return (n / 1e24).toFixed(2) + 'Sp';
-  if (n >= 1e21) return (n / 1e21).toFixed(2) + 'Sx';
-  if (n >= 1e18) return (n / 1e18).toFixed(2) + 'Qi';
-  if (n >= 1e15) return (n / 1e15).toFixed(2) + 'Qa';
-  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
-  return Math.floor(n).toString();
+  if (n < 1e3) return Math.floor(n).toLocaleString();
+  var tier = Math.floor(Math.log10(Math.abs(n)) / 3);
+  if (tier >= NUM_SUFFIXES.length) tier = NUM_SUFFIXES.length - 1;
+  if (tier < 1) return Math.floor(n).toString();
+  var scale = Math.pow(10, tier * 3);
+  var scaled = n / scale;
+  return scaled.toFixed(2) + NUM_SUFFIXES[tier];
+}
 }
 
 function fmtTime(ms) {
