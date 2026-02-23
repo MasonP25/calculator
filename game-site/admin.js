@@ -95,6 +95,7 @@
     'astray':'astray','maze':'astray',
     'mortal kombat':'mkjs','mk':'mkjs','0hh1':'0hh1','0h h1':'0hh1',
     'slime farmer':'slimefarmer','slime':'slimefarmer','clumsy bird':'clumsybird',
+    'biz tycoon':'biztycoon','business tycoon':'biztycoon','tycoon':'biztycoon',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
   };
 

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biz Tycoon</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 60px 20px 20px;
+  }
+  h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.3rem;
+    background: linear-gradient(90deg, #f39c12, #2ecc71);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  .stats {
+    display: flex;
+    gap: 2rem;
+    margin: 0.8rem 0 1.2rem;
+    font-size: 1.1rem;
+  }
+  .stats span { color: #f39c12; font-weight: bold; }
+  .stats .per-sec { color: #2ecc71; font-size: 0.85rem; }
+  .businesses {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    max-width: 900px;
+    width: 100%;
+  }
+  .biz {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: border-color 0.2s;
+  }
+  .biz:hover { border-color: #7b2ff7; }
+  .biz.locked { opacity: 0.4; pointer-events: none; }
+  .biz h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+  .biz .emoji { font-size: 1.8rem; float: left; margin-right: 0.6rem; }
+  .biz .info { color: #888; font-size: 0.8rem; margin-bottom: 0.5rem; }
+  .biz .info b { color: #f39c12; }
+  .biz .prog-bar {
+    width: 100%;
+    height: 8px;
+    background: #2a2a4a;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  .biz .prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7b2ff7, #00d4ff);
+    border-radius: 4px;
+    transition: width 0.1s linear;
+  }
+  .biz-btns { display: flex; gap: 0.5rem; }
+  .biz-btns button {
+    flex: 1;
+    padding: 0.4rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .biz-btns button:hover { opacity: 0.85; }
+  .biz-btns .run-btn {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white;
+  }
+  .biz-btns .buy-btn {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+  }
+  .biz-btns .mgr-btn {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+  }
+  .biz-btns button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .prestige-area {
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+  .prestige-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .prestige-btn:hover { opacity: 0.85; }
+  .prestige-btn:disabled { opacity: 0.3; cursor: default; }
+  .prestige-info { color: #888; font-size: 0.75rem; margin-top: 0.3rem; }
+  .save-note { color: #555; font-size: 0.7rem; margin-top: 1rem; }
+  a.back {
+    position: fixed; top: 14px; left: 14px; z-index: 10001;
+    color: #aaa; text-decoration: none; font-size: 15px;
+    background: #1a1a2e; border: 1px solid #2a2a4a;
+    padding: 6px 14px; border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+  }
+  a.back:hover { background: #2a2a4a; color: #fff; }
+  .reset-btn {
+    background: none; border: 1px solid #333; color: #555;
+    padding: 4px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 0.7rem; margin-top: 0.5rem; font-family: inherit;
+  }
+  .reset-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>Biz Tycoon</h1>
+<div class="stats">
+  Cash: $<span id="cash">0</span>
+  <span class="per-sec">$<span id="perSec">0</span>/s</span>
+  Prestige: <span id="mult">1</span>x
+</div>
+
+<div class="businesses" id="bizGrid"></div>
+
+<div class="prestige-area">
+  <button class="prestige-btn" id="prestigeBtn" disabled>Prestige (Reset for multiplier)</button>
+  <div class="prestige-info" id="prestigeInfo">Earn $1,000,000 to prestige</div>
+</div>
+
+<div class="save-note">Auto-saves every 10 seconds</div>
+<button class="reset-btn" id="resetBtn">Reset All Progress</button>
+
+<script>
+var BUSINESSES = [
+  { name: 'Lemonade Stand', emoji: '🍋', baseCost: 4, baseRevenue: 1, baseTime: 1000, mgrCost: 50 },
+  { name: 'Newspaper Route', emoji: '📰', baseCost: 60, baseRevenue: 8, baseTime: 2000, mgrCost: 500 },
+  { name: 'Car Wash', emoji: '🚗', baseCost: 720, baseRevenue: 60, baseTime: 3000, mgrCost: 5000 },
+  { name: 'Pizza Shop', emoji: '🍕', baseCost: 8640, baseRevenue: 400, baseTime: 4000, mgrCost: 40000 },
+  { name: 'Donut Shop', emoji: '🍩', baseCost: 103680, baseRevenue: 2500, baseTime: 5000, mgrCost: 300000 },
+  { name: 'Shrimp Boat', emoji: '🦐', baseCost: 1244160, baseRevenue: 15000, baseTime: 6000, mgrCost: 2000000 },
+  { name: 'Hockey Team', emoji: '🏒', baseCost: 14929920, baseRevenue: 90000, baseTime: 7000, mgrCost: 15000000 },
+  { name: 'Movie Studio', emoji: '🎬', baseCost: 179159040, baseRevenue: 540000, baseTime: 8000, mgrCost: 100000000 },
+  { name: 'Bank', emoji: '🏦', baseCost: 2149908480, baseRevenue: 3200000, baseTime: 9000, mgrCost: 800000000 },
+  { name: 'Oil Company', emoji: '🛢️', baseCost: 25798901760, baseRevenue: 20000000, baseTime: 10000, mgrCost: 5000000000 }
+];
+
+var state = {
+  cash: 0,
+  totalEarned: 0,
+  prestige: 0,
+  businesses: BUSINESSES.map(function() {
+    return { count: 0, hasManager: false, progress: 0, running: false };
+  })
+};
+
+function getMultiplier() { return 1 + state.prestige * 0.5; }
+
+function getCost(i) {
+  return Math.floor(BUSINESSES[i].baseCost * Math.pow(1.15, state.businesses[i].count));
+}
+
+function getRevenue(i) {
+  return Math.floor(BUSINESSES[i].baseRevenue * state.businesses[i].count * getMultiplier());
+}
+
+function fmt(n) {
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+  return Math.floor(n).toString();
+}
+
+function save() {
+  localStorage.setItem('biztycoon_save', JSON.stringify(state));
+}
+
+function load() {
+  var s = localStorage.getItem('biztycoon_save');
+  if (s) {
+    try {
+      var parsed = JSON.parse(s);
+      state.cash = parsed.cash || 0;
+      state.totalEarned = parsed.totalEarned || 0;
+      state.prestige = parsed.prestige || 0;
+      parsed.businesses.forEach(function(b, i) {
+        if (i < state.businesses.length) {
+          state.businesses[i].count = b.count || 0;
+          state.businesses[i].hasManager = b.hasManager || false;
+        }
+      });
+    } catch(e) {}
+  }
+}
+
+var grid = document.getElementById('bizGrid');
+
+function renderAll() {
+  grid.innerHTML = '';
+  BUSINESSES.forEach(function(biz, i) {
+    var bs = state.businesses[i];
+    var cost = getCost(i);
+    var rev = getRevenue(i);
+    var unlocked = i === 0 || state.businesses[i - 1].count > 0;
+
+    var div = document.createElement('div');
+    div.className = 'biz' + (unlocked ? '' : ' locked');
+    div.innerHTML =
+      '<div class="emoji">' + biz.emoji + '</div>' +
+      '<h3>' + biz.name + ' x' + bs.count + '</h3>' +
+      '<div class="info">Revenue: <b>$' + fmt(rev) + '</b> every ' + (biz.baseTime / 1000) + 's' +
+      (bs.hasManager ? ' (auto)' : '') + '</div>' +
+      '<div class="prog-bar"><div class="prog-fill" id="prog' + i + '" style="width:' + (bs.progress || 0) + '%"></div></div>' +
+      '<div class="biz-btns">' +
+        '<button class="run-btn" id="run' + i + '"' + (bs.count === 0 || bs.running || bs.hasManager ? ' disabled' : '') + '>Run</button>' +
+        '<button class="buy-btn" id="buy' + i + '"' + (state.cash < cost ? ' disabled' : '') + '>Buy $' + fmt(cost) + '</button>' +
+        '<button class="mgr-btn" id="mgr' + i + '"' + (bs.hasManager || bs.count === 0 || state.cash < biz.mgrCost ? ' disabled' : '') + '>Mgr $' + fmt(biz.mgrCost) + '</button>' +
+      '</div>';
+    grid.appendChild(div);
+
+    document.getElementById('buy' + i).addEventListener('click', function() { buyBiz(i); });
+    document.getElementById('run' + i).addEventListener('click', function() { runBiz(i); });
+    document.getElementById('mgr' + i).addEventListener('click', function() { buyManager(i); });
+  });
+}
+
+function buyBiz(i) {
+  var cost = getCost(i);
+  if (state.cash >= cost) {
+    state.cash -= cost;
+    state.businesses[i].count++;
+    if (state.businesses[i].count === 1 && i === 0 && !state.businesses[i].running && !state.businesses[i].hasManager) {
+      runBiz(i);
+    }
+    updateUI();
+  }
+}
+
+function buyManager(i) {
+  var cost = BUSINESSES[i].mgrCost;
+  if (state.cash >= cost && state.businesses[i].count > 0) {
+    state.cash -= cost;
+    state.businesses[i].hasManager = true;
+    if (!state.businesses[i].running) runBiz(i);
+    updateUI();
+  }
+}
+
+function runBiz(i) {
+  var bs = state.businesses[i];
+  if (bs.count === 0 || bs.running) return;
+  bs.running = true;
+  bs.progress = 0;
+  var time = BUSINESSES[i].baseTime;
+  var start = Date.now();
+
+  function tick() {
+    var elapsed = Date.now() - start;
+    bs.progress = Math.min(100, (elapsed / time) * 100);
+    var el = document.getElementById('prog' + i);
+    if (el) el.style.width = bs.progress + '%';
+
+    if (elapsed >= time) {
+      var rev = getRevenue(i);
+      state.cash += rev;
+      state.totalEarned += rev;
+      bs.progress = 0;
+      bs.running = false;
+      updateStats();
+      if (bs.hasManager) {
+        runBiz(i);
+      } else {
+        updateUI();
+      }
+    } else {
+      requestAnimationFrame(tick);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function updateStats() {
+  document.getElementById('cash').textContent = fmt(state.cash);
+  document.getElementById('mult').textContent = getMultiplier().toFixed(1);
+
+  var perSec = 0;
+  BUSINESSES.forEach(function(biz, i) {
+    var bs = state.businesses[i];
+    if (bs.hasManager && bs.count > 0) {
+      perSec += getRevenue(i) / (biz.baseTime / 1000);
+    }
+  });
+  document.getElementById('perSec').textContent = fmt(perSec);
+
+  var canPrestige = state.totalEarned >= 1000000;
+  document.getElementById('prestigeBtn').disabled = !canPrestige;
+  var nextMult = (1 + (state.prestige + 1) * 0.5).toFixed(1);
+  document.getElementById('prestigeInfo').textContent = canPrestige
+    ? 'Reset everything for ' + nextMult + 'x multiplier!'
+    : 'Earn $' + fmt(1000000 - state.totalEarned) + ' more to prestige';
+}
+
+function updateUI() {
+  renderAll();
+  updateStats();
+  BUSINESSES.forEach(function(biz, i) {
+    if (state.businesses[i].hasManager && state.businesses[i].count > 0 && !state.businesses[i].running) {
+      runBiz(i);
+    }
+  });
+}
+
+document.getElementById('prestigeBtn').addEventListener('click', function() {
+  if (state.totalEarned >= 1000000) {
+    state.prestige++;
+    state.cash = 0;
+    state.totalEarned = 0;
+    state.businesses.forEach(function(b) {
+      b.count = 0;
+      b.hasManager = false;
+      b.progress = 0;
+      b.running = false;
+    });
+    save();
+    updateUI();
+    if(window.SFX) window.SFX.win();
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+  if (confirm('Are you sure you want to reset ALL progress?')) {
+    localStorage.removeItem('biztycoon_save');
+    state.cash = 0;
+    state.totalEarned = 0;
+    state.prestige = 0;
+    state.businesses.forEach(function(b) {
+      b.count = 0;
+      b.hasManager = false;
+      b.progress = 0;
+      b.running = false;
+    });
+    updateUI();
+  }
+});
+
+load();
+updateUI();
+
+setInterval(save, 10000);
+window.addEventListener('beforeunload', save);
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
