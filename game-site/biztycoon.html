@@ -28,11 +28,36 @@
   .stats {
     display: flex;
     gap: 2rem;
-    margin: 0.8rem 0 1.2rem;
+    margin: 0.8rem 0 0.5rem;
     font-size: 1.1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .stats span { color: #f39c12; font-weight: bold; }
   .stats .per-sec { color: #2ecc71; font-size: 0.85rem; }
+  .toggles {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  .toggle-btn {
+    padding: 0.4rem 1rem;
+    border: 2px solid #2a2a4a;
+    border-radius: 8px;
+    background: #1a1a2e;
+    color: #888;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .toggle-btn.active {
+    border-color: #7b2ff7;
+    color: #7b2ff7;
+    background: #1a1a3e;
+  }
+  .toggle-btn:hover { border-color: #7b2ff7; }
   .businesses {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -129,6 +154,25 @@
     font-size: 0.7rem; margin-top: 0.5rem; font-family: inherit;
   }
   .reset-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+  .offline-popup {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); display: flex;
+    align-items: center; justify-content: center; z-index: 20000;
+  }
+  .offline-box {
+    background: #1a1a2e; border: 2px solid #7b2ff7;
+    border-radius: 16px; padding: 2rem; text-align: center;
+    max-width: 360px;
+  }
+  .offline-box h2 { color: #2ecc71; margin-bottom: 0.5rem; font-size: 1.3rem; }
+  .offline-box .amount { font-size: 2rem; color: #f39c12; font-weight: bold; margin: 0.5rem 0; }
+  .offline-box .time { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+  .offline-box button {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white; border: none; padding: 0.6rem 2rem;
+    border-radius: 8px; font-size: 1rem; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
 </style>
 </head>
 <body>
@@ -140,6 +184,12 @@
   Prestige: <span id="mult">1</span>x
 </div>
 
+<div class="toggles">
+  <button class="toggle-btn" id="autoRunBtn">Auto-Run</button>
+  <button class="toggle-btn" id="autoBuyBtn">Auto-Buy</button>
+  <button class="toggle-btn" id="autoMgrBtn">Auto-Manager</button>
+</div>
+
 <div class="businesses" id="bizGrid"></div>
 
 <div class="prestige-area">
@@ -147,8 +197,18 @@
   <div class="prestige-info" id="prestigeInfo">Earn $1,000,000 to prestige</div>
 </div>
 
-<div class="save-note">Auto-saves every 10 seconds</div>
+<div class="save-note">Auto-saves every 10 seconds | Earns offline too!</div>
 <button class="reset-btn" id="resetBtn">Reset All Progress</button>
+
+<div class="offline-popup" id="offlinePopup" style="display:none">
+  <div class="offline-box">
+    <h2>Welcome Back!</h2>
+    <div class="time" id="offlineTime"></div>
+    <div>You earned while away:</div>
+    <div class="amount" id="offlineAmount"></div>
+    <button id="offlineOk">Collect</button>
+  </div>
+</div>
 
 <script>
 var BUSINESSES = [
@@ -169,6 +229,10 @@ var state = {
   totalEarned: 0,
   lifetimeEarned: 0,
   prestige: 0,
+  lastSaved: Date.now(),
+  autoRun: false,
+  autoBuy: false,
+  autoMgr: false,
   businesses: BUSINESSES.map(function() {
     return { count: 0, hasManager: false, progress: 0, running: false };
   })
@@ -184,7 +248,19 @@ function getRevenue(i) {
   return Math.floor(BUSINESSES[i].baseRevenue * state.businesses[i].count * getMultiplier());
 }
 
+function getPerSec() {
+  var perSec = 0;
+  BUSINESSES.forEach(function(biz, i) {
+    var bs = state.businesses[i];
+    if ((bs.hasManager || state.autoRun) && bs.count > 0) {
+      perSec += getRevenue(i) / (biz.baseTime / 1000);
+    }
+  });
+  return perSec;
+}
+
 function fmt(n) {
+  if (n >= 1e15) return (n / 1e15).toFixed(2) + 'Q';
   if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -192,7 +268,21 @@ function fmt(n) {
   return Math.floor(n).toString();
 }
 
+function fmtTime(ms) {
+  var s = Math.floor(ms / 1000);
+  if (s < 60) return s + ' seconds';
+  var m = Math.floor(s / 60);
+  if (m < 60) return m + ' minute' + (m > 1 ? 's' : '');
+  var h = Math.floor(m / 60);
+  m = m % 60;
+  if (h < 24) return h + 'h ' + m + 'm';
+  var d = Math.floor(h / 24);
+  h = h % 24;
+  return d + 'd ' + h + 'h';
+}
+
 function save() {
+  state.lastSaved = Date.now();
   localStorage.setItem('biztycoon_save', JSON.stringify(state));
 }
 
@@ -205,6 +295,10 @@ function load() {
       state.totalEarned = parsed.totalEarned || 0;
       state.lifetimeEarned = parsed.lifetimeEarned || 0;
       state.prestige = parsed.prestige || 0;
+      state.lastSaved = parsed.lastSaved || Date.now();
+      state.autoRun = parsed.autoRun || false;
+      state.autoBuy = parsed.autoBuy || false;
+      state.autoMgr = parsed.autoMgr || false;
       parsed.businesses.forEach(function(b, i) {
         if (i < state.businesses.length) {
           state.businesses[i].count = b.count || 0;
@@ -213,6 +307,21 @@ function load() {
       });
     } catch(e) {}
   }
+}
+
+function calcOfflineEarnings() {
+  var elapsed = Date.now() - state.lastSaved;
+  if (elapsed < 5000) return 0;
+  var perSec = getPerSec();
+  if (perSec <= 0) return 0;
+  var seconds = elapsed / 1000;
+  return Math.floor(perSec * seconds);
+}
+
+function showOfflinePopup(earned, elapsed) {
+  document.getElementById('offlineTime').textContent = 'You were away for ' + fmtTime(elapsed);
+  document.getElementById('offlineAmount').textContent = '$' + fmt(earned);
+  document.getElementById('offlinePopup').style.display = 'flex';
 }
 
 var grid = document.getElementById('bizGrid');
@@ -231,10 +340,10 @@ function renderAll() {
       '<div class="emoji">' + biz.emoji + '</div>' +
       '<h3>' + biz.name + ' x' + bs.count + '</h3>' +
       '<div class="info">Revenue: <b>$' + fmt(rev) + '</b> every ' + (biz.baseTime / 1000) + 's' +
-      (bs.hasManager ? ' (auto)' : '') + '</div>' +
+      (bs.hasManager ? ' (auto)' : (state.autoRun && bs.count > 0 ? ' (auto-run)' : '')) + '</div>' +
       '<div class="prog-bar"><div class="prog-fill" id="prog' + i + '" style="width:' + (bs.progress || 0) + '%"></div></div>' +
       '<div class="biz-btns">' +
-        '<button class="run-btn" id="run' + i + '"' + (bs.count === 0 || bs.running || bs.hasManager ? ' disabled' : '') + '>Run</button>' +
+        '<button class="run-btn" id="run' + i + '"' + (bs.count === 0 || bs.running || bs.hasManager || state.autoRun ? ' disabled' : '') + '>Run</button>' +
         '<button class="buy-btn" id="buy' + i + '"' + (state.cash < cost ? ' disabled' : '') + '>Buy $' + fmt(cost) + '</button>' +
         '<button class="mgr-btn" id="mgr' + i + '"' + (bs.hasManager || bs.count === 0 || state.cash < biz.mgrCost ? ' disabled' : '') + '>Mgr $' + fmt(biz.mgrCost) + '</button>' +
       '</div>';
@@ -251,9 +360,6 @@ function buyBiz(i) {
   if (state.cash >= cost) {
     state.cash -= cost;
     state.businesses[i].count++;
-    if (state.businesses[i].count === 1 && i === 0 && !state.businesses[i].running && !state.businesses[i].hasManager) {
-      runBiz(i);
-    }
     updateUI();
   }
 }
@@ -290,7 +396,7 @@ function runBiz(i) {
       bs.progress = 0;
       bs.running = false;
       updateStats();
-      if (bs.hasManager) {
+      if (bs.hasManager || state.autoRun) {
         runBiz(i);
       } else {
         updateUI();
@@ -305,15 +411,7 @@ function runBiz(i) {
 function updateStats() {
   document.getElementById('cash').textContent = fmt(state.cash);
   document.getElementById('mult').textContent = getMultiplier().toFixed(1);
-
-  var perSec = 0;
-  BUSINESSES.forEach(function(biz, i) {
-    var bs = state.businesses[i];
-    if (bs.hasManager && bs.count > 0) {
-      perSec += getRevenue(i) / (biz.baseTime / 1000);
-    }
-  });
-  document.getElementById('perSec').textContent = fmt(perSec);
+  document.getElementById('perSec').textContent = fmt(getPerSec());
 
   var canPrestige = state.totalEarned >= 1000000;
   document.getElementById('prestigeBtn').disabled = !canPrestige;
@@ -326,13 +424,67 @@ function updateStats() {
 function updateUI() {
   renderAll();
   updateStats();
+  updateToggleButtons();
   BUSINESSES.forEach(function(biz, i) {
-    if (state.businesses[i].hasManager && state.businesses[i].count > 0 && !state.businesses[i].running) {
+    if ((state.businesses[i].hasManager || state.autoRun) && state.businesses[i].count > 0 && !state.businesses[i].running) {
       runBiz(i);
     }
   });
 }
 
+function updateToggleButtons() {
+  document.getElementById('autoRunBtn').className = 'toggle-btn' + (state.autoRun ? ' active' : '');
+  document.getElementById('autoBuyBtn').className = 'toggle-btn' + (state.autoBuy ? ' active' : '');
+  document.getElementById('autoMgrBtn').className = 'toggle-btn' + (state.autoMgr ? ' active' : '');
+}
+
+// Auto toggles
+document.getElementById('autoRunBtn').addEventListener('click', function() {
+  state.autoRun = !state.autoRun;
+  updateUI();
+});
+document.getElementById('autoBuyBtn').addEventListener('click', function() {
+  state.autoBuy = !state.autoBuy;
+  updateToggleButtons();
+});
+document.getElementById('autoMgrBtn').addEventListener('click', function() {
+  state.autoMgr = !state.autoMgr;
+  updateToggleButtons();
+});
+
+// Auto-buy and auto-manager loop
+setInterval(function() {
+  if (!state.autoBuy && !state.autoMgr) return;
+  var changed = false;
+
+  if (state.autoBuy) {
+    // Buy cheapest available business
+    for (var i = 0; i < BUSINESSES.length; i++) {
+      var unlocked = i === 0 || state.businesses[i - 1].count > 0;
+      if (!unlocked) continue;
+      var cost = getCost(i);
+      if (state.cash >= cost) {
+        state.cash -= cost;
+        state.businesses[i].count++;
+        changed = true;
+      }
+    }
+  }
+
+  if (state.autoMgr) {
+    for (var j = 0; j < BUSINESSES.length; j++) {
+      if (!state.businesses[j].hasManager && state.businesses[j].count > 0 && state.cash >= BUSINESSES[j].mgrCost) {
+        state.cash -= BUSINESSES[j].mgrCost;
+        state.businesses[j].hasManager = true;
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) updateUI();
+}, 1000);
+
+// Prestige
 document.getElementById('prestigeBtn').addEventListener('click', function() {
   if (state.totalEarned >= 1000000) {
     state.prestige++;
@@ -344,7 +496,6 @@ document.getElementById('prestigeBtn').addEventListener('click', function() {
       b.progress = 0;
       b.running = false;
     });
-    // Submit to leaderboard
     if (window.HallOfFame) window.HallOfFame.submit('biztycoon', Math.floor(state.lifetimeEarned));
     save();
     updateUI();
@@ -352,12 +503,17 @@ document.getElementById('prestigeBtn').addEventListener('click', function() {
   }
 });
 
+// Reset
 document.getElementById('resetBtn').addEventListener('click', function() {
   if (confirm('Are you sure you want to reset ALL progress?')) {
     localStorage.removeItem('biztycoon_save');
     state.cash = 10;
     state.totalEarned = 0;
+    state.lifetimeEarned = 0;
     state.prestige = 0;
+    state.autoRun = false;
+    state.autoBuy = false;
+    state.autoMgr = false;
     state.businesses.forEach(function(b) {
       b.count = 0;
       b.hasManager = false;
@@ -368,17 +524,36 @@ document.getElementById('resetBtn').addEventListener('click', function() {
   }
 });
 
+// Offline popup dismiss
+document.getElementById('offlineOk').addEventListener('click', function() {
+  document.getElementById('offlinePopup').style.display = 'none';
+});
+
+// Init
 load();
+
+// Calculate offline earnings
+var offlineEarned = calcOfflineEarnings();
+if (offlineEarned > 0) {
+  state.cash += offlineEarned;
+  state.totalEarned += offlineEarned;
+  state.lifetimeEarned += offlineEarned;
+  showOfflinePopup(offlineEarned, Date.now() - state.lastSaved);
+}
+
 updateUI();
 
+// Auto-save
 setInterval(save, 10000);
+
 // Leaderboard submit every 30 seconds
 setInterval(function() {
   if (state.lifetimeEarned > 0 && window.HallOfFame) {
     window.HallOfFame.submit('biztycoon', Math.floor(state.lifetimeEarned));
   }
 }, 30000);
-// Also submit on page unload
+
+// Submit on page unload
 window.addEventListener('beforeunload', function() {
   save();
   if (state.lifetimeEarned > 0 && window.HallOfFame) {
