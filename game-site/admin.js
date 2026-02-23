@@ -92,7 +92,9 @@
     'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft',
     'hextris':'hextris','spelunky':'spelunky',
     'fnf':'fnf','friday night funkin':'fnf','friday night':'fnf',
-    'neverball':'neverball','sans fight':'sansfight','sans':'sansfight','bad time':'sansfight',
+    'astray':'astray','maze':'astray',
+    'mortal kombat':'mkjs','mk':'mkjs','0hh1':'0hh1','0h h1':'0hh1',
+    'slime farmer':'slimefarmer','slime':'slimefarmer','clumsy bird':'clumsybird',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
   };
 
