@@ -336,7 +336,7 @@ function updateUI() {
 document.getElementById('prestigeBtn').addEventListener('click', function() {
   if (state.totalEarned >= 1000000) {
     state.prestige++;
-    state.cash = 0;
+    state.cash = 10;
     state.totalEarned = 0;
     state.businesses.forEach(function(b) {
       b.count = 0;
@@ -355,7 +355,7 @@ document.getElementById('prestigeBtn').addEventListener('click', function() {
 document.getElementById('resetBtn').addEventListener('click', function() {
   if (confirm('Are you sure you want to reset ALL progress?')) {
     localStorage.removeItem('biztycoon_save');
-    state.cash = 0;
+    state.cash = 10;
     state.totalEarned = 0;
     state.prestige = 0;
     state.businesses.forEach(function(b) {
