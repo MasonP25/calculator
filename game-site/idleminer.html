@@ -244,6 +244,27 @@
     100% { opacity: 0; }
   }
 
+  /* Offline popup */
+  .offline-popup {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7); display: flex;
+    align-items: center; justify-content: center; z-index: 20000;
+  }
+  .offline-box {
+    background: #1a1a2e; border: 2px solid #7b2ff7;
+    border-radius: 16px; padding: 2rem; text-align: center;
+    max-width: 360px;
+  }
+  .offline-box h2 { color: #00d4ff; margin-bottom: 0.5rem; font-size: 1.3rem; }
+  .offline-box .amount { font-size: 2rem; color: #ffd700; font-weight: bold; margin: 0.5rem 0; }
+  .offline-box .time { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+  .offline-box button {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: white; border: none; padding: 0.6rem 2rem;
+    border-radius: 8px; font-size: 1rem; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
+
   /* Responsive */
   @media (max-width: 750px) {
     #game-area {
@@ -455,6 +476,72 @@
       <div class="upgrade-cost" id="cost-robot">Cost: 3000</div>
       <div class="progress-bar" id="prog-robot"></div>
     </div>
+
+    <div class="upgrade-card" id="card-excavator" onclick="buyUpgrade('excavator')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#128679; Excavator</span>
+        <span class="upgrade-level" id="lvl-excavator">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Massive auto-mine boost: +20 gems/sec per level</div>
+      <div class="upgrade-effect" id="eff-excavator">+20 gems/sec</div>
+      <div class="upgrade-cost" id="cost-excavator">Cost: 10000</div>
+      <div class="progress-bar" id="prog-excavator"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-crystalcave" onclick="buyUpgrade('crystalcave')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#128142; Crystal Cave</span>
+        <span class="upgrade-level" id="lvl-crystalcave">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Discover crystal caves that multiply all passive income x1.5</div>
+      <div class="upgrade-effect" id="eff-crystalcave">x1.5 passive income</div>
+      <div class="upgrade-cost" id="cost-crystalcave">Cost: 25000</div>
+      <div class="progress-bar" id="prog-crystalcave"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-laserDrill" onclick="buyUpgrade('laserDrill')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#9889; Laser Drill</span>
+        <span class="upgrade-level" id="lvl-laserDrill">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">High-tech laser mining: +50 gems/sec per level</div>
+      <div class="upgrade-effect" id="eff-laserDrill">+50 gems/sec</div>
+      <div class="upgrade-cost" id="cost-laserDrill">Cost: 50000</div>
+      <div class="progress-bar" id="prog-laserDrill"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-portal" onclick="buyUpgrade('portal')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#127744; Gem Portal</span>
+        <span class="upgrade-level" id="lvl-portal">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Open portals to gem dimensions: x1.5 click power per level</div>
+      <div class="upgrade-effect" id="eff-portal">x1.5 click power</div>
+      <div class="upgrade-cost" id="cost-portal">Cost: 100000</div>
+      <div class="progress-bar" id="prog-portal"></div>
+    </div>
+
+    <div class="upgrade-card" id="card-blackhole" onclick="buyUpgrade('blackhole')">
+      <div class="upgrade-header">
+        <span class="upgrade-name">&#9899; Black Hole</span>
+        <span class="upgrade-level" id="lvl-blackhole">Lv 0</span>
+      </div>
+      <div class="upgrade-desc">Harness a black hole: x2 all passive income per level</div>
+      <div class="upgrade-effect" id="eff-blackhole">x2 passive income</div>
+      <div class="upgrade-cost" id="cost-blackhole">Cost: 500000</div>
+      <div class="progress-bar" id="prog-blackhole"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Offline Popup -->
+<div class="offline-popup" id="offlinePopup" style="display:none">
+  <div class="offline-box">
+    <h2>Welcome Back, Miner!</h2>
+    <div class="time" id="offlineTime"></div>
+    <div>Your miners found:</div>
+    <div class="amount" id="offlineAmount"></div>
+    <button id="offlineOk">Collect</button>
   </div>
 </div>
 
@@ -484,6 +571,16 @@ const GEM_TYPES = [
   { name: 'Taaffeite', color: '#ec407a', sparkle: '#f48fb1', shape: 'diamond' },
   { name: 'Void Crystal', color: '#311b92', sparkle: '#b388ff', shape: 'hex' },
   { name: 'Cosmic Gem', color: '#ff1744', sparkle: '#ffd740', shape: 'diamond' },
+  { name: 'Stardust', color: '#ffd54f', sparkle: '#fff9c4', shape: 'hex' },
+  { name: 'Nebula Shard', color: '#e040fb', sparkle: '#f8bbd0', shape: 'diamond' },
+  { name: 'Solar Flare', color: '#ff6e40', sparkle: '#ffccbc', shape: 'hex' },
+  { name: 'Dark Matter', color: '#263238', sparkle: '#78909c', shape: 'diamond' },
+  { name: 'Quantum Crystal', color: '#00e5ff', sparkle: '#84ffff', shape: 'hex' },
+  { name: 'Infinity Stone', color: '#aa00ff', sparkle: '#ea80fc', shape: 'diamond' },
+  { name: 'Primordial Gem', color: '#76ff03', sparkle: '#ccff90', shape: 'hex' },
+  { name: 'Celestial Core', color: '#ffd600', sparkle: '#ffff8d', shape: 'diamond' },
+  { name: 'Omega Crystal', color: '#ff1744', sparkle: '#ff80ab', shape: 'hex' },
+  { name: 'Eternal Diamond', color: '#e0f7fa', sparkle: '#ffffff', shape: 'diamond' },
 ];
 
 const UPGRADE_DEFS = {
@@ -501,6 +598,11 @@ const UPGRADE_DEFS = {
   forge:      { baseCost: 5000, costScale: 5,  maxLevel: 10 },
   dynamite:   { baseCost: 2000, costScale: 4,  maxLevel: 15 },
   robot:      { baseCost: 3000, costScale: 4.5, maxLevel: 20 },
+  excavator:  { baseCost: 10000, costScale: 5, maxLevel: 15 },
+  crystalcave:{ baseCost: 25000, costScale: 5.5, maxLevel: 10 },
+  laserDrill: { baseCost: 50000, costScale: 5, maxLevel: 20 },
+  portal:     { baseCost: 100000, costScale: 6, maxLevel: 10 },
+  blackhole:  { baseCost: 500000, costScale: 6, maxLevel: 8 },
 };
 
 let state = getDefaultState();
@@ -524,6 +626,12 @@ function getDefaultState() {
     forgeLevel: 0,
     dynamiteLevel: 0,
     robotLevel: 0,
+    excavatorLevel: 0,
+    crystalcaveLevel: 0,
+    laserDrillLevel: 0,
+    portalLevel: 0,
+    blackholeLevel: 0,
+    lastSaved: Date.now(),
     prestigeCount: 0,
   };
 }
@@ -533,8 +641,9 @@ function gemsPerClick() {
   const base = 1 + state.pickaxeLevel * 2;
   const depthMult = 1 + state.depthLevel;
   const shaftMult = state.shaftLevel > 0 ? Math.pow(1.2, state.shaftLevel) : 1;
+  const portalMult = state.portalLevel > 0 ? Math.pow(1.5, state.portalLevel) : 1;
   const mult = getMultiplier();
-  return Math.floor(base * depthMult * shaftMult * mult);
+  return Math.floor(base * depthMult * shaftMult * portalMult * mult);
 }
 
 function explosivesChance() {
@@ -546,14 +655,16 @@ function dynamiteChance() {
 }
 
 function gemsPerSec() {
-  const base = state.autominerLevel * 2 + state.drillLevel * 3 + state.refineryLevel * 5;
+  const base = state.autominerLevel * 2 + state.drillLevel * 3 + state.refineryLevel * 5 + state.excavatorLevel * 20 + state.laserDrillLevel * 50;
   const robotClicks = state.robotLevel * 2;
   if (base === 0 && robotClicks === 0) return 0;
   const depthMult = 1 + state.depthLevel;
   const mult = getMultiplier();
   const conveyorMult = state.conveyorLevel > 0 ? Math.pow(1.3, state.conveyorLevel) : 1;
+  const caveMult = state.crystalcaveLevel > 0 ? Math.pow(1.5, state.crystalcaveLevel) : 1;
+  const blackholeMult = state.blackholeLevel > 0 ? Math.pow(2, state.blackholeLevel) : 1;
   const robotGems = robotClicks > 0 ? robotClicks * gemsPerClick() : 0;
-  return Math.floor(base * depthMult * mult * conveyorMult + robotGems) || 0;
+  return Math.floor(base * depthMult * mult * conveyorMult * caveMult * blackholeMult + robotGems) || 0;
 }
 
 function getMultiplier() {
@@ -985,6 +1096,11 @@ function updateUI() {
   updateCard('forge', `x1.4 all earnings (x${state.forgeLevel > 0 ? Math.pow(1.4, state.forgeLevel).toFixed(2) : '1.00'} now)`);
   updateCard('dynamite', `+2% blast chance (${Math.round(dynamiteChance() * 100)}% now)`);
   updateCard('robot', `+2 auto-clicks/sec (${state.robotLevel * 2} now)`);
+  updateCard('excavator', `+20 gems/sec (${state.excavatorLevel * 20} now)`);
+  updateCard('crystalcave', `x1.5 passive income (x${state.crystalcaveLevel > 0 ? Math.pow(1.5, state.crystalcaveLevel).toFixed(2) : '1.00'} now)`);
+  updateCard('laserDrill', `+50 gems/sec (${state.laserDrillLevel * 50} now)`);
+  updateCard('portal', `x1.5 click power (x${state.portalLevel > 0 ? Math.pow(1.5, state.portalLevel).toFixed(2) : '1.00'} now)`);
+  updateCard('blackhole', `x2 passive income (x${state.blackholeLevel > 0 ? Math.pow(2, state.blackholeLevel).toFixed(0) : '1'} now)`);
 }
 
 function updateCard(type, effectText) {
@@ -1024,8 +1140,17 @@ function animateCounter() {
 }
 
 // ======================== SAVE / LOAD ========================
+function fmtTime(sec) {
+  if (sec < 60) return Math.floor(sec) + 's';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ' + Math.floor(sec % 60) + 's';
+  var h = Math.floor(sec / 3600);
+  var m = Math.floor((sec % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+
 function saveGame() {
   try {
+    state.lastSaved = Date.now();
     localStorage.setItem('idleminer_save', JSON.stringify(state));
   } catch (e) {}
 }
@@ -1038,11 +1163,38 @@ function loadGame() {
       state = { ...getDefaultState(), ...loaded };
       displayedGems = Math.floor(state.gems);
       initRockCracks();
+
+      // Offline earnings
+      if (state.lastSaved) {
+        var elapsed = (Date.now() - state.lastSaved) / 1000;
+        if (elapsed > 10) { // at least 10 seconds away
+          var gps = gemsPerSec();
+          if (gps > 0) {
+            // Cap at 8 hours
+            var cappedSec = Math.min(elapsed, 8 * 3600);
+            var earned = Math.floor(gps * cappedSec);
+            if (earned > 0) {
+              state.gems += earned;
+              state.totalGems += earned;
+              state.lifetimeGems += earned;
+              displayedGems = Math.floor(state.gems);
+              document.getElementById('offlineTime').textContent = 'You were away for ' + fmtTime(elapsed);
+              document.getElementById('offlineAmount').textContent = '+' + fmt(earned) + ' gems';
+              document.getElementById('offlinePopup').style.display = 'flex';
+            }
+          }
+        }
+      }
     }
   } catch (e) {}
 }
 
 loadGame();
+
+// Offline popup dismiss
+document.getElementById('offlineOk').addEventListener('click', function() {
+  document.getElementById('offlinePopup').style.display = 'none';
+});
 
 // Auto-save every 10 seconds
 setInterval(saveGame, 10000);
@@ -1085,6 +1237,7 @@ setInterval(function() {
 }, 30000);
 // Also submit on page unload
 window.addEventListener('beforeunload', function() {
+  saveGame();
   if (state.lifetimeGems > 0 && window.HallOfFame) {
     window.HallOfFame.submit('idleminer', Math.floor(state.lifetimeGems));
   }
