@@ -167,6 +167,7 @@ var BUSINESSES = [
 var state = {
   cash: 10,
   totalEarned: 0,
+  lifetimeEarned: 0,
   prestige: 0,
   businesses: BUSINESSES.map(function() {
     return { count: 0, hasManager: false, progress: 0, running: false };
@@ -202,6 +203,7 @@ function load() {
       var parsed = JSON.parse(s);
       state.cash = parsed.cash || 0;
       state.totalEarned = parsed.totalEarned || 0;
+      state.lifetimeEarned = parsed.lifetimeEarned || 0;
       state.prestige = parsed.prestige || 0;
       parsed.businesses.forEach(function(b, i) {
         if (i < state.businesses.length) {
@@ -284,6 +286,7 @@ function runBiz(i) {
       var rev = getRevenue(i);
       state.cash += rev;
       state.totalEarned += rev;
+      state.lifetimeEarned += rev;
       bs.progress = 0;
       bs.running = false;
       updateStats();
@@ -341,6 +344,8 @@ document.getElementById('prestigeBtn').addEventListener('click', function() {
       b.progress = 0;
       b.running = false;
     });
+    // Submit to leaderboard
+    if (window.HallOfFame) window.HallOfFame.submit('biztycoon', Math.floor(state.lifetimeEarned));
     save();
     updateUI();
     if(window.SFX) window.SFX.win();
@@ -367,7 +372,19 @@ load();
 updateUI();
 
 setInterval(save, 10000);
-window.addEventListener('beforeunload', save);
+// Leaderboard submit every 30 seconds
+setInterval(function() {
+  if (state.lifetimeEarned > 0 && window.HallOfFame) {
+    window.HallOfFame.submit('biztycoon', Math.floor(state.lifetimeEarned));
+  }
+}, 30000);
+// Also submit on page unload
+window.addEventListener('beforeunload', function() {
+  save();
+  if (state.lifetimeEarned > 0 && window.HallOfFame) {
+    window.HallOfFame.submit('biztycoon', Math.floor(state.lifetimeEarned));
+  }
+});
 </script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
