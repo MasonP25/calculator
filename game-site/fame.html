@@ -385,6 +385,16 @@ function setScope(scope) {
     { id: 'helicopter',   name: 'Helicopter',        emoji: '\uD83D\uDE81', unit: 'meters',      lower: false }
   ];
 
+  var NUM_SUFFIXES = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc','QaDc','QiDc','SxDc','SpDc','ODc','NDc','Vg'];
+  function fmtScore(n) {
+    if (n < 1e3) return Math.floor(n).toLocaleString();
+    var tier = Math.floor(Math.log10(Math.abs(n)) / 3);
+    if (tier >= NUM_SUFFIXES.length) tier = NUM_SUFFIXES.length - 1;
+    if (tier < 1) return Math.floor(n).toString();
+    var scale = Math.pow(10, tier * 3);
+    return (n / scale).toFixed(2) + NUM_SUFFIXES[tier];
+  }
+
   var searchQuery = '';
 
   // --- Player name (from auth) ---
@@ -470,7 +480,7 @@ function setScope(scope) {
 
       var tdScore = document.createElement('td');
       tdScore.className = 'score-val';
-      tdScore.textContent = entry.score + ' ' + game.unit;
+      tdScore.textContent = fmtScore(entry.score) + ' ' + game.unit;
       tr.appendChild(tdScore);
 
       var tdDate = document.createElement('td');
