@@ -90,7 +90,9 @@
     'champion island':'championisland',
     'fnaf':'fnaf','five nights at freddys':'fnaf',
     'five nights':'fnaf','minecraft':'minecraft','eaglercraft':'minecraft',
-    'hextris':'hextris','spelunky':'spelunky','mari0':'mari0','mario portal':'mari0',
+    'hextris':'hextris','spelunky':'spelunky',
+    'fnf':'fnf','friday night funkin':'fnf','friday night':'fnf',
+    'neverball':'neverball','sans fight':'sansfight','sans':'sansfight','bad time':'sansfight',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
   };
 
