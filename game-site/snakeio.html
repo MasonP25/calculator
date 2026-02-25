@@ -1214,11 +1214,35 @@ async function sendChat() {
 
 function renderChat(chatArr) {
   if (!chatArr) return;
-  let html = '';
+  chatMessages.innerHTML = '';
   for (const msg of chatArr) {
-    html += '<div class="chat-msg"><span class="chat-name">' + escHtml(msg.name) + '</span><span class="chat-text">' + escHtml(msg.text) + '</span><span class="chat-time">' + escHtml(msg.time || '') + '</span></div>';
+    var div = document.createElement('div');
+    div.className = 'chat-msg';
+    var nameEl = document.createElement('span');
+    nameEl.className = 'chat-name';
+    nameEl.setAttribute('data-chat-user', msg.name);
+    nameEl.textContent = msg.name;
+    var textEl = document.createElement('span');
+    textEl.className = 'chat-text';
+    textEl.textContent = msg.text;
+    var timeEl = document.createElement('span');
+    timeEl.className = 'chat-time';
+    timeEl.textContent = msg.time || '';
+    div.appendChild(nameEl);
+    div.appendChild(textEl);
+    div.appendChild(timeEl);
+    chatMessages.appendChild(div);
   }
-  chatMessages.innerHTML = html;
+  if (window.ArcadeAvatar && window.ArcadeCoins) {
+    chatMessages.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+      var name = el.dataset.chatUser;
+      if (name && window.ArcadeCoins.getProfile) {
+        window.ArcadeCoins.getProfile(name).then(function(profile) {
+          if (profile) window.ArcadeAvatar.styleName(el, profile);
+        });
+      }
+    });
+  }
   chatMessages.scrollTop = chatMessages.scrollHeight;
   if (chatArr.length > lastChatLen && !chatOpen) {
     chatBadge.textContent = chatArr.length - lastChatLen;

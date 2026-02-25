@@ -1689,10 +1689,30 @@ h1 {
             var m = msgs[i];
             var div = document.createElement('div');
             div.className = 'chat-msg';
-            var escName = document.createElement('div'); escName.textContent = m.name;
-            var escText = document.createElement('div'); escText.textContent = m.text;
-            div.innerHTML = '<span class="chat-name">' + escName.innerHTML + '</span><span class="chat-text">' + escText.innerHTML + '</span><span class="chat-time">' + (m.time||'') + '</span>';
+            var nameEl = document.createElement('span');
+            nameEl.className = 'chat-name';
+            nameEl.setAttribute('data-chat-user', m.name);
+            nameEl.textContent = m.name;
+            var textEl = document.createElement('span');
+            textEl.className = 'chat-text';
+            textEl.textContent = m.text;
+            var timeEl = document.createElement('span');
+            timeEl.className = 'chat-time';
+            timeEl.textContent = m.time || '';
+            div.appendChild(nameEl);
+            div.appendChild(textEl);
+            div.appendChild(timeEl);
             chatMessagesEl.appendChild(div);
+        }
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            chatMessagesEl.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+                var name = el.dataset.chatUser;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    });
+                }
+            });
         }
         requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; });
     }

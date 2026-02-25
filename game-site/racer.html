@@ -352,6 +352,7 @@ function update() {
   }
 
   // --- Move asteroids ---
+  const MAX_ASTEROIDS = 25;
   for (let i = asteroids.length - 1; i >= 0; i--) {
     const a = asteroids[i];
     a.y += 1.2 * speed;
@@ -360,8 +361,9 @@ function update() {
     if (a.x < -a.size) a.x = W + a.size;
     if (a.x > W + a.size) a.x = -a.size;
     if (a.y > H + a.size) {
-      a.y = -a.size - Math.random() * 100;
-      a.x = 20 + Math.random() * (W - 40);
+      // Remove asteroid instead of recycling, so count stays controlled
+      asteroids.splice(i, 1);
+      continue;
     }
     const hitR = (p) => {
       const sr = p.shrink > 0 ? 5 : 10;
@@ -472,8 +474,9 @@ function update() {
     if(window.SFX) window.SFX.coin();
     spawnParticles(MID / 2, 30, '#00d4ff', 15, 3);
     if (score1 >= WIN_SCORE) { triggerWin(1); return; }
-    // Add difficulty
-    spawnAsteroid(false); spawnAsteroid(false);
+    // Add difficulty (respect cap)
+    if (asteroids.length < MAX_ASTEROIDS) spawnAsteroid(false);
+    if (asteroids.length < MAX_ASTEROIDS) spawnAsteroid(false);
   }
   if (p2.alive && p2.y <= SHIP_H + 5) {
     score2++;
@@ -483,21 +486,23 @@ function update() {
     if(window.SFX) window.SFX.coin();
     spawnParticles(MID + MID / 2, 30, '#ff4757', 15, 3);
     if (score2 >= WIN_SCORE) { triggerWin(2); return; }
-    spawnAsteroid(false); spawnAsteroid(false);
+    if (asteroids.length < MAX_ASTEROIDS) spawnAsteroid(false);
+    if (asteroids.length < MAX_ASTEROIDS) spawnAsteroid(false);
   }
 
   // --- Spawning schedule ---
-  // Asteroids: spawn faster as waves progress
-  const asteroidInterval = Math.max(40, 140 - wave * 12);
-  if (frame % asteroidInterval === 0) spawnAsteroid(false);
+  // Asteroids: spawn faster as waves progress, but respect the cap
+  const asteroidInterval = Math.max(70, 140 - wave * 8);
+  if (frame % asteroidInterval === 0 && asteroids.length < MAX_ASTEROIDS) spawnAsteroid(false);
 
-  // Asteroid clusters starting wave 3
-  if (wave >= 3 && frame % 300 === 0) {
-    for (let i = 0; i < 3 + Math.floor(wave / 3); i++) spawnAsteroid(true);
+  // Asteroid clusters starting wave 3 (smaller clusters, respect cap)
+  if (wave >= 3 && frame % 360 === 0) {
+    const clusterSize = Math.min(3, 2 + Math.floor(wave / 4));
+    for (let i = 0; i < clusterSize && asteroids.length < MAX_ASTEROIDS; i++) spawnAsteroid(true);
   }
 
   // Comets starting wave 2
-  if (wave >= 2 && frame % Math.max(120, 300 - wave * 20) === 0) {
+  if (wave >= 2 && frame % Math.max(180, 300 - wave * 12) === 0) {
     spawnComet();
   }
 

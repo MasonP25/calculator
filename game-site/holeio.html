@@ -1012,9 +1012,27 @@ function listenToRoom(code) {
 
       // Chat
       const chatEl = document.getElementById('lobbyChat');
-      chatEl.innerHTML = (data.chat || []).map(m =>
-        `<div class="chat-msg"><b>${m.name}:</b> ${escapeHtml(m.text)}</div>`
-      ).join('');
+      chatEl.innerHTML = '';
+      (data.chat || []).forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'chat-msg';
+        var nameEl = document.createElement('b');
+        nameEl.setAttribute('data-chat-user', m.name);
+        nameEl.textContent = m.name + ':';
+        div.appendChild(nameEl);
+        div.appendChild(document.createTextNode(' ' + escapeHtml(m.text)));
+        chatEl.appendChild(div);
+      });
+      if (window.ArcadeAvatar && window.ArcadeCoins) {
+        chatEl.querySelectorAll('[data-chat-user]').forEach(function(el) {
+          var name = el.dataset.chatUser;
+          if (name && window.ArcadeCoins.getProfile) {
+            window.ArcadeCoins.getProfile(name).then(function(profile) {
+              if (profile) window.ArcadeAvatar.styleName(el, profile);
+            });
+          }
+        });
+      }
       chatEl.scrollTop = chatEl.scrollHeight;
 
       // Game started

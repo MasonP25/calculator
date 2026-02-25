@@ -679,36 +679,61 @@ function stepPhysics(){
     }
   }
 
-  // Wall collisions
+  // Pocket detection (BEFORE wall collisions so fast balls don't bounce off walls near pockets)
+  // Uses swept detection: checks the ball's path from previous to current position
   for(var i=0;i<balls.length;i++){
     var b=balls[i];
     if(b.potted)continue;
+    // Previous position (before this frame's movement)
+    var prevX = b.x - b.vx;
+    var prevY = b.y - b.vy;
+    for(var p=0;p<POCKETS.length;p++){
+      var px=POCKETS[p].x, py=POCKETS[p].y;
+      // Check current position against pocket (slightly larger radius for reliability)
+      var dx=b.x-px, dy=b.y-py;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist < POCKET_R){
+        b.potted=true;
+        b.vx=0;b.vy=0;
+        if(b.num===0){ foul=true; }
+        else { turnPotted.push(b.num); if(window.SFX) window.SFX.coin(); }
+        break;
+      }
+      // Swept detection: find closest point on movement segment to pocket center
+      var segDx=b.x-prevX, segDy=b.y-prevY;
+      var segLenSq=segDx*segDx+segDy*segDy;
+      if(segLenSq > 1){ // only if ball actually moved
+        var t=((px-prevX)*segDx+(py-prevY)*segDy)/segLenSq;
+        t=Math.max(0,Math.min(1,t));
+        var closestX=prevX+t*segDx, closestY=prevY+t*segDy;
+        var cdx=closestX-px, cdy=closestY-py;
+        var closestDist=Math.sqrt(cdx*cdx+cdy*cdy);
+        if(closestDist < POCKET_R){
+          b.potted=true;
+          b.vx=0;b.vy=0;
+          if(b.num===0){ foul=true; }
+          else { turnPotted.push(b.num); if(window.SFX) window.SFX.coin(); }
+          break;
+        }
+      }
+    }
+  }
+
+  // Wall collisions (skip balls near pockets so they can fall in)
+  for(var i=0;i<balls.length;i++){
+    var b=balls[i];
+    if(b.potted)continue;
+    // Check if ball is near any pocket - if so, skip wall bounce
+    var nearPocket=false;
+    for(var p=0;p<POCKETS.length;p++){
+      var dpx=b.x-POCKETS[p].x, dpy=b.y-POCKETS[p].y;
+      if(Math.sqrt(dpx*dpx+dpy*dpy) < POCKET_R + BR + 5){ nearPocket=true; break; }
+    }
+    if(nearPocket) continue;
     if(b.x-BR < FELT_X){ b.x=FELT_X+BR; b.vx=Math.abs(b.vx)*0.85; }
     if(b.x+BR > FELT_X+TW){ b.x=FELT_X+TW-BR; b.vx=-Math.abs(b.vx)*0.85; }
     if(b.y-BR < FELT_Y){ b.y=FELT_Y+BR; b.vy=Math.abs(b.vy)*0.85; }
     if(b.y+BR > FELT_Y+TH){ b.y=FELT_Y+TH-BR; b.vy=-Math.abs(b.vy)*0.85; }
-  }
-
-  // Pocket detection
-  for(var i=0;i<balls.length;i++){
-    var b=balls[i];
-    if(b.potted)continue;
-    for(var p=0;p<POCKETS.length;p++){
-      var dx=b.x-POCKETS[p].x, dy=b.y-POCKETS[p].y;
-      var dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist < POCKET_R - 2){
-        b.potted=true;
-        b.vx=0;b.vy=0;
-        if(b.num===0){
-          // Cue ball potted = scratch
-          foul=true;
-        } else {
-          turnPotted.push(b.num);
-          if(window.SFX) window.SFX.coin();
-        }
-        break;
-      }
-    }
   }
 
   return moving;

@@ -446,7 +446,7 @@ function startRound(){
 
 function flipGravity(p){
   if(!p.alive||p.flipCooldown>0)return;
-  p.gravDir*=-1;p.flipCooldown=5;
+  p.gravDir*=-1;p.vy=0;p.flipCooldown=8;
   spawnParticles(PX+PSIZE/2-(p.lag||0),p.y+PSIZE/2,p.color,8,3,20);
   window.SFX?.flip();
 }
@@ -481,7 +481,12 @@ function updatePlayers(){
     if(p.trail.length>25)p.trail.shift();
     for(let t=p.trail.length-1;t>=0;t--){p.trail[t].life--;if(p.trail[t].life<=0)p.trail.splice(t,1)}
 
-    p.vy+=p.gravDir*GRAV;p.y+=p.vy;
+    p.vy+=p.gravDir*GRAV;
+    // Cap velocity to prevent noclipping through floor/ceiling when spamming flip
+    const MAX_VY=12;
+    if(p.vy>MAX_VY)p.vy=MAX_VY;
+    if(p.vy<-MAX_VY)p.vy=-MAX_VY;
+    p.y+=p.vy;
     const psx=PX+i*5-p.lag;
     const wx=scrollX+psx;
 
@@ -546,6 +551,18 @@ function updatePlayers(){
           const pull=3*(1-dist/150);
           c.x+=dx/dist*pull;c.y+=dy/dist*pull;
         }
+      }
+    }
+
+    // Pre-clamp: snap player to floor/ceiling before wall checks to prevent
+    // high velocity from being misdetected as a side-wall collision
+    const preSeg=getSegmentAt(wx);
+    if(preSeg){
+      if(p.gravDir>0&&preSeg.hasFloor&&p.y+PSIZE>preSeg.floorY&&p.vy>=0){
+        p.y=preSeg.floorY-PSIZE;p.vy=0;
+      }
+      if(p.gravDir<0&&preSeg.hasCeil&&p.y<preSeg.ceilY&&p.vy<=0){
+        p.y=preSeg.ceilY;p.vy=0;
       }
     }
 
