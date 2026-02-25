@@ -96,6 +96,27 @@
     shirt_camo:     { name: 'Camo',       category: 'shirt', price: 85 },
     shirt_tie_dye:  { name: 'Tie Dye',    category: 'shirt', price: 95 },
     shirt_sailor:   { name: 'Sailor',     category: 'shirt', price: 75 },
+    // ── New Regular Items (Wave 2) ──
+    hat_bucket:     { name: 'Bucket Hat', category: 'hat', price: 80 },
+    hat_backwards:  { name: 'Backwards Cap', category: 'hat', price: 90 },
+    hat_headphones: { name: 'Headphones', category: 'hat', price: 110 },
+    hat_nurse:      { name: 'Nurse',      category: 'hat', price: 100 },
+    hat_fedora:     { name: 'Fedora',     category: 'hat', price: 130 },
+    hair_curtains:  { name: 'Curtains',   category: 'hair', price: 45 },
+    hair_undercut:  { name: 'Undercut',   category: 'hair', price: 55 },
+    hair_pixie:     { name: 'Pixie',      category: 'hair', price: 40 },
+    hair_cornrows:  { name: 'Cornrows',   category: 'hair', price: 70 },
+    hair_messy:     { name: 'Messy',       category: 'hair', price: 35 },
+    face_smirk:     { name: 'Smirk',      category: 'face', price: 45 },
+    face_nerd:      { name: 'Nerd',       category: 'face', price: 85 },
+    face_tongue:    { name: 'Tongue',     category: 'face', price: 50 },
+    face_mask:      { name: 'Mask',       category: 'face', price: 60 },
+    face_clown:     { name: 'Clown',      category: 'face', price: 75 },
+    shirt_polo:     { name: 'Polo',       category: 'shirt', price: 65 },
+    shirt_overalls: { name: 'Overalls',   category: 'shirt', price: 85 },
+    shirt_crop:     { name: 'Crop Top',   category: 'shirt', price: 55 },
+    shirt_armor:    { name: 'Armor',      category: 'shirt', price: 150 },
+    shirt_christmas:{ name: 'Christmas',  category: 'shirt', price: 100 },
     // ── Exclusive Items ──
     hat_astronaut:    { name: 'Astronaut',      category: 'hat',   price: 0, exclusive: true },
     hat_diamond_crown:{ name: 'Diamond Crown',  category: 'hat',   price: 0, exclusive: true },
@@ -359,6 +380,45 @@
         el('rect', { x: 31, y: sy, width: 38, height: 3, fill: '#000080', opacity: 0.9 }, svg);
       }
       el('path', { d: 'M38,68 Q50,78 62,68', fill: '#000080' }, svg);
+    },
+    // ── New Regular Shirts (Wave 2) ──
+    shirt_polo: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#2266AA'); });
+      el('path', { d: 'M42,68 L50,76 L58,68', fill: '#2266AA', stroke: '#fff', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 50, cy: 74, r: 1.2, fill: '#fff' }, svg);
+      el('circle', { cx: 50, cy: 78, r: 1.2, fill: '#fff' }, svg);
+    },
+    shirt_overalls: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#FFFFFF'); });
+      el('rect', { x: 34, y: 80, width: 32, height: 40, rx: 4, fill: '#4488CC' }, svg);
+      el('line', { x1: 38, y1: 68, x2: 38, y2: 84, stroke: '#4488CC', 'stroke-width': 4 }, svg);
+      el('line', { x1: 62, y1: 68, x2: 62, y2: 84, stroke: '#4488CC', 'stroke-width': 4 }, svg);
+      el('rect', { x: 44, y: 96, width: 12, height: 8, rx: 2, fill: '#3377BB' }, svg);
+    },
+    shirt_crop: function (svg, equipped) {
+      var skinColor = getSkinColor(equipped);
+      svg.querySelectorAll('.av-body').forEach(function (e) {
+        e.setAttribute('fill', '#FF69B4');
+      });
+      el('rect', { x: 30, y: 100, width: 40, height: 24, rx: 6, fill: skinColor }, svg);
+    },
+    shirt_armor: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#888888'); });
+      el('rect', { x: 36, y: 72, width: 28, height: 40, rx: 4, fill: '#AAAAAA' }, svg);
+      el('rect', { x: 38, y: 74, width: 24, height: 36, rx: 3, fill: '#999999' }, svg);
+      el('line', { x1: 50, y1: 74, x2: 50, y2: 110, stroke: '#777', 'stroke-width': 1 }, svg);
+      el('line', { x1: 38, y1: 86, x2: 62, y2: 86, stroke: '#777', 'stroke-width': 1 }, svg);
+      el('line', { x1: 38, y1: 98, x2: 62, y2: 98, stroke: '#777', 'stroke-width': 1 }, svg);
+      el('rect', { x: 16, y: 74, width: 16, height: 10, rx: 3, fill: '#AAAAAA' }, svg);
+      el('rect', { x: 68, y: 74, width: 16, height: 10, rx: 3, fill: '#AAAAAA' }, svg);
+    },
+    shirt_christmas: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#CC0000'); });
+      el('rect', { x: 40, y: 70, width: 20, height: 48, rx: 2, fill: '#008800' }, svg);
+      el('circle', { cx: 50, cy: 78, r: 2, fill: '#FFD700' }, svg);
+      el('circle', { cx: 50, cy: 88, r: 2, fill: '#FFD700' }, svg);
+      el('circle', { cx: 50, cy: 98, r: 2, fill: '#FFD700' }, svg);
+      el('rect', { x: 30, y: 112, width: 40, height: 6, rx: 3, fill: '#FFFFFF' }, svg);
     },
     // ── Exclusive Shirts ──
     shirt_flame: function (svg) {
@@ -651,6 +711,40 @@
       el('path', { d: 'M26,36 Q26,16 50,14 Q74,16 74,36 L70,30 Q65,20 50,18 Q35,20 30,30 Z', fill: '#FF8C00' }, svg);
       el('circle', { cx: 24, cy: 34, r: 3, fill: '#FF4500' }, svg);
       el('circle', { cx: 76, cy: 34, r: 3, fill: '#FF4500' }, svg);
+    },
+    // ── New Regular Hair (Wave 2) ──
+    hair_curtains: function (svg) {
+      behindHead(svg, 'path', { d: 'M24,36 Q22,50 24,60 Q26,64 30,58 L28,36 Z', fill: '#7B5B3A' });
+      behindHead(svg, 'path', { d: 'M76,36 Q78,50 76,60 Q74,64 70,58 L72,36 Z', fill: '#7B5B3A' });
+      el('path', { d: 'M26,36 Q26,14 50,12 Q74,14 74,36 L70,28 Q65,18 50,16 Q35,18 30,28 Z', fill: '#7B5B3A' }, svg);
+      el('path', { d: 'M50,14 Q40,16 32,28 L36,30 Q42,20 50,18 Z', fill: '#6A4F33' }, svg);
+      el('path', { d: 'M50,14 Q60,16 68,28 L64,30 Q58,20 50,18 Z', fill: '#6A4F33' }, svg);
+    },
+    hair_undercut: function (svg) {
+      el('path', { d: 'M26,38 Q26,32 34,30 Q42,28 50,28 Q58,28 66,30 Q74,32 74,38 Q72,34 50,32 Q28,34 26,38 Z', fill: '#333' }, svg);
+      el('path', { d: 'M30,30 Q32,10 50,8 Q68,10 70,30 Q66,16 50,14 Q34,16 30,30 Z', fill: '#555' }, svg);
+      el('path', { d: 'M32,28 Q40,12 56,10 Q64,12 68,28 Q62,14 50,12 Q36,14 32,28 Z', fill: '#666' }, svg);
+    },
+    hair_pixie: function (svg) {
+      el('path', { d: 'M28,36 Q28,18 50,16 Q72,18 72,36 L68,28 Q62,20 50,18 Q38,20 32,28 Z', fill: '#CC6633' }, svg);
+      el('path', { d: 'M28,36 Q26,30 30,24 Q34,18 42,16 L38,28 Z', fill: '#BB5522' }, svg);
+    },
+    hair_cornrows: function (svg) {
+      el('path', { d: 'M26,36 Q26,14 50,12 Q74,14 74,36 L70,28 Q65,18 50,16 Q35,18 30,28 Z', fill: '#1A1A1A' }, svg);
+      for (var cx = 34; cx <= 66; cx += 8) {
+        el('line', { x1: cx, y1: 14, x2: cx, y2: 34, stroke: '#333', 'stroke-width': 2 }, svg);
+      }
+      behindHead(svg, 'path', { d: 'M28,36 Q26,50 28,65 Q30,68 34,64 L32,36 Z', fill: '#1A1A1A' });
+      behindHead(svg, 'path', { d: 'M72,36 Q74,50 72,65 Q70,68 66,64 L68,36 Z', fill: '#1A1A1A' });
+    },
+    hair_messy: function (svg) {
+      behindHead(svg, 'path', { d: 'M22,38 Q20,48 24,56 Q26,58 28,54 L26,38 Z', fill: '#8B6914' });
+      behindHead(svg, 'path', { d: 'M78,38 Q80,48 76,56 Q74,58 72,54 L74,38 Z', fill: '#8B6914' });
+      el('path', { d: 'M24,38 Q24,12 50,10 Q76,12 76,38 L72,28 Q65,16 50,14 Q35,16 28,28 Z', fill: '#8B6914' }, svg);
+      el('polygon', { points: '28,26 24,14 34,24', fill: '#9B7924' }, svg);
+      el('polygon', { points: '42,18 38,8 46,16', fill: '#9B7924' }, svg);
+      el('polygon', { points: '58,16 62,6 56,18', fill: '#9B7924' }, svg);
+      el('polygon', { points: '72,26 76,14 66,24', fill: '#9B7924' }, svg);
     }
   };
 
@@ -852,6 +946,49 @@
       el('path', { d: 'M42,50 Q50,54 58,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
       el('ellipse', { cx: 34, cy: 44, rx: 5, ry: 3, fill: '#FF69B4', opacity: 0.4 }, svg);
       el('ellipse', { cx: 66, cy: 44, rx: 5, ry: 3, fill: '#FF69B4', opacity: 0.4 }, svg);
+    },
+    // ── New Regular Faces (Wave 2) ──
+    face_smirk: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('path', { d: 'M55,37 Q60,33 65,37', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M44,50 Q54,54 62,48', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('line', { x1: 34, y1: 30, x2: 44, y2: 32, stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    face_nerd: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 37, r: 7, fill: 'none', stroke: '#555', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 60, cy: 37, r: 7, fill: 'none', stroke: '#555', 'stroke-width': 1.5 }, svg);
+      el('line', { x1: 47, y1: 37, x2: 53, y2: 37, stroke: '#555', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 40, cy: 37, r: 2, fill: '#333' }, svg);
+      el('circle', { cx: 60, cy: 37, r: 2, fill: '#333' }, svg);
+      el('circle', { cx: 41, cy: 36, r: 0.8, fill: '#fff' }, svg);
+      el('circle', { cx: 61, cy: 36, r: 0.8, fill: '#fff' }, svg);
+      el('path', { d: 'M42,50 Q50,54 58,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    face_tongue: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('circle', { cx: 60, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('path', { d: 'M38,48 Q50,56 62,48', fill: 'none', stroke: '#333', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('ellipse', { cx: 50, cy: 56, rx: 5, ry: 6, fill: '#FF6B8A' }, svg);
+    },
+    face_mask: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('circle', { cx: 60, cy: 36, r: 2.5, fill: '#333' }, svg);
+      el('path', { d: 'M30,44 Q30,40 50,38 Q70,40 70,44 L70,56 Q70,62 50,64 Q30,62 30,56 Z', fill: '#88BBDD' }, svg);
+      el('line', { x1: 30, y1: 44, x2: 22, y2: 40, stroke: '#88BBDD', 'stroke-width': 1.5 }, svg);
+      el('line', { x1: 70, y1: 44, x2: 78, y2: 40, stroke: '#88BBDD', 'stroke-width': 1.5 }, svg);
+    },
+    face_clown: function (svg) {
+      removeDefaultEyes(svg);
+      el('circle', { cx: 40, cy: 36, r: 3, fill: '#333' }, svg);
+      el('circle', { cx: 60, cy: 36, r: 3, fill: '#333' }, svg);
+      el('circle', { cx: 50, cy: 46, r: 5, fill: '#FF0000' }, svg);
+      el('path', { d: 'M34,52 Q50,62 66,52', fill: 'none', stroke: '#CC0000', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M32,32 Q36,28 44,32', fill: 'none', stroke: '#4488FF', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M56,32 Q64,28 68,32', fill: 'none', stroke: '#4488FF', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
     }
   };
 
@@ -1017,6 +1154,33 @@
       el('path', { d: 'M74,16 Q80,8 82,0 Q84,4 86,2', fill: 'none', stroke: '#CC0000', 'stroke-width': 6, 'stroke-linecap': 'round' }, svg);
       el('rect', { x: 24, y: 24, width: 52, height: 8, rx: 4, fill: '#fff' }, svg);
       el('circle', { cx: 86, cy: 2, r: 5, fill: '#fff' }, svg);
+    },
+    // ── New Regular Hats (Wave 2) ──
+    hat_bucket: function (svg) {
+      el('path', { d: 'M22,26 Q24,10 50,8 Q76,10 78,26 Z', fill: '#D2B48C' }, svg);
+      el('ellipse', { cx: 50, cy: 26, rx: 32, ry: 6, fill: '#C4A882' }, svg);
+    },
+    hat_backwards: function (svg) {
+      el('path', { d: 'M26,24 Q26,8 50,6 Q74,8 74,24 Z', fill: '#CC3333' }, svg);
+      el('ellipse', { cx: 50, cy: 22, rx: 26, ry: 4, fill: '#AA2222' }, svg);
+      el('ellipse', { cx: 58, cy: 24, rx: 16, ry: 3, fill: '#AA2222' }, svg);
+    },
+    hat_headphones: function (svg) {
+      el('path', { d: 'M24,38 Q22,20 50,16 Q78,20 76,38', fill: 'none', stroke: '#333', 'stroke-width': 4 }, svg);
+      el('rect', { x: 18, y: 32, width: 10, height: 16, rx: 4, fill: '#444' }, svg);
+      el('rect', { x: 72, y: 32, width: 10, height: 16, rx: 4, fill: '#444' }, svg);
+      el('rect', { x: 20, y: 34, width: 6, height: 12, rx: 3, fill: '#666' }, svg);
+      el('rect', { x: 74, y: 34, width: 6, height: 12, rx: 3, fill: '#666' }, svg);
+    },
+    hat_nurse: function (svg) {
+      el('rect', { x: 30, y: 12, width: 40, height: 16, rx: 3, fill: '#fff' }, svg);
+      el('rect', { x: 46, y: 14, width: 8, height: 12, rx: 1, fill: '#FF0000' }, svg);
+      el('rect', { x: 42, y: 18, width: 16, height: 4, rx: 1, fill: '#FF0000' }, svg);
+    },
+    hat_fedora: function (svg) {
+      el('ellipse', { cx: 50, cy: 22, rx: 30, ry: 5, fill: '#3D3D3D' }, svg);
+      el('path', { d: 'M28,22 Q30,6 50,4 Q70,6 72,22 Z', fill: '#4A4A4A' }, svg);
+      el('rect', { x: 30, y: 18, width: 40, height: 4, rx: 1, fill: '#8B4513' }, svg);
     }
   };
 

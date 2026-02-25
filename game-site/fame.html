@@ -140,6 +140,7 @@
     border-radius: 16px;
     padding: 1.2rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
   }
   .game-card:hover {
     border-color: #7b2ff7;
@@ -171,6 +172,7 @@
   .score-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
   }
   .score-table th {
     font-size: 0.65rem;
@@ -181,11 +183,16 @@
     padding: 0.3rem 0.4rem;
     border-bottom: 1px solid #2a2a4a;
   }
+  .score-table th:nth-child(1) { width: 2.2rem; }
+  .score-table th:nth-child(4) { width: 4.5rem; }
   .score-table th:last-child { text-align: right; }
   .score-table td {
     padding: 0.4rem;
     font-size: 0.85rem;
     border-bottom: 1px solid #1f1f35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .score-table td:last-child {
     text-align: right;
