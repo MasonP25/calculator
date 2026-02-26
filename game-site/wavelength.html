@@ -549,6 +549,27 @@ h1 {
 .clue-fade-in { animation: clueFadeIn 0.4s ease; }
 .action-btn.lock-in-pulse { animation: lockInPulse 1.5s ease-in-out infinite; }
 
+/* Hotseat Overlay */
+.hotseat-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 190;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+.hotseat-overlay h2 {
+    font-size: 1.8rem;
+    color: #feca57;
+}
+.hotseat-overlay p {
+    color: #888;
+    font-size: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 500px) {
     .dial-wrapper { width: 320px; height: 180px; }
@@ -605,6 +626,21 @@ h1 {
             <div class="player-list" id="guest-player-list"></div>
             <p class="waiting-msg">Waiting for host to start the game...</p>
             <button class="leave-btn" id="guest-leave-btn" style="margin-top:8px;">Leave</button>
+        </div>
+    </div>
+
+    <div class="online-panel" style="margin-top:10px;">
+        <h3>Local Hotseat (2-8 Players)</h3>
+        <div id="hotseat-setup">
+            <p style="color:#888;font-size:0.85rem;margin-bottom:10px;">Enter player names:</p>
+            <div id="hotseat-names" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+                <input class="join-input" style="width:100%;font-size:1rem;letter-spacing:1px;" placeholder="Player 1" maxlength="15">
+                <input class="join-input" style="width:100%;font-size:1rem;letter-spacing:1px;" placeholder="Player 2" maxlength="15">
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">
+                <button class="online-btn secondary" id="hotseat-add-player">+ Add Player</button>
+                <button class="online-btn" id="hotseat-start">Start Game</button>
+            </div>
         </div>
     </div>
 </div>
@@ -801,13 +837,22 @@ h1 {
         data.players.forEach(function(name) {
             var div = document.createElement('div');
             div.className = 'player-list-item';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '8px';
+            var avatarDiv = document.createElement('div');
+            avatarDiv.style.cssText = 'width:24px;height:24px;flex-shrink:0;';
+            avatarDiv.setAttribute('data-avatar-user', name);
+            div.appendChild(avatarDiv);
             var left = document.createElement('span');
             left.textContent = name;
+            left.setAttribute('data-chat-user', name);
             div.appendChild(left);
             var right = document.createElement('span');
             right.style.display = 'flex';
             right.style.alignItems = 'center';
             right.style.gap = '6px';
+            right.style.marginLeft = 'auto';
             if (name === data.host) {
                 var badge = document.createElement('span');
                 badge.className = 'host-badge';
@@ -817,6 +862,24 @@ h1 {
             div.appendChild(right);
             container.appendChild(div);
         });
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            container.querySelectorAll('[data-chat-user]').forEach(function(el) {
+                var name = el.dataset.chatUser;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    });
+                }
+            });
+            container.querySelectorAll('[data-avatar-user]').forEach(function(el) {
+                var name = el.dataset.avatarUser;
+                if (name && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(name).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.renderMini(el, profile);
+                    });
+                }
+            });
+        }
     }
 
     // === CAN START CHECK ===
@@ -1256,6 +1319,7 @@ h1 {
             var nameSpan = document.createElement('span');
             nameSpan.className = 'chip-name';
             nameSpan.textContent = name;
+            nameSpan.setAttribute('data-chat-user', name);
             var scoreSpan = document.createElement('span');
             scoreSpan.className = 'chip-score';
             scoreSpan.textContent = scores[name] || 0;
@@ -1275,6 +1339,16 @@ h1 {
         var newPrev = {};
         data.players.forEach(function(name) { newPrev[name] = scores[name] || 0; });
         prevScores = newPrev;
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            container.querySelectorAll('[data-chat-user]').forEach(function(el) {
+                var n = el.dataset.chatUser;
+                if (n && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(n).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    });
+                }
+            });
+        }
     }
 
     // === GAME SNAPSHOT ===
@@ -1293,7 +1367,18 @@ h1 {
         var psychic = getPsychic(data);
         var roundNum = (data.psychicIndex || 0) + 1;
         var totalRounds = data.players.length;
-        document.getElementById('round-info').textContent = psychic + ' is the Psychic (Round ' + roundNum + '/' + totalRounds + ')';
+        var roundInfoEl = document.getElementById('round-info');
+        roundInfoEl.innerHTML = '';
+        var psychicSpan = document.createElement('span');
+        psychicSpan.textContent = psychic;
+        psychicSpan.setAttribute('data-chat-user', psychic);
+        roundInfoEl.appendChild(psychicSpan);
+        roundInfoEl.appendChild(document.createTextNode(' is the Psychic (Round ' + roundNum + '/' + totalRounds + ')'));
+        if (window.ArcadeAvatar && window.ArcadeCoins && window.ArcadeCoins.getProfile) {
+            window.ArcadeCoins.getProfile(psychic).then(function(profile) {
+                if (profile) window.ArcadeAvatar.styleName(psychicSpan, profile);
+            });
+        }
 
         // Phase indicator
         var phaseLabels = {
@@ -1369,6 +1454,7 @@ h1 {
             var nameSpan = document.createElement('span');
             nameSpan.className = 'ws-name';
             nameSpan.textContent = name;
+            nameSpan.setAttribute('data-chat-user', name);
             var ptsSpan = document.createElement('span');
             ptsSpan.className = 'ws-pts';
             ptsSpan.textContent = scores[name] || 0;
@@ -1376,6 +1462,16 @@ h1 {
             row.appendChild(ptsSpan);
             sb.appendChild(row);
         });
+        if (window.ArcadeAvatar && window.ArcadeCoins) {
+            sb.querySelectorAll('[data-chat-user]').forEach(function(el) {
+                var n = el.dataset.chatUser;
+                if (n && window.ArcadeCoins.getProfile) {
+                    window.ArcadeCoins.getProfile(n).then(function(profile) {
+                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    });
+                }
+            });
+        }
 
         // Show play again button only for host
         document.getElementById('play-again-btn').style.display = isHost ? '' : 'none';
@@ -1597,11 +1693,33 @@ h1 {
 
     document.getElementById('leave-game-btn').addEventListener('click', function() {
         if (window.SFX) window.SFX.click();
+        if (hotseatMode) {
+            hotseatMode = false;
+            hotseatPhase = '';
+            winnerOverlay.classList.remove('visible');
+            scorePopup.classList.remove('visible');
+            var overlay = document.querySelector('.hotseat-overlay');
+            if (overlay) overlay.remove();
+            showScreen('lobby');
+            showLobbyMain();
+            return;
+        }
         leaveLobby();
     });
 
     document.getElementById('back-to-lobby-btn').addEventListener('click', function() {
         if (window.SFX) window.SFX.click();
+        if (hotseatMode) {
+            hotseatMode = false;
+            hotseatPhase = '';
+            winnerOverlay.classList.remove('visible');
+            scorePopup.classList.remove('visible');
+            var overlay = document.querySelector('.hotseat-overlay');
+            if (overlay) overlay.remove();
+            showScreen('lobby');
+            showLobbyMain();
+            return;
+        }
         winnerOverlay.classList.remove('visible');
         leaveLobby();
     });
@@ -1735,6 +1853,460 @@ h1 {
         renderChat: renderChatMessages,
         resetChat: resetChatState
     };
+
+    // ===== HOTSEAT MODE =====
+    var hotseatMode = false;
+    var hotseatPlayers = [];
+    var hotseatScores = {};
+    var hotseatPsychicIndex = 0;
+    var hotseatTargetAngle = 0;
+    var hotseatClue = '';
+    var hotseatPhase = ''; // 'pass-to-psychic', 'psychic', 'pass-to-guesser', 'guessing', 'reveal'
+    var hotseatUsedSpectrums = [];
+    var hotseatCurrentSpectrum = null;
+    var hotseatGuessAngle = 90;
+
+    function hotseatPickSpectrum() {
+        var available = SPECTRUMS.filter(function(s, i) { return hotseatUsedSpectrums.indexOf(i) === -1; });
+        if (available.length === 0) { hotseatUsedSpectrums = []; available = SPECTRUMS.slice(); }
+        var idx = Math.floor(Math.random() * available.length);
+        var chosen = available[idx];
+        hotseatUsedSpectrums.push(SPECTRUMS.indexOf(chosen));
+        return chosen;
+    }
+
+    function startHotseat(names) {
+        // Validate names
+        var cleaned = [];
+        for (var i = 0; i < names.length; i++) {
+            var n = names[i].trim();
+            if (n.length > 0) cleaned.push(n);
+        }
+        if (cleaned.length < 2) {
+            showToast('Need at least 2 players!');
+            return;
+        }
+        if (cleaned.length > 8) {
+            showToast('Maximum 8 players!');
+            return;
+        }
+        // Check for duplicates
+        var seen = {};
+        for (var i = 0; i < cleaned.length; i++) {
+            var lower = cleaned[i].toLowerCase();
+            if (seen[lower]) {
+                showToast('Duplicate name: ' + cleaned[i]);
+                return;
+            }
+            seen[lower] = true;
+        }
+
+        hotseatMode = true;
+        hotseatPlayers = cleaned;
+        hotseatScores = {};
+        for (var i = 0; i < cleaned.length; i++) {
+            hotseatScores[cleaned[i]] = 0;
+        }
+        hotseatPsychicIndex = 0;
+        hotseatUsedSpectrums = [];
+        hotseatGuessAngle = 90;
+        currentNeedleAngle = 90;
+        lastPhase = '';
+
+        // Hide chat toggle for hotseat
+        chatToggleBtn.style.display = 'none';
+        chatPanel.classList.remove('open');
+        chatIsOpen = false;
+
+        // Show game screen
+        showScreen('game');
+        document.getElementById('game-room-code').textContent = 'Hotseat';
+
+        hotseatNextRound();
+    }
+
+    function hotseatNextRound() {
+        hotseatCurrentSpectrum = hotseatPickSpectrum();
+        hotseatTargetAngle = Math.floor(Math.random() * 160) + 10;
+        hotseatClue = '';
+        hotseatGuessAngle = 90;
+        currentNeedleAngle = 90;
+        hotseatPhase = 'pass-to-psychic';
+
+        renderHotseatGame();
+        var psychicName = hotseatPlayers[hotseatPsychicIndex % hotseatPlayers.length];
+        showHotseatOverlay('Pass to ' + psychicName, 'You are the Psychic this round!', "I'm Ready", function() {
+            hotseatPhase = 'psychic';
+            renderHotseatGame();
+        });
+    }
+
+    function showHotseatOverlay(title, subtitle, buttonText, callback) {
+        // Remove any existing overlay
+        var existing = document.querySelector('.hotseat-overlay');
+        if (existing) existing.remove();
+
+        var overlay = document.createElement('div');
+        overlay.className = 'hotseat-overlay';
+
+        var h2 = document.createElement('h2');
+        h2.textContent = title;
+        overlay.appendChild(h2);
+
+        if (subtitle) {
+            var p = document.createElement('p');
+            p.textContent = subtitle;
+            overlay.appendChild(p);
+        }
+
+        var btn = document.createElement('button');
+        btn.className = 'online-btn';
+        btn.textContent = buttonText;
+        btn.style.marginTop = '10px';
+        btn.style.fontSize = '1.1rem';
+        btn.style.padding = '12px 36px';
+        btn.onclick = function() {
+            overlay.remove();
+            if (callback) callback();
+        };
+        overlay.appendChild(btn);
+
+        document.body.appendChild(overlay);
+    }
+
+    function renderHotseatGame() {
+        if (!hotseatMode) return;
+
+        var psychicName = hotseatPlayers[hotseatPsychicIndex % hotseatPlayers.length];
+        var roundNum = hotseatPsychicIndex + 1;
+        var totalRounds = hotseatPlayers.length;
+
+        // Build a fake data object for reusing drawDial and scoreboard
+        var fakeData = {
+            players: hotseatPlayers,
+            scores: hotseatScores,
+            psychicIndex: hotseatPsychicIndex,
+            targetAngle: hotseatTargetAngle,
+            spectrum: { left: hotseatCurrentSpectrum[0], right: hotseatCurrentSpectrum[1] },
+            phase: hotseatPhase === 'reveal' ? 'reveal' : (hotseatPhase === 'guessing' ? 'guessing' : 'psychic'),
+            clue: hotseatClue,
+            guessAngle: hotseatGuessAngle
+        };
+
+        // Scoreboard
+        renderHotseatScoreboard(fakeData);
+
+        // Spectrum labels
+        document.getElementById('spec-left').textContent = hotseatCurrentSpectrum[0];
+        document.getElementById('spec-right').textContent = hotseatCurrentSpectrum[1];
+
+        // Round info
+        document.getElementById('round-info').textContent = psychicName + ' is the Psychic (Round ' + roundNum + '/' + totalRounds + ')';
+
+        // Phase indicator
+        var phaseLabels = {
+            'pass-to-psychic': 'Passing device...',
+            'psychic': psychicName + ' is thinking...',
+            'pass-to-guesser': 'Passing device...',
+            'guessing': 'Players are guessing!',
+            'reveal': 'Revealing target!'
+        };
+        document.getElementById('phase-indicator').textContent = phaseLabels[hotseatPhase] || '';
+
+        // Clue display
+        var clueDisplay = document.getElementById('clue-display');
+        var clueTextEl = document.getElementById('clue-text');
+        if (hotseatClue && (hotseatPhase === 'guessing' || hotseatPhase === 'reveal' || hotseatPhase === 'pass-to-guesser')) {
+            clueDisplay.style.display = '';
+            clueTextEl.textContent = hotseatClue;
+        } else {
+            clueDisplay.style.display = 'none';
+        }
+
+        // Draw dial
+        var showTarget = (hotseatPhase === 'psychic' || hotseatPhase === 'reveal');
+        var showNeedle = (hotseatPhase === 'guessing' || hotseatPhase === 'reveal');
+        drawDial(fakeData, showTarget, showNeedle);
+
+        // Render action area for hotseat
+        renderHotseatActionArea();
+    }
+
+    function renderHotseatScoreboard(data) {
+        var container = document.getElementById('player-scoreboard');
+        container.innerHTML = '';
+        var psychic = data.players[data.psychicIndex % data.players.length];
+        var scores = data.scores || {};
+        data.players.forEach(function(name) {
+            var chip = document.createElement('div');
+            chip.className = 'player-chip' + (name === psychic ? ' is-psychic' : '');
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'chip-name';
+            nameSpan.textContent = name;
+            var scoreSpan = document.createElement('span');
+            scoreSpan.className = 'chip-score';
+            scoreSpan.textContent = scores[name] || 0;
+            chip.appendChild(nameSpan);
+            chip.appendChild(scoreSpan);
+            container.appendChild(chip);
+
+            var prevVal = prevScores[name];
+            var currVal = scores[name] || 0;
+            if (prevVal !== undefined && currVal !== prevVal) {
+                chip.classList.add('score-pulse');
+                setTimeout(function() { chip.classList.remove('score-pulse'); }, 400);
+            }
+        });
+        var newPrev = {};
+        data.players.forEach(function(name) { newPrev[name] = scores[name] || 0; });
+        prevScores = newPrev;
+    }
+
+    function renderHotseatActionArea() {
+        var phaseMsg = document.getElementById('phase-msg');
+        var content = document.getElementById('action-content');
+        content.innerHTML = '';
+
+        var psychicName = hotseatPlayers[hotseatPsychicIndex % hotseatPlayers.length];
+
+        if (hotseatPhase === 'psychic') {
+            phaseMsg.textContent = psychicName + ', give a clue for where the target is on the spectrum.';
+            var div = document.createElement('div');
+            div.className = 'clue-input-area';
+            var input = document.createElement('input');
+            input.className = 'clue-input';
+            input.type = 'text';
+            input.placeholder = 'Enter your clue...';
+            input.maxLength = 40;
+            var btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = 'Submit Clue';
+            btn.onclick = function() {
+                var clue = input.value.trim();
+                if (!clue) { showToast('Enter a clue!'); return; }
+                if (window.SFX) window.SFX.click();
+                hotseatClue = clue;
+                hotseatPhase = 'pass-to-guesser';
+                renderHotseatGame();
+                showHotseatOverlay('Pass to the other players', "Don't let " + psychicName + ' see!', 'Ready', function() {
+                    hotseatPhase = 'guessing';
+                    currentNeedleAngle = 90;
+                    hotseatGuessAngle = 90;
+                    renderHotseatGame();
+                });
+            };
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') btn.onclick();
+            });
+            div.appendChild(input);
+            div.appendChild(btn);
+            content.appendChild(div);
+            // Focus the input after render
+            setTimeout(function() { input.focus(); }, 50);
+        } else if (hotseatPhase === 'guessing') {
+            phaseMsg.textContent = 'Move the needle to where you think the target is, then lock in!';
+            var btn = document.createElement('button');
+            btn.className = 'action-btn lock-in-pulse';
+            btn.textContent = 'Lock In Guess';
+            btn.onclick = function() {
+                if (window.SFX) window.SFX.click();
+                hotseatGuessAngle = Math.round(currentNeedleAngle);
+                hotseatDoReveal();
+            };
+            content.appendChild(btn);
+        } else if (hotseatPhase === 'reveal') {
+            phaseMsg.textContent = '';
+            var btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = 'Next Round';
+            btn.style.marginTop = '10px';
+            btn.onclick = function() {
+                if (window.SFX) window.SFX.click();
+                hotseatPsychicIndex++;
+                if (hotseatPsychicIndex >= hotseatPlayers.length) {
+                    hotseatShowWinner();
+                } else {
+                    hotseatNextRound();
+                }
+            };
+            content.appendChild(btn);
+        } else if (hotseatPhase === 'pass-to-psychic' || hotseatPhase === 'pass-to-guesser') {
+            phaseMsg.textContent = 'Passing device...';
+        }
+    }
+
+    function hotseatDoReveal() {
+        var pts = calcScore(hotseatTargetAngle, hotseatGuessAngle);
+        var psychicName = hotseatPlayers[hotseatPsychicIndex % hotseatPlayers.length];
+
+        // Psychic gets 1 point if guess is in any scoring zone
+        if (pts > 0) {
+            hotseatScores[psychicName] = (hotseatScores[psychicName] || 0) + 1;
+        }
+
+        // All non-psychic players get the accuracy points
+        hotseatPlayers.forEach(function(name) {
+            if (name !== psychicName) {
+                hotseatScores[name] = (hotseatScores[name] || 0) + pts;
+            }
+        });
+
+        hotseatPhase = 'reveal';
+        currentNeedleAngle = hotseatGuessAngle;
+        renderHotseatGame();
+
+        // Show score popup
+        if (window.SFX) window.SFX.coin();
+        document.getElementById('sp-points').textContent = pts > 0 ? '+' + pts : '0';
+        document.getElementById('sp-label').textContent = pts === 4 ? 'BULLSEYE!' : pts === 3 ? 'Close!' : pts === 2 ? 'Near' : 'Miss!';
+        document.getElementById('sp-psychic').textContent = pts > 0 ? ('Guessers +' + pts + ' | ' + psychicName + ' (Psychic) +1') : '';
+        scorePopup.classList.add('visible');
+        setTimeout(function() { scorePopup.classList.remove('visible'); }, 3500);
+    }
+
+    function hotseatShowWinner() {
+        // Find winner
+        var bestPlayer = '';
+        var bestScore = -1;
+        hotseatPlayers.forEach(function(name) {
+            var s = hotseatScores[name] || 0;
+            if (s > bestScore) {
+                bestScore = s;
+                bestPlayer = name;
+            }
+        });
+
+        document.getElementById('winner-text').textContent = 'Game Over!';
+
+        var sorted = hotseatPlayers.slice().sort(function(a, b) {
+            return (hotseatScores[b] || 0) - (hotseatScores[a] || 0);
+        });
+
+        var sb = document.getElementById('winner-scoreboard');
+        sb.innerHTML = '';
+        var topScore = hotseatScores[sorted[0]] || 0;
+        sorted.forEach(function(name) {
+            var row = document.createElement('div');
+            row.className = 'ws-row' + ((hotseatScores[name] || 0) === topScore ? ' ws-winner' : '');
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'ws-name';
+            nameSpan.textContent = name;
+            var ptsSpan = document.createElement('span');
+            ptsSpan.className = 'ws-pts';
+            ptsSpan.textContent = hotseatScores[name] || 0;
+            row.appendChild(nameSpan);
+            row.appendChild(ptsSpan);
+            sb.appendChild(row);
+        });
+
+        // Hide play again (online-only feature), show back to lobby
+        document.getElementById('play-again-btn').style.display = 'none';
+
+        winnerOverlay.classList.add('visible');
+
+        // Submit winner's score to HallOfFame
+        if (window.HallOfFame) window.HallOfFame.submit('wavelength', bestScore);
+
+        if (window.SFX) window.SFX.win();
+    }
+
+    // Hotseat pointer handling: override online pointer handlers when in hotseat mode
+    var origHandlePointerDown = handlePointerDown;
+    handlePointerDown = function(e) {
+        if (hotseatMode) {
+            if (hotseatPhase !== 'guessing') return;
+            isDragging = true;
+            var deg = angleFromEvent(e.touches ? e.touches[0] : e);
+            currentNeedleAngle = deg;
+            hotseatGuessAngle = deg;
+            var fakeData = {
+                players: hotseatPlayers,
+                scores: hotseatScores,
+                psychicIndex: hotseatPsychicIndex,
+                targetAngle: hotseatTargetAngle,
+                spectrum: { left: hotseatCurrentSpectrum[0], right: hotseatCurrentSpectrum[1] },
+                phase: 'guessing',
+                clue: hotseatClue,
+                guessAngle: hotseatGuessAngle
+            };
+            drawDial(fakeData, false, true);
+            return;
+        }
+        origHandlePointerDown(e);
+    };
+
+    var origHandlePointerMove = handlePointerMove;
+    handlePointerMove = function(e) {
+        if (hotseatMode) {
+            if (!isDragging) return;
+            e.preventDefault();
+            var deg = angleFromEvent(e.touches ? e.touches[0] : e);
+            currentNeedleAngle = deg;
+            hotseatGuessAngle = deg;
+            var fakeData = {
+                players: hotseatPlayers,
+                scores: hotseatScores,
+                psychicIndex: hotseatPsychicIndex,
+                targetAngle: hotseatTargetAngle,
+                spectrum: { left: hotseatCurrentSpectrum[0], right: hotseatCurrentSpectrum[1] },
+                phase: 'guessing',
+                clue: hotseatClue,
+                guessAngle: hotseatGuessAngle
+            };
+            drawDial(fakeData, false, true);
+            return;
+        }
+        origHandlePointerMove(e);
+    };
+
+    var origHandlePointerUp = handlePointerUp;
+    handlePointerUp = function(e) {
+        if (hotseatMode) {
+            isDragging = false;
+            return;
+        }
+        origHandlePointerUp(e);
+    };
+
+    // Re-attach event listeners with the new wrapped functions
+    dialCanvas.removeEventListener('mousedown', origHandlePointerDown);
+    dialCanvas.removeEventListener('mousemove', origHandlePointerMove);
+    document.removeEventListener('mouseup', origHandlePointerUp);
+    dialCanvas.addEventListener('mousedown', handlePointerDown);
+    dialCanvas.addEventListener('mousemove', handlePointerMove);
+    document.addEventListener('mouseup', handlePointerUp);
+    // Touch events: remove old inline listeners and add new ones
+    // (Since we can't remove anonymous listeners, we'll use a flag-based approach instead)
+    // The touch handlers already call handlePointerDown/Move/Up which are now overridden
+
+    // Hotseat event listeners
+    document.getElementById('hotseat-add-player').addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        var container = document.getElementById('hotseat-names');
+        var inputs = container.querySelectorAll('input');
+        if (inputs.length >= 8) {
+            showToast('Maximum 8 players!');
+            return;
+        }
+        var input = document.createElement('input');
+        input.className = 'join-input';
+        input.style.cssText = 'width:100%;font-size:1rem;letter-spacing:1px;';
+        input.placeholder = 'Player ' + (inputs.length + 1);
+        input.maxLength = 15;
+        container.appendChild(input);
+        input.focus();
+    });
+
+    document.getElementById('hotseat-start').addEventListener('click', function() {
+        if (window.SFX) window.SFX.click();
+        var container = document.getElementById('hotseat-names');
+        var inputs = container.querySelectorAll('input');
+        var names = [];
+        for (var i = 0; i < inputs.length; i++) {
+            names.push(inputs[i].value);
+        }
+        startHotseat(names);
+    });
 
     // Initial draw
     drawDial({ targetAngle: 90 }, false, false);
