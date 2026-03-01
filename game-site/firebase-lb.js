@@ -80,6 +80,7 @@ const LOWER_BETTER = ['reaction','minesweeper','memory','sudoku','nonogram','maz
 window.FirebaseLB = {
   submit: async function(gameId, score, name) {
     name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : localStorage.getItem('arcadePlayerName')) || 'Guest';
+    if (name === 'Guest') return; // Don't submit scores for guests
     // Use deterministic doc ID so each player has one entry per game
     var docId = gameId + '_' + name.toLowerCase();
     var docRef = doc(db, 'scores', docId);
