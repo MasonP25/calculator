@@ -224,7 +224,6 @@ a.back:hover { color:#e0e0e0; }
     <button class="act-btn call" id="btnCall" onclick="doAction('call')">Call</button>
     <button class="act-btn call" id="btnCheck" onclick="doAction('check')" style="display:none;">Check</button>
     <button class="act-btn raise" id="btnRaise" onclick="showRaise()">Raise</button>
-    <button class="act-btn raise" id="btnAllIn" onclick="doAction('allin')">All In</button>
   </div>
   <div class="raise-controls" id="raiseControls" style="display:none;">
     <input type="range" id="raiseSlider" min="0" max="1000" value="0" oninput="updateRaiseLabel()">
@@ -723,12 +722,11 @@ function showActions(pIdx) {
   const canCheck = toCall === 0;
 
   actionsEl.style.display = 'flex';
-  document.getElementById('btnFold').style.display = canCheck ? 'none' : '';
+  document.getElementById('btnFold').style.display = '';
   document.getElementById('btnCall').style.display = canCheck ? 'none' : '';
   document.getElementById('btnCall').textContent = 'Call ' + Math.min(toCall, p.chips);
   document.getElementById('btnCheck').style.display = canCheck ? '' : 'none';
   document.getElementById('btnRaise').style.display = p.chips > toCall ? '' : 'none';
-  document.getElementById('btnAllIn').style.display = '';
 
   // Raise slider
   const minRaise = Math.max(BIG_BLIND, currentBet * 2 - p.bet);
@@ -765,9 +763,6 @@ function doAction(type) {
   } else if (type === 'call') {
     executeAction(pIdx, {action:'call'});
     window._resolveAction('done');
-  } else if (type === 'allin') {
-    executeAction(pIdx, {action:'raise', amount:p.chips});
-    window._resolveAction('raise');
   }
 }
 
