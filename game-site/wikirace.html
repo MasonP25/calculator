@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiki Race</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  a.back {
+    position: fixed; top: 12px; left: 16px;
+    color: #888; text-decoration: none; font-size: 0.85rem;
+    z-index: 100; transition: color 0.2s;
+  }
+  a.back:hover { color: #e0e0e0; }
+
+  /* ── MENU SCREEN ── */
+  #menuScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 60px;
+    animation: fadeIn 0.4s ease;
+  }
+  .title {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: #888;
+    font-size: 1rem;
+    margin-bottom: 32px;
+    text-align: center;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+  .diff-label {
+    color: #888;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .diff-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .diff-btn {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    color: #e0e0e0;
+    padding: 14px 32px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .diff-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(123, 47, 247, 0.3);
+  }
+  .diff-btn.easy:hover, .diff-btn.easy:focus { border-color: #00d4ff; }
+  .diff-btn.medium:hover, .diff-btn.medium:focus { border-color: #feca57; }
+  .diff-btn.hard:hover, .diff-btn.hard:focus { border-color: #ff4757; }
+  .diff-btn .diff-name { display: block; margin-bottom: 2px; }
+  .diff-btn .diff-desc { display: block; font-size: 0.7rem; color: #666; font-weight: 400; }
+
+  .how-to {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 20px 28px;
+    max-width: 500px;
+    margin-top: 8px;
+  }
+  .how-to h3 {
+    color: #7b2ff7;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .how-to ol {
+    padding-left: 18px;
+    color: #aaa;
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+
+  /* ── GAME SCREEN ── */
+  #gameScreen { display: none; width: 100%; max-width: 860px; animation: fadeIn 0.3s ease; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .top-bar-route {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+  .route-start {
+    color: #00d4ff;
+    font-weight: 700;
+  }
+  .route-arrow {
+    color: #555;
+  }
+  .route-target {
+    color: #feca57;
+    font-weight: 700;
+  }
+  .top-bar-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.85rem;
+  }
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat-label { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-value { color: #00d4ff; font-weight: 700; font-size: 1rem; }
+  .stat-value.time-val { color: #7b2ff7; }
+  .give-up-btn {
+    background: transparent;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .give-up-btn:hover { background: rgba(255, 71, 87, 0.15); }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    background: #12121f;
+    border: 1px solid #1e1e35;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    overflow-x: auto;
+  }
+  .breadcrumb-item {
+    color: #7b2ff7;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .breadcrumb-item:hover { color: #00d4ff; }
+  .breadcrumb-item.current { color: #00d4ff; font-weight: 700; cursor: default; }
+  .breadcrumb-sep { color: #444; }
+
+  /* Current article header */
+  .current-article-header {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+  .current-article-header span {
+    color: #e0e0e0;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  /* Article container */
+  .article-container {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 24px 28px;
+    max-height: 65vh;
+    overflow-y: auto;
+    line-height: 1.7;
+    font-size: 0.92rem;
+    scroll-behavior: smooth;
+  }
+  .article-container::-webkit-scrollbar { width: 8px; }
+  .article-container::-webkit-scrollbar-track { background: #12121f; border-radius: 4px; }
+  .article-container::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+  .article-container::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+  /* Wikipedia content overrides */
+  .article-container h1, .article-container h2, .article-container h3,
+  .article-container h4, .article-container h5, .article-container h6 {
+    color: #e0e0e0;
+    margin: 1.2em 0 0.5em;
+    border-bottom: 1px solid #2a2a4a;
+    padding-bottom: 4px;
+  }
+  .article-container h1 { font-size: 1.6rem; }
+  .article-container h2 { font-size: 1.3rem; }
+  .article-container h3 { font-size: 1.1rem; }
+  .article-container p { margin-bottom: 0.8em; color: #ccc; }
+  .article-container a {
+    color: #7b2ff7;
+    text-decoration: none;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .article-container a:hover {
+    color: #00d4ff;
+    border-bottom-color: #00d4ff;
+  }
+  .article-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+  .article-container table {
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+  .article-container th, .article-container td {
+    border: 1px solid #2a2a4a;
+    padding: 6px 10px;
+    text-align: left;
+  }
+  .article-container th {
+    background: #12121f;
+    color: #888;
+  }
+  .article-container ul, .article-container ol {
+    margin: 0.5em 0 0.5em 1.5em;
+    color: #ccc;
+  }
+  .article-container li { margin-bottom: 0.3em; }
+  .article-container blockquote {
+    border-left: 3px solid #7b2ff7;
+    padding-left: 14px;
+    margin: 0.8em 0;
+    color: #aaa;
+    font-style: italic;
+  }
+  .article-container sup { font-size: 0.7em; }
+  .article-container .mw-editsection,
+  .article-container .mw-empty-elt,
+  .article-container .noprint,
+  .article-container .mw-jump-link,
+  .article-container .sistersitebox,
+  .article-container .side-box,
+  .article-container .metadata,
+  .article-container .navbox,
+  .article-container .vertical-navbox,
+  .article-container .mbox-small,
+  .article-container .portal,
+  .article-container .authority-control,
+  .article-container link,
+  .article-container style,
+  .article-container .catlinks,
+  .article-container .reflist,
+  .article-container .references,
+  .article-container .refbegin,
+  .article-container .external,
+  .article-container #External_links,
+  .article-container #References,
+  .article-container #Further_reading,
+  .article-container #Notes,
+  .article-container #Bibliography,
+  .article-container .hatnote,
+  .article-container .shortdescription { display: none !important; }
+  .article-container .infobox,
+  .article-container .sidebar,
+  .article-container .wikitable {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 8px 0;
+    float: none;
+    width: 100% !important;
+    max-width: 100%;
+  }
+  .article-container figure {
+    margin: 10px 0;
+    text-align: center;
+  }
+  .article-container figcaption {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 4px;
+  }
+  .article-container .thumbinner,
+  .article-container .thumb {
+    background: transparent !important;
+    border: none !important;
+    float: none !important;
+    width: auto !important;
+    margin: 8px auto !important;
+    text-align: center;
+  }
+
+  /* Loading spinner */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    color: #888;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid #2a2a4a;
+    border-top-color: #7b2ff7;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error state */
+  .error-msg {
+    text-align: center;
+    padding: 40px;
+    color: #ff4757;
+  }
+  .error-msg button {
+    margin-top: 12px;
+    background: #1a1a2e;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ── VICTORY SCREEN ── */
+  #victoryScreen { display: none; animation: fadeIn 0.4s ease; margin-top: 60px; text-align: center; }
+
+  .victory-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .victory-sub {
+    color: #888;
+    font-size: 1rem;
+    margin-bottom: 28px;
+  }
+  .victory-stats {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .victory-stat {
+    text-align: center;
+  }
+  .victory-stat-val {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #00d4ff;
+  }
+  .victory-stat-val.time { color: #7b2ff7; }
+  .victory-stat-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .victory-path {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 20px 28px;
+    max-width: 600px;
+    margin: 0 auto 28px;
+    text-align: left;
+  }
+  .victory-path h3 {
+    color: #888;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .path-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.9rem;
+  }
+  .path-num {
+    background: #2a2a4a;
+    color: #888;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .path-item.start .path-num { background: #00d4ff; color: #0f0f1a; }
+  .path-item.end .path-num { background: #feca57; color: #0f0f1a; }
+  .path-name { color: #ccc; }
+  .path-item.start .path-name { color: #00d4ff; font-weight: 700; }
+  .path-item.end .path-name { color: #feca57; font-weight: 700; }
+
+  .btn {
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    color: #fff;
+    border: none;
+    padding: 14px 44px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(123, 47, 247, 0.4);
+  }
+  .btn:active { transform: translateY(0); }
+
+  /* ── GAVE UP SCREEN ── */
+  #gaveUpScreen { display: none; animation: fadeIn 0.4s ease; margin-top: 60px; text-align: center; }
+  .gave-up-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #ff4757;
+    margin-bottom: 8px;
+  }
+  .gave-up-sub {
+    color: #888;
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .article-container { max-height: 55vh; padding: 16px; }
+    .top-bar { font-size: 0.8rem; }
+    .diff-buttons { flex-direction: column; }
+    .victory-stats { flex-direction: column; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+
+<!-- ── MENU SCREEN ── -->
+<div id="menuScreen">
+  <div class="title">WIKI RACE</div>
+  <div class="subtitle">
+    Navigate from one Wikipedia article to another using only links within the articles. The fewer clicks, the better!
+  </div>
+  <div class="diff-label">Choose Difficulty</div>
+  <div class="diff-buttons">
+    <button class="diff-btn easy" onclick="startGame('easy')">
+      <span class="diff-name">Easy</span>
+      <span class="diff-desc">Closely related topics</span>
+    </button>
+    <button class="diff-btn medium" onclick="startGame('medium')">
+      <span class="diff-name">Medium</span>
+      <span class="diff-desc">Loosely connected topics</span>
+    </button>
+    <button class="diff-btn hard" onclick="startGame('hard')">
+      <span class="diff-name">Hard</span>
+      <span class="diff-desc">Distant, tricky connections</span>
+    </button>
+  </div>
+  <div class="how-to">
+    <h3>How to Play</h3>
+    <ol>
+      <li>Pick a difficulty to get a start and target article</li>
+      <li>Read the Wikipedia article and click links to navigate</li>
+      <li>Reach the target article in as few clicks as possible</li>
+      <li>Your score is the number of clicks used (lower is better!)</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div id="gameScreen">
+  <div class="top-bar">
+    <div class="top-bar-route">
+      <span class="route-start" id="routeStart"></span>
+      <span class="route-arrow">&#10132;</span>
+      <span class="route-target" id="routeTarget"></span>
+    </div>
+    <div class="top-bar-stats">
+      <div class="stat-item">
+        <div>
+          <div class="stat-label">Clicks</div>
+          <div class="stat-value" id="statClicks">0</div>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div>
+          <div class="stat-label">Time</div>
+          <div class="stat-value time-val" id="statTime">0:00</div>
+        </div>
+      </div>
+      <button class="give-up-btn" onclick="giveUp()">Give Up</button>
+    </div>
+  </div>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div class="current-article-header">Currently reading: <span id="currentTitle"></span></div>
+  <div class="article-container" id="articleContainer">
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading article...
+    </div>
+  </div>
+</div>
+
+<!-- ── VICTORY SCREEN ── -->
+<div id="victoryScreen">
+  <div class="victory-title">You Found It!</div>
+  <div class="victory-sub">You navigated from Wikipedia article to article and reached the target!</div>
+  <div class="victory-stats">
+    <div class="victory-stat">
+      <div class="victory-stat-val" id="victoryClicks">0</div>
+      <div class="victory-stat-label">Clicks</div>
+    </div>
+    <div class="victory-stat">
+      <div class="victory-stat-val time" id="victoryTime">0:00</div>
+      <div class="victory-stat-label">Time</div>
+    </div>
+  </div>
+  <div class="victory-path" id="victoryPath"></div>
+  <button class="btn" onclick="backToMenu()">Play Again</button>
+</div>
+
+<!-- ── GAVE UP SCREEN ── -->
+<div id="gaveUpScreen">
+  <div class="gave-up-title">Gave Up</div>
+  <div class="gave-up-sub">Better luck next time! The target was hard to reach.</div>
+  <div class="victory-path" id="gaveUpPath"></div>
+  <button class="btn" onclick="backToMenu()">Try Again</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CHALLENGE PAIRS
+// ═══════════════════════════════════════════
+const PAIRS = {
+  easy: [
+    ["Dog", "Wolf"],
+    ["United States", "Washington, D.C."],
+    ["Sun", "Solar System"],
+    ["Association football", "FIFA"],
+    ["Apple Inc.", "Steve Jobs"],
+    ["Pizza", "Italy"],
+    ["Guitar", "Music"],
+    ["Moon", "Earth"],
+    ["Albert Einstein", "Physics"],
+    ["William Shakespeare", "England"]
+  ],
+  medium: [
+    ["Banana", "South America"],
+    ["Piano", "Ludwig van Beethoven"],
+    ["Association football", "Brazil"],
+    ["Oxygen", "Water"],
+    ["Netflix", "Hollywood"],
+    ["Mars", "NASA"],
+    ["Diamond", "Carbon"],
+    ["Olympic Games", "Greece"],
+    ["Eiffel Tower", "Iron"],
+    ["Basketball", "United States"]
+  ],
+  hard: [
+    ["Penguin", "Volcano"],
+    ["Chess", "India"],
+    ["Chocolate", "Aztecs"],
+    ["Bicycle", "Leonardo da Vinci"],
+    ["Coffee", "Ethiopia"],
+    ["Honey", "Ancient Egypt"],
+    ["Rubber", "Charles Goodyear"],
+    ["Silk", "Silk Road"],
+    ["Pineapple", "Christopher Columbus"],
+    ["Tomato", "Aztecs"]
+  ]
+};
+
+// ═══════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════
+let startArticle = '';
+let targetArticle = '';
+let currentArticle = '';
+let clicks = 0;
+let path = [];
+let timerInterval = null;
+let startTime = 0;
+let elapsedSeconds = 0;
+let gameActive = false;
+
+// ═══════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ═══════════════════════════════════════════
+function showScreen(id) {
+  ['menuScreen', 'gameScreen', 'victoryScreen', 'gaveUpScreen'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  document.getElementById(id).style.display = id === 'gameScreen' ? 'block' : '';
+  if (id !== 'gameScreen') {
+    document.getElementById(id).style.display = 'flex';
+    document.getElementById(id).style.flexDirection = 'column';
+    document.getElementById(id).style.alignItems = 'center';
+  }
+}
+
+function backToMenu() {
+  gameActive = false;
+  clearInterval(timerInterval);
+  if (window.SFX) window.SFX.click();
+  showScreen('menuScreen');
+}
+
+// ═══════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════
+function startTimer() {
+  startTime = Date.now();
+  elapsedSeconds = 0;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('statTime').textContent = formatTime(elapsedSeconds);
+  }, 1000);
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+// ═══════════════════════════════════════════
+// ARTICLE FETCHING
+// ═══════════════════════════════════════════
+async function fetchArticle(title) {
+  const container = document.getElementById('articleContainer');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading article...</div>';
+
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/html/${encodeURIComponent(title)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Article not found');
+    const html = await response.text();
+    return html;
+  } catch (err) {
+    container.innerHTML = `<div class="error-msg">
+      Failed to load "${title}".<br>
+      <small>${err.message}</small><br>
+      <button onclick="navigateTo('${title.replace(/'/g, "\\'")}')">Retry</button>
+    </div>`;
+    return null;
+  }
+}
+
+function cleanArticleHTML(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Remove unwanted elements
+  const removeSelectors = [
+    'link', 'style', 'script', 'meta',
+    '.mw-editsection', '.mw-empty-elt', '.noprint', '.mw-jump-link',
+    '.sistersitebox', '.side-box', '.metadata', '.navbox', '.vertical-navbox',
+    '.mbox-small', '.portal', '.authority-control', '.catlinks',
+    '.reflist', '.references', '.refbegin', '.hatnote', '.shortdescription',
+    '.mw-ref', 'sup.reference', '.reference', '.mw-references-wrap',
+    '.ext-discussiontools-init-highlight',
+    '[data-mw-section-id]',
+    '.mw-heading:has(#External_links)', '.mw-heading:has(#References)',
+    '.mw-heading:has(#Further_reading)', '.mw-heading:has(#Notes)',
+    '.mw-heading:has(#Bibliography)', '.mw-heading:has(#See_also)',
+    'figure[typeof*="mw:File/Thumb"]',
+    '.ambox', '.tmbox', '.ombox', '.cmbox', '.fmbox', '.imbox',
+    '.mw-parser-output > .mw-heading ~ .mw-heading:has(#External_links) ~ *'
+  ];
+
+  removeSelectors.forEach(sel => {
+    try {
+      doc.querySelectorAll(sel).forEach(el => el.remove());
+    } catch(e) {}
+  });
+
+  // Remove sections after External_links / References / See_also
+  let removing = false;
+  const body = doc.querySelector('body') || doc.querySelector('section') || doc.documentElement;
+  const allChildren = Array.from(body.children);
+  for (const child of allChildren) {
+    if (removing) {
+      child.remove();
+      continue;
+    }
+    const headingText = child.textContent?.trim().toLowerCase() || '';
+    if (child.tagName === 'SECTION') {
+      const headingInside = child.querySelector('h2, h3');
+      const hText = headingInside?.textContent?.trim().toLowerCase() || '';
+      if (['external links', 'references', 'further reading', 'notes', 'bibliography', 'see also'].some(s => hText.includes(s))) {
+        child.remove();
+        removing = true;
+      }
+    }
+  }
+
+  // Process links: keep only internal wiki links
+  const links = doc.querySelectorAll('a');
+  links.forEach(a => {
+    const href = a.getAttribute('href') || '';
+    const rel = a.getAttribute('rel') || '';
+
+    // Keep only internal article links
+    if (href.startsWith('./') && !href.includes(':') && !href.includes('#')) {
+      const articleTitle = decodeURIComponent(href.substring(2)).replace(/_/g, ' ');
+      a.setAttribute('data-wiki-title', articleTitle);
+      a.removeAttribute('href');
+      a.style.cursor = 'pointer';
+    } else if (href.startsWith('/wiki/') && !href.includes(':') && !href.includes('#')) {
+      const articleTitle = decodeURIComponent(href.substring(6)).replace(/_/g, ' ');
+      a.setAttribute('data-wiki-title', articleTitle);
+      a.removeAttribute('href');
+      a.style.cursor = 'pointer';
+    } else {
+      // Remove non-article links (external, file, special pages, anchors)
+      const span = doc.createElement('span');
+      span.textContent = a.textContent;
+      a.replaceWith(span);
+    }
+  });
+
+  // Remove images that are broken (Wikipedia hosted)
+  doc.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    if (src.startsWith('//')) {
+      img.setAttribute('src', 'https:' + src);
+    } else if (src.startsWith('/')) {
+      img.setAttribute('src', 'https://en.wikipedia.org' + src);
+    }
+  });
+
+  return (doc.querySelector('body') || doc.documentElement).innerHTML;
+}
+
+function displayArticle(html, title) {
+  const container = document.getElementById('articleContainer');
+  const cleaned = cleanArticleHTML(html);
+  container.innerHTML = cleaned;
+  container.scrollTop = 0;
+
+  // Attach click handlers to wiki links
+  container.querySelectorAll('a[data-wiki-title]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const linkTitle = a.getAttribute('data-wiki-title');
+      if (linkTitle && gameActive) {
+        navigateTo(linkTitle);
+      }
+    });
+  });
+
+  // Update current title display
+  document.getElementById('currentTitle').textContent = title;
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+async function navigateTo(title) {
+  if (!gameActive) return;
+
+  // Normalize title for comparison
+  const normalizedTitle = title.replace(/_/g, ' ');
+
+  // Count click (not for initial load)
+  if (path.length > 0) {
+    clicks++;
+    document.getElementById('statClicks').textContent = clicks;
+    if (window.SFX) window.SFX.click();
+  }
+
+  currentArticle = normalizedTitle;
+  path.push(normalizedTitle);
+  updateBreadcrumb();
+
+  // Check win condition
+  if (isMatch(normalizedTitle, targetArticle)) {
+    victory();
+    return;
+  }
+
+  // Fetch and display
+  const html = await fetchArticle(title);
+  if (html) {
+    displayArticle(html, normalizedTitle);
+  }
+}
+
+function isMatch(current, target) {
+  const normalize = s => s.toLowerCase().replace(/[_\s]+/g, ' ').trim();
+  return normalize(current) === normalize(target);
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = path.map((p, i) => {
+    const cls = i === path.length - 1 ? 'breadcrumb-item current' : 'breadcrumb-item';
+    const sep = i < path.length - 1 ? '<span class="breadcrumb-sep">&#8250;</span>' : '';
+    return `<span class="${cls}">${p}</span>${sep}`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// START GAME
+// ═══════════════════════════════════════════
+async function startGame(difficulty) {
+  if (window.SFX) window.SFX.click();
+
+  const pairs = PAIRS[difficulty];
+  const pair = pairs[Math.floor(Math.random() * pairs.length)];
+  startArticle = pair[0];
+  targetArticle = pair[1];
+  currentArticle = startArticle;
+  clicks = 0;
+  path = [];
+  gameActive = true;
+
+  // Update UI
+  document.getElementById('routeStart').textContent = startArticle;
+  document.getElementById('routeTarget').textContent = targetArticle;
+  document.getElementById('statClicks').textContent = '0';
+  document.getElementById('statTime').textContent = '0:00';
+
+  showScreen('gameScreen');
+  startTimer();
+
+  // Load first article (doesn't count as a click)
+  path.push(startArticle);
+  updateBreadcrumb();
+  document.getElementById('currentTitle').textContent = startArticle;
+
+  const html = await fetchArticle(startArticle);
+  if (html) {
+    displayArticle(html, startArticle);
+  }
+}
+
+// ═══════════════════════════════════════════
+// VICTORY
+// ═══════════════════════════════════════════
+function victory() {
+  gameActive = false;
+  clearInterval(timerInterval);
+
+  if (window.SFX) window.SFX.win();
+
+  document.getElementById('victoryClicks').textContent = clicks;
+  document.getElementById('victoryTime').textContent = formatTime(elapsedSeconds);
+
+  // Build path display
+  const pathContainer = document.getElementById('victoryPath');
+  pathContainer.innerHTML = '<h3>Your Path</h3>' +
+    path.map((p, i) => {
+      let cls = '';
+      if (i === 0) cls = 'start';
+      else if (i === path.length - 1) cls = 'end';
+      return `<div class="path-item ${cls}">
+        <span class="path-num">${i + 1}</span>
+        <span class="path-name">${p}</span>
+      </div>`;
+    }).join('');
+
+  showScreen('victoryScreen');
+
+  // Submit score (lower is better)
+  if (window.HallOfFame) {
+    window.HallOfFame.submit('wikirace', clicks);
+  }
+}
+
+// ═══════════════════════════════════════════
+// GIVE UP
+// ═══════════════════════════════════════════
+function giveUp() {
+  if (!gameActive) return;
+  gameActive = false;
+  clearInterval(timerInterval);
+
+  if (window.SFX) window.SFX.fail();
+
+  const pathContainer = document.getElementById('gaveUpPath');
+  pathContainer.innerHTML = '<h3>Your Path So Far</h3>' +
+    path.map((p, i) => {
+      let cls = i === 0 ? 'start' : '';
+      return `<div class="path-item ${cls}">
+        <span class="path-num">${i + 1}</span>
+        <span class="path-name">${p}</span>
+      </div>`;
+    }).join('') +
+    `<div class="path-item end">
+      <span class="path-num">?</span>
+      <span class="path-name">${targetArticle}</span>
+    </div>`;
+
+  showScreen('gaveUpScreen');
+}
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
