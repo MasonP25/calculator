@@ -20,6 +20,7 @@ h1{font-size:2.2rem;margin:0.5rem 0;background:linear-gradient(135deg,#ff4757,#f
 .diff-btn.easy:hover{border-color:#00e5a0;}
 .diff-btn.medium:hover{border-color:#feca57;}
 .diff-btn.hard:hover{border-color:#ff4757;}
+.diff-btn.impossible:hover{border-color:#7b2ff7;}
 .diff-btn .d-name{display:block;}
 .diff-btn .d-desc{display:block;font-size:0.7rem;color:#666;font-weight:400;margin-top:2px;}
 .how{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;padding:16px 22px;max-width:440px;color:#aaa;font-size:0.85rem;line-height:1.7;}
@@ -68,6 +69,7 @@ h1{font-size:2.2rem;margin:0.5rem 0;background:linear-gradient(135deg,#ff4757,#f
     <button class="diff-btn easy" onclick="startGame('easy')"><span class="d-name">Easy</span><span class="d-desc">4-6 vehicles</span></button>
     <button class="diff-btn medium" onclick="startGame('medium')"><span class="d-name">Medium</span><span class="d-desc">7-9 vehicles</span></button>
     <button class="diff-btn hard" onclick="startGame('hard')"><span class="d-name">Hard</span><span class="d-desc">10-12 vehicles</span></button>
+    <button class="diff-btn impossible" onclick="startGame('impossible')"><span class="d-name">Impossible</span><span class="d-desc">13 vehicles</span></button>
   </div>
   <div class="how"><h3>How to Play</h3>Drag vehicles along their direction to move them. Free the <strong style="color:#ff4757;">red car</strong> by sliding it to the exit on the right. Solve it in as few moves as possible!</div>
 </div>
@@ -120,6 +122,13 @@ const PUZZLES={
     {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:2,col:5,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:1,len:2,dir:'h'},{row:4,col:3,len:2,dir:'v'},{row:5,col:0,len:2,dir:'h'},{row:5,col:5,len:2,dir:'v'}]},
     {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:1,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:0,col:4,len:3,dir:'v'},{row:1,col:5,len:3,dir:'v'},{row:3,col:1,len:2,dir:'v'},{row:3,col:2,len:2,dir:'h'},{row:4,col:0,len:2,dir:'v'},{row:4,col:3,len:2,dir:'h'},{row:5,col:1,len:2,dir:'h'},{row:5,col:5,len:2,dir:'h'}]},
     {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:1,col:0,len:2,dir:'h'},{row:1,col:5,len:3,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:1,len:2,dir:'h'},{row:5,col:4,len:2,dir:'h'}]}
+  ],
+  impossible:[
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:3,len:2,dir:'v'},{row:0,col:5,len:2,dir:'v'},{row:1,col:2,len:3,dir:'v'},{row:1,col:4,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:1,len:2,dir:'h'},{row:4,col:5,len:2,dir:'v'},{row:5,col:2,len:2,dir:'h'},{row:5,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:0,col:4,len:2,dir:'h'},{row:1,col:1,len:2,dir:'v'},{row:1,col:5,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:1,len:2,dir:'h'},{row:4,col:5,len:2,dir:'v'},{row:5,col:2,len:2,dir:'h'},{row:5,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:2,dir:'v'},{row:0,col:4,len:2,dir:'h'},{row:1,col:0,len:2,dir:'v'},{row:1,col:5,len:2,dir:'v'},{row:2,col:4,len:2,dir:'v'},{row:3,col:1,len:2,dir:'v'},{row:3,col:5,len:2,dir:'v'},{row:4,col:0,len:2,dir:'v'},{row:4,col:2,len:2,dir:'h'},{row:5,col:3,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:0,col:5,len:2,dir:'v'},{row:1,col:1,len:2,dir:'v'},{row:1,col:4,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'v'},{row:3,col:5,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:4,col:4,len:2,dir:'v'},{row:5,col:2,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:0,col:5,len:2,dir:'v'},{row:1,col:1,len:2,dir:'h'},{row:2,col:4,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:1,len:2,dir:'h'},{row:4,col:2,len:2,dir:'h'},{row:4,col:4,len:2,dir:'v'},{row:4,col:5,len:2,dir:'v'},{row:5,col:1,len:2,dir:'h'}]}
   ]
 };
 
