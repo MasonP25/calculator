@@ -98,28 +98,28 @@ h1{font-size:2.2rem;margin:0.5rem 0;background:linear-gradient(135deg,#ff4757,#f
 const CELL=62, GAP=2, GRID_SIZE=6;
 const COLORS=['#3498db','#2ecc71','#9b59b6','#e67e22','#1abc9c','#e74c3c','#f39c12','#00d4ff','#95a5a6','#d35400','#8e44ad','#27ae60'];
 
-// Puzzles: {vehicles:[{row,col,len,dir:'h'|'v',player?}]}
+// Puzzles validated on 6x6 grid — no overlapping cells
 const PUZZLES={
   easy:[
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:3,col:2,len:2,dir:'v'},{row:5,col:0,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:3,len:3,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:4,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:3,col:4,len:2,dir:'h'},{row:5,col:2,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:1,len:2,dir:'v'},{row:0,col:4,len:3,dir:'v'},{row:4,col:0,len:2,dir:'h'},{row:3,col:3,len:2,dir:'v'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:2,dir:'v'},{row:3,col:3,len:3,dir:'v'},{row:0,col:5,len:2,dir:'v'},{row:4,col:0,len:2,dir:'h'}]}
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:3,dir:'v'},{row:1,col:4,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:3,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:3,col:3,len:2,dir:'v'},{row:5,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:2,dir:'v'},{row:3,col:4,len:3,dir:'v'},{row:0,col:4,len:2,dir:'h'},{row:4,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:5,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:5,col:1,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:1,col:2,len:3,dir:'v'},{row:3,col:4,len:2,dir:'v'},{row:5,col:0,len:2,dir:'h'},{row:0,col:3,len:2,dir:'h'}]}
   ],
   medium:[
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'h'},{row:3,col:3,len:3,dir:'v'},{row:4,col:0,len:2,dir:'h'},{row:5,col:4,len:2,dir:'h'},{row:1,col:5,len:2,dir:'v'}]},
-    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:1,col:4,len:2,dir:'v'},{row:3,col:2,len:3,dir:'v'},{row:3,col:4,len:2,dir:'h'},{row:5,col:0,len:2,dir:'h'},{row:4,col:5,len:2,dir:'v'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:2,dir:'v'},{row:0,col:4,len:3,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:2,len:2,dir:'h'},{row:4,col:3,len:2,dir:'v'},{row:5,col:1,len:3,dir:'h'},{row:0,col:0,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:1,col:2,len:1,dir:'v'},{row:2,col:5,len:3,dir:'v'},{row:3,col:1,len:2,dir:'h'},{row:4,col:3,len:2,dir:'h'},{row:5,col:0,len:3,dir:'h'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:3,dir:'v'},{row:0,col:5,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:0,len:2,dir:'v'},{row:3,col:0,len:2,dir:'h'},{row:5,col:2,len:2,dir:'h'},{row:4,col:4,len:2,dir:'v'}]}
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:3,dir:'v'},{row:1,col:4,len:2,dir:'v'},{row:3,col:0,len:2,dir:'h'},{row:4,col:3,len:2,dir:'v'},{row:4,col:5,len:2,dir:'v'},{row:5,col:1,len:2,dir:'h'},{row:0,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:3,col:3,len:2,dir:'h'},{row:3,col:5,len:3,dir:'v'},{row:5,col:0,len:2,dir:'h'},{row:3,col:1,len:2,dir:'v'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:3,len:3,dir:'v'},{row:3,col:4,len:3,dir:'v'},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:2,dir:'v'},{row:3,col:0,len:2,dir:'h'},{row:5,col:2,len:2,dir:'h'},{row:4,col:0,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:2,dir:'v'},{row:0,col:5,len:3,dir:'v'},{row:1,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:1,len:2,dir:'v'},{row:4,col:5,len:2,dir:'v'},{row:5,col:2,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:4,len:3,dir:'v'},{row:1,col:2,len:3,dir:'v'},{row:0,col:0,len:2,dir:'h'},{row:3,col:3,len:2,dir:'v'},{row:4,col:0,len:2,dir:'h'},{row:4,col:5,len:2,dir:'v'},{row:5,col:2,len:2,dir:'h'}]}
   ],
   hard:[
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'h'},{row:1,col:5,len:2,dir:'v'},{row:3,col:0,len:2,dir:'h'},{row:3,col:3,len:3,dir:'v'},{row:4,col:0,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:3,len:3,dir:'h'}]},
-    {vehicles:[{row:2,col:1,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:0,col:5,len:3,dir:'v'},{row:1,col:1,len:1,dir:'v'},{row:3,col:1,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:2,len:2,dir:'v'},{row:4,col:4,len:2,dir:'h'},{row:5,col:0,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:2,len:2,dir:'v'},{row:0,col:4,len:3,dir:'v'},{row:0,col:0,len:2,dir:'h'},{row:2,col:3,len:2,dir:'v'},{row:3,col:0,len:3,dir:'v'},{row:3,col:5,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:3,len:3,dir:'h'},{row:4,col:4,len:1,dir:'v'},{row:1,col:5,len:1,dir:'v'}]},
-    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:1,len:2,dir:'h'},{row:0,col:4,len:3,dir:'v'},{row:1,col:3,len:1,dir:'v'},{row:2,col:0,len:1,dir:'v'},{row:3,col:0,len:2,dir:'h'},{row:3,col:2,len:3,dir:'v'},{row:3,col:5,len:2,dir:'v'},{row:4,col:3,len:2,dir:'h'},{row:5,col:0,len:2,dir:'h'},{row:5,col:4,len:2,dir:'h'}]},
-    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:0,col:5,len:2,dir:'v'},{row:1,col:3,len:2,dir:'v'},{row:2,col:5,len:3,dir:'v'},{row:3,col:0,len:3,dir:'h'},{row:3,col:4,len:1,dir:'v'},{row:4,col:1,len:2,dir:'v'},{row:4,col:2,len:2,dir:'h'},{row:5,col:0,len:1,dir:'h'},{row:5,col:4,len:2,dir:'h'}]}
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:3,len:3,dir:'v'},{row:0,col:5,len:2,dir:'v'},{row:2,col:5,len:2,dir:'v'},{row:3,col:1,len:2,dir:'h'},{row:3,col:4,len:2,dir:'v'},{row:4,col:0,len:2,dir:'v'},{row:5,col:1,len:2,dir:'h'},{row:5,col:3,len:2,dir:'h'},{row:0,col:1,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:2,len:2,dir:'h',player:true},{row:0,col:0,len:3,dir:'v'},{row:0,col:3,len:2,dir:'h'},{row:0,col:5,len:3,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:3,col:1,len:2,dir:'h'},{row:4,col:2,len:2,dir:'v'},{row:5,col:3,len:2,dir:'h'},{row:3,col:5,len:2,dir:'v'},{row:4,col:0,len:2,dir:'v'},{row:1,col:2,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:2,col:5,len:2,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'h'},{row:4,col:1,len:2,dir:'h'},{row:4,col:3,len:2,dir:'v'},{row:5,col:0,len:2,dir:'h'},{row:5,col:5,len:2,dir:'v'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:1,len:2,dir:'v'},{row:0,col:2,len:2,dir:'h'},{row:0,col:4,len:3,dir:'v'},{row:1,col:5,len:3,dir:'v'},{row:3,col:1,len:2,dir:'v'},{row:3,col:2,len:2,dir:'h'},{row:4,col:0,len:2,dir:'v'},{row:4,col:3,len:2,dir:'h'},{row:5,col:1,len:2,dir:'h'},{row:5,col:5,len:2,dir:'h'}]},
+    {vehicles:[{row:2,col:0,len:2,dir:'h',player:true},{row:0,col:0,len:2,dir:'h'},{row:0,col:2,len:3,dir:'v'},{row:0,col:4,len:2,dir:'v'},{row:1,col:0,len:2,dir:'h'},{row:1,col:5,len:3,dir:'v'},{row:3,col:0,len:2,dir:'v'},{row:3,col:3,len:2,dir:'v'},{row:4,col:1,len:2,dir:'h'},{row:5,col:1,len:2,dir:'h'},{row:5,col:4,len:2,dir:'h'}]}
   ]
 };
 
