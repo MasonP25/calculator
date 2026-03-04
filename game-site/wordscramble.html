@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Scramble</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:1rem;}
+a.back{position:fixed;top:12px;left:16px;color:#888;text-decoration:none;font-size:0.85rem;z-index:100;transition:color .2s;}
+a.back:hover{color:#e0e0e0;}
+h1{font-size:2.2rem;margin:0.5rem 0;background:linear-gradient(135deg,#00e5a0,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;letter-spacing:3px;}
+.subtitle{color:#888;font-size:0.9rem;margin-bottom:1.5rem;text-align:center;max-width:440px;}
+
+/* Menu */
+#menu{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.mode-btns{display:flex;gap:12px;margin-bottom:8px;}
+.mode-btn{background:#1a1a2e;border:2px solid #2a2a4a;color:#e0e0e0;padding:14px 28px;border-radius:10px;cursor:pointer;font-size:1rem;font-weight:600;font-family:inherit;transition:border-color .2s,transform .15s;}
+.mode-btn:hover{transform:translateY(-2px);}
+.mode-btn.easy:hover{border-color:#00e5a0;}
+.mode-btn.medium:hover{border-color:#feca57;}
+.mode-btn.hard:hover{border-color:#ff4757;}
+.mode-btn .m-name{display:block;}
+.mode-btn .m-desc{display:block;font-size:0.7rem;color:#666;font-weight:400;margin-top:2px;}
+.how{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;padding:16px 22px;max-width:440px;color:#aaa;font-size:0.85rem;line-height:1.7;}
+.how h3{color:#00e5a0;font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+
+/* HUD */
+#game{display:none;width:100%;max-width:600px;flex-direction:column;align-items:center;}
+.hud{display:flex;justify-content:space-between;width:100%;padding:10px 16px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;margin-bottom:16px;}
+.hud-item{text-align:center;}
+.hud-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:#888;}
+.hud-val{font-size:1.4rem;font-weight:800;color:#00d4ff;}
+.hud-val.timer{color:#7b2ff7;}
+.hud-val.timer.low{color:#ff4757;animation:pulse 0.5s ease-in-out infinite alternate;}
+@keyframes pulse{from{opacity:1;}to{opacity:0.5;}}
+
+/* Tiles */
+.tiles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:70px;}
+.tile{background:#2a2a4a;color:#fff;font-size:1.8rem;font-weight:800;width:52px;height:58px;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.4);text-transform:uppercase;transition:transform .3s,background .3s;}
+.tiles.correct .tile{background:#00e5a0;transform:scale(1.05);}
+.tiles.wrong{animation:shake 0.4s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}50%{transform:translateX(-4px);}}
+
+/* Hint */
+.hint{color:#feca57;font-size:0.85rem;min-height:1.2rem;margin-bottom:12px;text-align:center;}
+
+/* Input */
+.input-row{display:flex;gap:8px;margin-bottom:16px;width:100%;max-width:400px;}
+#guessInput{flex:1;background:#1a1a2e;border:2px solid #2a2a4a;color:#e0e0e0;font-size:1.2rem;font-weight:600;font-family:inherit;padding:10px 16px;border-radius:8px;text-align:center;text-transform:uppercase;outline:none;transition:border-color .2s;}
+#guessInput:focus{border-color:#7b2ff7;}
+.skip-btn{background:#2a2a4a;border:none;color:#888;padding:10px 18px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;transition:all .2s;}
+.skip-btn:hover{background:#3a3a5a;color:#e0e0e0;}
+
+/* Game Over */
+#gameover{display:none;flex-direction:column;align-items:center;margin-top:40px;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.go-title{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#00e5a0,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+.go-score{font-size:3rem;font-weight:800;color:#00d4ff;margin-bottom:4px;}
+.go-label{font-size:0.8rem;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;}
+.word-list{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;padding:16px 22px;max-width:400px;width:100%;margin-bottom:20px;max-height:200px;overflow-y:auto;}
+.word-list h3{font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.wl-item{font-size:0.85rem;padding:3px 0;}
+.wl-item.solved{color:#00e5a0;}
+.wl-item.skipped{color:#555;}
+.play-btn{background:linear-gradient(135deg,#00e5a0,#00d4ff);color:#0f0f1a;border:none;padding:14px 44px;border-radius:8px;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s;}
+.play-btn:hover{transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>WORD SCRAMBLE</h1>
+<p class="subtitle">Unscramble the letters to form words before time runs out!</p>
+
+<div id="menu">
+  <div class="mode-btns">
+    <button class="mode-btn easy" onclick="startGame('easy')"><span class="m-name">Easy</span><span class="m-desc">4-5 letters &bull; 90 sec</span></button>
+    <button class="mode-btn medium" onclick="startGame('medium')"><span class="m-name">Medium</span><span class="m-desc">5-7 letters &bull; 75 sec</span></button>
+    <button class="mode-btn hard" onclick="startGame('hard')"><span class="m-name">Hard</span><span class="m-desc">6-8 letters &bull; 60 sec</span></button>
+  </div>
+  <div class="how"><h3>How to Play</h3>Unscramble the letters and type the correct word. Press Enter to guess. Solve as many as you can before time runs out! A hint appears after 15 seconds.</div>
+</div>
+
+<div id="game">
+  <div class="hud">
+    <div class="hud-item"><div class="hud-label">Score</div><div class="hud-val" id="scoreVal">0</div></div>
+    <div class="hud-item"><div class="hud-label">Mode</div><div class="hud-val" id="modeVal" style="font-size:1rem;color:#888;">--</div></div>
+    <div class="hud-item"><div class="hud-label">Time</div><div class="hud-val timer" id="timerVal">90</div></div>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="hint" id="hint"></div>
+  <div class="input-row">
+    <input id="guessInput" type="text" placeholder="Type your guess..." maxlength="12" autocomplete="off">
+    <button class="skip-btn" onclick="skipWord()">Skip</button>
+  </div>
+</div>
+
+<div id="gameover">
+  <div class="go-title">Time's Up!</div>
+  <div class="go-score" id="finalScore">0</div>
+  <div class="go-label">Words Solved</div>
+  <div class="word-list" id="wordList"></div>
+  <button class="play-btn" onclick="backToMenu()">Play Again</button>
+</div>
+
+<script>
+const WORDS = {
+  easy: ["apple","beach","chair","dance","eagle","flame","grape","house","juice","knife","lemon","money","night","ocean","paint","queen","river","storm","tiger","voice","water","youth","zebra","angel","brave","climb","dream","earth","frost","globe","heart","jolly","karma","lunar","magic","noble","orbit","pearl","quiet","royal","smile","trade","vivid","wheat","yacht","blaze","charm","dodge","ember","fairy","ghost","humor","jewel","kneel","plant","proud","shade","thorn","ultra","wrist","coral","dusk","flock","grasp","hatch","inbox","jumbo","kiosk","liver","mango","nerve","plumb","quilt","reign","sworn","trend","usher","valor","waltz","xerox","yield","zones","adapt","blink","crane","drift","elbow","flint","grind","hover","ivory","joker","knack","lodge","moose","nudge","oxide","prism","quota","razor","swirl","truce"],
+  medium: ["bridge","castle","desert","empire","forest","garden","harbor","island","jungle","kitten","ladder","marble","napkin","orange","planet","rabbit","salmon","temple","tunnel","valley","wander","anchor","basket","canvas","dinner","falcon","gentle","hermit","insect","jigsaw","kettle","lizard","mirror","needle","oyster","parrot","riddle","saddle","ticket","velvet","walrus","zigzag","blanket","cabinet","dolphin","fantasy","glacier","hammock","pilgrim","lantern","mineral","mustard","origami","popcorn","quarrel","rainbow","shuttle","surplus","terrain","tornado","trivial","unicorn","vintage","whistle","balloon","chimney","diamond","earring","feather","giraffe","harvest","javelin","ketchup","lobster","mattress","monsoon","orchard","paddock","ransom","saffron","tangent","trumpet","voltage","windmill","ceramic","dungeon","frisbee","gondola","hundred","knuckle"],
+  hard: ["abstract","backbone","calendar","database","elephant","fraction","kangaroo","homepage","illusion","jeopardy","keyboard","magnetic","notebook","obstacle","paradise","quantity","railroad","sandwich","triangle","umbrella","vacation","warranty","acrobat","backpack","campaign","darkness","exchange","flagship","geometry","handsome","identify","judgment","knockout","language","monopoly","navigate","opponent","platform","argument","bacteria","carnival","dedicate","exquisite","firework","gigantic","handicap","instinct","jealousy","kindness","lavender","monopoly","mushroom","necklace","optimism","pandora","reindeer","scissors","tomatoes","universe","volatile","waterfall","yearbook","zeppelin","altitude","botanist","chameleon","demolish","currency","enormous","flourish","glaucoma","heritage","improper","jackpot","kingfish","lifespan","membrane","paranoid","nuisance","sapphire","stampede","textbook","twilight","upcoming","velocity","woodland","appliance","barbecue","conquest","diagonal","escalate","fugitive","guardian","hologram","intimate","jurassic"]
+};
+
+let mode='', score=0, timeLeft=0, timer=null, currentWord='', wordPool=[], solvedWords=[], skippedWords=[], hintTimer=null, gameActive=false;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function scramble(word){let s;do{s=shuffle(word.split('')).join('');}while(s.toLowerCase()===word.toLowerCase());return s;}
+
+function startGame(m){
+  mode=m; score=0; solvedWords=[]; skippedWords=[];
+  const times={easy:90,medium:75,hard:60};
+  timeLeft=times[m];
+  wordPool=shuffle([...WORDS[m]]);
+  gameActive=true;
+  document.getElementById('menu').style.display='none';
+  document.getElementById('gameover').style.display='none';
+  document.getElementById('game').style.display='flex';
+  document.getElementById('scoreVal').textContent='0';
+  document.getElementById('modeVal').textContent=m.charAt(0).toUpperCase()+m.slice(1);
+  document.getElementById('timerVal').textContent=timeLeft;
+  document.getElementById('timerVal').classList.remove('low');
+  if(window.SFX) window.SFX.click();
+  nextWord();
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    timeLeft--;
+    const el=document.getElementById('timerVal');
+    el.textContent=timeLeft;
+    if(timeLeft<=10) el.classList.add('low'); else el.classList.remove('low');
+    if(timeLeft<=0){clearInterval(timer);endGame();}
+  },1000);
+}
+
+function nextWord(){
+  if(wordPool.length===0) wordPool=shuffle([...WORDS[mode]]);
+  currentWord=wordPool.pop();
+  const scrambled=scramble(currentWord);
+  const tiles=document.getElementById('tiles');
+  tiles.className='tiles';
+  tiles.innerHTML='';
+  for(const c of scrambled){
+    const t=document.createElement('div');
+    t.className='tile';
+    t.textContent=c.toUpperCase();
+    t.style.transform='rotate('+(Math.random()*8-4)+'deg)';
+    tiles.appendChild(t);
+  }
+  document.getElementById('hint').textContent='';
+  document.getElementById('guessInput').value='';
+  document.getElementById('guessInput').focus();
+  clearTimeout(hintTimer);
+  hintTimer=setTimeout(()=>{
+    if(gameActive) document.getElementById('hint').textContent='Hint: starts with "'+currentWord[0].toUpperCase()+'" ('+currentWord.length+' letters)';
+  },15000);
+}
+
+function checkGuess(){
+  const guess=document.getElementById('guessInput').value.trim().toLowerCase();
+  if(!guess||!gameActive) return;
+  if(guess===currentWord.toLowerCase()){
+    score++;
+    document.getElementById('scoreVal').textContent=score;
+    solvedWords.push(currentWord);
+    document.getElementById('tiles').classList.add('correct');
+    if(window.SFX) window.SFX.coin();
+    setTimeout(()=>{nextWord();},400);
+  } else {
+    document.getElementById('tiles').classList.add('wrong');
+    if(window.SFX) window.SFX.wrong();
+    setTimeout(()=>{document.getElementById('tiles').classList.remove('wrong');},400);
+    document.getElementById('guessInput').value='';
+  }
+}
+
+function skipWord(){
+  if(!gameActive) return;
+  skippedWords.push(currentWord);
+  if(window.SFX) window.SFX.click();
+  nextWord();
+}
+
+function endGame(){
+  gameActive=false;
+  clearInterval(timer);
+  clearTimeout(hintTimer);
+  if(window.SFX) window.SFX.fail();
+  document.getElementById('game').style.display='none';
+  document.getElementById('gameover').style.display='flex';
+  document.getElementById('finalScore').textContent=score;
+  const wl=document.getElementById('wordList');
+  wl.innerHTML='<h3>Results</h3>';
+  solvedWords.forEach(w=>{const d=document.createElement('div');d.className='wl-item solved';d.textContent='✓ '+w;wl.appendChild(d);});
+  skippedWords.forEach(w=>{const d=document.createElement('div');d.className='wl-item skipped';d.textContent='✗ '+w;wl.appendChild(d);});
+  if(window.HallOfFame) window.HallOfFame.submit('wordscramble',score);
+}
+
+function backToMenu(){
+  document.getElementById('gameover').style.display='none';
+  document.getElementById('game').style.display='none';
+  document.getElementById('menu').style.display='flex';
+  if(window.SFX) window.SFX.click();
+}
+
+document.getElementById('guessInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkGuess();});
+</script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+</body>
+</html>
