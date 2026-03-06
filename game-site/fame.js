@@ -50,6 +50,10 @@ window.HallOfFame = {
     if (window.ArcadeBadges && gameId !== 'idleminer') {
       window.ArcadeBadges.increment('gamesPlayed', 1);
     }
+    // Track recent games for profile
+    if (window.ArcadeBadges && window.ArcadeBadges.recordRecentGame) {
+      window.ArcadeBadges.recordRecentGame(gameId);
+    }
     return list;
   },
   getScores: function(gameId) {

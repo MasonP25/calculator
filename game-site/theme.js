@@ -411,7 +411,11 @@
       .section-header { color:${t.dim}!important; border-bottom-color:${t.border}!important; }
       .score-card { background:${t.bg2}!important; border-color:${t.border}!important; }
       .score-card .sc-name { color:${t.text}!important; }
+      .score-card .sc-name:hover { color:${t.accent}!important; }
       .score-card .sc-score { color:${t.dim}!important; }
+      .recent-card { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .recent-card:hover { border-color:${t.accent}!important; }
+      .recent-card .rc-time { color:${t.dim}!important; }
       .friend-card { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
       .friend-card:hover { border-color:${t.accent}!important; }
       .friend-name { color:${t.text}!important; }

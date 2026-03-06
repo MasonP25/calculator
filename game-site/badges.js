@@ -141,7 +141,7 @@
     '.badge-item{position:relative}' +
     '.badge-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);' +
     'background:#1a1a2e;border:1.5px solid #7b2ff7;border-radius:8px;padding:0.45rem 0.65rem;' +
-    'white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s;z-index:100;' +
+    'white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .1s;z-index:100;' +
     'box-shadow:0 4px 14px rgba(123,47,247,0.25);font-family:"Segoe UI",Tahoma,sans-serif}' +
     '.badge-item:hover .badge-tooltip{opacity:1}' +
     '.badge-tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);' +
@@ -333,6 +333,28 @@
         if (!snap.exists()) return null;
         return snap.data();
       } catch(e) { return null; }
+    },
+
+    // Record a recently played game (keeps last 3)
+    recordRecentGame: async function(gameId) {
+      if (_isGuest()) return;
+      try {
+        await _initFirebase();
+        if (!_db) return;
+        var key = _getUser().toLowerCase();
+        var ref = _doc(_db, 'users', key);
+        var snap = await _getDoc(ref);
+        var data = snap.exists() ? snap.data() : {};
+        var recent = data.recentGames || [];
+        // Remove if already in list, then add to front
+        recent = recent.filter(function(r) { return r.gameId !== gameId; });
+        recent.unshift({ gameId: gameId, time: Date.now() });
+        if (recent.length > 3) recent = recent.slice(0, 3);
+        data.recentGames = recent;
+        await _setDoc(ref, data);
+      } catch(e) {
+        console.warn('[Badges] recordRecentGame failed:', e);
+      }
     },
 
     getEarned: function() { return _earnedCache || []; }
