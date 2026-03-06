@@ -606,6 +606,12 @@ async function renderFriendButton(container, username) {
     btn.className = 'profile-btn success';
     btn.textContent = '\u2714 Friends';
     container.appendChild(btn);
+    var chatBtn = document.createElement('a');
+    chatBtn.className = 'profile-btn primary';
+    chatBtn.style.textDecoration = 'none';
+    chatBtn.href = 'index.html?dm=' + encodeURIComponent(username);
+    chatBtn.textContent = '\uD83D\uDCAC Chat';
+    container.appendChild(chatBtn);
     var removeBtn = document.createElement('button');
     removeBtn.className = 'profile-btn danger';
     removeBtn.textContent = 'Remove';

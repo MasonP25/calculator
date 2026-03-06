@@ -36,6 +36,10 @@
   var _doc = null;
   var _getDoc = null;
   var _setDoc = null;
+  var _collection = null;
+  var _getDocs = null;
+  var _query = null;
+  var _where = null;
   var _earnedCache = null;
 
   function _getUser() {
@@ -58,6 +62,10 @@
       _doc = mods[1].doc;
       _getDoc = mods[1].getDoc;
       _setDoc = mods[1].setDoc;
+      _collection = mods[1].collection;
+      _getDocs = mods[1].getDocs;
+      _query = mods[1].query;
+      _where = mods[1].where;
       var config = {
         apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
         authDomain: "calculator-81d08.firebaseapp.com",
@@ -304,9 +312,104 @@
     getEarned: function() { return _earnedCache || []; }
   };
 
-  // Auto-check after page load
+  // One-time migration: populate badgeProgress from existing data
+  async function _migrateExisting() {
+    if (_isGuest()) return;
+    var migKey = '_badge_migrate_v1_' + _getUser().toLowerCase();
+    if (localStorage.getItem(migKey)) return;
+    try {
+      await _initFirebase();
+      if (!_db) return;
+      var key = _getUser().toLowerCase();
+      var userRef = _doc(_db, 'users', key);
+      var userSnap = await _getDoc(userRef);
+      if (!userSnap.exists()) return;
+      var data = userSnap.data();
+      if (!data.badgeProgress) data.badgeProgress = {};
+      var progress = data.badgeProgress;
+      var changed = false;
+
+      // Count games played from scores collection (distinct gameIds)
+      var scoresQ = _query(_collection(_db, 'scores'), _where('name', '==', data.username || _getUser()));
+      var scoresSnap = await _getDocs(scoresQ);
+      var gameIds = [];
+      var podiumGames = progress.podiumGames || [];
+      var firstPlaceGames = progress.firstPlaceGames || [];
+      scoresSnap.forEach(function(d) {
+        var s = d.data();
+        if (s.gameId && gameIds.indexOf(s.gameId) === -1) gameIds.push(s.gameId);
+      });
+
+      // Set gamesPlayed to at least the number of games with scores
+      if (gameIds.length > (progress.gamesPlayed || 0)) {
+        progress.gamesPlayed = gameIds.length;
+        changed = true;
+      }
+
+      // Count items purchased from inventory
+      var invCount = (data.inventory || []).length;
+      if (invCount > (progress.itemsPurchased || 0)) {
+        progress.itemsPurchased = invCount;
+        changed = true;
+      }
+
+      // Estimate totalCoinsEarned from current balance + items owned (rough estimate)
+      var currentBalance = data.coins || 0;
+      // Each item costs at minimum some coins, so total earned >= balance + items * avg cost
+      var estimatedEarned = currentBalance + (invCount * 30);
+      if (estimatedEarned > (progress.totalCoinsEarned || 0)) {
+        progress.totalCoinsEarned = estimatedEarned;
+        changed = true;
+      }
+
+      // Scan leaderboard placements for each game the user has a score in
+      for (var i = 0; i < gameIds.length; i++) {
+        var gid = gameIds[i];
+        try {
+          if (window.FirebaseLB) {
+            var top3 = await window.FirebaseLB.getScores(gid, 3);
+            for (var p = 0; p < top3.length && p < 3; p++) {
+              if (top3[p].name && top3[p].name.toLowerCase() === key) {
+                if (podiumGames.indexOf(gid) === -1) {
+                  podiumGames.push(gid);
+                  changed = true;
+                }
+                if (p === 0 && firstPlaceGames.indexOf(gid) === -1) {
+                  firstPlaceGames.push(gid);
+                  changed = true;
+                }
+                break;
+              }
+            }
+          }
+        } catch(e) { /* ignore individual game errors */ }
+      }
+
+      if (podiumGames.length > 0) {
+        progress.podiumGames = podiumGames;
+        progress.podiumCount = podiumGames.length;
+      }
+      if (firstPlaceGames.length > 0) {
+        progress.firstPlaceGames = firstPlaceGames;
+        progress.firstPlaceCount = firstPlaceGames.length;
+      }
+
+      if (changed) {
+        data.badgeProgress = progress;
+        await _setDoc(userRef, data);
+        console.log('[Badges] Migration complete — populated from existing data');
+      }
+      localStorage.setItem(migKey, '1');
+      // Now check for badges with the updated progress
+      await window.ArcadeBadges.check();
+    } catch(e) {
+      console.warn('[Badges] Migration failed:', e);
+    }
+  }
+
+  // Auto-check after page load (includes migration on first run)
   setTimeout(function() {
-    if (!_isGuest()) window.ArcadeBadges.check();
+    if (!_isGuest()) _migrateExisting();
   }, 3000);
 
   window.addEventListener('arcade-auth-change', function() {
