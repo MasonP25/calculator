@@ -177,6 +177,18 @@
         // Check friend badges
         if (window.ArcadeBadges) window.ArcadeBadges.check();
 
+        // Notify the other user
+        if (window.ArcadeNotifications) {
+          window.ArcadeNotifications.push(theirKey,
+            window.ArcadeNotifications.create('friend_accepted', 'Friend Request Accepted',
+              _getUser() + ' accepted your friend request!', '🤝',
+              'profile.html?user=' + encodeURIComponent(_getUser()), { from: myKey })
+          );
+        }
+
+        // Award XP for friendship
+        if (window.ArcadeLevels) window.ArcadeLevels.addXP(10, 'friend_added');
+
         return { ok: true, msg: 'You are now friends!' };
       } catch(e) {
         console.warn('[Friends] acceptRequest failed:', e);

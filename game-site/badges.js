@@ -201,6 +201,8 @@
             (function(badge, delay) {
               setTimeout(function() { _showToast(badge); }, delay);
             })(newBadges[j], j * 800);
+            // Award XP for earning a badge
+            if (window.ArcadeLevels) window.ArcadeLevels.addXP(25, 'badge:' + newBadges[j].id);
           }
         }
         _earnedCache = earned;

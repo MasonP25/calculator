@@ -2,7 +2,7 @@
 
 # **Mason's Arcade**
 
-### A collection of 65+ browser-based games — no frameworks, no dependencies, just pure HTML/CSS/JS.
+### A collection of 67 browser-based games — no frameworks, no dependencies, just pure HTML/CSS/JS.
 
 [**Play Now**](https://masonp25.github.io/calculator/game-site/)
 
@@ -12,14 +12,10 @@
 
 ## What's Inside
 
-- **65+ Games** across solo, local multiplayer, and online multiplayer
+- **67 Games** across solo, local multiplayer, and online multiplayer
 - **Online Multiplayer** with real-time WebSocket rooms
 - **Global Leaderboards** powered by Firebase
 - **User Accounts** to track scores across devices
-- **Coin Economy** — earn coins by playing games and placing on leaderboards
-- **Shop** — buy and equip avatar parts (hats, hair, faces, shirts) and nametag styles (colors, gradients, fonts)
-- **Custom Avatars** — mix-and-match avatar builder with 40+ items
-- **Nametag Customization** — styled names with gradients, colors, and fonts visible in chat and multiplayer
 - **22 Themes** that apply across every game
 - **Sound Effects** with mute toggle
 

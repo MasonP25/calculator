@@ -448,6 +448,64 @@
       /* Friend request badge in auth */
       .ab-req { background:${t.accent}!important; }
 
+      /* Notification system */
+      .notif-toast { background:${t.bg2}!important; border-color:${t.accent2}!important; }
+      .notif-toast-title { color:${t.accent2}!important; }
+      .notif-toast-body { color:${t.text}!important; }
+      .notif-panel { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .notif-panel-header { border-bottom-color:${t.border}!important; }
+      .notif-panel-title { color:${t.text}!important; }
+      .notif-panel-btn { color:${t.dim}!important; }
+      .notif-panel-btn:hover { color:${t.accent2}!important; }
+      .notif-item:hover { background:${t.bg1}!important; }
+      .notif-item.unread { background:${t.accent}08!important; border-left-color:${t.accent}!important; }
+      .notif-item-title { color:${t.text}!important; }
+      .notif-item-body { color:${t.dim}!important; }
+      .notif-item-time { color:${t.dim}!important; }
+      .notif-empty { color:${t.dim}!important; }
+      .ab-bell { color:${t.text}!important; }
+
+      /* Level / XP */
+      .ab-level { color:${t.accent2}!important; background:${t.accent2}20!important; }
+      .xp-bar-outer { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .xp-bar-inner { background:linear-gradient(90deg,${t.accent},${t.accent2})!important; }
+      .xp-bar-label { color:${t.dim}!important; }
+      .level-badge { color:${t.accent2}!important; }
+
+      /* Gift modal */
+      .gift-overlay { background:${t.bg1}dd!important; }
+      .gift-box { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .gift-box h3 { color:${t.text}!important; }
+      .gift-close { color:${t.dim}!important; }
+      .gift-tab { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .gift-tab.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }
+      .gift-coin-input { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.accent2}!important; }
+      .gift-coin-input:focus { border-color:${t.accent}!important; }
+      .gift-item { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .gift-item:hover { border-color:${t.dim}!important; }
+      .gift-item.selected { border-color:${t.accent}!important; background:${t.accent}10!important; }
+      .gift-item-name { color:${t.dim}!important; }
+      .gift-send { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
+      .gift-empty { color:${t.dim}!important; }
+
+      /* Trade modal */
+      .trade-overlay { background:${t.bg1}dd!important; }
+      .trade-box { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .trade-box h3 { color:${t.text}!important; }
+      .trade-close { color:${t.dim}!important; }
+      .trade-col { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .trade-col-header { color:${t.dim}!important; border-bottom-color:${t.border}!important; }
+      .trade-item { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .trade-item:hover { border-color:${t.dim}!important; }
+      .trade-item.selected { border-color:${t.accent}!important; background:${t.accent}10!important; }
+      .trade-item-name { color:${t.dim}!important; }
+      .trade-send { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
+      .trade-arrow { color:${t.accent}!important; }
+      .trade-expire { color:${t.dim}!important; }
+      .trade-review-item { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .trade-review-label { color:${t.dim}!important; }
+      .trade-empty { color:${t.dim}!important; }
+
       /* Shop page */
       .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
       .tab-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }

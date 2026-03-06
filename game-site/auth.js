@@ -222,16 +222,30 @@
   function updateBadge() {
     var user = getCurrentUser();
     if (user) {
+      // Level badge
+      var levelStr = '';
+      if (window.ArcadeLevels) {
+        var prog = window.ArcadeLevels.getProgress();
+        levelStr = '<span class="ab-level">Lv.' + prog.level + '</span>';
+      }
+      // Coins
       var coinStr = '';
       if (window.ArcadeCoins) {
         var bal = window.ArcadeCoins.getBalance();
         coinStr = '<span class="ab-coins">&#129689; ' + bal + '</span>';
       }
+      // Notification bell
+      var bellStr = '';
+      var notifCount = window._authNotifCount || 0;
+      bellStr = '<span class="ab-bell" id="abBell">&#128276;' +
+        (notifCount > 0 ? '<span class="ab-bell-count">' + notifCount + '</span>' : '') + '</span>';
+      // Friend request badge
       var reqBadge = '';
       if (window._authFriendReqCount > 0) {
         reqBadge = '<span class="ab-req" title="' + window._authFriendReqCount + ' friend request(s)">' + window._authFriendReqCount + '</span>';
       }
-      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + coinStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span>';
+      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + levelStr + coinStr + bellStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span>';
+      // Name link → profile
       var nameLink = document.getElementById('abNameLink');
       if (nameLink) {
         nameLink.addEventListener('click', function(e) {
@@ -239,6 +253,15 @@
           window.open('profile.html?user=' + encodeURIComponent(user), '_self');
         });
       }
+      // Bell → notification panel
+      var bell = document.getElementById('abBell');
+      if (bell) {
+        bell.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (window.ArcadeNotifications) window.ArcadeNotifications.togglePanel();
+        });
+      }
+      // Sign out
       var out = document.getElementById('abOut');
       if (out) {
         out.addEventListener('click', function(e) {
@@ -247,9 +270,29 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
+      // XP bar below badge
+      _renderXPBar();
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
+      _removeXPBar();
     }
+  }
+
+  var _xpBarEl = null;
+  function _renderXPBar() {
+    if (!window.ArcadeLevels) return;
+    var prog = window.ArcadeLevels.getProgress();
+    if (!_xpBarEl) {
+      _xpBarEl = document.createElement('div');
+      _xpBarEl.className = 'xp-bar-wrap';
+      document.body.appendChild(_xpBarEl);
+    }
+    _xpBarEl.innerHTML =
+      '<div class="xp-bar-outer"><div class="xp-bar-inner" style="width:' + Math.min(prog.percent, 100) + '%"></div></div>' +
+      '<div class="xp-bar-label">' + prog.progressXP + ' / ' + prog.neededXP + ' XP</div>';
+  }
+  function _removeXPBar() {
+    if (_xpBarEl) { _xpBarEl.remove(); _xpBarEl = null; }
   }
 
   // ─── Expose API ───
@@ -290,5 +333,20 @@
       window._authFriendReqCount = count;
       updateBadge();
     }
+  });
+
+  // Track notification count for bell icon
+  window._authNotifCount = 0;
+  window.addEventListener('notifications-updated', function(e) {
+    var count = e.detail ? e.detail.unreadCount : 0;
+    if (count !== window._authNotifCount) {
+      window._authNotifCount = count;
+      updateBadge();
+    }
+  });
+
+  // Update XP bar when level changes
+  window.addEventListener('level-updated', function() {
+    updateBadge();
   });
 })();

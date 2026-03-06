@@ -101,9 +101,17 @@ window.FirebaseLB = {
     if (window.ArcadeBadges && !existing.exists()) {
       window.ArcadeBadges.increment('gamesWithScores', 1);
     }
+    // Award XP for game completion
+    if (window.ArcadeLevels && gameId !== 'idleminer') {
+      window.ArcadeLevels.addXP(10, 'game:' + gameId);
+    }
     // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       try {
+        // Capture old top 3 before our score updates the rankings
+        var oldTop3 = await window.FirebaseLB.getScores(gameId, 3);
+        var oldTop3Names = oldTop3.map(function(s) { return s.name.toLowerCase(); });
+
         var scores = await window.FirebaseLB.getScores(gameId, 3);
         for (var p = 0; p < scores.length && p < 3; p++) {
           if (scores[p].name === name) {
@@ -111,6 +119,23 @@ window.FirebaseLB = {
             window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId);
             // Record placement for badges (position is 1-indexed)
             if (window.ArcadeBadges) window.ArcadeBadges.recordPlacement(gameId, p + 1);
+            // Award XP for placement
+            if (window.ArcadeLevels) window.ArcadeLevels.addXP([50, 30, 15][p], 'placement:' + gameId);
+
+            // Notify displaced players
+            if (window.ArcadeNotifications) {
+              var newTop3Names = scores.map(function(s) { return s.name.toLowerCase(); });
+              for (var d = 0; d < oldTop3.length && d < 3; d++) {
+                var displaced = oldTop3[d].name.toLowerCase();
+                if (displaced !== name.toLowerCase() && newTop3Names.indexOf(displaced) === -1) {
+                  window.ArcadeNotifications.push(displaced,
+                    window.ArcadeNotifications.create('score_beaten', 'Score Beaten!',
+                      name + ' knocked you off the ' + gameId + ' leaderboard!', '⚔️', null,
+                      { gameId: gameId, by: name.toLowerCase() })
+                  );
+                }
+              }
+            }
             break;
           }
         }

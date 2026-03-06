@@ -431,6 +431,158 @@
     },
 
     // ── Quick help ──
+    // ─── XP / Level Commands ───
+    setXP: function(username, amount) {
+      if (!username) return console.error('[Admin] Username required');
+      amount = parseInt(amount) || 0;
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          data.xp = amount;
+          data.level = Math.floor(Math.sqrt(amount / 100));
+          return _setDoc(docRef, data).then(function() {
+            console.log('[Admin] Set ' + username + ' XP to ' + amount + ' (Level ' + data.level + ')');
+          });
+        });
+      });
+    },
+
+    addXP: function(username, amount) {
+      if (!username) return console.error('[Admin] Username required');
+      amount = parseInt(amount) || 0;
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          data.xp = (data.xp || 0) + amount;
+          data.level = Math.floor(Math.sqrt(data.xp / 100));
+          return _setDoc(docRef, data).then(function() {
+            console.log('[Admin] Added ' + amount + ' XP to ' + username + ' (now ' + data.xp + ', Level ' + data.level + ')');
+          });
+        });
+      });
+    },
+
+    setLevel: function(username, level) {
+      if (!username) return console.error('[Admin] Username required');
+      level = parseInt(level) || 0;
+      var xp = level * level * 100;
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          data.xp = xp;
+          data.level = level;
+          return _setDoc(docRef, data).then(function() {
+            console.log('[Admin] Set ' + username + ' to Level ' + level + ' (' + xp + ' XP)');
+          });
+        });
+      });
+    },
+
+    // ─── Notification Commands ───
+    pushNotif: function(username, title, body) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          if (!data.notifications) data.notifications = [];
+          data.notifications.unshift({
+            id: 'admin_' + Date.now(), type: 'general',
+            title: title || 'Admin Notice', body: body || '', icon: '📢',
+            read: false, time: Date.now(), link: null, data: null
+          });
+          if (data.notifications.length > 20) data.notifications = data.notifications.slice(0, 20);
+          return _setDoc(docRef, data).then(function() {
+            console.log('[Admin] Pushed notification to ' + username);
+          });
+        });
+      });
+    },
+
+    clearNotifs: function(username) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          data.notifications = [];
+          return _setDoc(docRef, data).then(function() {
+            console.log('[Admin] Cleared all notifications for ' + username);
+          });
+        });
+      });
+    },
+
+    // ─── Trade Commands ───
+    viewTrades: function(username) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        return _getDoc(_doc(_db, 'users', key)).then(function(snap) {
+          if (!snap.exists()) return console.log('[Admin] User not found');
+          var ids = snap.data().pendingTradeIds || [];
+          if (ids.length === 0) return console.log('[Admin] No pending trades');
+          var promises = ids.map(function(id) {
+            return _getDoc(_doc(_db, 'trades', id)).then(function(tSnap) {
+              if (tSnap.exists()) {
+                var t = tSnap.data();
+                console.log('[Trade] ' + t.id + ': ' + t.fromUser + ' → ' + t.toUser +
+                  ' | Status: ' + t.status + ' | Offer: ' + t.offeredItems.join(', ') +
+                  ' | Want: ' + t.requestedItems.join(', '));
+              }
+            });
+          });
+          return Promise.all(promises);
+        });
+      });
+    },
+
+    adminGift: function(fromUser, toUser, itemId) {
+      if (!fromUser || !toUser || !itemId) return console.error('[Admin] fromUser, toUser, and itemId required');
+      return _initFirebase().then(function() {
+        var fRef = _doc(_db, 'users', fromUser.toLowerCase());
+        var tRef = _doc(_db, 'users', toUser.toLowerCase());
+        return Promise.all([_getDoc(fRef), _getDoc(tRef)]).then(function(snaps) {
+          var fData = snaps[0].exists() ? snaps[0].data() : null;
+          var tData = snaps[1].exists() ? snaps[1].data() : null;
+          if (!fData || !tData) return console.error('[Admin] User not found');
+          fData.inventory = (fData.inventory || []).filter(function(i) { return i !== itemId; });
+          if (!tData.inventory) tData.inventory = [];
+          if (tData.inventory.indexOf(itemId) === -1) tData.inventory.push(itemId);
+          return Promise.all([_setDoc(fRef, fData), _setDoc(tRef, tData)]).then(function() {
+            console.log('[Admin] Gifted ' + itemId + ' from ' + fromUser + ' to ' + toUser);
+          });
+        });
+      });
+    },
+
+    adminGiftCoins: function(fromUser, toUser, amount) {
+      if (!fromUser || !toUser) return console.error('[Admin] fromUser and toUser required');
+      amount = parseInt(amount) || 0;
+      return _initFirebase().then(function() {
+        var fRef = _doc(_db, 'users', fromUser.toLowerCase());
+        var tRef = _doc(_db, 'users', toUser.toLowerCase());
+        return Promise.all([_getDoc(fRef), _getDoc(tRef)]).then(function(snaps) {
+          var fData = snaps[0].exists() ? snaps[0].data() : null;
+          var tData = snaps[1].exists() ? snaps[1].data() : null;
+          if (!fData || !tData) return console.error('[Admin] User not found');
+          fData.coins = (fData.coins || 0) - amount;
+          tData.coins = (tData.coins || 0) + amount;
+          return Promise.all([_setDoc(fRef, fData), _setDoc(tRef, tData)]).then(function() {
+            console.log('[Admin] Gifted ' + amount + ' coins from ' + fromUser + ' to ' + toUser);
+          });
+        });
+      });
+    },
+
     help: function () {
       console.log(
         '── ArcadeAdmin Commands ──\n' +
@@ -449,6 +601,14 @@
         '  ArcadeAdmin.listBadges()                    — List all badge IDs\n' +
         '  ArcadeAdmin.addFriend("user1", "user2")     — Force add friends\n' +
         '  ArcadeAdmin.viewRequests("user")            — View friend requests\n' +
+        '  ArcadeAdmin.setXP("user", 5000)             — Set XP\n' +
+        '  ArcadeAdmin.addXP("user", 500)              — Add XP\n' +
+        '  ArcadeAdmin.setLevel("user", 10)            — Set level\n' +
+        '  ArcadeAdmin.pushNotif("user", "Title", "Body") — Push notification\n' +
+        '  ArcadeAdmin.clearNotifs("user")             — Clear notifications\n' +
+        '  ArcadeAdmin.viewTrades("user")              — View pending trades\n' +
+        '  ArcadeAdmin.adminGift("from", "to", "item") — Force gift item\n' +
+        '  ArcadeAdmin.adminGiftCoins("from", "to", 500) — Force gift coins\n' +
         '  ArcadeAdmin.help()                          — Show this help'
       );
     }

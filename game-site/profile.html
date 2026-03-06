@@ -380,6 +380,7 @@
     <div class="hero-avatar" id="heroAvatar"></div>
     <div class="hero-info">
       <div class="hero-username" id="heroName"></div>
+      <div class="hero-level" id="heroLevel"></div>
       <div class="hero-meta" id="heroMeta"></div>
       <div class="hero-actions" id="heroActions"></div>
     </div>
@@ -404,6 +405,10 @@
   <div class="section-header" id="friendsHeader">Friends</div>
   <div class="friends-wrap" id="friendsWrap"></div>
 
+  <!-- Pending Trades (own profile only) -->
+  <div class="section-header" id="tradesHeader" style="display:none">Pending Trades</div>
+  <div class="friends-wrap" id="tradesWrap" style="display:none"></div>
+
   <!-- Friend Requests (own profile only) -->
   <div class="section-header" id="requestsHeader" style="display:none">Friend Requests</div>
   <div class="friends-wrap" id="requestsWrap" style="display:none"></div>
@@ -424,6 +429,10 @@
 <script src="avatar.js"></script>
 <script src="badges.js"></script>
 <script src="friends.js"></script>
+<script src="notifications.js"></script>
+<script src="levels.js"></script>
+<script src="gifting.js"></script>
+<script src="trading.js"></script>
 <script src="admin.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>
@@ -634,9 +643,21 @@ async function loadProfile() {
   var podiumCount = Math.max(livePodiumGames.length, progress.podiumCount || 0);
   var firstPlaceCount = Math.max(liveFirstPlaceGames.length, progress.firstPlaceCount || 0);
 
+  // ─── LEVEL DISPLAY ───
+  var levelInfo = null;
+  if (window.ArcadeLevels) {
+    levelInfo = await window.ArcadeLevels.getUserLevel(targetUser);
+    var heroLevel = document.getElementById('heroLevel');
+    if (levelInfo && heroLevel) {
+      heroLevel.innerHTML = '<span class="level-badge">Level ' + levelInfo.level + '</span>';
+      window.ArcadeLevels.renderProgressBar(heroLevel, levelInfo, false);
+    }
+  }
+
   // ─── STATS ROW ───
   var statsRow = document.getElementById('statsRow');
   var stats = [
+    { value: 'Lv.' + (levelInfo ? levelInfo.level : 0), label: 'Level' },
     { value: gamesPlayed, label: 'Games Played' },
     { value: fmtScore(coinsEarned), label: 'Coins Earned' },
     { value: itemCount, label: 'Items Owned' },
@@ -687,6 +708,11 @@ async function loadProfile() {
   // ─── FRIENDS ───
   await renderFriends(profileData);
 
+  // ─── PENDING TRADES (own profile) ───
+  if (isOwnProfile && window.ArcadeTrading) {
+    await renderPendingTrades();
+  }
+
   // ─── FRIEND REQUESTS (own profile) ───
   if (isOwnProfile) {
     await renderRequests();
@@ -714,6 +740,22 @@ async function renderFriendButton(container, username) {
     chatBtn.href = 'index.html?dm=' + encodeURIComponent(username);
     chatBtn.textContent = '\uD83D\uDCAC Chat';
     container.appendChild(chatBtn);
+    // Gift button
+    if (window.ArcadeGifting) {
+      var giftBtn = document.createElement('button');
+      giftBtn.className = 'profile-btn primary';
+      giftBtn.textContent = '🎁 Gift';
+      giftBtn.onclick = function() { window.ArcadeGifting.openGiftModal(username); };
+      container.appendChild(giftBtn);
+    }
+    // Trade button
+    if (window.ArcadeTrading) {
+      var tradeBtn = document.createElement('button');
+      tradeBtn.className = 'profile-btn primary';
+      tradeBtn.textContent = '🔄 Trade';
+      tradeBtn.onclick = function() { window.ArcadeTrading.openTradeModal(username); };
+      container.appendChild(tradeBtn);
+    }
     var removeBtn = document.createElement('button');
     removeBtn.className = 'profile-btn danger';
     removeBtn.textContent = 'Remove';
@@ -753,6 +795,47 @@ async function renderFriendButton(container, username) {
     };
     container.appendChild(btn);
   }
+}
+
+async function renderPendingTrades() {
+  var wrap = document.getElementById('tradesWrap');
+  var header = document.getElementById('tradesHeader');
+  if (!window.ArcadeTrading) return;
+
+  var trades = await window.ArcadeTrading.getPendingTrades();
+  if (trades.length === 0) return;
+
+  header.style.display = '';
+  wrap.style.display = '';
+  wrap.innerHTML = '';
+
+  var myKey = (localStorage.getItem('arcade_currentUser') || '').toLowerCase();
+
+  trades.forEach(function(trade) {
+    var isProposer = trade.fromUser === myKey;
+    var otherName = isProposer ? (trade.toDisplayName || trade.toUser) : (trade.fromDisplayName || trade.fromUser);
+    var dir = isProposer ? 'Sent to' : 'From';
+
+    var card = document.createElement('div');
+    card.className = 'request-card';
+    card.style.cursor = 'pointer';
+
+    var timeLeft = Math.max(0, trade.expiresAt - Date.now());
+    var hoursLeft = Math.floor(timeLeft / 3600000);
+
+    card.innerHTML =
+      '<div style="flex:1">' +
+        '<div style="font-weight:600;font-size:0.85rem">' + dir + ' ' + otherName + '</div>' +
+        '<div style="font-size:0.7rem;color:#888">Expires in ' + hoursLeft + 'h</div>' +
+      '</div>' +
+      '<button class="profile-btn primary" style="font-size:0.75rem;padding:0.3rem 0.7rem">View</button>';
+
+    card.querySelector('button').onclick = function() {
+      window.ArcadeTrading.openReviewModal(trade.id);
+    };
+
+    wrap.appendChild(card);
+  });
 }
 
 function renderRecentGames(profileData) {
