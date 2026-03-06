@@ -285,7 +285,14 @@
     if (!_xpBarEl) {
       _xpBarEl = document.createElement('div');
       _xpBarEl.className = 'xp-bar-wrap';
-      document.body.appendChild(_xpBarEl);
+      _xpBarEl.style.position = 'absolute';
+      _xpBarEl.style.top = '100%';
+      _xpBarEl.style.left = '50%';
+      _xpBarEl.style.transform = 'translateX(-50%)';
+      _xpBarEl.style.marginTop = '4px';
+      _xpBarEl.style.width = '170px';
+      _xpBarEl.style.right = 'auto';
+      badge.appendChild(_xpBarEl);
     }
     _xpBarEl.innerHTML =
       '<div class="xp-bar-outer"><div class="xp-bar-inner" style="width:' + Math.min(prog.percent, 100) + '%"></div></div>' +
