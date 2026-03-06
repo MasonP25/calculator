@@ -280,8 +280,8 @@
         if (notif.read === undefined) notif.read = false;
         notifs.unshift(notif);
         if (notifs.length > 20) notifs = notifs.slice(0, 20);
-        data.notifications = notifs;
-        await _setDoc(ref, data);
+        // Only update notifications field — don't overwrite other data
+        await _setDoc(ref, { notifications: notifs }, { merge: true });
       } catch(e) {
         console.warn('[Notifications] Push failed:', e);
       }
@@ -334,11 +334,7 @@
         if (!_db) return;
         var key = _getUser().toLowerCase();
         var ref = _doc(_db, 'users', key);
-        var snap = await _getDoc(ref);
-        if (!snap.exists()) return;
-        var data = snap.data();
-        data.notifications = _notifications;
-        await _setDoc(ref, data);
+        await _setDoc(ref, { notifications: _notifications }, { merge: true });
       } catch(e) {}
     },
 
@@ -360,11 +356,7 @@
         if (!_db) return;
         var key = _getUser().toLowerCase();
         var ref = _doc(_db, 'users', key);
-        var snap = await _getDoc(ref);
-        if (!snap.exists()) return;
-        var data = snap.data();
-        data.notifications = _notifications;
-        await _setDoc(ref, data);
+        await _setDoc(ref, { notifications: _notifications }, { merge: true });
       } catch(e) {}
     },
 
@@ -380,11 +372,7 @@
         if (!_db) return;
         var key = _getUser().toLowerCase();
         var ref = _doc(_db, 'users', key);
-        var snap = await _getDoc(ref);
-        if (!snap.exists()) return;
-        var data = snap.data();
-        data.notifications = [];
-        await _setDoc(ref, data);
+        await _setDoc(ref, { notifications: [] }, { merge: true });
       } catch(e) {}
     },
 

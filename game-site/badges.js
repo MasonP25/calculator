@@ -195,8 +195,7 @@
         }
 
         if (newBadges.length > 0) {
-          data.badges = earned;
-          await _setDoc(_doc(_db, 'users', key), data);
+          await _setDoc(_doc(_db, 'users', key), { badges: earned }, { merge: true });
           for (var j = 0; j < newBadges.length; j++) {
             (function(badge, delay) {
               setTimeout(function() { _showToast(badge); }, delay);
@@ -223,7 +222,7 @@
         var data = snap.exists() ? snap.data() : {};
         if (!data.badgeProgress) data.badgeProgress = {};
         data.badgeProgress[field] = (data.badgeProgress[field] || 0) + (amount || 1);
-        await _setDoc(ref, data);
+        await _setDoc(ref, { badgeProgress: data.badgeProgress }, { merge: true });
         await window.ArcadeBadges.check();
       } catch(e) {
         console.warn('[Badges] Increment failed:', e);
@@ -258,7 +257,7 @@
         }
 
         if (changed) {
-          await _setDoc(ref, data);
+          await _setDoc(ref, { badgeProgress: data.badgeProgress }, { merge: true });
           await window.ArcadeBadges.check();
         }
       } catch(e) {
@@ -279,7 +278,7 @@
         if (!data.badgeProgress) data.badgeProgress = {};
         if (streakVal > (data.badgeProgress.bestStreak || 0)) {
           data.badgeProgress.bestStreak = streakVal;
-          await _setDoc(ref, data);
+          await _setDoc(ref, { badgeProgress: data.badgeProgress }, { merge: true });
           await window.ArcadeBadges.check();
         }
       } catch(e) {
@@ -352,8 +351,7 @@
         recent = recent.filter(function(r) { return r.gameId !== gameId; });
         recent.unshift({ gameId: gameId, time: Date.now() });
         if (recent.length > 3) recent = recent.slice(0, 3);
-        data.recentGames = recent;
-        await _setDoc(ref, data);
+        await _setDoc(ref, { recentGames: recent }, { merge: true });
       } catch(e) {
         console.warn('[Badges] recordRecentGame failed:', e);
       }
@@ -451,8 +449,7 @@
       }
 
       if (changed) {
-        data.badgeProgress = progress;
-        await _setDoc(userRef, data);
+        await _setDoc(userRef, { badgeProgress: progress }, { merge: true });
         console.log('[Badges] Migration complete — populated from existing data');
       }
       localStorage.setItem(migKey, '1');

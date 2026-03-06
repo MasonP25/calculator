@@ -95,18 +95,16 @@
     });
   }
 
-  // Save to Firebase
+  // Save to Firebase (merge: only update coins/inventory/equipped)
   function _save() {
     if (_isGuest() || !_db) return Promise.resolve();
     var key = _getUser().toLowerCase();
     var docRef = _doc(_db, 'users', key);
-    return _getDoc(docRef).then(function(snap) {
-      var data = snap.exists() ? snap.data() : {};
-      data.coins = _balance;
-      data.inventory = _inventory;
-      data.equipped = _equipped;
-      return _setDoc(docRef, data);
-    }).catch(function(e) {
+    return _setDoc(docRef, {
+      coins: _balance,
+      inventory: _inventory,
+      equipped: _equipped
+    }, { merge: true }).catch(function(e) {
       console.warn('[Coins] Save failed:', e);
     });
   }

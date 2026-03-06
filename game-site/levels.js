@@ -110,23 +110,23 @@
       // Daily login XP bonus (5 XP)
       var today = new Date().toDateString();
       if (data.lastLoginDay !== today) {
-        data.lastLoginDay = today;
         var oldLevel = _level;
         _xp += 5;
-        data.xp = _xp;
         _level = _levelFromXP(_xp);
-        data.level = _level;
-        // Check milestones
+        var loginUpdates = { xp: _xp, level: _level, lastLoginDay: today };
         if (_level > oldLevel) {
-          if (!data.levelMilestonesClaimed) data.levelMilestonesClaimed = [];
+          var milestones = data.levelMilestonesClaimed || [];
+          var coinBonus = 0;
           for (var lv = oldLevel + 1; lv <= _level; lv++) {
-            if (MILESTONES[lv] && data.levelMilestonesClaimed.indexOf(lv) === -1) {
-              data.levelMilestonesClaimed.push(lv);
-              data.coins = (data.coins || 0) + MILESTONES[lv];
+            if (MILESTONES[lv] && milestones.indexOf(lv) === -1) {
+              milestones.push(lv);
+              coinBonus += MILESTONES[lv];
             }
           }
+          loginUpdates.levelMilestonesClaimed = milestones;
+          if (coinBonus > 0) loginUpdates.coins = (data.coins || 0) + coinBonus;
         }
-        await _setDoc(ref, data);
+        await _setDoc(ref, loginUpdates, { merge: true });
       }
 
       _dispatch();
@@ -156,20 +156,30 @@
         var newXP = oldXP + amount;
         var newLevel = _levelFromXP(newXP);
 
-        data.xp = newXP;
-        data.level = newLevel;
+        // Only write the fields we're changing (merge: true)
+        var updates = { xp: newXP, level: newLevel };
 
         // Check milestones for coin rewards
         if (newLevel > oldLevel) {
-          if (!data.levelMilestonesClaimed) data.levelMilestonesClaimed = [];
+          var milestones = data.levelMilestonesClaimed || [];
+          var coinBonus = 0;
           for (var lv = oldLevel + 1; lv <= newLevel; lv++) {
-            if (MILESTONES[lv] && data.levelMilestonesClaimed.indexOf(lv) === -1) {
-              data.levelMilestonesClaimed.push(lv);
-              // Award coins
-              data.coins = (data.coins || 0) + MILESTONES[lv];
+            if (MILESTONES[lv] && milestones.indexOf(lv) === -1) {
+              milestones.push(lv);
+              coinBonus += MILESTONES[lv];
             }
           }
-          // Push level-up notification
+          updates.levelMilestonesClaimed = milestones;
+          if (coinBonus > 0) updates.coins = (data.coins || 0) + coinBonus;
+        }
+
+        // Write ONLY changed fields — prevents overwriting notifications/other data
+        await _setDoc(ref, updates, { merge: true });
+        _xp = newXP;
+        _level = newLevel;
+
+        // Push level-up notification AFTER saving XP (so it can't overwrite)
+        if (newLevel > oldLevel) {
           if (window.ArcadeNotifications) {
             var coinReward = MILESTONES[newLevel] || 0;
             var body = 'You reached Level ' + newLevel + '!';
@@ -178,15 +188,10 @@
               window.ArcadeNotifications.create('level_up', 'Level Up!', body, '⬆️', null, { level: newLevel })
             );
           }
-        }
-
-        await _setDoc(ref, data);
-        _xp = newXP;
-        _level = newLevel;
-
-        // Reload coins if milestone awarded
-        if (newLevel > oldLevel && window.ArcadeCoins && window.ArcadeCoins.reload) {
-          window.ArcadeCoins.reload();
+          // Reload coins if milestone awarded
+          if (window.ArcadeCoins && window.ArcadeCoins.reload) {
+            window.ArcadeCoins.reload();
+          }
         }
 
         _dispatch();
