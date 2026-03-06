@@ -441,7 +441,7 @@
         return _getDoc(docRef).then(function(snap) {
           var data = snap.exists() ? snap.data() : { username: username };
           data.xp = amount;
-          data.level = Math.floor(Math.sqrt(amount / 100));
+          data.level = Math.floor(Math.sqrt(amount / 25));
           return _setDoc(docRef, data).then(function() {
             console.log('[Admin] Set ' + username + ' XP to ' + amount + ' (Level ' + data.level + ')');
           });
@@ -458,7 +458,7 @@
         return _getDoc(docRef).then(function(snap) {
           var data = snap.exists() ? snap.data() : { username: username };
           data.xp = (data.xp || 0) + amount;
-          data.level = Math.floor(Math.sqrt(data.xp / 100));
+          data.level = Math.floor(Math.sqrt(data.xp / 25));
           return _setDoc(docRef, data).then(function() {
             console.log('[Admin] Added ' + amount + ' XP to ' + username + ' (now ' + data.xp + ', Level ' + data.level + ')');
           });
@@ -469,7 +469,7 @@
     setLevel: function(username, level) {
       if (!username) return console.error('[Admin] Username required');
       level = parseInt(level) || 0;
-      var xp = level * level * 100;
+      var xp = level * level * 25;
       return _initFirebase().then(function() {
         var key = username.toLowerCase();
         var docRef = _doc(_db, 'users', key);

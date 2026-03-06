@@ -21,10 +21,10 @@
   }
 
   function _levelFromXP(xp) {
-    return Math.floor(Math.sqrt(xp / 100));
+    return Math.floor(Math.sqrt(xp / 25));
   }
   function _xpForLevel(level) {
-    return level * level * 100;
+    return level * level * 25;
   }
   function _progressInfo(xp) {
     var level = _levelFromXP(xp);
