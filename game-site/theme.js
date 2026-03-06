@@ -428,6 +428,14 @@
       .badge-item.earned .badge-name { color:${t.text}!important; }
       .badge-name { color:${t.dim}!important; }
 
+      /* Badge tooltip */
+      .badge-tooltip { background:${t.bg2}!important; border-color:${t.accent}!important; }
+      .badge-tooltip::after { border-top-color:${t.accent}!important; }
+      .badge-tooltip-name { color:${t.text}!important; }
+      .badge-tooltip-desc { color:${t.dim}!important; }
+      .badge-item.locked .badge-tooltip { border-color:${t.border}!important; }
+      .badge-item.locked .badge-tooltip::after { border-top-color:${t.border}!important; }
+
       /* Badge toast */
       .badge-toast { background:${t.bg2}!important; border-color:${t.accent}!important; }
       .badge-toast-text strong { color:${t.accent}!important; }

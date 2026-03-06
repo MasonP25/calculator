@@ -620,7 +620,8 @@ async function loadProfile() {
       firstPlaceCount: firstPlaceCount,
       friendCount: friendCount,
       bestStreak: liveBestStreak,
-      hasCustomized: 0
+      hasCustomized: 0,
+      gamesWithScores: liveGamesPlayed
     };
     var eq = profileData.equipped || {};
     if (eq.hat || eq.hair || eq.face || eq.shirt || eq.nametagColor || eq.nametagFont) {

@@ -97,6 +97,10 @@ window.FirebaseLB = {
       score: score,
       date: new Date().toLocaleDateString()
     });
+    // Track gamesWithScores for badges (any score submission counts)
+    if (window.ArcadeBadges && !existing.exists()) {
+      window.ArcadeBadges.increment('gamesWithScores', 1);
+    }
     // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       try {

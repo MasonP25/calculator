@@ -7,12 +7,15 @@
     { id: 'regular', name: 'Regular', desc: 'Play 50 games', icon: '\uD83C\uDFAE', field: 'gamesPlayed', target: 50 },
     { id: 'dedicated', name: 'Dedicated', desc: 'Play 100 games', icon: '\uD83D\uDCAA', field: 'gamesPlayed', target: 100 },
     { id: 'veteran', name: 'Arcade Veteran', desc: 'Play 500 games', icon: '\uD83C\uDFC5', field: 'gamesPlayed', target: 500 },
+    { id: 'nolife', name: 'No Life', desc: 'Play 1,000 games', icon: '\uD83D\uDC80', field: 'gamesPlayed', target: 1000 },
     // Leaderboard
     { id: 'podium', name: 'Podium Finish', desc: 'Reach top 3 on any leaderboard', icon: '\uD83E\uDD49', field: 'podiumCount', target: 1 },
     { id: 'podium5', name: 'Podium Regular', desc: 'Top 3 on 5 different leaderboards', icon: '\uD83E\uDD48', field: 'podiumCount', target: 5 },
+    { id: 'podium15', name: 'Always Placing', desc: 'Top 3 on 15 different leaderboards', icon: '\uD83C\uDF1F', field: 'podiumCount', target: 15 },
     { id: 'dominant', name: 'Dominant Force', desc: '#1 on 3 different leaderboards', icon: '\uD83E\uDD47', field: 'firstPlaceCount', target: 3 },
     { id: 'unstoppable', name: 'Unstoppable', desc: '#1 on 10 different leaderboards', icon: '\uD83D\uDC51', field: 'firstPlaceCount', target: 10 },
     { id: 'master', name: 'Arcade Master', desc: '#1 on 25 different leaderboards', icon: '\uD83C\uDFC6', field: 'firstPlaceCount', target: 25 },
+    { id: 'legend', name: 'Living Legend', desc: '#1 on 50 different leaderboards', icon: '\u2B50', field: 'firstPlaceCount', target: 50 },
     // Coins
     { id: 'piggy', name: 'Piggy Bank', desc: 'Earn 100 total coins', icon: '\uD83D\uDC37', field: 'totalCoinsEarned', target: 100 },
     { id: 'collector', name: 'Coin Collector', desc: 'Earn 1,000 total coins', icon: '\uD83D\uDCB0', field: 'totalCoinsEarned', target: 1000 },
@@ -22,14 +25,21 @@
     { id: 'shopper', name: 'Window Shopper', desc: 'Buy your first item', icon: '\uD83D\uDECD\uFE0F', field: 'itemsPurchased', target: 1 },
     { id: 'fashionista', name: 'Fashionista', desc: 'Buy 10 items', icon: '\uD83D\uDC57', field: 'itemsPurchased', target: 10 },
     { id: 'hatcollector', name: 'Hat Collector', desc: 'Buy 25 items', icon: '\uD83C\uDFA9', field: 'itemsPurchased', target: 25 },
+    { id: 'shopaholic', name: 'Shopaholic', desc: 'Buy 50 items', icon: '\uD83D\uDED2', field: 'itemsPurchased', target: 50 },
     // Social
     { id: 'friendly', name: 'Friendly', desc: 'Add your first friend', icon: '\uD83E\uDD1D', field: 'friendCount', target: 1 },
+    { id: 'popular', name: 'Popular', desc: 'Have 5 friends', icon: '\uD83D\uDE0E', field: 'friendCount', target: 5 },
     { id: 'social', name: 'Social Butterfly', desc: 'Have 10 friends', icon: '\uD83E\uDD8B', field: 'friendCount', target: 10 },
+    { id: 'influencer', name: 'Influencer', desc: 'Have 25 friends', icon: '\uD83D\uDCE3', field: 'friendCount', target: 25 },
     // Streaks
-    { id: 'onroll', name: 'On a Roll', desc: 'Win 5 in a row', icon: '\uD83C\uDFB3', field: 'bestStreak', target: 5 },
-    { id: 'hotstreak', name: 'Hot Streak', desc: 'Win 10 in a row', icon: '\u2728', field: 'bestStreak', target: 10 },
+    { id: 'onroll', name: 'On a Roll', desc: 'Win 3 in a row', icon: '\uD83C\uDFB3', field: 'bestStreak', target: 3 },
+    { id: 'hotstreak', name: 'Hot Streak', desc: 'Win 5 in a row', icon: '\u2728', field: 'bestStreak', target: 5 },
+    { id: 'blazing', name: 'Blazing', desc: 'Win 10 in a row', icon: '\uD83D\uDD25', field: 'bestStreak', target: 10 },
+    { id: 'unbeatable', name: 'Unbeatable', desc: 'Win 20 in a row', icon: '\u26A1', field: 'bestStreak', target: 20 },
     // Special
-    { id: 'express', name: 'Express Yourself', desc: 'Customize your avatar', icon: '\uD83C\uDFA8', field: 'hasCustomized', target: 1 }
+    { id: 'express', name: 'Express Yourself', desc: 'Customize your avatar', icon: '\uD83C\uDFA8', field: 'hasCustomized', target: 1 },
+    { id: 'completionist', name: 'Completionist', desc: 'Score on 25 different games', icon: '\uD83D\uDCCB', field: 'gamesWithScores', target: 25 },
+    { id: 'diversified', name: 'Diversified', desc: 'Score on 50 different games', icon: '\uD83C\uDF0D', field: 'gamesWithScores', target: 50 }
   ];
 
   var _db = null;
@@ -127,7 +137,19 @@
     '.badge-item.locked{opacity:0.35;filter:grayscale(1)}' +
     '.badge-icon{font-size:1.8rem;line-height:1;margin-bottom:0.3rem}' +
     '.badge-name{font-size:0.65rem;color:#aaa;text-align:center;line-height:1.2}' +
-    '.badge-item.earned .badge-name{color:#e0e0e0}';
+    '.badge-item.earned .badge-name{color:#e0e0e0}' +
+    '.badge-item{position:relative}' +
+    '.badge-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);' +
+    'background:#1a1a2e;border:1.5px solid #7b2ff7;border-radius:8px;padding:0.45rem 0.65rem;' +
+    'white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s;z-index:100;' +
+    'box-shadow:0 4px 14px rgba(123,47,247,0.25);font-family:"Segoe UI",Tahoma,sans-serif}' +
+    '.badge-item:hover .badge-tooltip{opacity:1}' +
+    '.badge-tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);' +
+    'border:6px solid transparent;border-top-color:#7b2ff7}' +
+    '.badge-tooltip-name{font-size:0.75rem;font-weight:700;color:#e0e0e0;display:block}' +
+    '.badge-tooltip-desc{font-size:0.65rem;color:#aaa;display:block;margin-top:0.15rem}' +
+    '.badge-item.locked .badge-tooltip{border-color:#444}' +
+    '.badge-item.locked .badge-tooltip::after{border-top-color:#444}';
   document.head.appendChild(css);
 
   window.ArcadeBadges = {
@@ -155,7 +177,8 @@
           firstPlaceCount: progress.firstPlaceCount || 0,
           friendCount: (data.friends || []).length,
           bestStreak: progress.bestStreak || 0,
-          hasCustomized: 0
+          hasCustomized: 0,
+          gamesWithScores: progress.gamesWithScores || 0
         };
         var eq = data.equipped || {};
         if (eq.hat || eq.hair || eq.face || eq.shirt || eq.nametagColor || eq.nametagFont) {
@@ -277,9 +300,12 @@
         var has = earnedIds.indexOf(b.id) !== -1;
         var el = document.createElement('div');
         el.className = 'badge-item' + (has ? ' earned' : ' locked');
-        el.title = b.name + ': ' + b.desc;
         el.innerHTML = '<span class="badge-icon">' + b.icon + '</span>' +
-          '<span class="badge-name">' + b.name + '</span>';
+          '<span class="badge-name">' + b.name + '</span>' +
+          '<div class="badge-tooltip">' +
+            '<span class="badge-tooltip-name">' + b.icon + ' ' + b.name + '</span>' +
+            '<span class="badge-tooltip-desc">' + b.desc + '</span>' +
+          '</div>';
         grid.appendChild(el);
       }
       container.appendChild(grid);
@@ -343,6 +369,12 @@
       // Set gamesPlayed to at least the number of games with scores
       if (gameIds.length > (progress.gamesPlayed || 0)) {
         progress.gamesPlayed = gameIds.length;
+        changed = true;
+      }
+
+      // Track distinct games with any score
+      if (gameIds.length > (progress.gamesWithScores || 0)) {
+        progress.gamesWithScores = gameIds.length;
         changed = true;
       }
 
