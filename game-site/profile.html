@@ -554,14 +554,48 @@ async function loadProfile() {
     renderFriendButton(actionsEl, targetUser);
   }
 
-  // ─── STATS ───
-  var statsRow = document.getElementById('statsRow');
+  // ─── COMPUTE STATS LIVE ───
   var progress = profileData.badgeProgress || {};
   var friendCount = (profileData.friends || []).length;
   var itemCount = (profileData.inventory || []).length;
+  var displayName = profileData.username || targetUser;
+
+  // Count games played + leaderboard placements from scores collection
+  var liveGamesPlayed = 0;
+  var livePodiumGames = [];
+  var liveFirstPlaceGames = [];
+  var liveCoinsEarned = progress.totalCoinsEarned || 0;
+  var liveBestStreak = progress.bestStreak || 0;
+
+  // Query all scores for this user
+  if (window.FirebaseLB) {
+    var scorePromises = GAMES.map(function(game) {
+      return window.FirebaseLB.getScores(game.id, 10).then(function(scores) {
+        for (var i = 0; i < scores.length; i++) {
+          if (scores[i].name && scores[i].name.toLowerCase() === targetUser.toLowerCase()) {
+            liveGamesPlayed++;
+            if (i < 3) livePodiumGames.push(game.id);
+            if (i === 0) liveFirstPlaceGames.push(game.id);
+            break;
+          }
+        }
+      }).catch(function() {});
+    });
+    await Promise.all(scorePromises);
+  }
+
+  // Use best available data
+  var gamesPlayed = Math.max(liveGamesPlayed, progress.gamesPlayed || 0);
+  var coinsEarned = Math.max(liveCoinsEarned, (profileData.coins || 0) + (itemCount * 30));
+  var itemsPurchased = Math.max(itemCount, progress.itemsPurchased || 0);
+  var podiumCount = Math.max(livePodiumGames.length, progress.podiumCount || 0);
+  var firstPlaceCount = Math.max(liveFirstPlaceGames.length, progress.firstPlaceCount || 0);
+
+  // ─── STATS ROW ───
+  var statsRow = document.getElementById('statsRow');
   var stats = [
-    { value: progress.gamesPlayed || 0, label: 'Games Played' },
-    { value: fmtScore(progress.totalCoinsEarned || 0), label: 'Coins Earned' },
+    { value: gamesPlayed, label: 'Games Played' },
+    { value: fmtScore(coinsEarned), label: 'Coins Earned' },
     { value: itemCount, label: 'Items Owned' },
     { value: friendCount, label: 'Friends' }
   ];
@@ -572,10 +606,31 @@ async function loadProfile() {
     statsRow.appendChild(box);
   });
 
-  // ─── BADGES ───
+  // ─── BADGES (compute live) ───
   var badgesWrap = document.getElementById('badgesWrap');
-  var earnedBadges = profileData.badges || [];
+  var earnedBadges = (profileData.badges || []).slice();
+
+  // Evaluate badges on the fly using live data
   if (window.ArcadeBadges) {
+    var liveValues = {
+      gamesPlayed: gamesPlayed,
+      totalCoinsEarned: coinsEarned,
+      itemsPurchased: itemsPurchased,
+      podiumCount: podiumCount,
+      firstPlaceCount: firstPlaceCount,
+      friendCount: friendCount,
+      bestStreak: liveBestStreak,
+      hasCustomized: 0
+    };
+    var eq = profileData.equipped || {};
+    if (eq.hat || eq.hair || eq.face || eq.shirt || eq.nametagColor || eq.nametagFont) {
+      liveValues.hasCustomized = 1;
+    }
+    window.ArcadeBadges.BADGES.forEach(function(b) {
+      if (earnedBadges.indexOf(b.id) === -1 && (liveValues[b.field] || 0) >= b.target) {
+        earnedBadges.push(b.id);
+      }
+    });
     window.ArcadeBadges.render(badgesWrap, earnedBadges, { showAll: true });
   }
 
