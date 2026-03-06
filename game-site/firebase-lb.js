@@ -81,6 +81,12 @@ window.FirebaseLB = {
   submit: async function(gameId, score, name) {
     name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : localStorage.getItem('arcadePlayerName')) || 'Guest';
     if (name === 'Guest') return; // Don't submit scores for guests
+
+    // Award XP for every game completion (before personal-best check)
+    if (window.ArcadeLevels && gameId !== 'idleminer') {
+      window.ArcadeLevels.addXP(10, 'game:' + gameId);
+    }
+
     // Use deterministic doc ID so each player has one entry per game
     var docId = gameId + '_' + name.toLowerCase();
     var docRef = doc(db, 'scores', docId);
@@ -100,10 +106,6 @@ window.FirebaseLB = {
     // Track gamesWithScores for badges (any score submission counts)
     if (window.ArcadeBadges && !existing.exists()) {
       window.ArcadeBadges.increment('gamesWithScores', 1);
-    }
-    // Award XP for game completion
-    if (window.ArcadeLevels && gameId !== 'idleminer') {
-      window.ArcadeLevels.addXP(10, 'game:' + gameId);
     }
     // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {

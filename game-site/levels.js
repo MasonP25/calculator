@@ -99,12 +99,36 @@
       await _initFirebase();
       if (!_db) return;
       var key = _getUser().toLowerCase();
-      var snap = await _getDoc(_doc(_db, 'users', key));
+      var ref = _doc(_db, 'users', key);
+      var snap = await _getDoc(ref);
       if (!snap.exists()) return;
       var data = snap.data();
       _xp = data.xp || 0;
       _level = _levelFromXP(_xp);
       _loaded = true;
+
+      // Daily login XP bonus (5 XP)
+      var today = new Date().toDateString();
+      if (data.lastLoginDay !== today) {
+        data.lastLoginDay = today;
+        var oldLevel = _level;
+        _xp += 5;
+        data.xp = _xp;
+        _level = _levelFromXP(_xp);
+        data.level = _level;
+        // Check milestones
+        if (_level > oldLevel) {
+          if (!data.levelMilestonesClaimed) data.levelMilestonesClaimed = [];
+          for (var lv = oldLevel + 1; lv <= _level; lv++) {
+            if (MILESTONES[lv] && data.levelMilestonesClaimed.indexOf(lv) === -1) {
+              data.levelMilestonesClaimed.push(lv);
+              data.coins = (data.coins || 0) + MILESTONES[lv];
+            }
+          }
+        }
+        await _setDoc(ref, data);
+      }
+
       _dispatch();
     } catch(e) {
       console.warn('[Levels] Load failed:', e);

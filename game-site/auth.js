@@ -72,9 +72,11 @@
   // ─── Inject styles ───
   var css = document.createElement('style');
   css.textContent =
-    '.auth-badge{position:fixed;top:12px;right:16px;z-index:9998;display:flex;align-items:center;gap:0.4rem;' +
+    '.auth-badge{position:fixed;top:12px;right:16px;z-index:9998;display:flex;flex-direction:column;align-items:center;' +
     'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:20px;padding:0.25rem 0.7rem 0.25rem 0.5rem;' +
-    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.78rem;color:#e0e0e0;cursor:pointer;transition:border-color .2s;user-select:none;overflow:visible}' +
+    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.78rem;color:#e0e0e0;cursor:pointer;transition:border-color .2s;user-select:none}' +
+    '.ab-row{display:flex;align-items:center;gap:0.4rem;width:100%}' +
+    '.ab-xp{width:100%;padding:0 0.2rem 0.15rem;pointer-events:none}' +
     '.auth-badge:hover{border-color:#7b2ff7}' +
     '.auth-badge .ab-icon{font-size:1rem}' +
     '.auth-badge .ab-name{color:#00d4ff;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
@@ -244,7 +246,15 @@
       if (window._authFriendReqCount > 0) {
         reqBadge = '<span class="ab-req" title="' + window._authFriendReqCount + ' friend request(s)">' + window._authFriendReqCount + '</span>';
       }
-      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + levelStr + coinStr + bellStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span>';
+      // Build XP bar HTML
+      var xpHtml = '';
+      if (window.ArcadeLevels) {
+        var xpProg = window.ArcadeLevels.getProgress();
+        xpHtml = '<div class="ab-xp"><div class="xp-bar-outer"><div class="xp-bar-inner" style="width:' +
+          Math.min(xpProg.percent, 100) + '%"></div></div><div class="xp-bar-label">' +
+          xpProg.progressXP + ' / ' + xpProg.neededXP + ' XP</div></div>';
+      }
+      badge.innerHTML = '<div class="ab-row"><span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + levelStr + coinStr + bellStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span></div>' + xpHtml;
       // Name link → profile
       var nameLink = document.getElementById('abNameLink');
       if (nameLink) {
@@ -270,36 +280,9 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
-      // XP bar below badge
-      _renderXPBar();
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
-      _removeXPBar();
     }
-  }
-
-  var _xpBarEl = null;
-  function _renderXPBar() {
-    if (!window.ArcadeLevels) return;
-    var prog = window.ArcadeLevels.getProgress();
-    if (!_xpBarEl || !_xpBarEl.parentNode) {
-      _xpBarEl = document.createElement('div');
-      _xpBarEl.className = 'xp-bar-wrap';
-      _xpBarEl.style.position = 'absolute';
-      _xpBarEl.style.top = '100%';
-      _xpBarEl.style.left = '50%';
-      _xpBarEl.style.transform = 'translateX(-50%)';
-      _xpBarEl.style.marginTop = '4px';
-      _xpBarEl.style.width = '170px';
-      _xpBarEl.style.right = 'auto';
-      badge.appendChild(_xpBarEl);
-    }
-    _xpBarEl.innerHTML =
-      '<div class="xp-bar-outer"><div class="xp-bar-inner" style="width:' + Math.min(prog.percent, 100) + '%"></div></div>' +
-      '<div class="xp-bar-label">' + prog.progressXP + ' / ' + prog.neededXP + ' XP</div>';
-  }
-  function _removeXPBar() {
-    if (_xpBarEl) { _xpBarEl.remove(); _xpBarEl = null; }
   }
 
   // ─── Expose API ───
