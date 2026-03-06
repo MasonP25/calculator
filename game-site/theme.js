@@ -384,6 +384,87 @@
       button { color:${t.text}!important; }
       .btn,.action-btn { border-color:${t.border}!important; }
 
+      /* Feedback button */
+      #feedback-btn {
+        background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important;
+      }
+
+      /* Auth box ARCADE heading */
+      .auth-box h2 {
+        background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
+        -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
+      }
+
+      /* Profile page */
+      .profile-hero {
+        background:${t.bg2}!important; border-color:${t.border}!important;
+      }
+      .hero-avatar { background:${t.bg1}!important; }
+      .hero-username { color:${t.text}!important; }
+      .hero-meta { color:${t.dim}!important; }
+      .profile-btn.primary { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; border-color:${t.accent}!important; }
+      .profile-btn.secondary { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .profile-btn.secondary:hover { border-color:${t.accent}!important; color:${t.text}!important; }
+      .profile-btn.success { background:${t.bg1}!important; }
+      .profile-btn.pending { background:${t.bg1}!important; }
+      .profile-btn.danger { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .section-header { color:${t.dim}!important; border-bottom-color:${t.border}!important; }
+      .score-card { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .score-card .sc-name { color:${t.text}!important; }
+      .score-card .sc-score { color:${t.dim}!important; }
+      .friend-card { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .friend-card:hover { border-color:${t.accent}!important; }
+      .friend-name { color:${t.text}!important; }
+      .request-card { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .request-card .req-name { color:${t.text}!important; }
+      .empty-text { color:${t.dim}!important; }
+      .loading-text { color:${t.dim}!important; }
+      .add-friend-msg { color:${t.dim}!important; }
+
+      /* Badge items */
+      .badge-item { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .badge-item.earned { background:${t.bg2}!important; border-color:${t.accent}!important; }
+      .badge-item.earned:hover { border-color:${t.accent2}!important; }
+      .badge-item.earned .badge-name { color:${t.text}!important; }
+      .badge-name { color:${t.dim}!important; }
+
+      /* Badge toast */
+      .badge-toast { background:${t.bg2}!important; border-color:${t.accent}!important; }
+      .badge-toast-text strong { color:${t.accent}!important; }
+      .badge-toast-text span { color:${t.text}!important; }
+
+      /* Friend request badge in auth */
+      .ab-req { background:${t.accent}!important; }
+
+      /* Shop page */
+      .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .tab-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }
+      .avatar-preview-box { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .category-row { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .category-label { color:${t.dim}!important; }
+      .arrow-btn { background:${t.bg3}!important; color:${t.text}!important; }
+      .arrow-btn:hover { background:${t.border}!important; }
+      .item-name { color:${t.text}!important; }
+      .item-price { color:${t.accent2}!important; }
+      .buy-btn { background:linear-gradient(135deg,${t.accent},${t.bg3})!important; }
+      .nametag-preview-box { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .nt-section-title { color:${t.dim}!important; }
+      .nt-card { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .nt-card:hover,.nt-card.equipped { border-color:${t.accent}!important; }
+      .guest-msg { color:${t.dim}!important; }
+      .skin-grid .skin-btn { border-color:${t.border}!important; }
+      .skin-grid .skin-btn.active { border-color:${t.accent}!important; }
+
+      /* Menu/difficulty buttons in games */
+      .menu,.menu-screen,.game-menu,.diff-menu {
+        background:${t.bg2}!important; border-color:${t.border}!important;
+      }
+      .diff-btn,.round-btn,.mode-btn {
+        background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
+      }
+      .d-name { color:${t.text}!important; }
+      .d-desc { color:${t.dim}!important; }
+
       /* Custom theme color pickers - preserve native color picker */
       input[type="color"] {
         -webkit-appearance:auto!important; appearance:auto!important;

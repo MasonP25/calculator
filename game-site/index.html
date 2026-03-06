@@ -1536,11 +1536,8 @@ document.getElementById('gameSearch').addEventListener('input', function() {
   var _dmParam = new URLSearchParams(window.location.search).get('dm');
   if (_dmParam && getUser() !== 'Guest') {
     setTimeout(function() {
-      // Open chat panel if closed
-      var panel = document.getElementById('chat-panel');
-      if (panel && !panel.classList.contains('open')) {
-        panel.classList.add('open');
-      }
+      // Expand chat panel if collapsed
+      if (!chatExpanded) toggleChat();
       startDmWith(_dmParam, true);
     }, 1500);
   }
