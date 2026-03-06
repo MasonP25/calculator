@@ -74,7 +74,7 @@
   css.textContent =
     '.auth-badge{position:fixed;top:12px;right:16px;z-index:9998;display:flex;align-items:center;gap:0.4rem;' +
     'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:20px;padding:0.25rem 0.7rem 0.25rem 0.5rem;' +
-    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.78rem;color:#e0e0e0;cursor:pointer;transition:border-color .2s;user-select:none}' +
+    'font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.78rem;color:#e0e0e0;cursor:pointer;transition:border-color .2s;user-select:none;overflow:visible}' +
     '.auth-badge:hover{border-color:#7b2ff7}' +
     '.auth-badge .ab-icon{font-size:1rem}' +
     '.auth-badge .ab-name{color:#00d4ff;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
@@ -282,7 +282,7 @@
   function _renderXPBar() {
     if (!window.ArcadeLevels) return;
     var prog = window.ArcadeLevels.getProgress();
-    if (!_xpBarEl) {
+    if (!_xpBarEl || !_xpBarEl.parentNode) {
       _xpBarEl = document.createElement('div');
       _xpBarEl.className = 'xp-bar-wrap';
       _xpBarEl.style.position = 'absolute';
