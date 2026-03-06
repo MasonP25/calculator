@@ -287,9 +287,22 @@
       }
     },
 
-    // Push to self
+    // Push to self — also shows toast immediately
     pushSelf: async function(notif) {
       if (_isGuest()) return;
+      // Ensure notif has id/time
+      if (!notif.id) notif.id = _genId();
+      if (!notif.time) notif.time = Date.now();
+      if (notif.read === undefined) notif.read = false;
+      // Show toast immediately (don't wait for poll)
+      _showToast(notif);
+      // Add to local state so poll doesn't duplicate
+      _notifications.unshift(notif);
+      if (_notifications.length > 20) _notifications = _notifications.slice(0, 20);
+      _lastKnownIds.push(notif.id);
+      _updateCount();
+      if (_panelVisible) _renderPanel();
+      // Write to Firestore
       await window.ArcadeNotifications.push(_getUser(), notif);
     },
 
