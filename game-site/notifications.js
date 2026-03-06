@@ -112,7 +112,7 @@
     'min-width:14px;height:14px;line-height:14px;text-align:center;border-radius:7px;padding:0 3px}' +
     // Notification panel
     '.notif-panel{position:fixed;top:48px;right:16px;width:320px;max-height:420px;overflow-y:auto;' +
-    'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:14px;z-index:9997;display:none;' +
+    'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:14px;z-index:10000;display:none;' +
     'box-shadow:0 8px 30px rgba(0,0,0,0.5);font-family:"Segoe UI",Tahoma,sans-serif}' +
     '.notif-panel.show{display:block}' +
     '.notif-panel-header{padding:0.7rem 1rem;border-bottom:1px solid #2a2a4a;display:flex;justify-content:space-between;align-items:center}' +
@@ -211,6 +211,8 @@
   }
 
   // ─── POLLING ───
+  var _firstPollDone = false;
+
   async function _poll() {
     if (_isGuest()) return;
     try {
@@ -221,25 +223,31 @@
       if (!snap.exists()) return;
       var data = snap.data();
       var notifs = data.notifications || [];
-      // Check for new notifications
-      var newOnes = [];
-      for (var i = 0; i < notifs.length; i++) {
-        if (_lastKnownIds.indexOf(notifs[i].id) === -1) {
-          newOnes.push(notifs[i]);
-        }
-      }
+
+      // Save previous known IDs before updating
+      var prevIds = _lastKnownIds.slice();
+
       _notifications = notifs;
       _lastKnownIds = notifs.map(function(n) { return n.id; });
       _updateCount();
 
-      // Show toasts for truly new notifications (not on first load)
-      if (_lastKnownIds.length > 0 && newOnes.length > 0 && newOnes.length < 5) {
-        for (var j = 0; j < newOnes.length; j++) {
-          (function(n, delay) {
-            setTimeout(function() { _showToast(n); }, delay);
-          })(newOnes[j], j * 800);
+      // Show toasts only after the first poll (not on page load)
+      if (_firstPollDone && prevIds.length > 0) {
+        var newOnes = [];
+        for (var i = 0; i < notifs.length; i++) {
+          if (prevIds.indexOf(notifs[i].id) === -1) {
+            newOnes.push(notifs[i]);
+          }
+        }
+        if (newOnes.length > 0 && newOnes.length < 5) {
+          for (var j = 0; j < newOnes.length; j++) {
+            (function(n, delay) {
+              setTimeout(function() { _showToast(n); }, delay);
+            })(newOnes[j], j * 800);
+          }
         }
       }
+      _firstPollDone = true;
     } catch(e) {
       console.warn('[Notifications] Poll failed:', e);
     }
@@ -247,13 +255,9 @@
 
   function _startPolling() {
     if (_pollTimer) clearInterval(_pollTimer);
-    // Initial load after 2s, then every 30s (staggered from friends.js)
+    _firstPollDone = false;
     setTimeout(function() {
-      // First poll is silent (loads existing, no toasts)
-      _poll().then(function() {
-        // After first load, set lastKnownIds so future polls show toasts
-        _lastKnownIds = _notifications.map(function(n) { return n.id; });
-      });
+      _poll();
       _pollTimer = setInterval(_poll, 30000);
     }, 2000);
   }
