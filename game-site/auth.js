@@ -107,7 +107,10 @@
     '.auth-guest{display:block;width:100%;background:none;border:2px solid #2a2a4a;color:#666;' +
     'padding:0.45rem;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit;margin-top:0.6rem;transition:border-color .2s,color .2s}' +
     '.auth-guest:hover{border-color:#555;color:#e0e0e0}' +
-    '.auth-info{color:#555;font-size:0.7rem;text-align:center;margin-top:0.8rem}';
+    '.auth-info{color:#555;font-size:0.7rem;text-align:center;margin-top:0.8rem}' +
+    '.ab-name-link{cursor:pointer;transition:text-decoration .2s}.ab-name-link:hover{text-decoration:underline}' +
+    '.ab-req{background:#ff4757;color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:0.2rem;line-height:1.3}' +
+    '.chat-name[data-chat-user]{cursor:pointer}.chat-name[data-chat-user]:hover{text-decoration:underline}';
   document.head.appendChild(css);
 
   // ─── Create badge ───
@@ -224,7 +227,18 @@
         var bal = window.ArcadeCoins.getBalance();
         coinStr = '<span class="ab-coins">&#129689; ' + bal + '</span>';
       }
-      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name">' + user + '</span>' + coinStr + '<span class="ab-out" id="abOut">Sign Out</span>';
+      var reqBadge = '';
+      if (window._authFriendReqCount > 0) {
+        reqBadge = '<span class="ab-req" title="' + window._authFriendReqCount + ' friend request(s)">' + window._authFriendReqCount + '</span>';
+      }
+      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + coinStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span>';
+      var nameLink = document.getElementById('abNameLink');
+      if (nameLink) {
+        nameLink.addEventListener('click', function(e) {
+          e.stopPropagation();
+          window.open('profile.html?user=' + encodeURIComponent(user), '_self');
+        });
+      }
       var out = document.getElementById('abOut');
       if (out) {
         out.addEventListener('click', function(e) {
@@ -255,5 +269,26 @@
   // Update badge when coins change
   window.addEventListener('coins-updated', function() {
     updateBadge();
+  });
+
+  // Make chat usernames clickable to profiles
+  document.addEventListener('click', function(e) {
+    var el = e.target.closest('.chat-name[data-chat-user]');
+    if (el) {
+      var name = el.dataset.chatUser;
+      if (name && name !== 'Guest') {
+        window.open('profile.html?user=' + encodeURIComponent(name), '_blank');
+      }
+    }
+  });
+
+  // Track friend request count for badge display
+  window._authFriendReqCount = 0;
+  window.addEventListener('friends-updated', function(e) {
+    var count = e.detail ? e.detail.requestCount : 0;
+    if (count !== window._authFriendReqCount) {
+      window._authFriendReqCount = count;
+      updateBadge();
+    }
   });
 })();

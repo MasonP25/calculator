@@ -46,6 +46,10 @@ window.HallOfFame = {
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       window.ArcadeCoins.earn(10, 'finish ' + gameId);
     }
+    // Track games played for badges
+    if (window.ArcadeBadges && gameId !== 'idleminer') {
+      window.ArcadeBadges.increment('gamesPlayed', 1);
+    }
     return list;
   },
   getScores: function(gameId) {
@@ -76,6 +80,8 @@ window.HallOfFame = {
     if (s.current > s.best) s.best = s.current;
     this.setBest('streak_' + gameId, s.current);
     this.setBest('bestStreak_' + gameId, s.best);
+    // Track for streak badges
+    if (window.ArcadeBadges) window.ArcadeBadges.recordStreak(s.current);
     return s;
   },
   loseStreak: function(gameId) {

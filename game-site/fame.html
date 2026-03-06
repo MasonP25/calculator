@@ -224,6 +224,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
+    transition: text-decoration 0.2s;
+  }
+  .name-cell .player-name-text:hover {
+    text-decoration: underline;
   }
   .empty-msg {
     color: #555;
@@ -476,6 +481,9 @@ function setScope(scope) {
       nameText.className = 'player-name-text';
       nameText.dataset.username = entry.name;
       nameText.textContent = entry.name;
+      if (entry.name && entry.name !== 'Guest') {
+        nameText.onclick = function() { window.open('profile.html?user=' + encodeURIComponent(entry.name), '_blank'); };
+      }
       nameCell.appendChild(miniAvatar);
       nameCell.appendChild(nameText);
       tdName.appendChild(nameCell);
@@ -678,6 +686,8 @@ function setScope(scope) {
 // After coins.js and avatar.js load, render avatars on all leaderboard entries
 if (window._renderFameAvatars) window._renderFameAvatars();
 </script>
+<script src="badges.js"></script>
+<script src="friends.js"></script>
 <script src="admin.js"></script>
 <script src="auth.js"></script>
 <script src="theme.js?v=4"></script>

@@ -133,6 +133,7 @@
       _save();
       _dispatch();
       console.log('[Coins] +' + amount + (reason ? ' (' + reason + ')' : '') + ' → ' + _balance);
+      if (window.ArcadeBadges) window.ArcadeBadges.increment('totalCoinsEarned', amount);
     },
 
     spend: function(amount) {
@@ -161,9 +162,11 @@
       _inventory.push(itemId);
       _save();
       _dispatch();
+      if (window.ArcadeBadges) window.ArcadeBadges.increment('itemsPurchased', 1);
       return { ok: true };
     },
 
+    // Equip triggers avatar customization badge check
     equipItem: function(category, itemId) {
       // Allow free skin colors without needing them in inventory
       var isFree = category === 'skin' && itemId && itemId.indexOf('skin_') === 0 &&
@@ -175,6 +178,7 @@
       _equipped[category] = itemId || '';
       _save();
       _dispatch();
+      if (itemId && window.ArcadeBadges) window.ArcadeBadges.check();
       return true;
     },
 

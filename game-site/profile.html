@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Profile — Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 0 1rem 3rem;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem 0;
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .back-link {
+    position: absolute;
+    left: 0;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #7b2ff7; }
+  .top-bar h1 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Hero section */
+  .profile-hero {
+    max-width: 900px;
+    margin: 1.5rem auto;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 20px;
+    padding: 2rem;
+  }
+  .hero-avatar {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #0f0f1a;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-username {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #e0e0e0;
+    margin-bottom: 0.3rem;
+    word-break: break-word;
+  }
+  .hero-meta {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 1rem;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .profile-btn {
+    padding: 0.45rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+  .profile-btn.primary {
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: #fff;
+    border-color: #7b2ff7;
+  }
+  .profile-btn.primary:hover { opacity: 0.9; }
+  .profile-btn.secondary {
+    background: #0f0f1a;
+    color: #aaa;
+    border-color: #2a2a4a;
+  }
+  .profile-btn.secondary:hover { border-color: #7b2ff7; color: #e0e0e0; }
+  .profile-btn.success {
+    background: #0f0f1a;
+    color: #2ed573;
+    border-color: #2ed573;
+    cursor: default;
+  }
+  .profile-btn.pending {
+    background: #0f0f1a;
+    color: #ffa502;
+    border-color: #ffa502;
+    cursor: default;
+  }
+  .profile-btn.danger {
+    background: #0f0f1a;
+    color: #ff4757;
+    border-color: #2a2a4a;
+  }
+  .profile-btn.danger:hover { border-color: #ff4757; }
+
+  /* Stats row */
+  .stats-row {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 0.8rem 1.5rem;
+    text-align: center;
+    min-width: 140px;
+    flex: 1;
+    max-width: 200px;
+  }
+  .stat-box .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #00d4ff;
+  }
+  .stat-box .stat-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0.2rem;
+  }
+
+  /* Section headers */
+  .section-header {
+    max-width: 900px;
+    margin: 2rem auto 0.8rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #555;
+    border-bottom: 1px solid #2a2a4a;
+    padding-bottom: 0.4rem;
+  }
+
+  /* Badges section */
+  .badges-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* Scores section */
+  .scores-grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .score-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 14px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .score-card .sc-emoji { font-size: 1.6rem; }
+  .score-card .sc-info { flex: 1; min-width: 0; }
+  .score-card .sc-name { font-size: 0.9rem; font-weight: 600; }
+  .score-card .sc-score {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 0.15rem;
+  }
+  .score-card .sc-rank {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .sc-rank.gold   { color: #ffd700; background: #ffd70015; }
+  .sc-rank.silver { color: #c0c0c0; background: #c0c0c015; }
+  .sc-rank.bronze { color: #cd7f32; background: #cd7f3215; }
+  .sc-rank.normal { color: #888; background: #ffffff08; }
+
+  /* Friends section */
+  .friends-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .friends-list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .friend-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.2s;
+    min-width: 140px;
+  }
+  .friend-card:hover {
+    border-color: #7b2ff7;
+    transform: translateY(-2px);
+  }
+  .friend-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .friend-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  /* Friend requests */
+  .request-card {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+  .request-card .req-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .request-card .req-btn {
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .request-card .req-btn:hover { opacity: 0.8; }
+  .req-accept { background: #2ed573; color: #000; }
+  .req-decline { background: #ff475733; color: #ff4757; }
+
+  /* Add friend bar */
+  .add-friend-bar {
+    max-width: 900px;
+    margin: 1rem auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .add-friend-bar input {
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.8rem;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .add-friend-bar input:focus { border-color: #7b2ff7; }
+  .add-friend-bar input::placeholder { color: #555; }
+  .add-friend-msg {
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+  }
+
+  .empty-text {
+    color: #555;
+    font-size: 0.85rem;
+    font-style: italic;
+    padding: 1rem 0;
+  }
+
+  .loading-text {
+    color: #888;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 3rem 0;
+  }
+
+  @media (max-width: 600px) {
+    .profile-hero {
+      flex-direction: column;
+      text-align: center;
+      padding: 1.5rem;
+    }
+    .hero-actions { justify-content: center; }
+    .stat-box { min-width: 100px; padding: 0.6rem 0.8rem; }
+    .stat-box .stat-value { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="index.html">&#8592; Back</a>
+  <h1>Player Profile</h1>
+</div>
+
+<div id="loading" class="loading-text">Loading profile...</div>
+<div id="content" style="display:none">
+
+  <!-- Hero -->
+  <div class="profile-hero">
+    <div class="hero-avatar" id="heroAvatar"></div>
+    <div class="hero-info">
+      <div class="hero-username" id="heroName"></div>
+      <div class="hero-meta" id="heroMeta"></div>
+      <div class="hero-actions" id="heroActions"></div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Badges -->
+  <div class="section-header">Badges</div>
+  <div class="badges-wrap" id="badgesWrap"></div>
+
+  <!-- Scores -->
+  <div class="section-header">Scores</div>
+  <div class="scores-grid" id="scoresGrid"></div>
+
+  <!-- Friends -->
+  <div class="section-header" id="friendsHeader">Friends</div>
+  <div class="friends-wrap" id="friendsWrap"></div>
+
+  <!-- Friend Requests (own profile only) -->
+  <div class="section-header" id="requestsHeader" style="display:none">Friend Requests</div>
+  <div class="friends-wrap" id="requestsWrap" style="display:none"></div>
+
+  <!-- Add Friend bar (own profile only) -->
+  <div class="section-header" id="addFriendHeader" style="display:none">Add Friend</div>
+  <div class="add-friend-bar" id="addFriendBar" style="display:none">
+    <input type="text" id="addFriendInput" placeholder="Enter username..." maxlength="15">
+    <button class="profile-btn primary" id="addFriendBtn" onclick="doAddFriend()">Send Request</button>
+    <span class="add-friend-msg" id="addFriendMsg"></span>
+  </div>
+</div>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js"></script>
+<script src="avatar.js"></script>
+<script src="badges.js"></script>
+<script src="friends.js"></script>
+<script src="admin.js"></script>
+<script src="auth.js"></script>
+<script src="theme.js?v=4"></script>
+<script>
+// GAMES list for score rendering
+var GAMES = [
+  { id:'snake', name:'Snake', emoji:'\uD83D\uDC0D', unit:'points' },
+  { id:'pong', name:'Pong', emoji:'\uD83C\uDFD3', unit:'streak' },
+  { id:'tron', name:'Tron', emoji:'\u26A1', unit:'streak' },
+  { id:'tanks', name:'Tank Battle', emoji:'\uD83D\uDCA3', unit:'streak' },
+  { id:'racer', name:'Space Race', emoji:'\uD83D\uDE80', unit:'streak' },
+  { id:'connect4', name:'Connect Four', emoji:'\uD83D\uDD34', unit:'streak' },
+  { id:'reaction', name:'Reaction Time', emoji:'\u23F1', unit:'ms' },
+  { id:'tetris', name:'Tetris', emoji:'\uD83E\uDDE9', unit:'score' },
+  { id:'breakout', name:'Breakout', emoji:'\uD83C\uDF77', unit:'score' },
+  { id:'2048', name:'2048', emoji:'\uD83D\uDD22', unit:'score' },
+  { id:'minesweeper', name:'Minesweeper', emoji:'\uD83D\uDCA5', unit:'seconds' },
+  { id:'flappy', name:'Flappy Bird', emoji:'\uD83D\uDC26', unit:'score' },
+  { id:'asteroids', name:'Asteroids', emoji:'\u2604', unit:'score' },
+  { id:'memory', name:'Memory Match', emoji:'\uD83E\uDDE0', unit:'moves' },
+  { id:'wordle', name:'Wordle', emoji:'\uD83D\uDCDD', unit:'streak' },
+  { id:'doodle', name:'Doodle Jump', emoji:'\uD83D\uDC3B', unit:'height' },
+  { id:'typing', name:'Typing Test', emoji:'\u2328', unit:'score' },
+  { id:'sudoku', name:'Sudoku', emoji:'\uD83D\uDD22', unit:'seconds' },
+  { id:'connections', name:'Connections', emoji:'\uD83D\uDD17', unit:'streak' },
+  { id:'hangman', name:'Hangman', emoji:'\uD83D\uDC64', unit:'streak' },
+  { id:'simon', name:'Simon Says', emoji:'\uD83C\uDFA8', unit:'rounds' },
+  { id:'gravity', name:'Gravity Run', emoji:'\u2699', unit:'distance m' },
+  { id:'chess', name:'Chess', emoji:'\u265A', unit:'streak' },
+  { id:'checkers', name:'Checkers', emoji:'\u26AA', unit:'streak' },
+  { id:'platformer', name:'Platformer', emoji:'\uD83C\uDFC3', unit:'score' },
+  { id:'tiles', name:'Piano Tiles', emoji:'\uD83C\uDFB9', unit:'score' },
+  { id:'crossy', name:'Crossy Road', emoji:'\uD83D\uDC14', unit:'score' },
+  { id:'invaders', name:'Space Invaders', emoji:'\uD83D\uDC7E', unit:'score' },
+  { id:'aim_classic', name:'Aim (Classic)', emoji:'\uD83C\uDFAF', unit:'ms' },
+  { id:'aim_speed', name:'Aim (Speed)', emoji:'\uD83C\uDFAF', unit:'hits' },
+  { id:'aim_precision', name:'Aim (Precision)', emoji:'\uD83C\uDFAF', unit:'points' },
+  { id:'battleship', name:'Battleship', emoji:'\u26F5', unit:'streak' },
+  { id:'whack', name:'Whack-a-Mole', emoji:'\uD83D\uDC39', unit:'score' },
+  { id:'sliding', name:'Sliding Puzzle', emoji:'\uD83E\uDDE9', unit:'seconds' },
+  { id:'stack', name:'Stack Tower', emoji:'\uD83C\uDFD7', unit:'score' },
+  { id:'wordsearch', name:'Word Search', emoji:'\uD83D\uDD0E', unit:'seconds' },
+  { id:'geodash', name:'Geometry Dash', emoji:'\u25A0', unit:'level' },
+  { id:'rps', name:'Rock Paper Scissors', emoji:'\u270A', unit:'streak' },
+  { id:'pacman', name:'Pac-Man', emoji:'\uD83D\uDC3A', unit:'score' },
+  { id:'solitaire', name:'Solitaire', emoji:'\uD83C\uDCCF', unit:'score' },
+  { id:'flood', name:'Color Flood', emoji:'\uD83C\uDFA8', unit:'points' },
+  { id:'bubbles', name:'Bubble Shooter', emoji:'\uD83E\uDEE7', unit:'score' },
+  { id:'uno', name:'UNO', emoji:'\uD83C\uDCCF', unit:'streak' },
+  { id:'wavelength', name:'Wavelength', emoji:'\uD83C\uDF08', unit:'score' },
+  { id:'tictactoe', name:'Tic Tac Toe', emoji:'\u274C', unit:'streak' },
+  { id:'wordscapes', name:'Wordscapes', emoji:'\uD83C\uDF31', unit:'level' },
+  { id:'match3', name:'Match 3', emoji:'\uD83D\uDC8E', unit:'score' },
+  { id:'nonogram', name:'Nonogram', emoji:'\u25A7', unit:'seconds' },
+  { id:'fruit', name:'Fruit Slicer', emoji:'\uD83C\uDF49', unit:'score' },
+  { id:'maze', name:'Maze Runner', emoji:'\uD83D\uDDE1', unit:'seconds' },
+  { id:'20q', name:'20 Questions', emoji:'\u2753', unit:'questions' },
+  { id:'huesort', name:'Hue Sort', emoji:'\uD83C\uDFA8', unit:'seconds' },
+  { id:'lightsout', name:'Lights Out', emoji:'\uD83D\uDCA1', unit:'moves' },
+  { id:'pipes', name:'Pipe Puzzle', emoji:'\uD83D\uDD27', unit:'seconds' },
+  { id:'ballsort', name:'Ball Sort', emoji:'\uD83C\uDFB1', unit:'moves' },
+  { id:'snakeio', name:'Snake.io', emoji:'\uD83D\uDC0D', unit:'score' },
+  { id:'holeio', name:'Hole.io', emoji:'\uD83D\uDD73', unit:'score' },
+  { id:'idleminer', name:'Idle Miner', emoji:'\u26CF', unit:'gems' },
+  { id:'biztycoon', name:'Biz Tycoon', emoji:'\uD83D\uDCB0', unit:'cash' },
+  { id:'colorswitch', name:'Color Switch', emoji:'\uD83C\uDFA8', unit:'score' },
+  { id:'duckhunt', name:'Duck Hunt', emoji:'\uD83E\uDD86', unit:'score' },
+  { id:'td', name:'Tower Defense', emoji:'\uD83C\uDFF0', unit:'score' },
+  { id:'bulletdodge', name:'Bullet Dodge', emoji:'\uD83D\uDCA5', unit:'seconds' },
+  { id:'penguin', name:'Penguin Knockout', emoji:'\uD83D\uDC27', unit:'streak' },
+  { id:'imposter', name:'Imposter', emoji:'\uD83D\uDD75', unit:'points' },
+  { id:'rhythm', name:'Rhythm', emoji:'\uD83C\uDFB5', unit:'score' },
+  { id:'golf', name:'Mini Golf', emoji:'\u26F3', unit:'strokes' },
+  { id:'dino', name:'Dino Runner', emoji:'\uD83E\uDD96', unit:'score' },
+  { id:'galaga', name:'Galaga', emoji:'\uD83D\uDE80', unit:'score' },
+  { id:'crossword', name:'Crossword', emoji:'\uD83D\uDCDD', unit:'seconds' },
+  { id:'blockblast', name:'Block Blast', emoji:'\uD83E\uDDE9', unit:'score' },
+  { id:'stickmanhook', name:'Stickman Hook', emoji:'\uD83E\uDDF0', unit:'level' },
+  { id:'paperio', name:'Paper.io', emoji:'\uD83D\uDCCE', unit:'%' },
+  { id:'fruitmerge', name:'Fruit Merge', emoji:'\uD83C\uDF51', unit:'score' },
+  { id:'pool', name:'Pool', emoji:'\uD83C\uDFB1', unit:'streak' },
+  { id:'dotsboxes', name:'Dots & Boxes', emoji:'\u2716', unit:'streak' },
+  { id:'helicopter', name:'Helicopter', emoji:'\uD83D\uDE81', unit:'meters' },
+  { id:'poker', name:'Poker', emoji:'\uD83C\uDCCF', unit:'streak' },
+  { id:'parkingjam', name:'Parking Jam', emoji:'\uD83D\uDE97', unit:'streak' },
+  { id:'wordscramble', name:'Word Scramble', emoji:'\uD83D\uDD00', unit:'words' }
+];
+var GAME_MAP = {};
+GAMES.forEach(function(g) { GAME_MAP[g.id] = g; });
+
+// Number formatting
+var NUM_SUFFIXES = ['','K','M','B','T'];
+function fmtScore(n) {
+  if (n < 1e3) return Math.floor(n).toLocaleString();
+  var tier = Math.floor(Math.log10(Math.abs(n)) / 3);
+  if (tier >= NUM_SUFFIXES.length) tier = NUM_SUFFIXES.length - 1;
+  if (tier < 1) return Math.floor(n).toString();
+  var scale = Math.pow(10, tier * 3);
+  return (n / scale).toFixed(1) + NUM_SUFFIXES[tier];
+}
+
+// Get target username from URL
+var params = new URLSearchParams(window.location.search);
+var targetUser = params.get('user') || '';
+
+async function loadProfile() {
+  // Wait for Firebase modules
+  await new Promise(function(r) { setTimeout(r, 1500); });
+
+  // Determine which user to view
+  var currentUser = localStorage.getItem('arcade_currentUser') || '';
+  if (!targetUser) {
+    targetUser = currentUser || 'Guest';
+  }
+  var isOwnProfile = currentUser && currentUser.toLowerCase() === targetUser.toLowerCase();
+
+  if (targetUser === 'Guest') {
+    document.getElementById('loading').textContent = 'Sign in to view your profile';
+    return;
+  }
+
+  // Fetch profile data from Firebase
+  var profileData = null;
+  if (window.ArcadeBadges && window.ArcadeBadges.getFullProfile) {
+    profileData = await window.ArcadeBadges.getFullProfile(targetUser);
+  }
+  if (!profileData) {
+    document.getElementById('loading').textContent = 'User not found';
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // ─── HERO ───
+  var heroNameEl = document.getElementById('heroName');
+  heroNameEl.textContent = profileData.username || targetUser;
+
+  // Apply nametag style
+  if (window.ArcadeAvatar && profileData.equipped) {
+    window.ArcadeAvatar.styleName(heroNameEl, profileData.equipped);
+  }
+
+  // Render avatar
+  var avatarEl = document.getElementById('heroAvatar');
+  if (window.ArcadeAvatar && profileData.equipped) {
+    window.ArcadeAvatar.render(avatarEl, profileData.equipped, 110);
+  }
+
+  // Meta info
+  var metaEl = document.getElementById('heroMeta');
+  metaEl.textContent = 'Member since ' + (profileData.createdAt || 'unknown');
+
+  // Actions
+  var actionsEl = document.getElementById('heroActions');
+  if (isOwnProfile) {
+    actionsEl.innerHTML = '<a href="shop.html" class="profile-btn secondary" style="text-decoration:none">Edit Avatar</a>';
+  } else if (currentUser) {
+    // Show friend status button
+    renderFriendButton(actionsEl, targetUser);
+  }
+
+  // ─── STATS ───
+  var statsRow = document.getElementById('statsRow');
+  var progress = profileData.badgeProgress || {};
+  var friendCount = (profileData.friends || []).length;
+  var itemCount = (profileData.inventory || []).length;
+  var stats = [
+    { value: progress.gamesPlayed || 0, label: 'Games Played' },
+    { value: fmtScore(progress.totalCoinsEarned || 0), label: 'Coins Earned' },
+    { value: itemCount, label: 'Items Owned' },
+    { value: friendCount, label: 'Friends' }
+  ];
+  stats.forEach(function(s) {
+    var box = document.createElement('div');
+    box.className = 'stat-box';
+    box.innerHTML = '<div class="stat-value">' + s.value + '</div><div class="stat-label">' + s.label + '</div>';
+    statsRow.appendChild(box);
+  });
+
+  // ─── BADGES ───
+  var badgesWrap = document.getElementById('badgesWrap');
+  var earnedBadges = profileData.badges || [];
+  if (window.ArcadeBadges) {
+    window.ArcadeBadges.render(badgesWrap, earnedBadges, { showAll: true });
+  }
+
+  // ─── SCORES ───
+  await renderScores(targetUser);
+
+  // ─── FRIENDS ───
+  await renderFriends(profileData);
+
+  // ─── FRIEND REQUESTS (own profile) ───
+  if (isOwnProfile) {
+    await renderRequests();
+    // Show add friend section
+    document.getElementById('addFriendHeader').style.display = '';
+    document.getElementById('addFriendBar').style.display = '';
+  }
+}
+
+async function renderFriendButton(container, username) {
+  if (!window.ArcadeFriends) {
+    container.innerHTML = '';
+    return;
+  }
+  var status = await window.ArcadeFriends.getStatus(username);
+  container.innerHTML = '';
+  if (status === 'friends') {
+    var btn = document.createElement('button');
+    btn.className = 'profile-btn success';
+    btn.textContent = '\u2714 Friends';
+    container.appendChild(btn);
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'profile-btn danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = async function() {
+      var r = await window.ArcadeFriends.removeFriend(username);
+      if (r.ok) renderFriendButton(container, username);
+    };
+    container.appendChild(removeBtn);
+  } else if (status === 'pending_sent') {
+    var btn = document.createElement('button');
+    btn.className = 'profile-btn pending';
+    btn.textContent = '\u23F3 Pending';
+    container.appendChild(btn);
+  } else if (status === 'pending_received') {
+    var btn = document.createElement('button');
+    btn.className = 'profile-btn primary';
+    btn.textContent = 'Accept Request';
+    btn.onclick = async function() {
+      var r = await window.ArcadeFriends.acceptRequest(username);
+      if (r.ok) renderFriendButton(container, username);
+    };
+    container.appendChild(btn);
+  } else {
+    var btn = document.createElement('button');
+    btn.className = 'profile-btn primary';
+    btn.textContent = '+ Add Friend';
+    btn.onclick = async function() {
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      var r = await window.ArcadeFriends.sendRequest(username);
+      if (r.ok) {
+        renderFriendButton(container, username);
+      } else {
+        btn.disabled = false;
+        btn.textContent = r.msg || 'Failed';
+      }
+    };
+    container.appendChild(btn);
+  }
+}
+
+async function renderScores(username) {
+  var grid = document.getElementById('scoresGrid');
+  grid.innerHTML = '';
+
+  if (!window.FirebaseLB) {
+    grid.innerHTML = '<p class="empty-text">Leaderboard unavailable</p>';
+    return;
+  }
+
+  // Fetch scores for all games where user has an entry
+  var found = [];
+  var key = username.toLowerCase();
+
+  // Query all games concurrently (batch of promises)
+  var promises = GAMES.map(function(game) {
+    return window.FirebaseLB.getScores(game.id, 10).then(function(scores) {
+      for (var i = 0; i < scores.length; i++) {
+        if (scores[i].name.toLowerCase() === key) {
+          found.push({
+            game: game,
+            score: scores[i].score,
+            rank: i + 1
+          });
+          break;
+        }
+      }
+    }).catch(function() {});
+  });
+
+  await Promise.all(promises);
+
+  if (found.length === 0) {
+    grid.innerHTML = '<p class="empty-text">No scores yet</p>';
+    return;
+  }
+
+  // Sort by rank (best placements first)
+  found.sort(function(a, b) { return a.rank - b.rank; });
+
+  found.forEach(function(entry) {
+    var card = document.createElement('div');
+    card.className = 'score-card';
+
+    var rankClass = 'normal';
+    if (entry.rank === 1) rankClass = 'gold';
+    else if (entry.rank === 2) rankClass = 'silver';
+    else if (entry.rank === 3) rankClass = 'bronze';
+
+    card.innerHTML =
+      '<span class="sc-emoji">' + entry.game.emoji + '</span>' +
+      '<div class="sc-info">' +
+        '<div class="sc-name">' + entry.game.name + '</div>' +
+        '<div class="sc-score">' + fmtScore(entry.score) + ' ' + entry.game.unit + '</div>' +
+      '</div>' +
+      '<span class="sc-rank ' + rankClass + '">#' + entry.rank + '</span>';
+    grid.appendChild(card);
+  });
+}
+
+async function renderFriends(profileData) {
+  var wrap = document.getElementById('friendsWrap');
+  var friendKeys = profileData.friends || [];
+
+  if (friendKeys.length === 0) {
+    wrap.innerHTML = '<p class="empty-text">No friends yet</p>';
+    return;
+  }
+
+  var list = document.createElement('div');
+  list.className = 'friends-list';
+
+  for (var i = 0; i < friendKeys.length; i++) {
+    var fKey = friendKeys[i];
+    var card = document.createElement('a');
+    card.className = 'friend-card';
+    card.href = 'profile.html?user=' + encodeURIComponent(fKey);
+
+    var avatar = document.createElement('span');
+    avatar.className = 'friend-avatar';
+    avatar.dataset.username = fKey;
+
+    var name = document.createElement('span');
+    name.className = 'friend-name';
+    name.dataset.username = fKey;
+    name.textContent = fKey;
+
+    card.appendChild(avatar);
+    card.appendChild(name);
+    list.appendChild(card);
+
+    // Load avatar + display name async
+    (function(avatarEl, nameEl, username) {
+      if (window.ArcadeCoins && window.ArcadeCoins.getProfile) {
+        window.ArcadeCoins.getProfile(username).then(function(profile) {
+          if (!profile) return;
+          if (window.ArcadeAvatar) {
+            window.ArcadeAvatar.renderMini(avatarEl, profile, 32);
+            window.ArcadeAvatar.styleName(nameEl, profile);
+          }
+        }).catch(function() {});
+      }
+      // Get display name
+      if (window.ArcadeBadges && window.ArcadeBadges.getFullProfile) {
+        window.ArcadeBadges.getFullProfile(username).then(function(data) {
+          if (data && data.username) {
+            nameEl.textContent = data.username;
+            // Update href too
+            nameEl.closest('a').href = 'profile.html?user=' + encodeURIComponent(data.username);
+          }
+        }).catch(function() {});
+      }
+    })(avatar, name, fKey);
+  }
+
+  wrap.appendChild(list);
+}
+
+async function renderRequests() {
+  if (!window.ArcadeFriends) return;
+  var requests = await window.ArcadeFriends.getIncomingRequests();
+  if (requests.length === 0) return;
+
+  document.getElementById('requestsHeader').style.display = '';
+  document.getElementById('requestsWrap').style.display = '';
+
+  var wrap = document.getElementById('requestsWrap');
+  wrap.innerHTML = '';
+
+  requests.forEach(function(fromUser) {
+    var card = document.createElement('div');
+    card.className = 'request-card';
+
+    var nameEl = document.createElement('span');
+    nameEl.className = 'req-name';
+    nameEl.textContent = fromUser;
+
+    var acceptBtn = document.createElement('button');
+    acceptBtn.className = 'req-btn req-accept';
+    acceptBtn.textContent = 'Accept';
+    acceptBtn.onclick = async function() {
+      var r = await window.ArcadeFriends.acceptRequest(fromUser);
+      if (r.ok) {
+        card.remove();
+        if (wrap.children.length === 0) {
+          document.getElementById('requestsHeader').style.display = 'none';
+          document.getElementById('requestsWrap').style.display = 'none';
+        }
+      }
+    };
+
+    var declineBtn = document.createElement('button');
+    declineBtn.className = 'req-btn req-decline';
+    declineBtn.textContent = 'Decline';
+    declineBtn.onclick = async function() {
+      var r = await window.ArcadeFriends.declineRequest(fromUser);
+      if (r.ok) {
+        card.remove();
+        if (wrap.children.length === 0) {
+          document.getElementById('requestsHeader').style.display = 'none';
+          document.getElementById('requestsWrap').style.display = 'none';
+        }
+      }
+    };
+
+    card.appendChild(nameEl);
+    card.appendChild(acceptBtn);
+    card.appendChild(declineBtn);
+    wrap.appendChild(card);
+  });
+}
+
+// Add friend from the add friend bar
+async function doAddFriend() {
+  var input = document.getElementById('addFriendInput');
+  var msg = document.getElementById('addFriendMsg');
+  var btn = document.getElementById('addFriendBtn');
+  var username = input.value.trim();
+  if (!username) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  msg.textContent = '';
+
+  if (!window.ArcadeFriends) {
+    msg.textContent = 'Friends system not loaded';
+    msg.style.color = '#ff4757';
+    btn.disabled = false;
+    btn.textContent = 'Send Request';
+    return;
+  }
+
+  var result = await window.ArcadeFriends.sendRequest(username);
+  if (result.ok) {
+    msg.textContent = result.msg;
+    msg.style.color = '#2ed573';
+    input.value = '';
+  } else {
+    msg.textContent = result.msg;
+    msg.style.color = '#ff4757';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send Request';
+}
+
+// Enter key in add friend input
+document.getElementById('addFriendInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doAddFriend();
+});
+
+// Load the profile
+loadProfile();
+</script>
+</body>
+</html>

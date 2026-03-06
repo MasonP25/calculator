@@ -97,7 +97,7 @@ window.FirebaseLB = {
       score: score,
       date: new Date().toLocaleDateString()
     });
-    // Award coins for leaderboard placement
+    // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       try {
         var scores = await window.FirebaseLB.getScores(gameId, 3);
@@ -105,6 +105,8 @@ window.FirebaseLB = {
           if (scores[p].name === name) {
             var bonus = [50, 30, 15][p];
             window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId);
+            // Record placement for badges (position is 1-indexed)
+            if (window.ArcadeBadges) window.ArcadeBadges.recordPlacement(gameId, p + 1);
             break;
           }
         }

@@ -341,6 +341,95 @@
       });
     },
 
+    // ── Give a badge to a user ──
+    giveBadge: function (username, badgeId) {
+      if (!username || !badgeId) return console.error('[Admin] Username and badgeId required');
+      return _initFirebase().then(function () {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function (snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          if (!data.badges) data.badges = [];
+          if (data.badges.indexOf(badgeId) === -1) {
+            data.badges.push(badgeId);
+          }
+          return _setDoc(docRef, data).then(function () {
+            console.log('[Admin] Gave badge ' + badgeId + ' to ' + username);
+          });
+        });
+      });
+    },
+
+    // ── Reset all badges for a user ──
+    resetBadges: function (username) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function () {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function (snap) {
+          var data = snap.exists() ? snap.data() : { username: username };
+          data.badges = [];
+          data.badgeProgress = {};
+          return _setDoc(docRef, data).then(function () {
+            console.log('[Admin] Reset all badges and progress for ' + username);
+          });
+        });
+      });
+    },
+
+    // ── Add a friend for a user (bypass request) ──
+    addFriend: function (username, friendName) {
+      if (!username || !friendName) return console.error('[Admin] Both usernames required');
+      return _initFirebase().then(function () {
+        var key1 = username.toLowerCase();
+        var key2 = friendName.toLowerCase();
+        var ref1 = _doc(_db, 'users', key1);
+        var ref2 = _doc(_db, 'users', key2);
+        return Promise.all([_getDoc(ref1), _getDoc(ref2)]).then(function (snaps) {
+          var data1 = snaps[0].exists() ? snaps[0].data() : null;
+          var data2 = snaps[1].exists() ? snaps[1].data() : null;
+          if (!data1 || !data2) return console.error('[Admin] One or both users not found');
+          if (!data1.friends) data1.friends = [];
+          if (!data2.friends) data2.friends = [];
+          if (data1.friends.indexOf(key2) === -1) data1.friends.push(key2);
+          if (data2.friends.indexOf(key1) === -1) data2.friends.push(key1);
+          return Promise.all([_setDoc(ref1, data1), _setDoc(ref2, data2)]).then(function () {
+            console.log('[Admin] ' + username + ' and ' + friendName + ' are now friends');
+          });
+        });
+      });
+    },
+
+    // ── View friend requests for a user ──
+    viewRequests: function (username) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function () {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function (snap) {
+          if (!snap.exists()) return console.log('[Admin] User not found');
+          var data = snap.data();
+          console.log('[Admin] Friend data for ' + username + ':');
+          console.log('  Friends:', (data.friends || []).join(', ') || 'none');
+          console.log('  Sent requests:', (data.friendRequestsSent || []).join(', ') || 'none');
+          console.log('  Received requests:', (data.friendRequestsReceived || []).join(', ') || 'none');
+          console.log('  Badges:', (data.badges || []).join(', ') || 'none');
+        });
+      });
+    },
+
+    // ── List all badge IDs ──
+    listBadges: function () {
+      if (window.ArcadeBadges && window.ArcadeBadges.BADGES) {
+        console.log('── All Badges ──');
+        window.ArcadeBadges.BADGES.forEach(function (b) {
+          console.log('  ' + b.id + ' — ' + b.icon + ' ' + b.name + ': ' + b.desc);
+        });
+      } else {
+        console.error('[Admin] ArcadeBadges not loaded');
+      }
+    },
+
     // ── Quick help ──
     help: function () {
       console.log(
@@ -355,6 +444,11 @@
         '  ArcadeAdmin.deleteScore("snake", "user")    — Delete a score\n' +
         '  ArcadeAdmin.viewUser("user")                — View full profile\n' +
         '  ArcadeAdmin.listItems()                     — List all item IDs\n' +
+        '  ArcadeAdmin.giveBadge("user", "badge_id")   — Give a badge\n' +
+        '  ArcadeAdmin.resetBadges("user")             — Reset all badges\n' +
+        '  ArcadeAdmin.listBadges()                    — List all badge IDs\n' +
+        '  ArcadeAdmin.addFriend("user1", "user2")     — Force add friends\n' +
+        '  ArcadeAdmin.viewRequests("user")            — View friend requests\n' +
         '  ArcadeAdmin.help()                          — Show this help'
       );
     }
