@@ -112,6 +112,11 @@
     '.trade-item:hover{border-color:#555}' +
     '.trade-item.selected{border-color:#7b2ff7;background:#7b2ff710}' +
     '.trade-item-name{font-size:0.55rem;color:#aaa;text-align:center;margin-top:0.2rem;line-height:1.1}' +
+    '.trade-coin-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;padding:0.4rem;background:#1a1a2e;border-radius:8px;border:1px solid #2a2a4a}' +
+    '.trade-coin-label{font-size:0.75rem;color:#ffd700;font-weight:600;white-space:nowrap}' +
+    '.trade-coin-input{flex:1;background:#0f0f1a;border:1px solid #2a2a4a;color:#ffd700;padding:0.3rem 0.5rem;border-radius:6px;' +
+    'font-size:0.8rem;font-family:inherit;outline:none;width:60px;-moz-appearance:textfield}' +
+    '.trade-coin-input::-webkit-outer-spin-button,.trade-coin-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}' +
     '.trade-arrow{text-align:center;font-size:1.5rem;color:#7b2ff7;margin:0.5rem 0}' +
     '.trade-send{display:block;width:100%;background:linear-gradient(135deg,#7b2ff7,#5b1fd7);color:#fff;' +
     'border:none;padding:0.6rem;border-radius:8px;font-size:0.9rem;cursor:pointer;font-family:inherit}' +
@@ -132,9 +137,11 @@
   document.head.appendChild(css);
 
   window.ArcadeTrading = {
-    propose: async function(toUsername, offeredItems, requestedItems) {
+    propose: async function(toUsername, offeredItems, requestedItems, offeredCoins, requestedCoins) {
       if (_isGuest()) return { ok: false, msg: 'Not signed in' };
-      if (!offeredItems.length && !requestedItems.length) return { ok: false, msg: 'Select items to trade' };
+      offeredCoins = Math.max(0, Math.floor(offeredCoins || 0));
+      requestedCoins = Math.max(0, Math.floor(requestedCoins || 0));
+      if (!offeredItems.length && !requestedItems.length && !offeredCoins && !requestedCoins) return { ok: false, msg: 'Select items or coins to trade' };
       try {
         await _initFirebase();
         if (!_db) return { ok: false, msg: 'Connection error' };
@@ -152,6 +159,9 @@
         var theirData = theirSnap.data();
 
         if ((myData.friends || []).indexOf(theirKey) === -1) return { ok: false, msg: 'Must be friends' };
+
+        // Validate coins
+        if (offeredCoins > 0 && (myData.coins || 0) < offeredCoins) return { ok: false, msg: 'Not enough coins' };
 
         // Validate offered items
         for (var i = 0; i < offeredItems.length; i++) {
@@ -173,10 +183,11 @@
           toDisplayName: theirData.username || toUsername,
           offeredItems: offeredItems,
           requestedItems: requestedItems,
+          offeredCoins: offeredCoins,
+          requestedCoins: requestedCoins,
           status: 'pending',
           createdAt: Date.now(),
-          expiresAt: Date.now() + 86400000,
-          completedAt: null
+          expiresAt: Date.now() + 86400000
         };
 
         // Add trade ID to both users
@@ -187,10 +198,11 @@
 
         // Notification
         if (window.ArcadeNotifications) {
-          var offerNames = offeredItems.map(_getItemName).join(', ');
-          var wantNames = requestedItems.map(_getItemName).join(', ');
+          var parts = [];
+          if (offeredCoins > 0) parts.push(offeredCoins + ' coins');
+          if (offeredItems.length > 0) parts.push(offeredItems.map(_getItemName).join(', '));
           var body = _getUser() + ' wants to trade';
-          if (offerNames) body += ' — offering: ' + offerNames;
+          if (parts.length) body += ' — offering: ' + parts.join(' + ');
           var notif = window.ArcadeNotifications.create('trade_request', 'Trade Request',
             body, '🔄', 'profile.html?user=' + encodeURIComponent(_getUser()),
             { tradeId: tradeId, from: myKey });
@@ -208,8 +220,8 @@
 
         return { ok: true, msg: 'Trade proposed!', tradeId: tradeId };
       } catch(e) {
-        console.warn('[Trading] propose failed:', e);
-        return { ok: false, msg: 'Something went wrong' };
+        console.error('[Trading] propose failed:', e);
+        return { ok: false, msg: e.message || 'Something went wrong' };
       }
     },
 
@@ -239,6 +251,9 @@
         var fromData = fromSnap.data();
         var toData = toSnap.data();
 
+        var tradeOfferedCoins = trade.offeredCoins || 0;
+        var tradeRequestedCoins = trade.requestedCoins || 0;
+
         // Verify both still own items
         for (var i = 0; i < trade.offeredItems.length; i++) {
           if ((fromData.inventory || []).indexOf(trade.offeredItems[i]) === -1)
@@ -249,12 +264,23 @@
             return { ok: false, msg: 'You no longer own ' + _getItemName(trade.requestedItems[j]) };
         }
 
+        // Verify coin balances
+        if (tradeOfferedCoins > 0 && (fromData.coins || 0) < tradeOfferedCoins)
+          return { ok: false, msg: 'Proposer no longer has enough coins' };
+        if (tradeRequestedCoins > 0 && (toData.coins || 0) < tradeRequestedCoins)
+          return { ok: false, msg: 'You no longer have enough coins' };
+
+        // Transfer coins
+        if (tradeOfferedCoins > 0 || tradeRequestedCoins > 0) {
+          fromData.coins = (fromData.coins || 0) - tradeOfferedCoins + tradeRequestedCoins;
+          toData.coins = (toData.coins || 0) - tradeRequestedCoins + tradeOfferedCoins;
+        }
+
         // Swap items
         trade.offeredItems.forEach(function(itemId) {
-          fromData.inventory = fromData.inventory.filter(function(i) { return i !== itemId; });
+          fromData.inventory = (fromData.inventory || []).filter(function(i) { return i !== itemId; });
           if (!toData.inventory) toData.inventory = [];
           if (toData.inventory.indexOf(itemId) === -1) toData.inventory.push(itemId);
-          // Unequip if equipped
           if (fromData.equipped) {
             Object.keys(fromData.equipped).forEach(function(k) {
               if (fromData.equipped[k] === itemId) fromData.equipped[k] = '';
@@ -263,7 +289,7 @@
         });
 
         trade.requestedItems.forEach(function(itemId) {
-          toData.inventory = toData.inventory.filter(function(i) { return i !== itemId; });
+          toData.inventory = (toData.inventory || []).filter(function(i) { return i !== itemId; });
           if (!fromData.inventory) fromData.inventory = [];
           if (fromData.inventory.indexOf(itemId) === -1) fromData.inventory.push(itemId);
           if (toData.equipped) {
@@ -303,8 +329,8 @@
 
         return { ok: true, msg: 'Trade completed!' };
       } catch(e) {
-        console.warn('[Trading] accept failed:', e);
-        return { ok: false, msg: 'Something went wrong' };
+        console.error('[Trading] accept failed:', e);
+        return { ok: false, msg: e.message || 'Something went wrong' };
       }
     },
 
@@ -469,16 +495,22 @@
       if (friendProfile) friendInventory = friendProfile.inventory || [];
     }
 
+    var myCoins = (window.ArcadeCoins && window.ArcadeCoins.getBalance()) || 0;
+
     box.innerHTML =
       '<button class="trade-close" id="tradeClose">&times;</button>' +
       '<h3>Trade with ' + friendUsername + '</h3>' +
       '<div class="trade-columns">' +
         '<div class="trade-col">' +
-          '<div class="trade-col-header">Your Items (offering)</div>' +
+          '<div class="trade-col-header">You Offer</div>' +
+          '<div class="trade-coin-row"><span class="trade-coin-label">&#129689; Coins</span>' +
+            '<input type="number" class="trade-coin-input" id="tradeOfferCoins" min="0" max="' + myCoins + '" value="0" placeholder="0"></div>' +
           '<div class="trade-item-grid" id="tradeMyItems"></div>' +
         '</div>' +
         '<div class="trade-col">' +
-          '<div class="trade-col-header">Their Items (requesting)</div>' +
+          '<div class="trade-col-header">You Request</div>' +
+          '<div class="trade-coin-row"><span class="trade-coin-label">&#129689; Coins</span>' +
+            '<input type="number" class="trade-coin-input" id="tradeRequestCoins" min="0" value="0" placeholder="0"></div>' +
           '<div class="trade-item-grid" id="tradeTheirItems"></div>' +
         '</div>' +
       '</div>' +
@@ -495,8 +527,13 @@
     var selectedRequest = [];
 
     function updateSendBtn() {
-      document.getElementById('tradeSend').disabled = selectedOffer.length === 0 && selectedRequest.length === 0;
+      var oc = parseInt(document.getElementById('tradeOfferCoins').value) || 0;
+      var rc = parseInt(document.getElementById('tradeRequestCoins').value) || 0;
+      document.getElementById('tradeSend').disabled = selectedOffer.length === 0 && selectedRequest.length === 0 && oc <= 0 && rc <= 0;
     }
+
+    document.getElementById('tradeOfferCoins').addEventListener('input', updateSendBtn);
+    document.getElementById('tradeRequestCoins').addEventListener('input', updateSendBtn);
 
     // Populate my items
     var myGrid = document.getElementById('tradeMyItems');
@@ -558,7 +595,9 @@
       var msg = document.getElementById('tradeMsg');
       btn.disabled = true;
       btn.textContent = 'Proposing...';
-      var r = await window.ArcadeTrading.propose(friendUsername, selectedOffer, selectedRequest);
+      var oc = parseInt(document.getElementById('tradeOfferCoins').value) || 0;
+      var rc = parseInt(document.getElementById('tradeRequestCoins').value) || 0;
+      var r = await window.ArcadeTrading.propose(friendUsername, selectedOffer, selectedRequest, oc, rc);
       msg.textContent = r.msg;
       msg.className = 'trade-msg ' + (r.ok ? 'ok' : 'err');
       btn.disabled = false;
@@ -586,12 +625,18 @@
     var hoursLeft = Math.floor(timeLeft / 3600000);
     var minsLeft = Math.floor((timeLeft % 3600000) / 60000);
 
-    var offerHtml = trade.offeredItems.map(function(id) {
-      return '<span class="trade-review-item">' + _getItemName(id) + '</span>';
-    }).join('');
-    var requestHtml = trade.requestedItems.map(function(id) {
-      return '<span class="trade-review-item">' + _getItemName(id) + '</span>';
-    }).join('');
+    var offerParts = [];
+    if (trade.offeredCoins > 0) offerParts.push('<span class="trade-review-item" style="color:#ffd700">&#129689; ' + trade.offeredCoins + ' coins</span>');
+    trade.offeredItems.forEach(function(id) {
+      offerParts.push('<span class="trade-review-item">' + _getItemName(id) + '</span>');
+    });
+    var requestParts = [];
+    if (trade.requestedCoins > 0) requestParts.push('<span class="trade-review-item" style="color:#ffd700">&#129689; ' + trade.requestedCoins + ' coins</span>');
+    trade.requestedItems.forEach(function(id) {
+      requestParts.push('<span class="trade-review-item">' + _getItemName(id) + '</span>');
+    });
+    var offerHtml = offerParts.join('');
+    var requestHtml = requestParts.join('');
 
     box.innerHTML =
       '<button class="trade-close" id="tradeClose">&times;</button>' +

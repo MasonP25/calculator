@@ -505,6 +505,8 @@
       .trade-review-item { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
       .trade-review-label { color:${t.dim}!important; }
       .trade-empty { color:${t.dim}!important; }
+      .trade-coin-row { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .trade-coin-input { background:${t.bg1}!important; border-color:${t.border}!important; color:#ffd700!important; }
 
       /* Shop page */
       .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
