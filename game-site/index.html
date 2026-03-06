@@ -1535,11 +1535,10 @@ document.getElementById('gameSearch').addEventListener('input', function() {
   /* ── auto-open DM from ?dm= URL parameter ── */
   var _dmParam = new URLSearchParams(window.location.search).get('dm');
   if (_dmParam && getUser() !== 'Guest') {
-    setTimeout(function() {
-      // Expand chat panel if collapsed
-      if (!chatExpanded) toggleChat();
-      startDmWith(_dmParam, true);
-    }, 1500);
+    // Force expand immediately
+    chatExpanded = true;
+    panel.className = 'expanded';
+    startDmWith(_dmParam, true);
   }
 })();
 </script>
