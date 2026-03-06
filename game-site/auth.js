@@ -277,7 +277,7 @@
     if (el) {
       var name = el.dataset.chatUser;
       if (name && name !== 'Guest') {
-        window.open('profile.html?user=' + encodeURIComponent(name), '_blank');
+        window.location.href = 'profile.html?user=' + encodeURIComponent(name);
       }
     }
   });

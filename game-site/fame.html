@@ -482,7 +482,7 @@ function setScope(scope) {
       nameText.dataset.username = entry.name;
       nameText.textContent = entry.name;
       if (entry.name && entry.name !== 'Guest') {
-        nameText.onclick = function() { window.open('profile.html?user=' + encodeURIComponent(entry.name), '_blank'); };
+        nameText.onclick = function() { window.location.href = 'profile.html?user=' + encodeURIComponent(entry.name); };
       }
       nameCell.appendChild(miniAvatar);
       nameCell.appendChild(nameText);
