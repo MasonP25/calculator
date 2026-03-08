@@ -10,9 +10,11 @@
   var _query = null;
   var _orderBy = null;
   var _limit = null;
+  var _where = null;
   var _deleteDoc = null;
   var _cache = null;
   var _cacheTime = 0;
+  var _cleanedUp = false;
 
   function _getUser() {
     return localStorage.getItem('arcade_currentUser') || 'Guest';
@@ -40,6 +42,7 @@
       _query = mods[1].query;
       _orderBy = mods[1].orderBy;
       _limit = mods[1].limit;
+      _where = mods[1].where;
       _deleteDoc = mods[1].deleteDoc;
       var config = {
         apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
@@ -64,6 +67,26 @@
     }).catch(function(e) {
       console.warn('[Activity] Firebase init failed:', e);
     });
+  }
+
+  // Delete activity entries older than 24 hours (runs once per session)
+  async function _cleanup() {
+    if (_cleanedUp) return;
+    _cleanedUp = true;
+    try {
+      var cutoff = Date.now() - 86400000; // 24 hours ago
+      var q = _query(_collection(_db, 'activity'), _where('time', '<', cutoff), _limit(50));
+      var snap = await _getDocs(q);
+      var deletes = [];
+      snap.forEach(function(d) {
+        deletes.push(_deleteDoc(d.ref));
+      });
+      if (deletes.length > 0) {
+        await Promise.all(deletes);
+      }
+    } catch(e) {
+      // Ignore cleanup errors
+    }
   }
 
   // Type configs
@@ -100,7 +123,10 @@
   css.textContent =
     '.activity-feed{max-width:500px;margin:0 auto 1.5rem;font-family:"Segoe UI",Tahoma,sans-serif}' +
     '.activity-feed .af-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:#555;margin-bottom:0.5rem;text-align:center}' +
-    '.activity-feed .af-list{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2a2a4a transparent}' +
+    '.activity-feed .af-list{max-height:310px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2a2a4a transparent}' +
+    '.activity-feed .af-list::-webkit-scrollbar{width:4px}' +
+    '.activity-feed .af-list::-webkit-scrollbar-track{background:transparent}' +
+    '.activity-feed .af-list::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}' +
     '.activity-feed .af-item{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.6rem;border-radius:8px;margin-bottom:0.2rem;background:#1a1a2e;font-size:0.8rem;color:#ccc}' +
     '.activity-feed .af-item:hover{background:#1f1f38}' +
     '.activity-feed .af-icon{font-size:1rem;flex-shrink:0}' +
@@ -123,13 +149,15 @@
         };
         await _addDoc(_collection(_db, 'activity'), entry);
         _cache = null; // Invalidate cache
+        // Cleanup old entries (once per session)
+        _cleanup();
       } catch(e) {
         console.warn('[Activity] Post failed:', e);
       }
     },
 
     getRecent: async function(max) {
-      max = max || 15;
+      max = max || 20;
       // Cache for 30s
       if (_cache && Date.now() - _cacheTime < 30000) return _cache;
       try {
@@ -143,6 +171,8 @@
         });
         _cache = results;
         _cacheTime = Date.now();
+        // Also run cleanup on fetch (once per session)
+        _cleanup();
         return results;
       } catch(e) {
         console.warn('[Activity] Fetch failed:', e);
@@ -152,7 +182,7 @@
 
     renderFeed: async function(container) {
       if (!container) return;
-      var items = await window.ArcadeActivity.getRecent(15);
+      var items = await window.ArcadeActivity.getRecent(20);
       container.innerHTML = '';
       var wrap = document.createElement('div');
       wrap.className = 'activity-feed';
