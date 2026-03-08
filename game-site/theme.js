@@ -566,6 +566,10 @@
       /* GOTD banner */
       .gotd-banner { background:linear-gradient(135deg,#ffd700,#ff8c00)!important; color:#0f0f1a!important; }
 
+      /* Fullscreen button */
+      .fullscreen-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .fullscreen-btn:hover { border-color:${t.accent}!important; color:${t.text}!important; }
+
       /* Shop page */
       .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
       .tab-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }

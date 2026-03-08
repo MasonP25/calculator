@@ -59,6 +59,7 @@
     background: #2a2a4a;
     color: #fff;
   }
+  .fullscreen-btn{margin-top:0.8rem;padding:0.5rem 1.2rem;background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;color:#aaa;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s}.fullscreen-btn:hover{border-color:#7b2ff7;color:#fff}.game-container:-webkit-full-screen,.game-container:fullscreen{border-radius:0;border:none;max-width:none;width:100%;height:100%}
 </style>
 </head>
 <body>
@@ -67,6 +68,11 @@
 <div class="game-container">
   <iframe src="https://amhooman.github.io/website/games/slope/game.html" allowfullscreen></iframe>
 </div>
+<button class="fullscreen-btn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
+<script>
+function toggleFullscreen(){var c=document.querySelector(".game-container");if(document.fullscreenElement){document.exitFullscreen()}else{c.requestFullscreen().catch(function(){var f=c.querySelector("iframe");if(f)f.requestFullscreen()})}}
+document.addEventListener("fullscreenchange",function(){var b=document.querySelector(".fullscreen-btn");if(b)b.textContent=document.fullscreenElement?"\u2715 Exit Fullscreen":"\u26F6 Fullscreen"});
+</script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
