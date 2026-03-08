@@ -595,7 +595,17 @@ async function loadProfile() {
 
   // Meta info
   var metaEl = document.getElementById('heroMeta');
-  metaEl.textContent = 'Member since ' + (profileData.createdAt || 'unknown');
+  var joinDate = profileData.createdAt;
+  if (!joinDate) {
+    joinDate = 'unknown';
+  } else if (typeof joinDate === 'number') {
+    joinDate = new Date(joinDate).toLocaleDateString();
+  } else if (joinDate.toDate) {
+    joinDate = joinDate.toDate().toLocaleDateString();
+  } else if (typeof joinDate === 'string' && /^\d{10,}$/.test(joinDate)) {
+    joinDate = new Date(parseInt(joinDate)).toLocaleDateString();
+  }
+  metaEl.textContent = 'Member since ' + joinDate;
 
   // Actions
   var actionsEl = document.getElementById('heroActions');
