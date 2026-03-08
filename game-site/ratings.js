@@ -263,6 +263,11 @@
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
 
+      // Stop key events from reaching game listeners (space, arrows, etc.)
+      modal.addEventListener('keydown', function(e) { e.stopPropagation(); });
+      modal.addEventListener('keyup', function(e) { e.stopPropagation(); });
+      modal.addEventListener('keypress', function(e) { e.stopPropagation(); });
+
       var stars = modal.querySelectorAll('.rm-stars .star');
       var submitBtn = modal.querySelector('.rm-submit');
       var textarea = modal.querySelector('textarea');
