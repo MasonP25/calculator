@@ -508,6 +508,47 @@
       .trade-coin-row { background:${t.bg2}!important; border-color:${t.border}!important; }
       .trade-coin-input { background:${t.bg1}!important; border-color:${t.border}!important; color:#ffd700!important; }
 
+      /* Challenge widget */
+      .challenge-widget { background:${t.bg2}!important; border-color:#ffd70044!important; }
+      .challenge-widget .cw-desc { color:${t.text}!important; }
+      .challenge-widget .cw-bar { background:${t.bg1}!important; }
+      .challenge-widget .cw-status { color:${t.dim}!important; }
+
+      /* Quest cards */
+      .quest-card { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .quest-card .qc-desc { color:${t.text}!important; }
+      .quest-card .qc-prog { color:${t.dim}!important; }
+      .quest-card .qc-bar { background:${t.bg1}!important; }
+
+      /* Activity feed */
+      .activity-feed .af-title { color:${t.dim}!important; }
+      .activity-feed .af-item { background:${t.bg2}!important; color:${t.text}!important; }
+      .activity-feed .af-item:hover { background:${t.bg3}!important; }
+      .activity-feed .af-time { color:${t.dim}!important; }
+      .activity-feed .af-empty { color:${t.dim}!important; }
+
+      /* Rating modal */
+      .rating-modal { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .rating-modal h3 { color:${t.text}!important; }
+      .rating-modal textarea { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .rate-btn { background:${t.bg2}!important; border-color:#ffd70066!important; }
+
+      /* GOTD card */
+      .card.gotd { border-color:#ffd70088!important; }
+
+      /* Casino page */
+      .balance-bar { background:${t.bg2}!important; border-color:#ffd70044!important; }
+      .casino-tab { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .casino-tab.active { border-color:#ffd700!important; color:#ffd700!important; }
+      .game-area { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .bet-input { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .bet-quick button { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .scratch-tier { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .scratch-cell { background:${t.bg3}!important; border-color:${t.border}!important; }
+      .scratch-cell.revealed { background:${t.bg1}!important; }
+      .casino-stats { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .casino-stat .cs-label { color:${t.dim}!important; }
+
       /* Shop page */
       .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
       .tab-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }

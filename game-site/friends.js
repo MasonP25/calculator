@@ -188,6 +188,8 @@
 
         // Award XP for friendship
         if (window.ArcadeLevels) window.ArcadeLevels.addXP(10, 'friend_added');
+        // Increment weekly quest for friends added
+        if (window.ArcadeChallenges) window.ArcadeChallenges.incrementQuest('friends_added', 1);
 
         return { ok: true, msg: 'You are now friends!' };
       } catch(e) {

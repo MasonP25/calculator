@@ -447,6 +447,13 @@
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
+  <a class="fame-link" href="casino.html"><span>&#127920;</span> Casino — Gamble Your Coins</a>
+
+  <!-- Daily Challenge Widget -->
+  <div id="daily-challenge-container"></div>
+
+  <!-- Activity Feed -->
+  <div id="activity-feed-container"></div>
 
   <div class="search-bar">
     <span class="search-icon">&#128269;</span>
@@ -1555,8 +1562,57 @@ document.getElementById('gameSearch').addEventListener('input', function() {
 <script src="levels.js?v=2"></script>
 <script src="gifting.js?v=2"></script>
 <script src="trading.js?v=2"></script>
+<script src="challenges.js?v=1"></script>
+<script src="activity.js?v=1"></script>
+<script src="ratings.js?v=1"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=2"></script>
 <script src="theme.js?v=4"></script>
+<script>
+// ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
+(function() {
+  function init() {
+    // Game of the Day highlight
+    if (window.ArcadeChallenges) {
+      var gotdId = window.ArcadeChallenges.getGOTD();
+      var gotdName = window.ArcadeChallenges.getGOTDName();
+      var cards = document.querySelectorAll('.card');
+      cards.forEach(function(card) {
+        var href = card.getAttribute('href') || '';
+        var cardGameId = href.replace('.html', '');
+        if (cardGameId === gotdId) {
+          card.classList.add('gotd');
+          var banner = document.createElement('div');
+          banner.className = 'gotd-banner';
+          banner.textContent = '\u2B50 GAME OF THE DAY \u2014 2x Coins & XP!';
+          card.style.position = 'relative';
+          card.appendChild(banner);
+        }
+      });
+
+      // Daily Challenge widget
+      var chContainer = document.getElementById('daily-challenge-container');
+      if (chContainer) {
+        window.ArcadeChallenges.renderChallengeWidget(chContainer);
+      }
+    }
+
+    // Activity Feed
+    if (window.ArcadeActivity) {
+      var feedContainer = document.getElementById('activity-feed-container');
+      if (feedContainer) {
+        window.ArcadeActivity.renderFeed(feedContainer);
+      }
+    }
+  }
+
+  // Wait for modules to load
+  if (document.readyState === 'complete') {
+    setTimeout(init, 500);
+  } else {
+    window.addEventListener('load', function() { setTimeout(init, 500); });
+  }
+})();
+</script>
 </body>
 </html>

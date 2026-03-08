@@ -82,9 +82,25 @@ window.FirebaseLB = {
     name = name || (window.HallOfFame ? window.HallOfFame.getPlayerName() : localStorage.getItem('arcadePlayerName')) || 'Guest';
     if (name === 'Guest') return; // Don't submit scores for guests
 
+    // Check if this game is the Game of the Day (2x multiplier)
+    var isGOTD = window.ArcadeChallenges && window.ArcadeChallenges.isGOTD(gameId);
+    var xpMult = isGOTD ? 2 : 1;
+
     // Award XP for every game completion (before personal-best check)
     if (window.ArcadeLevels && gameId !== 'idleminer') {
-      window.ArcadeLevels.addXP(10, 'game:' + gameId);
+      window.ArcadeLevels.addXP(10 * xpMult, 'game:' + gameId);
+    }
+
+    // Check daily challenge + increment weekly quests
+    if (window.ArcadeChallenges && gameId !== 'idleminer') {
+      window.ArcadeChallenges.checkChallenge(gameId, score);
+      window.ArcadeChallenges.incrementQuest('games_played', 1);
+      if (isGOTD) window.ArcadeChallenges.incrementQuest('gotd_played', 1);
+    }
+
+    // Show rating button after game completion
+    if (window.ArcadeRatings) {
+      window.ArcadeRatings.showRateButton(gameId);
     }
 
     // Use deterministic doc ID so each player has one entry per game
@@ -107,6 +123,14 @@ window.FirebaseLB = {
     if (window.ArcadeBadges && !existing.exists()) {
       window.ArcadeBadges.increment('gamesWithScores', 1);
     }
+    // Increment weekly quest for scores posted
+    if (window.ArcadeChallenges) {
+      window.ArcadeChallenges.incrementQuest('scores_posted', 1);
+    }
+    // Post activity for new personal best
+    if (window.ArcadeActivity) {
+      window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
+    }
     // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       try {
@@ -117,12 +141,14 @@ window.FirebaseLB = {
         var scores = await window.FirebaseLB.getScores(gameId, 3);
         for (var p = 0; p < scores.length && p < 3; p++) {
           if (scores[p].name === name) {
-            var bonus = [50, 30, 15][p];
-            window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId);
+            var bonus = [50, 30, 15][p] * (isGOTD ? 2 : 1);
+            window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId + (isGOTD ? ' (2x GOTD)' : ''));
             // Record placement for badges (position is 1-indexed)
             if (window.ArcadeBadges) window.ArcadeBadges.recordPlacement(gameId, p + 1);
             // Award XP for placement
-            if (window.ArcadeLevels) window.ArcadeLevels.addXP([50, 30, 15][p], 'placement:' + gameId);
+            if (window.ArcadeLevels) window.ArcadeLevels.addXP([50, 30, 15][p] * xpMult, 'placement:' + gameId);
+            // Increment weekly quest for placements
+            if (window.ArcadeChallenges) window.ArcadeChallenges.incrementQuest('placements', 1);
 
             // Notify displaced players
             if (window.ArcadeNotifications) {

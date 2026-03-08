@@ -583,6 +583,79 @@
       });
     },
 
+    // ─── NEW: Challenges/Activity/Ratings/Casino/Profile admin ───
+    resetChallenge: function(user) {
+      return _initFirebase().then(function() {
+        return _setDoc(_doc(_db, 'users', user.toLowerCase()), { dailyChallenge: {} }, { merge: true }).then(function() {
+          console.log('[Admin] Reset daily challenge for ' + user);
+        });
+      });
+    },
+
+    resetQuests: function(user) {
+      return _initFirebase().then(function() {
+        return _setDoc(_doc(_db, 'users', user.toLowerCase()), { weeklyQuests: {} }, { merge: true }).then(function() {
+          console.log('[Admin] Reset weekly quests for ' + user);
+        });
+      });
+    },
+
+    viewRatings: function(gameId) {
+      return _initFirebase().then(function() {
+        var q = _query(_collection(_db, 'ratings'), _limit(50));
+        return _getDocs(q).then(function(snap) {
+          var results = [];
+          snap.forEach(function(d) {
+            var data = d.data();
+            if (!gameId || data.gameId === gameId) {
+              results.push({ gameId: data.gameId, user: data.username, rating: data.rating, review: data.review || '' });
+            }
+          });
+          console.table(results);
+        });
+      });
+    },
+
+    deleteRating: function(gameId, user) {
+      return _initFirebase().then(function() {
+        var docId = gameId + '_' + user.toLowerCase();
+        return _setDoc(_doc(_db, 'ratings', docId), { deleted: true }).then(function() {
+          console.log('[Admin] Deleted rating for ' + gameId + ' by ' + user);
+        });
+      });
+    },
+
+    setBio: function(user, text) {
+      return _initFirebase().then(function() {
+        return _setDoc(_doc(_db, 'users', user.toLowerCase()), { bio: (text || '').substring(0, 150) }, { merge: true }).then(function() {
+          console.log('[Admin] Set bio for ' + user);
+        });
+      });
+    },
+
+    setBanner: function(user, banner) {
+      return _initFirebase().then(function() {
+        return _setDoc(_doc(_db, 'users', user.toLowerCase()), { banner: banner }, { merge: true }).then(function() {
+          console.log('[Admin] Set banner for ' + user + ' to ' + banner);
+        });
+      });
+    },
+
+    setCasinoStats: function(user, stats) {
+      return _initFirebase().then(function() {
+        return _setDoc(_doc(_db, 'users', user.toLowerCase()), { casinoStats: stats }, { merge: true }).then(function() {
+          console.log('[Admin] Set casino stats for ' + user);
+        });
+      });
+    },
+
+    postActivity: function(type, user, data) {
+      if (window.ArcadeActivity) {
+        window.ArcadeActivity.post(type, data || {});
+        console.log('[Admin] Posted activity: ' + type);
+      }
+    },
+
     help: function () {
       console.log(
         '── ArcadeAdmin Commands ──\n' +
@@ -609,6 +682,14 @@
         '  ArcadeAdmin.viewTrades("user")              — View pending trades\n' +
         '  ArcadeAdmin.adminGift("from", "to", "item") — Force gift item\n' +
         '  ArcadeAdmin.adminGiftCoins("from", "to", 500) — Force gift coins\n' +
+        '  ArcadeAdmin.resetChallenge("user")          — Reset daily challenge\n' +
+        '  ArcadeAdmin.resetQuests("user")             — Reset weekly quests\n' +
+        '  ArcadeAdmin.viewRatings("gameId")           — View game ratings\n' +
+        '  ArcadeAdmin.deleteRating("gameId", "user")  — Delete a rating\n' +
+        '  ArcadeAdmin.setBio("user", "text")          — Set user bio\n' +
+        '  ArcadeAdmin.setBanner("user", "sunset")     — Set profile banner\n' +
+        '  ArcadeAdmin.setCasinoStats("user", {...})   — Set casino stats\n' +
+        '  ArcadeAdmin.postActivity("type", "user", {})— Post activity\n' +
         '  ArcadeAdmin.help()                          — Show this help'
       );
     }

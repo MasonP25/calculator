@@ -188,6 +188,10 @@
               window.ArcadeNotifications.create('level_up', 'Level Up!', body, '⬆️', null, { level: newLevel })
             );
           }
+          // Post activity for level-up
+          if (window.ArcadeActivity) {
+            window.ArcadeActivity.post('level_up', { level: newLevel });
+          }
           // Reload coins if milestone awarded
           if (window.ArcadeCoins && window.ArcadeCoins.reload) {
             window.ArcadeCoins.reload();

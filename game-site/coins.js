@@ -132,6 +132,10 @@
       _dispatch();
       console.log('[Coins] +' + amount + (reason ? ' (' + reason + ')' : '') + ' → ' + _balance);
       if (window.ArcadeBadges) window.ArcadeBadges.increment('totalCoinsEarned', amount);
+      if (window.ArcadeChallenges) {
+        window.ArcadeChallenges.incrementQuest('coins_earned', amount);
+        window.ArcadeChallenges.checkDailyCoinChallenge(amount);
+      }
     },
 
     spend: function(amount) {

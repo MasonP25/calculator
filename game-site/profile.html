@@ -376,18 +376,34 @@
 <div id="content" style="display:none">
 
   <!-- Hero -->
-  <div class="profile-hero">
+  <div class="profile-hero" id="profileHero">
     <div class="hero-avatar" id="heroAvatar"></div>
     <div class="hero-info">
       <div class="hero-username" id="heroName"></div>
+      <div class="hero-bio" id="heroBio" style="font-size:0.85rem;color:#aaa;margin:0.2rem 0;font-style:italic;display:none"></div>
       <div class="hero-level" id="heroLevel"></div>
       <div class="hero-meta" id="heroMeta"></div>
+      <div id="heroFeaturedBadge" style="margin-top:0.3rem;display:none"></div>
       <div class="hero-actions" id="heroActions"></div>
     </div>
   </div>
 
+  <!-- Pinned Game -->
+  <div id="pinnedGameSection" style="display:none">
+    <div class="section-header">Pinned Game</div>
+    <div class="recent-games" id="pinnedGameWrap" style="max-width:900px;margin:0 auto"></div>
+  </div>
+
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- Daily Challenge + Weekly Quests (own profile only) -->
+  <div id="challengesSection" style="display:none">
+    <div class="section-header">Daily Challenge</div>
+    <div id="profileChallengeWrap" style="max-width:900px;margin:0 auto 1rem"></div>
+    <div class="section-header">Weekly Quests</div>
+    <div id="profileQuestsWrap" style="max-width:900px;margin:0 auto 1rem"></div>
+  </div>
 
   <!-- Recently Played -->
   <div class="section-header" id="recentHeader" style="display:none">Recently Played</div>
@@ -433,6 +449,9 @@
 <script src="levels.js?v=2"></script>
 <script src="gifting.js?v=2"></script>
 <script src="trading.js?v=2"></script>
+<script src="challenges.js?v=1"></script>
+<script src="activity.js?v=1"></script>
+<script src="ratings.js?v=1"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=2"></script>
 <script src="theme.js?v=4"></script>
@@ -607,13 +626,74 @@ async function loadProfile() {
   }
   metaEl.textContent = 'Member since ' + joinDate;
 
+  // ─── CUSTOM PROFILE: Banner gradient ───
+  var banner = profileData.banner || 'default';
+  var heroEl = document.getElementById('profileHero');
+  var BANNER_GRADIENTS = {
+    'default': '',
+    'sunset': 'linear-gradient(135deg, #ff6b6b22, #ffd70022)',
+    'ocean': 'linear-gradient(135deg, #0077b622, #00d4ff22)',
+    'forest': 'linear-gradient(135deg, #2ed57322, #1e90ff22)',
+    'purple': 'linear-gradient(135deg, #7b2ff722, #ff6b8122)',
+    'fire': 'linear-gradient(135deg, #ff475722, #ff8c0022)',
+    'midnight': 'linear-gradient(135deg, #2c3e5022, #3498db22)',
+    'neon': 'linear-gradient(135deg, #ff00ff22, #00ff0022)',
+    'gold': 'linear-gradient(135deg, #ffd70022, #ff8c0022)'
+  };
+  if (banner !== 'default' && BANNER_GRADIENTS[banner]) {
+    heroEl.style.background = BANNER_GRADIENTS[banner];
+    heroEl.style.borderColor = '#3a3a5a';
+  }
+
+  // ─── CUSTOM PROFILE: Bio ───
+  var bioEl = document.getElementById('heroBio');
+  if (profileData.bio) {
+    bioEl.textContent = profileData.bio;
+    bioEl.style.display = 'block';
+  }
+
+  // ─── CUSTOM PROFILE: Featured Badge ───
+  var featuredBadgeEl = document.getElementById('heroFeaturedBadge');
+  if (profileData.featuredBadge && window.ArcadeBadges) {
+    var allBadges = window.ArcadeBadges.BADGES || [];
+    var fb = allBadges.find(function(b) { return b.id === profileData.featuredBadge; });
+    if (fb) {
+      featuredBadgeEl.innerHTML = '<span style="font-size:1.5rem">' + fb.icon + '</span> <span style="font-size:0.85rem;color:#ffd700;font-weight:600">' + fb.name + '</span>';
+      featuredBadgeEl.style.display = 'block';
+    }
+  }
+
+  // ─── CUSTOM PROFILE: Pinned Game ───
+  if (profileData.pinnedGame) {
+    var pg = GAME_MAP[profileData.pinnedGame];
+    if (pg) {
+      document.getElementById('pinnedGameSection').style.display = 'block';
+      var pgWrap = document.getElementById('pinnedGameWrap');
+      var pgCard = document.createElement('a');
+      pgCard.className = 'recent-card';
+      pgCard.href = (GAME_URLS[pg.id] || pg.id + '.html');
+      pgCard.innerHTML = '<span class="rc-emoji">' + pg.emoji + '</span><div><div class="rc-name">' + pg.name + '</div><div class="rc-time">Favorite Game</div></div>';
+      pgWrap.appendChild(pgCard);
+    }
+  }
+
   // Actions
   var actionsEl = document.getElementById('heroActions');
   if (isOwnProfile) {
-    actionsEl.innerHTML = '<a href="shop.html" class="profile-btn secondary" style="text-decoration:none">Edit Avatar</a>';
+    actionsEl.innerHTML = '<a href="shop.html" class="profile-btn secondary" style="text-decoration:none">Edit Avatar</a>' +
+      '<button class="profile-btn secondary" onclick="openEditProfileModal()">Edit Profile</button>';
   } else if (currentUser) {
     // Show friend status button
     renderFriendButton(actionsEl, targetUser);
+  }
+
+  // ─── Daily Challenge + Weekly Quests (own profile only) ───
+  if (isOwnProfile && window.ArcadeChallenges) {
+    document.getElementById('challengesSection').style.display = 'block';
+    var chWrap = document.getElementById('profileChallengeWrap');
+    window.ArcadeChallenges.renderChallengeWidget(chWrap);
+    var qWrap = document.getElementById('profileQuestsWrap');
+    window.ArcadeChallenges.renderQuestCards(qWrap);
   }
 
   // ─── COMPUTE STATS LIVE ───
@@ -1094,6 +1174,143 @@ async function doAddFriend() {
 document.getElementById('addFriendInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') doAddFriend();
 });
+
+// ─── Edit Profile Modal ───
+window.openEditProfileModal = async function() {
+  var currentUser = localStorage.getItem('arcade_currentUser');
+  if (!currentUser || currentUser === 'Guest') return;
+
+  // Fetch current profile data
+  var mods = await Promise.all([
+    import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
+    import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
+  ]);
+  var getApp = mods[0].getApp;
+  var initializeApp = mods[0].initializeApp;
+  var getFirestore = mods[1].getFirestore;
+  var doc = mods[1].doc;
+  var getDoc = mods[1].getDoc;
+  var setDoc = mods[1].setDoc;
+  var config = {
+    apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",
+    projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",
+    messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e"
+  };
+  var db;
+  try { db = getFirestore(getApp('profile-edit')); }
+  catch(e) {
+    try { db = getFirestore(initializeApp(config, 'profile-edit')); }
+    catch(e2) { db = getFirestore(initializeApp(config, 'profile-edit-' + Date.now())); }
+  }
+  var ref = doc(db, 'users', currentUser.toLowerCase());
+  var snap = await getDoc(ref);
+  var data = snap.exists() ? snap.data() : {};
+
+  var BANNERS = [
+    {id:'default',label:'Default',css:''},
+    {id:'sunset',label:'Sunset',css:'linear-gradient(135deg,#ff6b6b,#ffd700)'},
+    {id:'ocean',label:'Ocean',css:'linear-gradient(135deg,#0077b6,#00d4ff)'},
+    {id:'forest',label:'Forest',css:'linear-gradient(135deg,#2ed573,#1e90ff)'},
+    {id:'purple',label:'Purple',css:'linear-gradient(135deg,#7b2ff7,#ff6b81)'},
+    {id:'fire',label:'Fire',css:'linear-gradient(135deg,#ff4757,#ff8c00)'},
+    {id:'midnight',label:'Midnight',css:'linear-gradient(135deg,#2c3e50,#3498db)'},
+    {id:'neon',label:'Neon',css:'linear-gradient(135deg,#ff00ff,#00ff00)'},
+    {id:'gold',label:'Gold',css:'linear-gradient(135deg,#ffd700,#ff8c00)'}
+  ];
+
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100000;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",Tahoma,sans-serif';
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:2rem;width:420px;max-width:90vw;max-height:80vh;overflow-y:auto';
+
+  var selectedBanner = data.banner || 'default';
+  var selectedPinnedGame = data.pinnedGame || '';
+  var selectedFeaturedBadge = data.featuredBadge || '';
+
+  // Build banner picker
+  var bannerHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem">';
+  BANNERS.forEach(function(b) {
+    var bg = b.css || '#1a1a2e';
+    var sel = b.id === selectedBanner ? 'border-color:#ffd700' : 'border-color:#2a2a4a';
+    bannerHtml += '<div class="ep-banner-opt" data-banner="' + b.id + '" style="width:40px;height:40px;border-radius:8px;background:' + bg + ';border:2px solid;' + sel + ';cursor:pointer" title="' + b.label + '"></div>';
+  });
+  bannerHtml += '</div>';
+
+  // Build game picker
+  var gameOptions = '<option value="">None</option>';
+  GAMES.forEach(function(g) {
+    var sel = g.id === selectedPinnedGame ? ' selected' : '';
+    gameOptions += '<option value="' + g.id + '"' + sel + '>' + g.emoji + ' ' + g.name + '</option>';
+  });
+
+  // Build badge picker
+  var earned = data.badges || [];
+  var badgeOptions = '<option value="">None</option>';
+  if (window.ArcadeBadges) {
+    (window.ArcadeBadges.BADGES || []).forEach(function(b) {
+      if (earned.indexOf(b.id) !== -1) {
+        var sel = b.id === selectedFeaturedBadge ? ' selected' : '';
+        badgeOptions += '<option value="' + b.id + '"' + sel + '>' + b.icon + ' ' + b.name + '</option>';
+      }
+    });
+  }
+
+  modal.innerHTML =
+    '<h3 style="color:#e0e0e0;margin-bottom:1rem;font-size:1.2rem">Edit Profile</h3>' +
+    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Bio</label>' +
+    '<textarea id="ep-bio" maxlength="150" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.6rem;resize:none;height:60px;outline:none;margin:0.3rem 0 1rem">' + (data.bio || '') + '</textarea>' +
+    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Banner</label>' +
+    bannerHtml +
+    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Pinned Game</label>' +
+    '<select id="ep-pinned" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 1rem">' + gameOptions + '</select>' +
+    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Featured Badge</label>' +
+    '<select id="ep-badge" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 1rem">' + badgeOptions + '</select>' +
+    '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">' +
+      '<button id="ep-cancel" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #2a2a4a;background:#0f0f1a;color:#aaa;font-weight:600">Cancel</button>' +
+      '<button id="ep-save" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #ffd700;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#0f0f1a;font-weight:700">Save</button>' +
+    '</div>' +
+    '<div id="ep-msg" style="font-size:0.75rem;color:#888;margin-top:0.5rem;text-align:center"></div>';
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // Banner click handlers
+  modal.querySelectorAll('.ep-banner-opt').forEach(function(opt) {
+    opt.addEventListener('click', function() {
+      selectedBanner = opt.getAttribute('data-banner');
+      modal.querySelectorAll('.ep-banner-opt').forEach(function(o) {
+        o.style.borderColor = o.getAttribute('data-banner') === selectedBanner ? '#ffd700' : '#2a2a4a';
+      });
+    });
+  });
+
+  // Cancel
+  modal.querySelector('#ep-cancel').addEventListener('click', function() { overlay.remove(); });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+  // Save
+  modal.querySelector('#ep-save').addEventListener('click', async function() {
+    var bio = document.getElementById('ep-bio').value.trim().substring(0, 150);
+    var pinned = document.getElementById('ep-pinned').value;
+    var badge = document.getElementById('ep-badge').value;
+    var msg = document.getElementById('ep-msg');
+    try {
+      await setDoc(ref, {
+        bio: bio,
+        banner: selectedBanner,
+        pinnedGame: pinned,
+        featuredBadge: badge
+      }, { merge: true });
+      msg.style.color = '#2ed573';
+      msg.textContent = 'Profile saved! Refreshing...';
+      setTimeout(function() { location.reload(); }, 800);
+    } catch(e) {
+      msg.style.color = '#ff4757';
+      msg.textContent = e.message || 'Failed to save';
+    }
+  });
+};
 
 // Load the profile
 loadProfile();

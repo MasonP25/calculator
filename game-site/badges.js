@@ -202,6 +202,8 @@
             })(newBadges[j], j * 800);
             // Award XP for earning a badge
             if (window.ArcadeLevels) window.ArcadeLevels.addXP(25, 'badge:' + newBadges[j].id);
+            // Post activity for badge earned
+            if (window.ArcadeActivity) window.ArcadeActivity.post('badge_earned', { badgeId: newBadges[j].id, badgeName: newBadges[j].name });
           }
         }
         _earnedCache = earned;
