@@ -467,7 +467,9 @@
     },
 
     // ─── Render helpers ───
-    renderChallengeWidget: function(container) {
+    renderChallengeWidget: async function(container) {
+      // Ensure challenge state is loaded before rendering
+      if (!_loaded && !_isGuest()) await _load();
       var ch = window.ArcadeChallenges.getDailyChallenge();
       var pct = ch.target > 0 ? Math.min(100, Math.round((ch.progress / ch.target) * 100)) : 0;
       var div = document.createElement('div');
@@ -480,7 +482,8 @@
       container.appendChild(div);
     },
 
-    renderQuestCards: function(container) {
+    renderQuestCards: async function(container) {
+      if (!_loaded && !_isGuest()) await _load();
       var quests = window.ArcadeChallenges.getWeeklyQuests();
       quests.forEach(function(q) {
         var pct = q.target > 0 ? Math.min(100, Math.round((q.progress / q.target) * 100)) : 0;
