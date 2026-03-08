@@ -13,12 +13,22 @@
   var _ratingCache = {};   // gameId -> { avg, count, time }
   var _userRatingCache = {}; // gameId -> { rating, review }
 
+  // Pages that are NOT games (don't show rate button)
+  var EXCLUDED_PAGES = ['index','profile','fame','shop','casino'];
+
   function _getUser() {
     return localStorage.getItem('arcade_currentUser') || 'Guest';
   }
   function _isGuest() {
     var u = _getUser();
     return !u || u === 'Guest';
+  }
+
+  function _getGameIdFromURL() {
+    var path = window.location.pathname;
+    var file = path.split('/').pop().replace('.html', '');
+    if (!file || EXCLUDED_PAGES.indexOf(file) !== -1) return null;
+    return file;
   }
 
   function _initFirebase() {
@@ -76,8 +86,13 @@
     '.rating-stars-static .star.filled{color:#ffd700}' +
     '.rating-stars-static .star.half{color:#ffd700}' +
     '.rating-count{font-size:0.6rem;color:#666;margin-left:3px}' +
-    '.rate-btn{position:fixed;bottom:80px;right:16px;z-index:9990;background:linear-gradient(135deg,#1a1a2e,#1f1a3e);border:2px solid #ffd70066;border-radius:12px;padding:0.5rem 1rem;color:#ffd700;font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:all 0.2s;display:none}' +
+    '.rate-btn{position:fixed;bottom:80px;right:16px;z-index:9990;background:linear-gradient(135deg,#1a1a2e,#1f1a3e);border:2px solid #ffd70066;border-radius:12px;padding:0.5rem 1rem;color:#ffd700;font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:all 0.2s;display:flex;align-items:center;gap:0.5rem}' +
     '.rate-btn:hover{border-color:#ffd700;transform:translateY(-2px)}' +
+    '.rate-btn .rb-stars{display:inline-flex;gap:0;font-size:0.75rem}' +
+    '.rate-btn .rb-stars .star{color:#2a2a4a}' +
+    '.rate-btn .rb-stars .star.filled{color:#ffd700}' +
+    '.rate-btn .rb-stars .star.half{color:#ffd700}' +
+    '.rate-btn .rb-count{font-size:0.65rem;color:#888}' +
     '.rating-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100000;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",Tahoma,sans-serif}' +
     '.rating-modal{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:2rem;width:340px;max-width:90vw;text-align:center}' +
     '.rating-modal h3{color:#e0e0e0;margin-bottom:0.8rem;font-size:1.2rem}' +
@@ -101,6 +116,30 @@
     '.game-reviews .review-user{color:#00d4ff;font-weight:600}' +
     '.game-reviews .review-text{color:#bbb;font-style:italic}';
   document.head.appendChild(css);
+
+  // Build star HTML for the button
+  function _buildStarHTML(avg, count) {
+    if (count === 0) return '<span class="rb-count">No ratings yet</span>';
+    var html = '<span class="rb-stars">';
+    for (var i = 1; i <= 5; i++) {
+      if (avg >= i) html += '<span class="star filled">\u2605</span>';
+      else if (avg >= i - 0.5) html += '<span class="star half">\u2605</span>';
+      else html += '<span class="star">\u2605</span>';
+    }
+    html += '</span><span class="rb-count">' + avg + ' (' + count + ')</span>';
+    return html;
+  }
+
+  // Update the button's star display
+  async function _updateButtonStars(gameId) {
+    var btn = document.getElementById('rate-game-btn');
+    if (!btn) return;
+    try {
+      var rating = await window.ArcadeRatings.getGameRating(gameId);
+      var starsEl = btn.querySelector('.rb-rating');
+      if (starsEl) starsEl.innerHTML = _buildStarHTML(rating.avg, rating.count);
+    } catch(e) {}
+  }
 
   window.ArcadeRatings = {
     rate: async function(gameId, stars, review) {
@@ -135,6 +174,9 @@
           if (window.ArcadeLevels) window.ArcadeLevels.addXP(5, 'rate_game');
           if (window.ArcadeChallenges) window.ArcadeChallenges.incrementQuest('games_rated', 1);
         }
+
+        // Update button stars after rating
+        _updateButtonStars(gameId);
 
         return { ok: true };
       } catch(e) {
@@ -218,21 +260,18 @@
     },
 
     showRateButton: function(gameId) {
-      if (_isGuest()) return;
       var existing = document.getElementById('rate-game-btn');
       if (existing) existing.remove();
       var btn = document.createElement('button');
       btn.id = 'rate-game-btn';
       btn.className = 'rate-btn';
-      btn.textContent = '\u2605 Rate this game';
+      btn.innerHTML = '\u2605 Rate<span class="rb-rating"></span>';
       btn.onclick = function() {
         window.ArcadeRatings.openRatingModal(gameId);
       };
       document.body.appendChild(btn);
-      // Show after 5s of play
-      setTimeout(function() {
-        btn.style.display = 'block';
-      }, 5000);
+      // Fetch and display average rating
+      _updateButtonStars(gameId);
     },
 
     openRatingModal: function(gameId) {
@@ -338,4 +377,18 @@
       });
     }
   };
+
+  // ─── Auto-show rate button on game pages ───
+  function _autoInit() {
+    var gameId = _getGameIdFromURL();
+    if (gameId) {
+      window.ArcadeRatings.showRateButton(gameId);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _autoInit);
+  } else {
+    _autoInit();
+  }
 })();
