@@ -70,8 +70,8 @@
 </div>
 <button class="fullscreen-btn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
 <script>
-function toggleFullscreen(){var c=document.querySelector(".game-container");if(document.fullscreenElement){document.exitFullscreen()}else{c.requestFullscreen().catch(function(){var f=c.querySelector("iframe");if(f)f.requestFullscreen()})}}
-document.addEventListener("fullscreenchange",function(){var b=document.querySelector(".fullscreen-btn");if(b)b.textContent=document.fullscreenElement?"\u2715 Exit Fullscreen":"\u26F6 Fullscreen"});
+function toggleFullscreen(){var c=document.querySelector(".game-container");if(document.fullscreenElement){document.exitFullscreen()}else{c.requestFullscreen().then(function(){var f=c.querySelector("iframe");if(f)f.focus()}).catch(function(){var f=c.querySelector("iframe");if(f)f.requestFullscreen().then(function(){f.focus()})})}}
+document.addEventListener("fullscreenchange",function(){var b=document.querySelector(".fullscreen-btn");if(b)b.textContent=document.fullscreenElement?"\u2715 Exit Fullscreen":"\u26F6 Fullscreen";var f=document.querySelector(".game-container iframe");if(f)setTimeout(function(){f.focus()},100)});
 </script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
