@@ -721,12 +721,18 @@
     var seg = WHEEL_SEGMENTS[segIdx];
     var total = WHEEL_SEGMENTS.length;
     var segAngle = (2 * Math.PI) / total;
-    // Target angle: the pointer is at top (270deg / -90deg). We want seg center at top.
-    var targetAngle = -segIdx * segAngle - segAngle / 2 - Math.PI / 2;
-    var spins = 5 + Math.random() * 3;
-    var finalAngle = targetAngle + spins * 2 * Math.PI;
-
     var startAngle = wheelAngle;
+    // Target rest angle: segment segIdx center at the top pointer (-PI/2)
+    var targetRest = -segIdx * segAngle - segAngle / 2 - Math.PI / 2;
+    // Normalize to [0, 2PI)
+    targetRest = ((targetRest % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    var currentNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    // Forward distance to land on target
+    var delta = targetRest - currentNorm;
+    if (delta <= 0) delta += 2 * Math.PI;
+    // Add 5-8 full rotations for visual effect
+    var spins = 5 + Math.floor(Math.random() * 3);
+    var finalAngle = startAngle + delta + spins * 2 * Math.PI;
     var startTime = performance.now();
     var duration = 4000;
 

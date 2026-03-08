@@ -539,15 +539,32 @@
       /* Casino page */
       .balance-bar { background:${t.bg2}!important; border-color:#ffd70044!important; }
       .casino-tab { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
-      .casino-tab.active { border-color:#ffd700!important; color:#ffd700!important; }
+      .casino-tab:hover { border-color:#ffd700!important; color:#ffd700!important; }
+      .casino-tab.active { border-color:#ffd700!important; color:#ffd700!important; background:${t.bg3}!important; }
       .game-area { background:${t.bg2}!important; border-color:${t.border}!important; }
-      .bet-input { background:${t.bg1}!important; border-color:${t.border}!important; }
+      .game-area h2 { color:#ffd700!important; }
+      .bet-row label { color:${t.dim}!important; }
+      .bet-input { background:${t.bg1}!important; border-color:${t.border}!important; color:#ffd700!important; }
+      .bet-input:focus { border-color:#ffd700!important; }
       .bet-quick button { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .bet-quick button:hover { border-color:#ffd700!important; color:#ffd700!important; }
+      .coin-face.coin-heads { background:linear-gradient(135deg,#ffd700,#ffaa00)!important; }
+      .coin-face.coin-tails { background:linear-gradient(135deg,#c0c0c0,#909090)!important; }
       .scratch-tier { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
-      .scratch-cell { background:${t.bg3}!important; border-color:${t.border}!important; }
-      .scratch-cell.revealed { background:${t.bg1}!important; }
+      .scratch-tier:hover { border-color:#ffd700!important; color:#ffd700!important; }
+      .scratch-tier.active { border-color:#ffd700!important; color:#ffd700!important; background:${t.bg3}!important; }
+      .scratch-cell { background:${t.bg3}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .scratch-cell:hover:not(.revealed) { border-color:#ffd700!important; }
+      .scratch-cell.revealed { background:${t.bg1}!important; border-color:${t.border}!important; }
       .casino-stats { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .casino-stat .cs-val { color:#ffd700!important; }
       .casino-stat .cs-label { color:${t.dim}!important; }
+      .back-link { color:${t.accent2}!important; }
+      .back-link:hover { color:${t.accent}!important; }
+      .wheel-canvas { border-color:#ffd700!important; }
+
+      /* GOTD banner */
+      .gotd-banner { background:linear-gradient(135deg,#ffd700,#ff8c00)!important; color:#0f0f1a!important; }
 
       /* Shop page */
       .tab-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }

@@ -327,7 +327,10 @@
     },
 
     checkChallenge: async function(gameId, score) {
-      if (_isGuest() || !_dailyChallenge || _dailyChallenge.completed) return;
+      if (_isGuest()) return;
+      // Ensure challenge state is loaded
+      if (!_loaded) await _load();
+      if (!_dailyChallenge || _dailyChallenge.completed) return;
       var ch = _getTodaysChallenge();
       var changed = false;
 
@@ -377,8 +380,10 @@
       }
     },
 
-    checkDailyCoinChallenge: function(amount) {
-      if (_isGuest() || !_dailyChallenge || _dailyChallenge.completed) return;
+    checkDailyCoinChallenge: async function(amount) {
+      if (_isGuest()) return;
+      if (!_loaded) await _load();
+      if (!_dailyChallenge || _dailyChallenge.completed) return;
       var ch = _getTodaysChallenge();
       if (ch.type === 'coins_earned') {
         _dailyChallenge.progress = (_dailyChallenge.progress || 0) + amount;
@@ -418,7 +423,9 @@
     },
 
     incrementQuest: async function(type, amount) {
-      if (_isGuest() || !_weeklyQuests) return;
+      if (_isGuest()) return;
+      if (!_loaded) await _load();
+      if (!_weeklyQuests) return;
       var quests = _weeklyQuests.quests || [];
       var changed = false;
       var allDone = true;

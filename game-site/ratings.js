@@ -229,10 +229,10 @@
         window.ArcadeRatings.openRatingModal(gameId);
       };
       document.body.appendChild(btn);
-      // Show after 15s
+      // Show after 5s of play
       setTimeout(function() {
         btn.style.display = 'block';
-      }, 15000);
+      }, 5000);
     },
 
     openRatingModal: function(gameId) {
