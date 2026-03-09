@@ -1,6 +1,6 @@
 // ─── RECENTLY PLAYED TRACKER ───
 (function() {
-  var KEY = 'arcade_recentlyPlayed', MAX = 8;
+  var KEY = 'arcade_recentlyPlayed', MAX = 5;
   var f = (window.location.pathname.split('/').pop() || '').replace('.html', '');
   if (!f || ['index','fame','shop','profile','casino','eaglercraft'].indexOf(f) !== -1) return;
   var r = []; try { r = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e) {}
