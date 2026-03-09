@@ -514,6 +514,26 @@
       .trade-coin-row { background:${t.bg2}!important; border-color:${t.border}!important; }
       .trade-coin-input { background:${t.bg1}!important; border-color:${t.border}!important; color:#ffd700!important; }
 
+      /* Streak widget */
+      .streak-widget { background:${t.bg2}!important; border-color:#ffd70044!important; }
+      .streak-title { color:${t.dim}!important; }
+      .streak-count { color:#ffd700!important; }
+      .streak-reward { color:${t.dim}!important; }
+      .streak-collect-btn:disabled { background:${t.bg3}!important; border-color:${t.bg3}!important; color:${t.dim}!important; }
+
+      /* Invite button */
+      .invite-btn { background:${t.bg2}!important; border-color:${t.accent2}!important; color:${t.accent2}!important; }
+      .invite-btn:hover { background:${t.bg1}!important; }
+      .invite-modal { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .invite-modal h3 { color:${t.text}!important; }
+      .invite-friend:hover { background:${t.bg1}!important; }
+      .invite-friend-name { color:${t.text}!important; }
+      .invite-send-btn { background:${t.accent2}!important; color:${t.bg1}!important; }
+      .invite-send-btn:disabled { background:${t.bg3}!important; color:${t.dim}!important; }
+      .invite-empty { color:${t.dim}!important; }
+      .invite-close { background:${t.bg1}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .invite-close:hover { border-color:${t.accent}!important; color:${t.text}!important; }
+
       /* Challenge widget */
       .challenge-widget { background:${t.bg2}!important; border-color:#ffd70044!important; }
       .challenge-widget .cw-desc { color:${t.text}!important; }
@@ -778,5 +798,16 @@
     document.addEventListener('DOMContentLoaded', () => { createPicker(); applyTheme(current); });
   } else {
     createPicker(); applyTheme(current);
+  }
+})();
+
+// Load invites module on multiplayer game pages
+(function() {
+  var MP = ['tictactoe','connect4','imposter','uno','penguin','wavelength','snakeio','holeio'];
+  var p = (window.location.pathname.split('/').pop() || '').replace('.html','');
+  if (MP.indexOf(p) !== -1) {
+    var s = document.createElement('script');
+    s.src = 'invites.js';
+    document.body.appendChild(s);
   }
 })();

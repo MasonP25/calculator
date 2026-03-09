@@ -353,6 +353,44 @@
     padding: 3rem 0;
   }
 
+  /* Streak Widget */
+  .streak-widget {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    background: #1a1a2e;
+    border: 2px solid #ffd70044;
+    border-radius: 16px;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .streak-fire { font-size: 2.5rem; line-height: 1; }
+  .streak-info { flex: 1; min-width: 0; }
+  .streak-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+  .streak-count { font-size: 1.8rem; font-weight: 700; color: #ffd700; }
+  .streak-reward { font-size: 0.85rem; color: #aaa; margin-top: 0.2rem; }
+  .streak-collect-btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid #ffd700;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #0f0f1a;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .streak-collect-btn:hover { opacity: 0.9; transform: scale(1.02); }
+  .streak-collect-btn:disabled {
+    background: #2a2a4a;
+    border-color: #2a2a4a;
+    color: #888;
+    cursor: default;
+    transform: none;
+  }
+
   @media (max-width: 600px) {
     .profile-hero {
       flex-direction: column;
@@ -396,6 +434,12 @@
 
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- Daily Login Streak (own profile only) -->
+  <div id="streakSection" style="display:none">
+    <div class="section-header">Daily Login</div>
+    <div class="streak-widget" id="streakWidget"></div>
+  </div>
 
   <!-- Daily Challenge + Weekly Quests (own profile only) -->
   <div id="challengesSection" style="display:none">
@@ -568,6 +612,99 @@ function fmtScore(n) {
 var params = new URLSearchParams(window.location.search);
 var targetUser = params.get('user') || '';
 
+// ─── DAILY LOGIN STREAK ───
+async function renderStreakWidget(profileData) {
+  var section = document.getElementById('streakSection');
+  var widget = document.getElementById('streakWidget');
+  section.style.display = '';
+
+  function dateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  var today = dateStr(new Date());
+  var yd = new Date(); yd.setDate(yd.getDate() - 1);
+  var yesterday = dateStr(yd);
+
+  var lastDate = profileData.lastStreakDate || '';
+  var streak = profileData.loginStreak || 0;
+  var alreadyCollected = (lastDate === today);
+  var continues = (lastDate === yesterday);
+
+  var displayStreak, todayReward;
+  if (alreadyCollected) {
+    displayStreak = streak;
+    todayReward = 40 + streak * 10;
+  } else if (continues) {
+    displayStreak = streak;
+    todayReward = 40 + (streak + 1) * 10;
+  } else {
+    displayStreak = 0;
+    todayReward = 50;
+  }
+
+  widget.innerHTML =
+    '<div class="streak-fire">' + (displayStreak > 0 ? '\uD83D\uDD25' : '\uD83D\uDCA4') + '</div>' +
+    '<div class="streak-info">' +
+      '<div class="streak-title">Login Streak</div>' +
+      '<div class="streak-count">' + displayStreak + ' day' + (displayStreak !== 1 ? 's' : '') + '</div>' +
+      '<div class="streak-reward">' + (alreadyCollected ? 'Collected +' + todayReward + ' coins today' : 'Today\'s reward: +' + todayReward + ' coins') + '</div>' +
+    '</div>' +
+    '<button class="streak-collect-btn" id="streakCollectBtn"' + (alreadyCollected ? ' disabled' : '') + '>' +
+      (alreadyCollected ? '\u2714 Collected' : 'Collect') +
+    '</button>';
+
+  if (!alreadyCollected) {
+    document.getElementById('streakCollectBtn').onclick = async function() {
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Collecting...';
+      var newStreak = continues ? streak + 1 : 1;
+      var reward = 40 + newStreak * 10;
+      try {
+        var mods = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
+        ]);
+        var getApp = mods[0].getApp;
+        var initializeApp = mods[0].initializeApp;
+        var getFirestore = mods[1].getFirestore;
+        var doc = mods[1].doc;
+        var getDoc = mods[1].getDoc;
+        var setDoc = mods[1].setDoc;
+        var config = {
+          apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",
+          projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",
+          messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e"
+        };
+        var db;
+        try { db = getFirestore(getApp('streak-app')); }
+        catch(e) {
+          try { db = getFirestore(initializeApp(config, 'streak-app')); }
+          catch(e2) { db = getFirestore(initializeApp(config, 'streak-app-' + Date.now())); }
+        }
+        var key = (localStorage.getItem('arcade_currentUser') || '').toLowerCase();
+        var ref = doc(db, 'users', key);
+        var snap = await getDoc(ref);
+        var data = snap.exists() ? snap.data() : {};
+        await setDoc(ref, {
+          loginStreak: newStreak,
+          lastStreakDate: today,
+          coins: (data.coins || 0) + reward
+        }, { merge: true });
+        btn.textContent = '\u2714 Collected';
+        widget.querySelector('.streak-count').textContent = newStreak + ' day' + (newStreak !== 1 ? 's' : '');
+        widget.querySelector('.streak-reward').textContent = 'Collected +' + reward + ' coins today';
+        widget.querySelector('.streak-fire').textContent = '\uD83D\uDD25';
+        if (window.ArcadeCoins && window.ArcadeCoins.reload) window.ArcadeCoins.reload();
+      } catch(e) {
+        btn.disabled = false;
+        btn.textContent = 'Collect';
+        console.warn('[Streak] Collection failed:', e);
+      }
+    };
+  }
+}
+
 async function loadProfile() {
   // Wait for Firebase modules
   await new Promise(function(r) { setTimeout(r, 1500); });
@@ -685,6 +822,11 @@ async function loadProfile() {
   } else if (currentUser) {
     // Show friend status button
     renderFriendButton(actionsEl, targetUser);
+  }
+
+  // ─── Daily Login Streak (own profile) ───
+  if (isOwnProfile) {
+    await renderStreakWidget(profileData);
   }
 
   // ─── Daily Challenge + Weekly Quests (own profile only) ───
