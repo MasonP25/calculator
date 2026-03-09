@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://masonp25.github.io/Calculator/game-site/sitemap.xml
