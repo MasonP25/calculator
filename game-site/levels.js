@@ -7,6 +7,7 @@
   var _xp = 0;
   var _level = 0;
   var _loaded = false;
+  var _xpQueue = Promise.resolve();
 
   var MILESTONES = {
     1: 50, 5: 100, 10: 250, 15: 500, 20: 1000, 25: 1500, 30: 2000, 40: 3000, 50: 5000
@@ -140,68 +141,76 @@
     window.dispatchEvent(new CustomEvent('level-updated', { detail: info }));
   }
 
-  window.ArcadeLevels = {
-    addXP: async function(amount, reason) {
-      if (_isGuest() || !amount || amount <= 0) return;
-      try {
-        await _initFirebase();
-        if (!_db) return;
-        var key = _getUser().toLowerCase();
-        var ref = _doc(_db, 'users', key);
-        var snap = await _getDoc(ref);
-        if (!snap.exists()) return;
-        var data = snap.data();
-        var oldXP = data.xp || 0;
-        var oldLevel = _levelFromXP(oldXP);
-        var newXP = oldXP + amount;
-        var newLevel = _levelFromXP(newXP);
+  // Serialized addXP to prevent race conditions (duplicate level-up notifications)
+  async function _addXPImpl(amount, reason) {
+    try {
+      await _initFirebase();
+      if (!_db) return;
+      var key = _getUser().toLowerCase();
+      var ref = _doc(_db, 'users', key);
+      var snap = await _getDoc(ref);
+      if (!snap.exists()) return;
+      var data = snap.data();
+      var oldXP = data.xp || 0;
+      var oldLevel = _levelFromXP(oldXP);
+      var newXP = oldXP + amount;
+      var newLevel = _levelFromXP(newXP);
 
-        // Only write the fields we're changing (merge: true)
-        var updates = { xp: newXP, level: newLevel };
+      // Only write the fields we're changing (merge: true)
+      var updates = { xp: newXP, level: newLevel };
 
-        // Check milestones for coin rewards
-        if (newLevel > oldLevel) {
-          var milestones = data.levelMilestonesClaimed || [];
-          var coinBonus = 0;
-          for (var lv = oldLevel + 1; lv <= newLevel; lv++) {
-            if (MILESTONES[lv] && milestones.indexOf(lv) === -1) {
-              milestones.push(lv);
-              coinBonus += MILESTONES[lv];
-            }
-          }
-          updates.levelMilestonesClaimed = milestones;
-          if (coinBonus > 0) updates.coins = (data.coins || 0) + coinBonus;
-        }
-
-        // Write ONLY changed fields — prevents overwriting notifications/other data
-        await _setDoc(ref, updates, { merge: true });
-        _xp = newXP;
-        _level = newLevel;
-
-        // Push level-up notification AFTER saving XP (so it can't overwrite)
-        if (newLevel > oldLevel) {
-          if (window.ArcadeNotifications) {
-            var coinReward = MILESTONES[newLevel] || 0;
-            var body = 'You reached Level ' + newLevel + '!';
-            if (coinReward) body += ' +' + coinReward + ' coins!';
-            window.ArcadeNotifications.pushSelf(
-              window.ArcadeNotifications.create('level_up', 'Level Up!', body, '⬆️', null, { level: newLevel })
-            );
-          }
-          // Post activity for level-up
-          if (window.ArcadeActivity) {
-            window.ArcadeActivity.post('level_up', { level: newLevel });
-          }
-          // Reload coins if milestone awarded
-          if (window.ArcadeCoins && window.ArcadeCoins.reload) {
-            window.ArcadeCoins.reload();
+      // Check milestones for coin rewards
+      if (newLevel > oldLevel) {
+        var milestones = data.levelMilestonesClaimed || [];
+        var coinBonus = 0;
+        for (var lv = oldLevel + 1; lv <= newLevel; lv++) {
+          if (MILESTONES[lv] && milestones.indexOf(lv) === -1) {
+            milestones.push(lv);
+            coinBonus += MILESTONES[lv];
           }
         }
-
-        _dispatch();
-      } catch(e) {
-        console.warn('[Levels] addXP failed:', e);
+        updates.levelMilestonesClaimed = milestones;
+        if (coinBonus > 0) updates.coins = (data.coins || 0) + coinBonus;
       }
+
+      // Write ONLY changed fields — prevents overwriting notifications/other data
+      await _setDoc(ref, updates, { merge: true });
+      _xp = newXP;
+      _level = newLevel;
+
+      // Push level-up notification AFTER saving XP (so it can't overwrite)
+      if (newLevel > oldLevel) {
+        if (window.ArcadeNotifications) {
+          var coinReward = MILESTONES[newLevel] || 0;
+          var body = 'You reached Level ' + newLevel + '!';
+          if (coinReward) body += ' +' + coinReward + ' coins!';
+          window.ArcadeNotifications.pushSelf(
+            window.ArcadeNotifications.create('level_up', 'Level Up!', body, '⬆️', null, { level: newLevel })
+          );
+        }
+        // Post activity for level-up
+        if (window.ArcadeActivity) {
+          window.ArcadeActivity.post('level_up', { level: newLevel });
+        }
+        // Reload coins if milestone awarded
+        if (window.ArcadeCoins && window.ArcadeCoins.reload) {
+          window.ArcadeCoins.reload();
+        }
+      }
+
+      _dispatch();
+    } catch(e) {
+      console.warn('[Levels] addXP failed:', e);
+    }
+  }
+
+  window.ArcadeLevels = {
+    addXP: function(amount, reason) {
+      if (_isGuest() || !amount || amount <= 0) return Promise.resolve();
+      _xpQueue = _xpQueue.then(function() {
+        return _addXPImpl(amount, reason);
+      });
+      return _xpQueue;
     },
 
     getProgress: function() {

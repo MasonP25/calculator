@@ -127,8 +127,8 @@ window.FirebaseLB = {
     if (window.ArcadeChallenges) {
       window.ArcadeChallenges.incrementQuest('scores_posted', 1);
     }
-    // Post activity for new personal best
-    if (window.ArcadeActivity) {
+    // Post activity for new personal best (only when beating an existing score, not first-time)
+    if (window.ArcadeActivity && existing.exists()) {
       window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
     }
     // Award coins for leaderboard placement + track for badges
