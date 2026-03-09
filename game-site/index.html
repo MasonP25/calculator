@@ -71,6 +71,7 @@
     margin-bottom: 1rem;
   }
   .card {
+    position: relative;
     background: #1a1a2e;
     border: 2px solid #2a2a4a;
     border-radius: 16px;
@@ -87,18 +88,9 @@
     border-color: #7b2ff7;
     box-shadow: 0 8px 30px rgba(123, 47, 247, 0.3);
   }
-  .card.featured {
-    width: 390px;
-    border-color: #7b2ff733;
-    background: linear-gradient(135deg, #1a1a2e, #1f1a3e);
-  }
-  .card.featured:hover { border-color: #7b2ff7; }
   .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .card.featured .icon { font-size: 3rem; }
   .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
-  .card.featured h2 { font-size: 1.4rem; }
   .card p { color: #888; font-size: 0.75rem; line-height: 1.4; }
-  .card.featured p { font-size: 0.85rem; }
   .badge {
     display: inline-block;
     font-size: 0.58rem;
@@ -190,6 +182,52 @@
     display: none;
     margin-bottom: 1rem;
   }
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 700px;
+    margin-bottom: 1.5rem;
+  }
+  .filter-btn {
+    background: #1a1a2e;
+    border: 1.5px solid #2a2a4a;
+    border-radius: 20px;
+    color: #888;
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 0.35rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .filter-btn:hover { border-color: #7b2ff7; color: #e0e0e0; }
+  .filter-btn.active {
+    background: #7b2ff7;
+    border-color: #7b2ff7;
+    color: #fff;
+  }
+  /* Fav button */
+  .fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.15s;
+    color: #888;
+    z-index: 2;
+    padding: 2px;
+    line-height: 1;
+  }
+  .card:hover .fav-btn { opacity: 1; }
+  .fav-btn.favorited { opacity: 1; color: #feca57; }
+  .fav-btn:hover { transform: scale(1.2); }
+
   .gotd-banner {
     background: linear-gradient(135deg, #ffd700, #ff8c00);
     color: #0f0f1a;
@@ -501,37 +539,25 @@
   </div>
   <div class="no-results" id="noResults">No games found</div>
 
-  <div class="section-title">Featured</div>
-  <div class="games">
-    <a class="card featured" href="uno.html">
-      <div class="icon">&#127183;</div>
-      <h2>UNO</h2>
-      <p>The classic card game, now online! Create a room and play with 2-12 friends. Full rules including +2/+4 stacking, wilds, skips, reverses, and more!</p>
-      <span class="badge mp">Online 2-12 Players</span>
-      <span class="badge new">New</span>
-    </a>
-    <a class="card featured" href="wavelength.html">
-      <div class="icon">&#127752;</div>
-      <h2>Wavelength</h2>
-      <p>Online party game! A Psychic gives a clue on a spectrum and players guess where the target is on the dial. Everyone takes a turn as Psychic!</p>
-      <span class="badge mp">Online 2+ Players</span>
-      <span class="badge new">New</span>
-    </a>
-    <a class="card featured" href="imposter.html">
-      <div class="icon">&#128373;</div>
-      <h2>Imposter</h2>
-      <p>Social deduction game! Everyone gets a secret word except the Imposter. Give one-word clues, then vote on who's faking it. Can the Imposter blend in?</p>
-      <span class="badge mp">Online 3+ Players</span>
-      <span class="badge new">New</span>
-    </a>
-    <a class="card featured" href="penguin.html">
-      <div class="icon">&#128039;</div>
-      <h2>Penguin Knockout</h2>
-      <p>Launch penguins on a shrinking ice rink! Aim secretly, then watch all penguins collide at once. Knock opponents off to win! Play locally, vs AI, or online.</p>
-      <span class="badge mp">2-8P / AI / Online</span>
-      <span class="badge new">New</span>
-    </a>
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="multiplayer">Multiplayer</button>
+    <button class="filter-btn" data-filter="action">Action</button>
+    <button class="filter-btn" data-filter="puzzle">Puzzle</button>
+    <button class="filter-btn" data-filter="classic">Classic</button>
+    <button class="filter-btn" data-filter="arcade">Arcade</button>
+    <button class="filter-btn" data-filter="word">Word</button>
+    <button class="filter-btn" data-filter="strategy">Strategy</button>
+    <button class="filter-btn" data-filter="card">Card</button>
+    <button class="filter-btn" data-filter="sports">Sports</button>
+    <button class="filter-btn" data-filter="idle">Idle</button>
   </div>
+
+  <div class="section-title" id="favSection" style="display:none">&#11088; Favorites</div>
+  <div class="games" id="favGames" style="display:none"></div>
+
+  <div class="section-title" id="recentSection" style="display:none">&#128338; Recently Played</div>
+  <div class="games" id="recentGames" style="display:none"></div>
 
   <div class="section-title">Multiplayer / vs Bot</div>
   <div class="games">
@@ -639,6 +665,34 @@
       <p>Texas Hold'em vs AI or 2P hotseat. Easy, Medium, Hard AI.</p>
       <span class="badge mp">1-2P / AI</span>
       <span class="badge new">New</span>
+    </a>
+    <a class="card" href="uno.html">
+      <div class="icon">&#127183;</div>
+      <h2>UNO</h2>
+      <p>The classic card game, now online! Play with 2-12 friends with full rules!</p>
+      <span class="badge mp">Online 2-12 Players</span>
+      <span class="badge online">Online</span>
+    </a>
+    <a class="card" href="wavelength.html">
+      <div class="icon">&#127752;</div>
+      <h2>Wavelength</h2>
+      <p>Online party game! Give clues on a spectrum and guess the target!</p>
+      <span class="badge mp">Online 2+ Players</span>
+      <span class="badge online">Online</span>
+    </a>
+    <a class="card" href="imposter.html">
+      <div class="icon">&#128373;</div>
+      <h2>Imposter</h2>
+      <p>Social deduction! Everyone gets a word except the Imposter. Vote to find them!</p>
+      <span class="badge mp">Online 3+ Players</span>
+      <span class="badge online">Online</span>
+    </a>
+    <a class="card" href="penguin.html">
+      <div class="icon">&#128039;</div>
+      <h2>Penguin Knockout</h2>
+      <p>Launch penguins on shrinking ice! Knock opponents off to win!</p>
+      <span class="badge mp">2-8P / AI / Online</span>
+      <span class="badge online">Online</span>
     </a>
   </div>
 
@@ -1143,39 +1197,291 @@
   </div>
 
 <script>
-document.getElementById('gameSearch').addEventListener('input', function() {
-  var q = this.value.toLowerCase().trim();
-  var cards = document.querySelectorAll('.card');
-  var sections = document.querySelectorAll('.section-title');
-  var grids = document.querySelectorAll('.games');
-  var anyVisible = false;
+(function() {
+  // ─── GAME TAGS ───
+  var GAME_TAGS = {
+    snakeio:'multiplayer,action,arcade', holeio:'multiplayer,action,arcade',
+    connect4:'multiplayer,strategy,classic', tictactoe:'multiplayer,strategy,classic',
+    gravity:'multiplayer,action,arcade', pong:'multiplayer,classic,sports',
+    tron:'multiplayer,action,arcade', tanks:'multiplayer,action,arcade',
+    racer:'multiplayer,action,arcade', reaction:'multiplayer,action',
+    chess:'multiplayer,strategy,classic', checkers:'multiplayer,strategy,classic',
+    battleship:'multiplayer,strategy', pool:'multiplayer,sports',
+    dotsboxes:'multiplayer,strategy,puzzle', poker:'multiplayer,card',
+    uno:'multiplayer,card', wavelength:'multiplayer,strategy',
+    imposter:'multiplayer,strategy', penguin:'multiplayer,action',
+    parkingjam:'puzzle', wordscramble:'word,puzzle',
+    tetris:'classic,arcade,puzzle', '2048':'puzzle',
+    wordle:'word,puzzle', snake:'classic,arcade,action',
+    pacman:'classic,arcade,action', minesweeper:'puzzle,classic',
+    solitaire:'card,classic', flappy:'arcade,action',
+    geodash:'arcade,action', crossy:'arcade,action',
+    sudoku:'puzzle', breakout:'arcade,classic,action',
+    invaders:'arcade,classic,action', doodle:'arcade,action',
+    typing:'word', connections:'word,puzzle',
+    tiles:'arcade,action', asteroids:'arcade,classic,action',
+    platformer:'arcade,action', memory:'puzzle',
+    aim:'action', whack:'arcade,action',
+    hangman:'word', simon:'puzzle,classic',
+    rps:'classic', stack:'arcade,action',
+    sliding:'puzzle', wordsearch:'word,puzzle',
+    wordscapes:'word,puzzle', flood:'puzzle',
+    bubbles:'arcade,puzzle', match3:'puzzle,arcade',
+    nonogram:'puzzle', fruit:'arcade,action',
+    maze:'puzzle,action', '20q':'puzzle',
+    huesort:'puzzle', lightsout:'puzzle',
+    pipes:'puzzle', ballsort:'puzzle',
+    idleminer:'idle', biztycoon:'idle',
+    colorswitch:'arcade,action', duckhunt:'arcade,classic,action',
+    td:'strategy,action', bulletdodge:'action,arcade',
+    rhythm:'arcade,action', golf:'sports',
+    dino:'arcade,action', galaga:'arcade,classic,action',
+    crossword:'word,puzzle', blockblast:'puzzle,arcade',
+    stickmanhook:'arcade,action', paperio:'arcade,action',
+    fruitmerge:'puzzle,arcade', sandfall:'puzzle',
+    helicopter:'arcade,action', casino:'card',
+    fireboywater:'multiplayer,puzzle,action', slope:'arcade,action',
+    subway:'arcade,action', drifthunters:'sports,action',
+    run3:'arcade,action', championisland:'arcade,sports',
+    doodlebaseball:'sports,arcade', gardengnomes:'arcade',
+    doodlesnake:'classic,arcade', doodlepacman:'classic,arcade',
+    fnaf:'action', minecraft:'action,strategy',
+    worldhardest:'action,puzzle', hextris:'puzzle,arcade',
+    spelunky:'action,arcade', astray:'puzzle',
+    '0hh1':'puzzle', gswitch3:'action,arcade'
+  };
 
-  cards.forEach(function(card) {
-    var name = card.querySelector('h2');
-    var desc = card.querySelector('p');
-    var text = ((name ? name.textContent : '') + ' ' + (desc ? desc.textContent : '')).toLowerCase();
-    if (!q || text.indexOf(q) !== -1) {
-      card.classList.remove('hidden-search');
+  function getGameId(card) {
+    return (card.getAttribute('href') || '').replace('.html', '');
+  }
+
+  // ─── FILTER BAR ───
+  var activeFilter = 'all';
+  var filterBar = document.getElementById('filterBar');
+  var searchInput = document.getElementById('gameSearch');
+
+  filterBar.addEventListener('click', function(e) {
+    var btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    var f = btn.getAttribute('data-filter');
+    activeFilter = (f === activeFilter && f !== 'all') ? 'all' : f;
+    filterBar.querySelectorAll('.filter-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-filter') === activeFilter);
+    });
+    applyFilters();
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    var q = searchInput.value.toLowerCase().trim();
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
+    var sections = document.querySelectorAll('.section-title:not(#favSection):not(#recentSection)');
+    var grids = document.querySelectorAll('.games:not(#favGames):not(#recentGames)');
+    var anyVisible = false;
+
+    cards.forEach(function(card) {
+      var gameId = getGameId(card);
+      var tags = (GAME_TAGS[gameId] || '').split(',');
+      var name = card.querySelector('h2');
+      var desc = card.querySelector('p');
+      var text = ((name ? name.textContent : '') + ' ' + (desc ? desc.textContent : '')).toLowerCase();
+      var matchSearch = !q || text.indexOf(q) !== -1;
+      var matchFilter = activeFilter === 'all' || tags.indexOf(activeFilter) !== -1;
+      if (matchSearch && matchFilter) {
+        card.classList.remove('hidden-search');
+      } else {
+        card.classList.add('hidden-search');
+      }
+    });
+
+    grids.forEach(function(grid, i) {
+      var visible = grid.querySelectorAll('.card:not(.hidden-search)');
+      var hide = (q || activeFilter !== 'all') && visible.length === 0;
+      grid.classList.toggle('hidden-search', hide);
+      if (sections[i]) sections[i].classList.toggle('hidden-search', hide);
+      if (visible.length > 0) anyVisible = true;
+    });
+
+    // Hide Other section warning when section is hidden
+    var lastSection = sections[sections.length - 1];
+    if (lastSection) {
+      var warn = lastSection.nextElementSibling;
+      if (warn && warn.tagName === 'P') warn.style.display = lastSection.classList.contains('hidden-search') ? 'none' : '';
+    }
+
+    document.getElementById('noResults').style.display = ((q || activeFilter !== 'all') && !anyVisible) ? 'block' : 'none';
+
+    // Hide fav/recent sections when filtering
+    var favS = document.getElementById('favSection');
+    var favG = document.getElementById('favGames');
+    var recS = document.getElementById('recentSection');
+    var recG = document.getElementById('recentGames');
+    if (q || activeFilter !== 'all') {
+      favS.style.display = 'none'; favG.style.display = 'none';
+      recS.style.display = 'none'; recG.style.display = 'none';
     } else {
-      card.classList.add('hidden-search');
+      renderFavorites();
+      renderRecentlyPlayed();
+    }
+  }
+
+  // ─── FAVORITES ───
+  var FAV_KEY = 'arcade_favorites';
+  var favSection = document.getElementById('favSection');
+  var favGames = document.getElementById('favGames');
+
+  function getFavorites() {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function saveFavorites(favs) {
+    localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+    var user = localStorage.getItem('arcade_currentUser');
+    if (user) {
+      try {
+        var db = firebase.firestore(firebase.app('global-chat'));
+        db.collection('users').doc(user.toLowerCase()).set({ favorites: favs }, { merge: true }).catch(function(){});
+      } catch(e) {}
+    }
+  }
+  function toggleFavorite(gameId) {
+    var favs = getFavorites();
+    var idx = favs.indexOf(gameId);
+    if (idx !== -1) favs.splice(idx, 1); else favs.push(gameId);
+    saveFavorites(favs);
+    refreshFavState();
+  }
+
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('fav-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      var gid = e.target.getAttribute('data-fav');
+      if (gid) toggleFavorite(gid);
     }
   });
 
-  // Hide sections where all cards are hidden
-  grids.forEach(function(grid, i) {
-    var visibleCards = grid.querySelectorAll('.card:not(.hidden-search)');
-    if (q && visibleCards.length === 0) {
-      grid.classList.add('hidden-search');
-      if (sections[i]) sections[i].classList.add('hidden-search');
-    } else {
-      grid.classList.remove('hidden-search');
-      if (sections[i]) sections[i].classList.remove('hidden-search');
-      if (visibleCards.length > 0) anyVisible = true;
-    }
-  });
+  function injectFavButtons() {
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
+    cards.forEach(function(card) {
+      var gid = getGameId(card);
+      if (!gid) return;
+      var btn = document.createElement('button');
+      btn.className = 'fav-btn';
+      btn.setAttribute('data-fav', gid);
+      btn.innerHTML = '\u2606';
+      btn.title = 'Add to favorites';
+      card.appendChild(btn);
+    });
+  }
 
-  document.getElementById('noResults').style.display = (q && !anyVisible) ? 'block' : 'none';
-});
+  function updateFavButtons() {
+    var favs = getFavorites();
+    document.querySelectorAll('.fav-btn').forEach(function(btn) {
+      var gid = btn.getAttribute('data-fav');
+      var isFav = favs.indexOf(gid) !== -1;
+      btn.classList.toggle('favorited', isFav);
+      btn.innerHTML = isFav ? '\u2605' : '\u2606';
+      btn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
+    });
+  }
+
+  function renderFavorites() {
+    var favs = getFavorites();
+    if (favs.length === 0) {
+      favSection.style.display = 'none';
+      favGames.style.display = 'none';
+      favGames.innerHTML = '';
+      return;
+    }
+    favSection.style.display = '';
+    favGames.style.display = '';
+    favGames.innerHTML = '';
+    favs.forEach(function(gid) {
+      var orig = document.querySelector('.games:not(#favGames):not(#recentGames) .card[href="' + gid + '.html"]');
+      if (!orig) return;
+      var clone = orig.cloneNode(true);
+      var oldBtn = clone.querySelector('.fav-btn');
+      if (oldBtn) oldBtn.remove();
+      var btn = document.createElement('button');
+      btn.className = 'fav-btn favorited';
+      btn.setAttribute('data-fav', gid);
+      btn.innerHTML = '\u2605';
+      btn.title = 'Remove from favorites';
+      clone.appendChild(btn);
+      favGames.appendChild(clone);
+    });
+  }
+
+  // ─── RECENTLY PLAYED ───
+  var recentSection = document.getElementById('recentSection');
+  var recentGames = document.getElementById('recentGames');
+
+  function renderRecentlyPlayed() {
+    var recent = [];
+    try { recent = JSON.parse(localStorage.getItem('arcade_recentlyPlayed') || '[]'); } catch(e) {}
+    if (recent.length === 0) {
+      recentSection.style.display = 'none';
+      recentGames.style.display = 'none';
+      recentGames.innerHTML = '';
+      return;
+    }
+    recentSection.style.display = '';
+    recentGames.style.display = '';
+    recentGames.innerHTML = '';
+    var favs = getFavorites();
+    recent.forEach(function(entry) {
+      var gid = entry.gameId;
+      var orig = document.querySelector('.games:not(#favGames):not(#recentGames) .card[href="' + gid + '.html"]');
+      if (!orig) return;
+      var clone = orig.cloneNode(true);
+      var oldBtn = clone.querySelector('.fav-btn');
+      if (oldBtn) oldBtn.remove();
+      var isFav = favs.indexOf(gid) !== -1;
+      var btn = document.createElement('button');
+      btn.className = 'fav-btn' + (isFav ? ' favorited' : '');
+      btn.setAttribute('data-fav', gid);
+      btn.innerHTML = isFav ? '\u2605' : '\u2606';
+      btn.title = isFav ? 'Remove from favorites' : 'Add to favorites';
+      clone.appendChild(btn);
+      recentGames.appendChild(clone);
+    });
+  }
+
+  function refreshFavState() {
+    updateFavButtons();
+    renderFavorites();
+    renderRecentlyPlayed();
+  }
+
+  // ─── INIT ───
+  injectFavButtons();
+  refreshFavState();
+
+  // Load favorites from Firebase when logged in
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var user = localStorage.getItem('arcade_currentUser');
+      if (user) {
+        try {
+          var db = firebase.firestore(firebase.app('global-chat'));
+          db.collection('users').doc(user.toLowerCase()).get().then(function(doc) {
+            if (doc.exists && doc.data().favorites) {
+              var remote = doc.data().favorites;
+              var local = getFavorites();
+              var merged = local.slice();
+              remote.forEach(function(g) { if (merged.indexOf(g) === -1) merged.push(g); });
+              if (merged.length !== local.length) {
+                saveFavorites(merged);
+                refreshFavState();
+              }
+            }
+          }).catch(function(){});
+        } catch(e) {}
+      }
+    }, 2000);
+  });
+})();
 </script>
 
 <!-- Chat Panel -->
@@ -1623,7 +1929,7 @@ document.getElementById('gameSearch').addEventListener('input', function() {
     if (window.ArcadeChallenges) {
       var gotdId = window.ArcadeChallenges.getGOTD();
       var gotdName = window.ArcadeChallenges.getGOTDName();
-      var cards = document.querySelectorAll('.card');
+      var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
       cards.forEach(function(card) {
         var href = card.getAttribute('href') || '';
         var cardGameId = href.replace('.html', '');

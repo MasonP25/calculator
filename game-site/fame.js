@@ -1,3 +1,15 @@
+// ─── RECENTLY PLAYED TRACKER ───
+(function() {
+  var KEY = 'arcade_recentlyPlayed', MAX = 8;
+  var f = (window.location.pathname.split('/').pop() || '').replace('.html', '');
+  if (!f || ['index','fame','shop','profile','casino','eaglercraft'].indexOf(f) !== -1) return;
+  var r = []; try { r = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e) {}
+  r = r.filter(function(x) { return x.gameId !== f; });
+  r.unshift({ gameId: f, time: Date.now() });
+  if (r.length > MAX) r = r.slice(0, MAX);
+  localStorage.setItem(KEY, JSON.stringify(r));
+})();
+
 // One-time migration: clear corrupted streak data from 2P bug (pong/tron/racer)
 (function() {
   if (localStorage.getItem('_lb_streak_fix_v1')) return;

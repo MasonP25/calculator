@@ -220,9 +220,15 @@
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
       }
       .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
-      .card.featured { background:linear-gradient(135deg,${t.bg2},${t.bg3})!important; border-color:${t.accent}33!important; }
-      .card.featured:hover { border-color:${t.accent}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
+
+      /* Filter bar */
+      .filter-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
+      .filter-btn:hover { border-color:${t.accent}!important; color:${t.text}!important; }
+      .filter-btn.active { background:${t.accent}!important; border-color:${t.accent}!important; color:#fff!important; }
+      /* Fav button */
+      .fav-btn { color:${t.dim}!important; }
+      .fav-btn.favorited { color:#feca57!important; }
 
       /* Badges */
       .badge.mp { background:${t.accent}20!important; color:${t.accent}!important; border-color:${t.accent}44!important; }
