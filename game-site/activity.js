@@ -135,6 +135,50 @@
     '.activity-feed .af-empty{text-align:center;color:#555;font-size:0.85rem;padding:1rem}';
   document.head.appendChild(css);
 
+  // One-time migration: remove false high scores and duplicate level-ups
+  async function _fixActivityFeed() {
+    if (localStorage.getItem('_activity_fix_v1')) return;
+    try {
+      await _initFirebase();
+      if (!_db || !_collection) return;
+      var q = _query(_collection(_db, 'activity'), _limit(200));
+      var snap = await _getDocs(q);
+      var toDelete = [];
+      var seenLevelUps = {};
+
+      snap.forEach(function(d) {
+        var data = d.data();
+        // Delete all high_score entries (can't distinguish real from false)
+        if (data.type === 'high_score') {
+          toDelete.push(d.ref);
+          return;
+        }
+        // Deduplicate level_up: keep only the latest per user+level
+        if (data.type === 'level_up' && data.data) {
+          var key = (data.username || '') + '_lv_' + data.data.level;
+          if (seenLevelUps[key]) {
+            if (data.time > seenLevelUps[key].time) {
+              toDelete.push(seenLevelUps[key].ref);
+              seenLevelUps[key] = { ref: d.ref, time: data.time };
+            } else {
+              toDelete.push(d.ref);
+            }
+          } else {
+            seenLevelUps[key] = { ref: d.ref, time: data.time };
+          }
+        }
+      });
+
+      for (var i = 0; i < toDelete.length; i++) {
+        await _deleteDoc(toDelete[i]);
+      }
+      _cache = null;
+      localStorage.setItem('_activity_fix_v1', '1');
+    } catch(e) {
+      console.warn('[Activity] Fix migration failed:', e);
+    }
+  }
+
   window.ArcadeActivity = {
     post: async function(type, data) {
       if (_isGuest()) return;
@@ -182,6 +226,7 @@
 
     renderFeed: async function(container) {
       if (!container) return;
+      await _fixActivityFeed();
       var items = await window.ArcadeActivity.getRecent(20);
       container.innerHTML = '';
       var wrap = document.createElement('div');

@@ -224,6 +224,27 @@
       var data = snap.data();
       var notifs = data.notifications || [];
 
+      // One-time migration: deduplicate level_up notifications
+      if (!localStorage.getItem('_notif_dedup_v1')) {
+        var seen = {};
+        var cleaned = [];
+        var changed = false;
+        for (var k = 0; k < notifs.length; k++) {
+          var n = notifs[k];
+          if (n.type === 'level_up' && n.data && n.data.level) {
+            var dedupKey = 'level_up_' + n.data.level;
+            if (seen[dedupKey]) { changed = true; continue; }
+            seen[dedupKey] = true;
+          }
+          cleaned.push(n);
+        }
+        if (changed) {
+          notifs = cleaned;
+          _setDoc(_doc(_db, 'users', key), { notifications: notifs }, { merge: true }).catch(function(){});
+        }
+        localStorage.setItem('_notif_dedup_v1', '1');
+      }
+
       // Save previous known IDs before updating
       var prevIds = _lastKnownIds.slice();
 
