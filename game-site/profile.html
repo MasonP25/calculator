@@ -614,7 +614,7 @@ var params = new URLSearchParams(window.location.search);
 var targetUser = params.get('user') || '';
 
 // ─── DAILY LOGIN STREAK ───
-async function renderStreakWidget(profileData) {
+async function renderStreakWidget(profileData, isOwnProfile) {
   var section = document.getElementById('streakSection');
   var widget = document.getElementById('streakWidget');
   section.style.display = '';
@@ -643,18 +643,22 @@ async function renderStreakWidget(profileData) {
     todayReward = 50;
   }
 
+  var collectBtnHtml = '';
+  if (isOwnProfile) {
+    collectBtnHtml = '<button class="streak-collect-btn" id="streakCollectBtn"' + (alreadyCollected ? ' disabled' : '') + '>' +
+      (alreadyCollected ? '\u2714 Collected' : 'Collect') +
+    '</button>';
+  }
+
   widget.innerHTML =
     '<div class="streak-fire">' + (displayStreak > 0 ? '\uD83D\uDD25' : '\uD83D\uDCA4') + '</div>' +
     '<div class="streak-info">' +
       '<div class="streak-title">Login Streak</div>' +
       '<div class="streak-count">' + displayStreak + ' day' + (displayStreak !== 1 ? 's' : '') + '</div>' +
-      '<div class="streak-reward">' + (alreadyCollected ? 'Collected +' + todayReward + ' coins today' : 'Today\'s reward: +' + todayReward + ' coins') + '</div>' +
-    '</div>' +
-    '<button class="streak-collect-btn" id="streakCollectBtn"' + (alreadyCollected ? ' disabled' : '') + '>' +
-      (alreadyCollected ? '\u2714 Collected' : 'Collect') +
-    '</button>';
+      '<div class="streak-reward">' + (alreadyCollected ? 'Collected +' + todayReward + ' coins today' : (isOwnProfile ? 'Today\'s reward: +' + todayReward + ' coins' : '')) + '</div>' +
+    '</div>' + collectBtnHtml;
 
-  if (!alreadyCollected) {
+  if (isOwnProfile && !alreadyCollected) {
     document.getElementById('streakCollectBtn').onclick = async function() {
       var btn = this;
       btn.disabled = true;
@@ -755,7 +759,7 @@ async function loadProfile() {
   var metaEl = document.getElementById('heroMeta');
   var joinDate = profileData.createdAt;
   if (!joinDate) {
-    joinDate = 'unknown';
+    joinDate = null;
   } else if (typeof joinDate === 'number') {
     joinDate = new Date(joinDate).toLocaleDateString();
   } else if (joinDate.toDate) {
@@ -763,7 +767,7 @@ async function loadProfile() {
   } else if (typeof joinDate === 'string' && /^\d{10,}$/.test(joinDate)) {
     joinDate = new Date(parseInt(joinDate)).toLocaleDateString();
   }
-  metaEl.textContent = 'Member since ' + joinDate;
+  metaEl.textContent = joinDate ? 'Member since ' + joinDate : 'Member';
 
   // ─── CUSTOM PROFILE: Banner gradient ───
   var banner = profileData.banner || 'default';
@@ -826,10 +830,8 @@ async function loadProfile() {
     renderFriendButton(actionsEl, targetUser);
   }
 
-  // ─── Daily Login Streak (own profile) ───
-  if (isOwnProfile) {
-    await renderStreakWidget(profileData);
-  }
+  // ─── Daily Login Streak ───
+  await renderStreakWidget(profileData, isOwnProfile);
 
   // ─── Daily Challenge + Weekly Quests (own profile only) ───
   if (isOwnProfile && window.ArcadeChallenges) {
