@@ -824,6 +824,8 @@
   function onReady() {
     document.body.classList.add('page-loaded');
     document.addEventListener('click', function(e) {
+      // Skip clicks on interactive elements inside links (fav buttons, etc.)
+      if (e.target.closest('.fav-btn, button, input, .notif-item')) return;
       var link = e.target.closest('a');
       if (!link) return;
       var href = link.getAttribute('href');
