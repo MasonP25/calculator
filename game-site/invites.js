@@ -10,16 +10,55 @@
     snakeio:'Snake.io', holeio:'Hole.io'
   };
 
-  // Join function map for auto-join from invite links
-  var JOIN_MAP = {
-    tictactoe: { fn: '_onlineJoinGame', passCode: true },
-    connect4:  { fn: '_c4OnlineJoinGame', passCode: true },
-    uno:       { fn: '_unoJoinGame', passCode: true },
-    wavelength:{ fn: '_wlJoinGame', passCode: true },
-    snakeio:   { fn: 'joinOnlineRoom', passCode: true },
-    penguin:   { fn: 'joinRoom', passCode: false, inputId: 'joinCode' },
-    imposter:  { fn: 'joinRoom', passCode: false, inputId: 'join-code-input' },
-    holeio:    { fn: 'joinRoom', passCode: false, inputId: 'joinCodeInput' }
+  // Auto-join steps: sequence of DOM actions to join a room
+  // { click: 'selector' } — click a button
+  // { fill: 'selector' } — set input value to room code
+  // { fn: 'globalFnName', args: [...] } — call a global function
+  var AUTO_JOIN = {
+    tictactoe: [
+      { click: '[data-mode="online"]' },
+      { click: '#join-game-btn' },
+      { fill: '#join-code-input' },
+      { click: '#join-submit-btn' }
+    ],
+    connect4: [
+      { click: '#modeOnline' },
+      { click: '#join-game-btn' },
+      { fill: '#join-code-input' },
+      { click: '#join-submit-btn' }
+    ],
+    uno: [
+      { click: '#join-game-btn' },
+      { fill: '#join-code-input' },
+      { click: '#join-submit-btn' }
+    ],
+    wavelength: [
+      { click: '#join-game-btn' },
+      { fill: '#join-code-input' },
+      { click: '#join-submit-btn' }
+    ],
+    snakeio: [
+      { click: '#btn-online' },
+      { click: '#ol-join-btn' },
+      { fill: '#ol-join-input' },
+      { click: '#ol-join-submit' }
+    ],
+    penguin: [
+      { fn: 'showSetup', args: ['online'] },
+      { fn: 'showJoinArea' },
+      { fill: '#joinCode' },
+      { fn: 'joinRoom' }
+    ],
+    imposter: [
+      { fn: 'showScreen', args: ['join-screen'] },
+      { fill: '#join-code-input' },
+      { fn: 'joinRoom' }
+    ],
+    holeio: [
+      { fn: 'showScreen', args: ['lobbyScreen'] },
+      { fill: '#joinCodeInput' },
+      { fn: 'joinRoom' }
+    ]
   };
 
   function _getUser() {
@@ -58,13 +97,11 @@
 
   // Detect active room code from the page
   function detectRoomCode() {
-    // Check .room-code-display elements
     var els = document.querySelectorAll('.room-code-display');
     for (var i = 0; i < els.length; i++) {
       var t = els[i].textContent.trim();
       if (t && t.length === 4 && t !== '----') return t;
     }
-    // Fallback: check window._onlineState
     if (window._onlineState && window._onlineState.roomId) return window._onlineState.roomId;
     return null;
   }
@@ -170,30 +207,60 @@
   if (inviteRoom) {
     inviteRoom = inviteRoom.toUpperCase().trim();
     // Clean URL so refresh doesn't re-trigger
-    var cleanUrl = window.location.pathname + window.location.hash;
-    window.history.replaceState(null, '', cleanUrl);
+    window.history.replaceState(null, '', window.location.pathname);
 
-    var config = JOIN_MAP[page];
-    if (config) {
-      var tries = 0;
-      var joinInterval = setInterval(function() {
-        tries++;
-        var fn = window[config.fn];
-        if (fn) {
-          clearInterval(joinInterval);
-          if (config.passCode) {
-            fn(inviteRoom);
-          } else {
-            var input = document.getElementById(config.inputId);
-            if (input) {
-              input.value = inviteRoom;
-              fn();
+    var steps = AUTO_JOIN[page];
+    if (steps) {
+      var stepIndex = 0;
+
+      function runStep() {
+        if (stepIndex >= steps.length) return;
+        var step = steps[stepIndex];
+        var retries = 0;
+
+        function attempt() {
+          retries++;
+          if (retries > 15) { // give up after ~4.5s per step
+            stepIndex++;
+            setTimeout(runStep, 200);
+            return;
+          }
+
+          if (step.click) {
+            var el = document.querySelector(step.click);
+            if (el) {
+              el.click();
+              stepIndex++;
+              setTimeout(runStep, 400);
+              return;
+            }
+          } else if (step.fill) {
+            var el = document.querySelector(step.fill);
+            if (el) {
+              el.value = inviteRoom;
+              stepIndex++;
+              setTimeout(runStep, 200);
+              return;
+            }
+          } else if (step.fn) {
+            var fn = window[step.fn];
+            if (fn) {
+              fn.apply(null, step.args || []);
+              stepIndex++;
+              setTimeout(runStep, 400);
+              return;
             }
           }
-        } else if (tries > 20) {
-          clearInterval(joinInterval);
+
+          // Element/function not ready yet, retry
+          setTimeout(attempt, 300);
         }
-      }, 500);
+
+        attempt();
+      }
+
+      // Wait for page scripts to initialize before starting
+      setTimeout(runStep, 2500);
     }
   }
 
