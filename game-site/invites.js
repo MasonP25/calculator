@@ -10,6 +10,18 @@
     snakeio:'Snake.io', holeio:'Hole.io'
   };
 
+  // Join function map for auto-join from invite links
+  var JOIN_MAP = {
+    tictactoe: { fn: '_onlineJoinGame', passCode: true },
+    connect4:  { fn: '_c4OnlineJoinGame', passCode: true },
+    uno:       { fn: '_unoJoinGame', passCode: true },
+    wavelength:{ fn: '_wlJoinGame', passCode: true },
+    snakeio:   { fn: 'joinOnlineRoom', passCode: true },
+    penguin:   { fn: 'joinRoom', passCode: false, inputId: 'joinCode' },
+    imposter:  { fn: 'joinRoom', passCode: false, inputId: 'join-code-input' },
+    holeio:    { fn: 'joinRoom', passCode: false, inputId: 'joinCodeInput' }
+  };
+
   function _getUser() {
     return localStorage.getItem('arcade_currentUser') || 'Guest';
   }
@@ -42,16 +54,38 @@
     '.invite-close:hover{border-color:#7b2ff7;color:#e0e0e0}';
   document.head.appendChild(css);
 
-  function addButton() {
-    if (_isGuest() || document.querySelector('.invite-btn')) return;
+  var _currentRoomCode = null;
+
+  // Detect active room code from the page
+  function detectRoomCode() {
+    // Check .room-code-display elements
+    var els = document.querySelectorAll('.room-code-display');
+    for (var i = 0; i < els.length; i++) {
+      var t = els[i].textContent.trim();
+      if (t && t.length === 4 && t !== '----') return t;
+    }
+    // Fallback: check window._onlineState
+    if (window._onlineState && window._onlineState.roomId) return window._onlineState.roomId;
+    return null;
+  }
+
+  function addButton(roomCode) {
+    if (_isGuest()) return;
+    var existing = document.querySelector('.invite-btn');
+    if (existing) existing.remove();
     var btn = document.createElement('button');
     btn.className = 'invite-btn';
     btn.innerHTML = '\uD83D\uDC4B Invite Friend';
-    btn.onclick = showInviteModal;
+    btn.onclick = function() { showInviteModal(roomCode); };
     document.body.appendChild(btn);
   }
 
-  async function showInviteModal() {
+  function removeButton() {
+    var btn = document.querySelector('.invite-btn');
+    if (btn) btn.remove();
+  }
+
+  async function showInviteModal(roomCode) {
     if (!window.ArcadeFriends) return;
 
     var overlay = document.createElement('div');
@@ -102,8 +136,8 @@
             'Game Invite',
             _getUser() + ' invited you to play ' + gameName + '!',
             '\uD83C\uDFAE',
-            page + '.html',
-            { from: _getUser(), gameId: page }
+            page + '.html?room=' + roomCode,
+            { from: _getUser(), gameId: page, roomCode: roomCode }
           );
           await window.ArcadeNotifications.push(friendName, notif);
         }
@@ -117,21 +151,57 @@
     });
   }
 
-  // Add button when ready
-  if (!_isGuest()) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', addButton);
-    } else {
-      addButton();
+  // ─── POLL FOR ROOM CODE (show/hide invite button) ───
+  setInterval(function() {
+    if (_isGuest()) { removeButton(); return; }
+    var code = detectRoomCode();
+    if (code && code !== _currentRoomCode) {
+      _currentRoomCode = code;
+      addButton(code);
+    } else if (!code && _currentRoomCode) {
+      _currentRoomCode = null;
+      removeButton();
+    }
+  }, 1000);
+
+  // ─── AUTO-JOIN FROM INVITE LINK ───
+  var params = new URLSearchParams(window.location.search);
+  var inviteRoom = params.get('room');
+  if (inviteRoom) {
+    inviteRoom = inviteRoom.toUpperCase().trim();
+    // Clean URL so refresh doesn't re-trigger
+    var cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState(null, '', cleanUrl);
+
+    var config = JOIN_MAP[page];
+    if (config) {
+      var tries = 0;
+      var joinInterval = setInterval(function() {
+        tries++;
+        var fn = window[config.fn];
+        if (fn) {
+          clearInterval(joinInterval);
+          if (config.passCode) {
+            fn(inviteRoom);
+          } else {
+            var input = document.getElementById(config.inputId);
+            if (input) {
+              input.value = inviteRoom;
+              fn();
+            }
+          }
+        } else if (tries > 20) {
+          clearInterval(joinInterval);
+        }
+      }, 500);
     }
   }
 
+  // Handle auth changes
   window.addEventListener('arcade-auth-change', function() {
-    var existing = document.querySelector('.invite-btn');
     if (_isGuest()) {
-      if (existing) existing.remove();
-    } else {
-      addButton();
+      removeButton();
+      _currentRoomCode = null;
     }
   });
 })();
