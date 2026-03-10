@@ -117,6 +117,22 @@
     shirt_crop:     { name: 'Crop Top',   category: 'shirt', price: 55 },
     shirt_armor:    { name: 'Armor',      category: 'shirt', price: 150 },
     shirt_christmas:{ name: 'Christmas',  category: 'shirt', price: 100 },
+    // ── New Regular Items (Wave 3) ──
+    hat_bandana:    { name: 'Bandana',   category: 'hat', price: 45 },
+    hat_military:   { name: 'Military',  category: 'hat', price: 110 },
+    hat_fez:        { name: 'Fez',       category: 'hat', price: 85 },
+    hat_straw:      { name: 'Straw Hat', category: 'hat', price: 70 },
+    hair_shaggy:    { name: 'Shaggy',    category: 'hair', price: 40 },
+    hair_slickback: { name: 'Slick Back', category: 'hair', price: 55 },
+    hair_bangs:     { name: 'Bangs',     category: 'hair', price: 35 },
+    hair_flattop:   { name: 'Flat Top',  category: 'hair', price: 45 },
+    face_freckles:  { name: 'Freckles',  category: 'face', price: 25 },
+    face_scar:      { name: 'Scar',      category: 'face', price: 40 },
+    face_mustache:  { name: 'Mustache',  category: 'face', price: 50 },
+    shirt_denim:    { name: 'Denim',     category: 'shirt', price: 70 },
+    shirt_cardigan: { name: 'Cardigan',  category: 'shirt', price: 65 },
+    shirt_sports:   { name: 'Sports',    category: 'shirt', price: 80 },
+    shirt_punk:     { name: 'Punk',      category: 'shirt', price: 95 },
     // ── Exclusive Items ──
     hat_astronaut:    { name: 'Astronaut',      category: 'hat',   price: 0, exclusive: true },
     hat_diamond_crown:{ name: 'Diamond Crown',  category: 'hat',   price: 0, exclusive: true },
@@ -419,6 +435,53 @@
       el('circle', { cx: 50, cy: 88, r: 2, fill: '#FFD700' }, svg);
       el('circle', { cx: 50, cy: 98, r: 2, fill: '#FFD700' }, svg);
       el('rect', { x: 30, y: 112, width: 40, height: 6, rx: 3, fill: '#FFFFFF' }, svg);
+    },
+    // ── New Regular Shirts (Wave 3) ──
+    shirt_denim: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#4A6FA5'); });
+      // Collar
+      el('path', { d: 'M40,68 L46,74 L50,70 L54,74 L60,68', fill: 'none', stroke: '#3A5F95', 'stroke-width': 2 }, svg);
+      // Button line
+      el('line', { x1: 50, y1: 74, x2: 50, y2: 118, stroke: '#3A5F95', 'stroke-width': 1.5 }, svg);
+      el('circle', { cx: 50, cy: 82, r: 1.2, fill: '#DAA520' }, svg);
+      el('circle', { cx: 50, cy: 92, r: 1.2, fill: '#DAA520' }, svg);
+      el('circle', { cx: 50, cy: 102, r: 1.2, fill: '#DAA520' }, svg);
+      // Chest pockets
+      el('rect', { x: 36, y: 78, width: 10, height: 8, rx: 1, fill: 'none', stroke: '#3A5F95', 'stroke-width': 1 }, svg);
+      el('rect', { x: 54, y: 78, width: 10, height: 8, rx: 1, fill: 'none', stroke: '#3A5F95', 'stroke-width': 1 }, svg);
+    },
+    shirt_cardigan: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#8B6E5A'); });
+      // Open front showing inner tee
+      el('rect', { x: 42, y: 70, width: 16, height: 48, rx: 2, fill: '#EEEEEE' }, svg);
+      // Button side
+      el('circle', { cx: 42, cy: 80, r: 1.2, fill: '#5C4033' }, svg);
+      el('circle', { cx: 42, cy: 90, r: 1.2, fill: '#5C4033' }, svg);
+      el('circle', { cx: 42, cy: 100, r: 1.2, fill: '#5C4033' }, svg);
+    },
+    shirt_sports: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#CC0000'); });
+      // Number 23
+      var t = el('text', { x: 50, y: 100, 'text-anchor': 'middle', 'font-size': '16', 'font-weight': 'bold', fill: '#fff', 'font-family': 'sans-serif' }, svg);
+      t.textContent = '23';
+      // White side stripes on arms
+      el('rect', { x: 18, y: 76, width: 14, height: 2, fill: '#fff', opacity: 0.8 }, svg);
+      el('rect', { x: 68, y: 76, width: 14, height: 2, fill: '#fff', opacity: 0.8 }, svg);
+      el('rect', { x: 18, y: 80, width: 14, height: 2, fill: '#fff', opacity: 0.8 }, svg);
+      el('rect', { x: 68, y: 80, width: 14, height: 2, fill: '#fff', opacity: 0.8 }, svg);
+    },
+    shirt_punk: function (svg) {
+      svg.querySelectorAll('.av-body').forEach(function (e) { e.setAttribute('fill', '#111111'); });
+      // Skull graphic
+      el('circle', { cx: 50, cy: 88, r: 7, fill: '#DDDDDD' }, svg);
+      el('circle', { cx: 47, cy: 86, r: 2, fill: '#111' }, svg);
+      el('circle', { cx: 53, cy: 86, r: 2, fill: '#111' }, svg);
+      el('rect', { x: 47, y: 92, width: 6, height: 2, rx: 1, fill: '#111' }, svg);
+      // Studs on shoulders
+      el('circle', { cx: 22, cy: 76, r: 1.5, fill: '#C0C0C0' }, svg);
+      el('circle', { cx: 26, cy: 76, r: 1.5, fill: '#C0C0C0' }, svg);
+      el('circle', { cx: 74, cy: 76, r: 1.5, fill: '#C0C0C0' }, svg);
+      el('circle', { cx: 78, cy: 76, r: 1.5, fill: '#C0C0C0' }, svg);
     },
     // ── Exclusive Shirts ──
     shirt_flame: function (svg) {
@@ -745,6 +808,34 @@
       el('polygon', { points: '42,18 38,8 46,16', fill: '#9B7924' }, svg);
       el('polygon', { points: '58,16 62,6 56,18', fill: '#9B7924' }, svg);
       el('polygon', { points: '72,26 76,14 66,24', fill: '#9B7924' }, svg);
+    },
+    // ── New Regular Hair (Wave 3) ──
+    hair_shaggy: function (svg) {
+      behindHead(svg, 'path', { d: 'M22,38 Q18,52 22,66 Q26,70 30,64 L26,38 Z', fill: '#7B5B3A' });
+      behindHead(svg, 'path', { d: 'M78,38 Q82,52 78,66 Q74,70 70,64 L74,38 Z', fill: '#7B5B3A' });
+      el('path', { d: 'M24,38 Q24,12 50,10 Q76,12 76,38 L72,28 Q65,16 50,14 Q35,16 28,28 Z', fill: '#7B5B3A' }, svg);
+      // Messy fringe strands
+      el('path', { d: 'M28,30 Q30,22 36,26', fill: '#6A4A2A' }, svg);
+      el('path', { d: 'M36,24 Q40,16 46,22', fill: '#6A4A2A' }, svg);
+      el('path', { d: 'M54,22 Q60,16 64,24', fill: '#6A4A2A' }, svg);
+      el('path', { d: 'M64,26 Q70,22 72,30', fill: '#6A4A2A' }, svg);
+    },
+    hair_slickback: function (svg) {
+      el('path', { d: 'M26,38 Q26,14 50,12 Q74,14 74,38 L70,30 Q65,18 50,16 Q35,18 30,30 Z', fill: '#1A1A1A' }, svg);
+      // Slick shine highlights
+      el('path', { d: 'M34,26 Q40,18 50,16 L48,20 Q40,22 36,28 Z', fill: '#2A2A2A' }, svg);
+      el('path', { d: 'M64,28 Q60,22 52,20 L54,16 Q62,18 66,26 Z', fill: '#2A2A2A' }, svg);
+    },
+    hair_bangs: function (svg) {
+      behindHead(svg, 'path', { d: 'M24,36 Q22,50 26,58 Q28,60 32,56 L28,36 Z', fill: '#A0522D' });
+      behindHead(svg, 'path', { d: 'M76,36 Q78,50 74,58 Q72,60 68,56 L72,36 Z', fill: '#A0522D' });
+      el('path', { d: 'M24,36 Q24,14 50,12 Q76,14 76,36 L72,28 Q65,18 50,16 Q35,18 28,28 Z', fill: '#A0522D' }, svg);
+      // Straight bangs across forehead
+      el('rect', { x: 28, y: 24, width: 44, height: 8, rx: 2, fill: '#8B4226' }, svg);
+    },
+    hair_flattop: function (svg) {
+      el('rect', { x: 28, y: 14, width: 44, height: 18, rx: 4, fill: '#333' }, svg);
+      el('rect', { x: 30, y: 12, width: 40, height: 6, rx: 1, fill: '#333' }, svg);
     }
   };
 
@@ -989,6 +1080,28 @@
       el('path', { d: 'M34,52 Q50,62 66,52', fill: 'none', stroke: '#CC0000', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, svg);
       el('path', { d: 'M32,32 Q36,28 44,32', fill: 'none', stroke: '#4488FF', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
       el('path', { d: 'M56,32 Q64,28 68,32', fill: 'none', stroke: '#4488FF', 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+    },
+    // ── New Regular Faces (Wave 3) ──
+    face_freckles: function (svg) {
+      // Keep default eyes, just add freckles + smile
+      el('circle', { cx: 34, cy: 44, r: 1.2, fill: '#AA7744', opacity: 0.6 }, svg);
+      el('circle', { cx: 38, cy: 46, r: 1, fill: '#AA7744', opacity: 0.5 }, svg);
+      el('circle', { cx: 36, cy: 42, r: 0.8, fill: '#AA7744', opacity: 0.5 }, svg);
+      el('circle', { cx: 62, cy: 42, r: 1.2, fill: '#AA7744', opacity: 0.6 }, svg);
+      el('circle', { cx: 66, cy: 44, r: 1, fill: '#AA7744', opacity: 0.5 }, svg);
+      el('circle', { cx: 64, cy: 46, r: 0.8, fill: '#AA7744', opacity: 0.5 }, svg);
+      el('path', { d: 'M40,50 Q50,54 60,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    face_scar: function (svg) {
+      // Keep default eyes, add scar on left cheek
+      el('path', { d: 'M32,36 L28,48', fill: 'none', stroke: '#AA6644', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M26,40 L34,44', fill: 'none', stroke: '#AA6644', 'stroke-width': 1, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M40,50 Q50,54 60,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    face_mustache: function (svg) {
+      // Keep default eyes, add mustache
+      el('path', { d: 'M38,48 Q42,44 50,46 Q58,44 62,48 Q58,50 50,48 Q42,50 38,48 Z', fill: '#3D2B1F' }, svg);
+      el('path', { d: 'M42,50 Q50,54 58,50', fill: 'none', stroke: '#333', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
     }
   };
 
@@ -1181,6 +1294,37 @@
       el('ellipse', { cx: 50, cy: 22, rx: 30, ry: 5, fill: '#3D3D3D' }, svg);
       el('path', { d: 'M28,22 Q30,6 50,4 Q70,6 72,22 Z', fill: '#4A4A4A' }, svg);
       el('rect', { x: 30, y: 18, width: 40, height: 4, rx: 1, fill: '#8B4513' }, svg);
+    },
+    // ── New Regular Hats (Wave 3) ──
+    hat_bandana: function (svg) {
+      el('path', { d: 'M26,28 Q26,18 50,16 Q74,18 74,28 Z', fill: '#CC2222' }, svg);
+      el('path', { d: 'M28,28 Q30,24 50,22 Q70,24 72,28', fill: 'none', stroke: '#FFD700', 'stroke-width': 1.5 }, svg);
+      // Tied knot at back
+      el('path', { d: 'M72,26 Q78,24 80,28 Q78,32 72,30', fill: '#CC2222' }, svg);
+      el('path', { d: 'M80,28 Q84,30 82,34', fill: 'none', stroke: '#CC2222', 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+    },
+    hat_military: function (svg) {
+      el('ellipse', { cx: 50, cy: 22, rx: 28, ry: 4, fill: '#2F4F2F' }, svg);
+      el('path', { d: 'M26,22 Q28,8 50,6 Q72,8 74,22 Z', fill: '#3B5B3B' }, svg);
+      el('ellipse', { cx: 50, cy: 22, rx: 26, ry: 3, fill: '#2F4F2F' }, svg);
+      // Brim
+      el('path', { d: 'M26,22 Q24,26 22,24 Q20,20 26,20 Z', fill: '#2F4F2F' }, svg);
+      el('ellipse', { cx: 42, cy: 24, rx: 20, ry: 3.5, fill: '#2F4F2F' }, svg);
+      // Badge
+      drawStar(svg, 50, 14, 3, '#FFD700');
+    },
+    hat_fez: function (svg) {
+      el('path', { d: 'M34,26 Q36,6 50,4 Q64,6 66,26 Z', fill: '#8B0000' }, svg);
+      el('rect', { x: 34, y: 22, width: 32, height: 5, rx: 1, fill: '#6B0000' }, svg);
+      // Tassel
+      el('circle', { cx: 50, cy: 4, r: 2, fill: '#111' }, svg);
+      el('path', { d: 'M50,6 Q56,8 58,14', fill: 'none', stroke: '#111', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+      el('path', { d: 'M58,14 L56,20 L60,18', fill: 'none', stroke: '#111', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, svg);
+    },
+    hat_straw: function (svg) {
+      el('ellipse', { cx: 50, cy: 24, rx: 36, ry: 6, fill: '#E8D478' }, svg);
+      el('path', { d: 'M30,24 Q30,8 50,6 Q70,8 70,24 Z', fill: '#F0E080' }, svg);
+      el('rect', { x: 30, y: 18, width: 40, height: 4, rx: 1, fill: '#CC9944' }, svg);
     }
   };
 

@@ -811,3 +811,144 @@
     document.body.appendChild(s);
   }
 })();
+
+// ─── PAGE TRANSITIONS ───
+(function() {
+  var css = document.createElement('style');
+  css.textContent =
+    'body{opacity:0;transition:opacity 0.3s ease}' +
+    'body.page-loaded{opacity:1}' +
+    'body.page-exit{opacity:0}';
+  document.head.appendChild(css);
+
+  function onReady() {
+    document.body.classList.add('page-loaded');
+    document.addEventListener('click', function(e) {
+      var link = e.target.closest('a');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+      if (link.target && link.target !== '_self') return;
+      if (link.hostname && link.hostname !== window.location.hostname) return;
+      e.preventDefault();
+      if (window.SFX && window.SFX.whoosh) window.SFX.whoosh();
+      document.body.classList.add('page-exit');
+      setTimeout(function() { window.location.href = href; }, 300);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady);
+  } else {
+    onReady();
+  }
+})();
+
+// ─── PLAYER STATUS (presence tracking) ───
+(function() {
+  var GAME_NAMES = {
+    tictactoe:'Tic Tac Toe', connect4:'Connect Four', imposter:'Imposter',
+    uno:'UNO', penguin:'Penguin Knockout', wavelength:'Wavelength',
+    snakeio:'Snake.io', holeio:'Hole.io', snake:'Snake', tetris:'Tetris',
+    minesweeper:'Minesweeper', '2048':'2048', chess:'Chess', checkers:'Checkers',
+    sudoku:'Sudoku', breakout:'Breakout', pong:'Pong', memory:'Memory',
+    hangman:'Hangman', typing:'Typing', whackamole:'Whack-a-Mole',
+    wordle:'Wordle', flappy:'Flappy Bird', solitaire:'Solitaire',
+    blackjack:'Blackjack', rps:'Rock Paper Scissors', simon:'Simon',
+    colorswitch:'Color Switch', doodlejump:'Doodle Jump', crossy:'Crossy Road',
+    aim:'Aim Trainer', cookie:'Cookie Clicker', biztycoon:'Biz Tycoon',
+    bulletdodge:'Bullet Dodge', rhythm:'Rhythm', golf:'Mini Golf',
+    dino:'Dino Runner', galaga:'Galaga', crossword:'Crossword',
+    blockblast:'Block Blast', stickmanhook:'Stickman Hook', paperio:'Paper.io',
+    fruitmerge:'Fruit Merge', sandfall:'Sand Fall', helicopter:'Helicopter',
+    casino:'Casino', pool:'Pool', dotsboxes:'Dots & Boxes', poker:'Poker',
+    parkjam:'Parking Jam', wordscramble:'Word Scramble'
+  };
+
+  function _getUser() {
+    return localStorage.getItem('arcade_currentUser') || 'Guest';
+  }
+  function _isGuest() {
+    var u = _getUser();
+    return !u || u === 'Guest';
+  }
+
+  var page = (window.location.pathname.split('/').pop() || '').replace('.html','');
+
+  function getActivity() {
+    if (GAME_NAMES[page]) return 'Playing ' + GAME_NAMES[page];
+    if (page === 'index' || page === '') return 'Browsing Arcade';
+    if (page === 'profile') return 'Viewing Profile';
+    if (page === 'shop') return 'In Shop';
+    if (page === 'fame') return 'Hall of Fame';
+    return 'Online';
+  }
+
+  var _presDb = null;
+  var _presDoc = null;
+  var _presSetDoc = null;
+  var _serverTimestamp = null;
+
+  async function initPresence() {
+    if (_presDb) return;
+    try {
+      var mods = await Promise.all([
+        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
+        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
+      ]);
+      var getApp = mods[0].getApp;
+      var initializeApp = mods[0].initializeApp;
+      var getFirestore = mods[1].getFirestore;
+      _presDoc = mods[1].doc;
+      _presSetDoc = mods[1].setDoc;
+      _serverTimestamp = mods[1].serverTimestamp;
+      var config = {
+        apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",
+        projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",
+        messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e"
+      };
+      try { _presDb = getFirestore(getApp('pres-app')); }
+      catch(e) {
+        try { _presDb = getFirestore(initializeApp(config, 'pres-app')); }
+        catch(e2) { _presDb = getFirestore(initializeApp(config, 'pres-app-' + Date.now())); }
+      }
+    } catch(e) {
+      console.warn('[Presence] Init failed:', e);
+    }
+  }
+
+  async function updatePresence(online) {
+    if (_isGuest()) return;
+    try {
+      await initPresence();
+      if (!_presDb) return;
+      var key = _getUser().toLowerCase();
+      var ref = _presDoc(_presDb, 'users', key);
+      var data = { lastSeen: _serverTimestamp(), online: online };
+      if (online) data.currentPage = getActivity();
+      await _presSetDoc(ref, data, { merge: true });
+    } catch(e) {}
+  }
+
+  if (!_isGuest()) {
+    // Set online after a short delay (let other scripts init first)
+    setTimeout(function() { updatePresence(true); }, 3000);
+    // Heartbeat every 60s
+    setInterval(function() { if (!_isGuest()) updatePresence(true); }, 60000);
+    // Offline on unload
+    window.addEventListener('beforeunload', function() {
+      if (_presDb && !_isGuest()) {
+        var key = _getUser().toLowerCase();
+        var ref = _presDoc(_presDb, 'users', key);
+        // Use sendBeacon-style: can't await here, just fire
+        _presSetDoc(ref, { online: false, lastSeen: _serverTimestamp() }, { merge: true }).catch(function(){});
+      }
+    });
+  }
+
+  window.addEventListener('arcade-auth-change', function() {
+    if (!_isGuest()) {
+      updatePresence(true);
+    }
+  });
+})();

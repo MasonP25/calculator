@@ -321,6 +321,39 @@
       } catch(e) { return 'none'; }
     },
 
+    // Get friends list with online status
+    getFriendsWithStatus: async function() {
+      if (_isGuest()) return [];
+      try {
+        await _initFirebase();
+        if (!_db) return [];
+        var data = await _readUser(_getUser().toLowerCase());
+        if (!data) return [];
+        var keys = data.friends || [];
+        var results = [];
+        for (var i = 0; i < keys.length; i++) {
+          var uData = await _readUser(keys[i]);
+          if (uData) {
+            var isOnline = uData.online === true;
+            var lastSeen = uData.lastSeen;
+            var ts = 0;
+            if (lastSeen) ts = lastSeen.toDate ? lastSeen.toDate().getTime() : (typeof lastSeen === 'number' ? lastSeen : 0);
+            // Consider offline if lastSeen > 2 minutes ago
+            if (isOnline && ts && (Date.now() - ts > 120000)) isOnline = false;
+            results.push({
+              username: uData.username || keys[i],
+              online: isOnline,
+              currentPage: uData.currentPage || '',
+              lastSeen: ts
+            });
+          }
+        }
+        // Sort: online first
+        results.sort(function(a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0); });
+        return results;
+      } catch(e) { return []; }
+    },
+
     // Force refresh (dispatch event)
     refresh: async function() {
       if (_isGuest()) return;

@@ -89,6 +89,13 @@
     slide: () => { const c = getCtx(); const o = c.createOscillator(); const g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(400, c.currentTime); o.frequency.linearRampToValueAtTime(600, c.currentTime + 0.1); g.gain.value = 0.2 * vol; o.connect(g); g.connect(c.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12); o.stop(c.currentTime + 0.13); },
     countdown: (n) => osc('sine', n > 0 ? 440 : 880, n > 0 ? 0.15 : 0.3, 0.4),
     nearmiss: () => { osc('triangle', 1000, 0.05, 0.2); osc('triangle', 1300, 0.08, 0.2, 0.05); },
+
+    // Site-wide
+    notification: () => { osc('sine', 880, 0.08, 0.3); osc('sine', 1100, 0.08, 0.3, 0.08); osc('sine', 1320, 0.12, 0.3, 0.16); },
+    invite: () => { osc('triangle', 660, 0.1, 0.35); osc('triangle', 990, 0.15, 0.35, 0.12); },
+    streak: () => { [600,750,900,1050,1200].forEach((f,i) => osc('sine', f, 0.1, 0.3, i*0.07)); },
+    whoosh: () => { if(muted) return; const c=getCtx(); const o=c.createOscillator(); const g=c.createGain(); o.type='sine'; o.frequency.setValueAtTime(800,c.currentTime); o.frequency.exponentialRampToValueAtTime(200,c.currentTime+0.2); g.gain.value=0.2*vol; o.connect(g); g.connect(c.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.25); o.stop(c.currentTime+0.26); },
+    random: () => { for(let i=0;i<8;i++) osc('sine',300+Math.random()*800,0.04,0.2,i*0.06); },
   };
 
   // ─── Mute button UI ───

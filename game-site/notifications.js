@@ -73,6 +73,7 @@
 
   // ─── TOAST ───
   function _showToast(notif) {
+    if (window.SFX && window.SFX.notification) window.SFX.notification();
     var toast = document.createElement('div');
     toast.className = 'notif-toast';
     toast.innerHTML = '<span class="notif-toast-icon">' + (notif.icon || '🔔') + '</span>' +

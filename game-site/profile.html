@@ -420,6 +420,7 @@
       <div class="hero-username" id="heroName"></div>
       <div class="hero-bio" id="heroBio" style="font-size:0.85rem;color:#aaa;margin:0.2rem 0;font-style:italic;display:none"></div>
       <div class="hero-level" id="heroLevel"></div>
+      <div id="heroStatus" style="font-size:0.78rem;margin:0.3rem 0;display:none"></div>
       <div class="hero-meta" id="heroMeta"></div>
       <div id="heroFeaturedBadge" style="margin-top:0.3rem;display:none"></div>
       <div class="hero-actions" id="heroActions"></div>
@@ -691,6 +692,7 @@ async function renderStreakWidget(profileData) {
           lastStreakDate: today,
           coins: (data.coins || 0) + reward
         }, { merge: true });
+        if (window.SFX && window.SFX.streak) window.SFX.streak();
         btn.textContent = '\u2714 Collected';
         widget.querySelector('.streak-count').textContent = newStreak + ' day' + (newStreak !== 1 ? 's' : '');
         widget.querySelector('.streak-reward').textContent = 'Collected +' + reward + ' coins today';
@@ -883,6 +885,33 @@ async function loadProfile() {
     if (levelInfo && heroLevel) {
       heroLevel.innerHTML = '<span class="level-badge">Level ' + levelInfo.level + '</span>';
       window.ArcadeLevels.renderProgressBar(heroLevel, levelInfo, false);
+    }
+  }
+
+  // ─── STATUS ───
+  var statusEl = document.getElementById('heroStatus');
+  if (statusEl && profileData) {
+    var isOnline = profileData.online === true;
+    var lastSeen = profileData.lastSeen;
+    var currentPage = profileData.currentPage || 'Online';
+    if (isOnline) {
+      statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#44cc44;margin-right:5px;vertical-align:middle"></span>' +
+        '<span style="color:#44cc44">' + currentPage + '</span>';
+      statusEl.style.display = '';
+    } else if (lastSeen) {
+      var ts = lastSeen.toDate ? lastSeen.toDate().getTime() : (typeof lastSeen === 'number' ? lastSeen : 0);
+      if (ts) {
+        var diff = Date.now() - ts;
+        var mins = Math.floor(diff / 60000);
+        var timeStr;
+        if (mins < 1) timeStr = 'just now';
+        else if (mins < 60) timeStr = mins + 'm ago';
+        else if (mins < 1440) timeStr = Math.floor(mins / 60) + 'h ago';
+        else timeStr = Math.floor(mins / 1440) + 'd ago';
+        statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle"></span>' +
+          '<span style="color:#888">Last seen ' + timeStr + '</span>';
+        statusEl.style.display = '';
+      }
     }
   }
 
@@ -1194,12 +1223,18 @@ async function renderFriends(profileData) {
     name.dataset.username = fKey;
     name.textContent = fKey;
 
+    var statusDot = document.createElement('span');
+    statusDot.className = 'friend-status';
+    statusDot.dataset.username = fKey;
+    statusDot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0;margin-left:auto';
+
     card.appendChild(avatar);
     card.appendChild(name);
+    card.appendChild(statusDot);
     list.appendChild(card);
 
-    // Load avatar + display name async
-    (function(avatarEl, nameEl, username) {
+    // Load avatar + display name + status async
+    (function(avatarEl, nameEl, dotEl, username) {
       if (window.ArcadeCoins && window.ArcadeCoins.getProfile) {
         window.ArcadeCoins.getProfile(username).then(function(profile) {
           if (!profile) return;
@@ -1209,17 +1244,25 @@ async function renderFriends(profileData) {
           }
         }).catch(function() {});
       }
-      // Get display name
+      // Get display name + status
       if (window.ArcadeBadges && window.ArcadeBadges.getFullProfile) {
         window.ArcadeBadges.getFullProfile(username).then(function(data) {
           if (data && data.username) {
             nameEl.textContent = data.username;
-            // Update href too
             nameEl.closest('a').href = 'profile.html?user=' + encodeURIComponent(data.username);
+          }
+          if (data) {
+            var isOnline = data.online === true;
+            var ls = data.lastSeen;
+            var ts = 0;
+            if (ls) ts = ls.toDate ? ls.toDate().getTime() : (typeof ls === 'number' ? ls : 0);
+            if (isOnline && ts && (Date.now() - ts > 120000)) isOnline = false;
+            dotEl.style.background = isOnline ? '#44cc44' : '#444';
+            dotEl.title = isOnline ? (data.currentPage || 'Online') : 'Offline';
           }
         }).catch(function() {});
       }
-    })(avatar, name, fKey);
+    })(avatar, name, statusDot, fKey);
   }
 
   wrap.appendChild(list);

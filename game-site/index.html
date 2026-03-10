@@ -208,6 +208,24 @@
     border-color: #7b2ff7;
     color: #fff;
   }
+  /* Random game button */
+  .random-btn {
+    background: linear-gradient(135deg, #7b2ff7 0%, #00d4ff 100%);
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.35rem 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+  }
+  .random-btn:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(123,47,247,0.4); }
+  .random-btn.spinning { animation: randomPulse 0.15s infinite alternate; }
+  @keyframes randomPulse { from { transform: scale(1); } to { transform: scale(1.06); } }
+
   /* Fav button */
   .fav-btn {
     position: absolute;
@@ -577,6 +595,7 @@
     <button class="filter-btn" data-filter="card">Card</button>
     <button class="filter-btn" data-filter="sports">Sports</button>
     <button class="filter-btn" data-filter="idle">Idle</button>
+    <button class="random-btn" id="randomGameBtn">&#127922; Random</button>
   </div>
 
   <div class="section-title" id="favSection" style="display:none">&#11088; Favorites</div>
@@ -592,14 +611,12 @@
       <h2>Snake.io</h2>
       <p>Grow your snake, eat food, and outlast opponents in a multiplayer arena! Boost to go fast but risk shrinking.</p>
       <span class="badge mp">2P / AI / Online</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="holeio.html">
       <div class="icon">&#128371;</div>
       <h2>Hole.io</h2>
       <p>Control a black hole absorbing everything in a city! Grow bigger to swallow cars, buildings, and even other players.</p>
       <span class="badge mp">2P / AI / Online</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="connect4.html">
       <div class="icon">&#128308;</div>
@@ -675,7 +692,6 @@
       <p>8-ball pool! Play online, local 2P, or vs AI. Real physics!</p>
       <span class="badge mp">2P / AI</span>
       <span class="badge online">Online</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="dotsboxes.html">
       <div class="icon">&#10006;</div>
@@ -683,14 +699,12 @@
       <p>Draw lines, claim boxes! Play online, local 2P, or vs AI!</p>
       <span class="badge mp">2P / AI</span>
       <span class="badge online">Online</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="poker.html">
       <div class="icon">&#127183;</div>
       <h2>Poker</h2>
       <p>Texas Hold'em vs AI or 2P hotseat. Easy, Medium, Hard AI.</p>
       <span class="badge mp">1-2P / AI</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="uno.html">
       <div class="icon">&#127183;</div>
@@ -729,14 +743,12 @@
       <h2>Parking Jam</h2>
       <p>Slide cars out of the way to free the red car! Rush Hour-style puzzle.</p>
       <span class="badge solo">Drag</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="wordscramble.html">
       <div class="icon">&#128260;</div>
       <h2>Word Scramble</h2>
       <p>Unscramble the letters to form words before time runs out!</p>
       <span class="badge solo">Keyboard</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="tetris.html">
       <div class="icon">&#129513;</div>
@@ -989,7 +1001,6 @@
       <h2>Biz Tycoon</h2>
       <p>Build a business empire! Buy shops, hire managers, and prestige for multipliers! Auto-saves!</p>
       <span class="badge solo">Click</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="colorswitch.html">
       <div class="icon">&#127912;</div>
@@ -1019,31 +1030,31 @@
       <div class="icon">&#127925;</div>
       <h2>Rhythm</h2>
       <p>Hit arrow keys in time with the beat! Perfect your timing.</p>
-      <span class="badge solo">Arrow Keys</span><span class="badge new">New</span>
+      <span class="badge solo">Arrow Keys</span>
     </a>
     <a class="card" href="golf.html">
       <div class="icon">&#9971;</div>
       <h2>Mini Golf</h2>
       <p>9 holes of mini golf! Drag to aim, sink every putt.</p>
-      <span class="badge solo">Click / Drag</span><span class="badge new">New</span>
+      <span class="badge solo">Click / Drag</span>
     </a>
     <a class="card" href="dino.html">
       <div class="icon">&#129430;</div>
       <h2>Dino Runner</h2>
       <p>Run, jump, and duck past obstacles! Chrome dino-style.</p>
-      <span class="badge solo">Space / Down</span><span class="badge new">New</span>
+      <span class="badge solo">Space / Down</span>
     </a>
     <a class="card" href="galaga.html">
       <div class="icon">&#128640;</div>
       <h2>Galaga</h2>
       <p>Classic space shooter! Destroy alien formations wave by wave.</p>
-      <span class="badge solo">Arrows / Space</span><span class="badge new">New</span>
+      <span class="badge solo">Arrows / Space</span>
     </a>
     <a class="card" href="crossword.html">
       <div class="icon">&#128221;</div>
       <h2>Crossword</h2>
       <p>Solve crossword puzzles! 3 difficulty levels, timed challenge.</p>
-      <span class="badge solo">Keyboard</span><span class="badge new">New</span>
+      <span class="badge solo">Keyboard</span>
     </a>
     <a class="card" href="blockblast.html">
       <div class="icon">&#129513;</div>
@@ -1067,27 +1078,25 @@
       <div class="icon">&#127825;</div>
       <h2>Fruit Merge</h2>
       <p>Drop and merge fruits! Combine matching fruits to grow bigger.</p>
-      <span class="badge solo">Click / Drag</span><span class="badge new">New</span>
+      <span class="badge solo">Click / Drag</span>
     </a>
     <a class="card" href="sandfall.html">
       <div class="icon">&#9201;</div>
       <h2>Sand Fall</h2>
       <p>Falling sand simulator! Draw with sand, water, fire, lava, and more.</p>
-      <span class="badge solo">Click / Drag</span><span class="badge new">New</span>
+      <span class="badge solo">Click / Drag</span>
     </a>
     <a class="card" href="helicopter.html">
       <div class="icon">&#128641;</div>
       <h2>Helicopter</h2>
       <p>Hold to fly through a cave! Avoid walls and obstacles!</p>
       <span class="badge solo">Hold / Space</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="casino.html">
       <div class="icon">&#127920;</div>
       <h2>Casino</h2>
       <p>Gamble your coins! Coin flip, spin the wheel, and scratch cards!</p>
       <span class="badge solo">Click</span>
-      <span class="badge new">New</span>
     </a>
   </div>
 
@@ -1099,119 +1108,102 @@
       <h2>Fireboy & Watergirl</h2>
       <p>Team up in the Forest Temple! Fireboy uses arrows, Watergirl uses WASD. Solve puzzles together!</p>
       <span class="badge mp">2P Local</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="slope.html">
       <div class="icon">&#9935;</div>
       <h2>Slope</h2>
       <p>Roll a ball down an endless slope! Dodge obstacles and stay on the track!</p>
       <span class="badge solo">Arrows / AD</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="subway.html">
       <div class="icon">&#128646;</div>
       <h2>Subway Surfers</h2>
       <p>Dash through the subway! Dodge trains, collect coins, and surf endlessly!</p>
       <span class="badge solo">Arrows / Swipe</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="drifthunters.html">
       <div class="icon">&#128663;</div>
       <h2>Drift Hunters</h2>
       <p>3D drift racing! Tune your car and master drifting on multiple tracks!</p>
       <span class="badge solo">WASD / Arrows</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="run3.html">
       <div class="icon">&#128694;</div>
       <h2>Run 3</h2>
       <p>Sprint through space tunnels! Jump and run on walls in this endless runner!</p>
       <span class="badge solo">Arrows / Space</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="championisland.html">
       <div class="icon">&#127942;</div>
       <h2>Champion Island</h2>
       <p>Google's RPG adventure! Compete in sports mini-games across a beautiful island!</p>
       <span class="badge solo">Arrows</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="doodlebaseball.html">
       <div class="icon">&#9918;</div>
       <h2>Doodle Baseball</h2>
       <p>Google's baseball doodle! Bat as American foods and try to hit home runs!</p>
       <span class="badge solo">Click</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="gardengnomes.html">
       <div class="icon">&#127793;</div>
       <h2>Garden Gnomes</h2>
       <p>Google's garden doodle! Launch gnomes by catapult to cover your garden!</p>
       <span class="badge solo">Click</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="doodlesnake.html">
       <div class="icon">&#128013;</div>
       <h2>Doodle Snake</h2>
       <p>Google's snake doodle! Guide your snake to eat apples on a classic grid!</p>
       <span class="badge solo">Arrows</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="doodlepacman.html">
       <div class="icon">&#128308;</div>
       <h2>Doodle PAC-MAN</h2>
       <p>Google's 30th anniversary PAC-MAN! Press Insert Coin twice for 2-player Ms. PAC-MAN!</p>
       <span class="badge solo">Arrows</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="fnaf.html">
       <div class="icon">&#128059;</div>
       <h2>Five Nights at Freddy's</h2>
       <p>Survive 5 nights as a security guard! Watch the cameras and don't let the animatronics get you!</p>
       <span class="badge solo">Click</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="minecraft.html">
       <div class="icon">&#9935;</div>
       <h2>Minecraft</h2>
       <p>Build, mine, and survive in the classic sandbox game! Eaglercraft 1.8 in your browser!</p>
       <span class="badge solo">WASD / Mouse</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="worldhardest.html">
       <div class="icon">&#128545;</div>
       <h2>World's Hardest Game</h2>
       <p>Dodge blue balls and reach the green zone! Simple concept, insanely hard execution!</p>
       <span class="badge solo">Arrows / WASD</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="hextris.html">
       <div class="icon">&#11042;</div>
       <h2>Hextris</h2>
       <p>Rotate the hexagon to catch falling blocks! Match 3+ colors to clear them before they stack up!</p>
       <span class="badge solo">Arrows / AD</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="spelunky.html">
       <div class="icon">&#9935;</div>
       <h2>Spelunky</h2>
       <p>Explore randomly generated caves! Collect treasure, avoid traps, and survive the depths!</p>
       <span class="badge solo">Arrows / ZX</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="astray.html">
       <div class="icon">&#127987;</div>
       <h2>Astray</h2>
       <p>Navigate a ball through 3D mazes! Use arrow keys to find the exit before time runs out!</p>
       <span class="badge solo">Arrows / HJKL</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="0hh1.html">
       <div class="icon">&#128308;</div>
       <h2>0h h1</h2>
       <p>Fill the grid with red and blue! Follow the rules — no three in a row, equal counts per line!</p>
       <span class="badge solo">Click / Tap</span>
-      <span class="badge new">New</span>
     </a>
     <a class="card" href="gswitch3.html">
       <div class="icon">&#128260;</div>
@@ -1351,6 +1343,34 @@
       renderRecentlyPlayed();
     }
   }
+
+  // ─── RANDOM GAME ───
+  document.getElementById('randomGameBtn').addEventListener('click', function() {
+    var btn = this;
+    if (btn.classList.contains('spinning')) return;
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card:not(.hidden-search)');
+    if (cards.length === 0) return;
+    if (window.SFX && window.SFX.random) window.SFX.random();
+    btn.classList.add('spinning');
+    var names = [];
+    cards.forEach(function(c) { var h = c.querySelector('h2'); if (h) names.push(h.textContent); });
+    var chosen = cards[Math.floor(Math.random() * cards.length)];
+    var cycles = 0, maxCycles = 15;
+    var interval = setInterval(function() {
+      btn.textContent = names[Math.floor(Math.random() * names.length)];
+      cycles++;
+      if (cycles >= maxCycles) {
+        clearInterval(interval);
+        var chosenName = chosen.querySelector('h2');
+        btn.textContent = chosenName ? chosenName.textContent : 'Go!';
+        btn.classList.remove('spinning');
+        setTimeout(function() {
+          if (window.SFX && window.SFX.whoosh) window.SFX.whoosh();
+          window.location.href = chosen.getAttribute('href');
+        }, 600);
+      }
+    }, 80);
+  });
 
   // ─── FAVORITES ───
   var FAV_KEY = 'arcade_favorites';
