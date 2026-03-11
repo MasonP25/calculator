@@ -127,10 +127,6 @@ window.FirebaseLB = {
     if (window.ArcadeChallenges) {
       window.ArcadeChallenges.incrementQuest('scores_posted', 1);
     }
-    // Post activity for new personal best (only when beating an existing score, not first-time)
-    if (window.ArcadeActivity && existing.exists()) {
-      window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
-    }
     // Award coins for leaderboard placement + track for badges
     if (window.ArcadeCoins && gameId !== 'idleminer') {
       try {
@@ -143,6 +139,10 @@ window.FirebaseLB = {
           if (scores[p].name === name) {
             var bonus = [50, 30, 15][p] * (isGOTD ? 2 : 1);
             window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId + (isGOTD ? ' (2x GOTD)' : ''));
+            // Post activity only for #1 on leaderboard
+            if (p === 0 && window.ArcadeActivity) {
+              window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
+            }
             // Record placement for badges (position is 1-indexed)
             if (window.ArcadeBadges) window.ArcadeBadges.recordPlacement(gameId, p + 1);
             // Award XP for placement
