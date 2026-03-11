@@ -137,24 +137,31 @@
 
   // One-time migration: remove false high scores and duplicate level-ups
   async function _fixActivityFeed() {
-    if (localStorage.getItem('_activity_fix_v1')) return;
+    if (localStorage.getItem('_activity_fix_v3')) return;
     try {
       await _initFirebase();
       if (!_db || !_collection) return;
-      var q = _query(_collection(_db, 'activity'), _limit(200));
-      var snap = await _getDocs(q);
-      var toDelete = [];
-      var seenLevelUps = {};
 
+      // Loop to delete ALL high_score entries (batches of 100)
+      var deleted = 0;
+      while (true) {
+        var hsQ = _query(_collection(_db, 'activity'), _where('type', '==', 'high_score'), _limit(100));
+        var hsSnap = await _getDocs(hsQ);
+        if (hsSnap.empty) break;
+        var promises = [];
+        hsSnap.forEach(function(d) { promises.push(_deleteDoc(d.ref)); });
+        await Promise.all(promises);
+        deleted += promises.length;
+      }
+
+      // Deduplicate level_up: keep only the latest per user+level
+      var q = _query(_collection(_db, 'activity'), _where('type', '==', 'level_up'), _limit(500));
+      var snap = await _getDocs(q);
+      var seenLevelUps = {};
+      var toDelete = [];
       snap.forEach(function(d) {
         var data = d.data();
-        // Delete all high_score entries (can't distinguish real from false)
-        if (data.type === 'high_score') {
-          toDelete.push(d.ref);
-          return;
-        }
-        // Deduplicate level_up: keep only the latest per user+level
-        if (data.type === 'level_up' && data.data) {
+        if (data.data) {
           var key = (data.username || '') + '_lv_' + data.data.level;
           if (seenLevelUps[key]) {
             if (data.time > seenLevelUps[key].time) {
@@ -168,12 +175,13 @@
           }
         }
       });
-
       for (var i = 0; i < toDelete.length; i++) {
         await _deleteDoc(toDelete[i]);
       }
+
       _cache = null;
-      localStorage.setItem('_activity_fix_v1', '1');
+      if (deleted > 0) console.log('[Activity] Cleaned up ' + deleted + ' false high_score entries');
+      localStorage.setItem('_activity_fix_v3', '1');
     } catch(e) {
       console.warn('[Activity] Fix migration failed:', e);
     }
