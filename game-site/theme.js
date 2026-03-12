@@ -4,7 +4,7 @@
     var link = document.createElement('link');
     link.rel = 'icon';
     link.type = 'image/svg+xml';
-    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect rx="12" width="64" height="64" fill="#1a1a2e"/><rect x="18" y="14" width="28" height="20" rx="4" fill="#7b2ff7"/><rect x="20" y="16" width="24" height="16" rx="2" fill="#2a2a4a"/><circle cx="28" cy="24" r="3" fill="#00d4ff"/><circle cx="36" cy="24" r="3" fill="#ff6b6b"/><rect x="26" y="36" width="12" height="8" rx="2" fill="#444"/><rect x="20" y="40" width="8" height="4" rx="1" fill="#555"/><rect x="36" y="40" width="8" height="4" rx="1" fill="#555"/><circle cx="44" cy="48" r="3" fill="#ff6b6b"/><circle cx="50" cy="44" r="3" fill="#00d4ff"/><rect x="16" y="44" width="4" height="8" rx="1" fill="#555"/><rect x="14" y="46" width="8" height="4" rx="1" fill="#555"/></svg>');
+    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect rx="14" width="64" height="64" fill="#7b2ff7"/><text x="32" y="46" text-anchor="middle" font-size="40" font-family="Arial,sans-serif" font-weight="bold" fill="white">A</text></svg>');
     document.head.appendChild(link);
   }
 })();
