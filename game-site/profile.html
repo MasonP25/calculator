@@ -422,15 +422,8 @@
       <div class="hero-level" id="heroLevel"></div>
       <div id="heroStatus" style="font-size:0.78rem;margin:0.3rem 0;display:none"></div>
       <div class="hero-meta" id="heroMeta"></div>
-      <div id="heroFeaturedBadge" style="margin-top:0.3rem;display:none"></div>
       <div class="hero-actions" id="heroActions"></div>
     </div>
-  </div>
-
-  <!-- Pinned Game -->
-  <div id="pinnedGameSection" style="display:none">
-    <div class="section-header">Pinned Game</div>
-    <div class="recent-games" id="pinnedGameWrap" style="max-width:900px;margin:0 auto"></div>
   </div>
 
   <!-- Stats -->
@@ -774,30 +767,30 @@ async function loadProfile() {
   var heroEl = document.getElementById('profileHero');
   var BANNER_GRADIENTS = {
     'default': '',
-    'sunset': 'linear-gradient(135deg, #ff6b6b22, #ffd70022)',
-    'ocean': 'linear-gradient(135deg, #0077b622, #00d4ff22)',
-    'forest': 'linear-gradient(135deg, #2ed57322, #1e90ff22)',
-    'purple': 'linear-gradient(135deg, #7b2ff722, #ff6b8122)',
-    'fire': 'linear-gradient(135deg, #ff475722, #ff8c0022)',
-    'midnight': 'linear-gradient(135deg, #2c3e5022, #3498db22)',
-    'neon': 'linear-gradient(135deg, #ff00ff22, #00ff0022)',
-    'gold': 'linear-gradient(135deg, #ffd70022, #ff8c0022)',
-    'aurora': 'linear-gradient(135deg, #22d1a022, #7b5ef722)',
-    'cherry': 'linear-gradient(135deg, #e91e6322, #ff525222)',
-    'ice': 'linear-gradient(135deg, #a8edea22, #1a298022)',
-    'lava': 'linear-gradient(135deg, #f1271122, #f5af1922)',
-    'cotton': 'linear-gradient(135deg, #f093fb22, #f5576c22)',
-    'emerald': 'linear-gradient(135deg, #11998e22, #38ef7d22)',
-    'rose': 'linear-gradient(135deg, #b76e7922, #f0c27f22)',
-    'storm': 'linear-gradient(135deg, #3a1c7122, #d76d7722, #ffaf7b22)',
-    'deep': 'linear-gradient(135deg, #0f202722, #203a4322, #2c536422)',
-    'candy': 'linear-gradient(135deg, #fc5c7d22, #6a82fb22)'
+    'sunset': 'linear-gradient(135deg, #ff6b6b55, #ffd70055)',
+    'ocean': 'linear-gradient(135deg, #0077b655, #00d4ff55)',
+    'forest': 'linear-gradient(135deg, #2ed57355, #1e90ff55)',
+    'purple': 'linear-gradient(135deg, #7b2ff755, #ff6b8155)',
+    'fire': 'linear-gradient(135deg, #ff475755, #ff8c0055)',
+    'midnight': 'linear-gradient(135deg, #2c3e5055, #3498db55)',
+    'neon': 'linear-gradient(135deg, #ff00ff55, #00ff0055)',
+    'gold': 'linear-gradient(135deg, #ffd70055, #ff8c0055)',
+    'aurora': 'linear-gradient(135deg, #22d1a055, #7b5ef755)',
+    'cherry': 'linear-gradient(135deg, #e91e6355, #ff525255)',
+    'ice': 'linear-gradient(135deg, #a8edea55, #1a298055)',
+    'lava': 'linear-gradient(135deg, #f1271155, #f5af1955)',
+    'cotton': 'linear-gradient(135deg, #f093fb55, #f5576c55)',
+    'emerald': 'linear-gradient(135deg, #11998e55, #38ef7d55)',
+    'rose': 'linear-gradient(135deg, #b76e7955, #f0c27f55)',
+    'storm': 'linear-gradient(135deg, #3a1c7155, #d76d7755, #ffaf7b55)',
+    'deep': 'linear-gradient(135deg, #0f202755, #203a4355, #2c536455)',
+    'candy': 'linear-gradient(135deg, #fc5c7d55, #6a82fb55)'
   };
   var bannerBg = '';
   if (banner.startsWith('custom:')) {
     // Custom gradient — apply with transparency
     var grad = banner.replace('custom:', '');
-    bannerBg = grad.replace(/#([0-9a-fA-F]{6})/g, function(m, hex) { return '#' + hex + '22'; });
+    bannerBg = grad.replace(/#([0-9a-fA-F]{6})/g, function(m, hex) { return '#' + hex + '55'; });
   } else if (banner !== 'default') {
     bannerBg = BANNER_GRADIENTS[banner] || '';
   }
@@ -811,31 +804,6 @@ async function loadProfile() {
   if (profileData.bio) {
     bioEl.textContent = profileData.bio;
     bioEl.style.display = 'block';
-  }
-
-  // ─── CUSTOM PROFILE: Featured Badge ───
-  var featuredBadgeEl = document.getElementById('heroFeaturedBadge');
-  if (profileData.featuredBadge && window.ArcadeBadges) {
-    var allBadges = window.ArcadeBadges.BADGES || [];
-    var fb = allBadges.find(function(b) { return b.id === profileData.featuredBadge; });
-    if (fb) {
-      featuredBadgeEl.innerHTML = '<span style="font-size:1.5rem">' + fb.icon + '</span> <span style="font-size:0.85rem;color:#ffd700;font-weight:600">' + fb.name + '</span>';
-      featuredBadgeEl.style.display = 'block';
-    }
-  }
-
-  // ─── CUSTOM PROFILE: Pinned Game ───
-  if (profileData.pinnedGame) {
-    var pg = GAME_MAP[profileData.pinnedGame];
-    if (pg) {
-      document.getElementById('pinnedGameSection').style.display = 'block';
-      var pgWrap = document.getElementById('pinnedGameWrap');
-      var pgCard = document.createElement('a');
-      pgCard.className = 'recent-card';
-      pgCard.href = (GAME_URLS[pg.id] || pg.id + '.html');
-      pgCard.innerHTML = '<span class="rc-emoji">' + pg.emoji + '</span><div><div class="rc-name">' + pg.name + '</div><div class="rc-time">Favorite Game</div></div>';
-      pgWrap.appendChild(pgCard);
-    }
   }
 
   // Actions
@@ -1445,8 +1413,6 @@ window.openEditProfileModal = async function() {
   modal.style.cssText = 'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:1.5rem 2rem;width:440px;max-width:90vw;max-height:85vh;overflow-y:auto';
 
   var selectedBanner = data.banner || 'default';
-  var selectedPinnedGame = data.pinnedGame || '';
-  var selectedFeaturedBadge = data.featuredBadge || '';
 
   // Banner preview helper
   function getBannerCss(id) {
@@ -1490,25 +1456,6 @@ window.openEditProfileModal = async function() {
   bannerHtml += '<button id="ep-capply" style="background:#7b2ff7;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;font-weight:600">Apply</button>';
   bannerHtml += '</div>';
 
-  // Build game picker
-  var gameOptions = '<option value="">None</option>';
-  GAMES.forEach(function(g) {
-    var sel = g.id === selectedPinnedGame ? ' selected' : '';
-    gameOptions += '<option value="' + g.id + '"' + sel + '>' + g.emoji + ' ' + g.name + '</option>';
-  });
-
-  // Build badge picker
-  var earned = data.badges || [];
-  var badgeOptions = '<option value="">None</option>';
-  if (window.ArcadeBadges) {
-    (window.ArcadeBadges.BADGES || []).forEach(function(b) {
-      if (earned.indexOf(b.id) !== -1) {
-        var sel = b.id === selectedFeaturedBadge ? ' selected' : '';
-        badgeOptions += '<option value="' + b.id + '"' + sel + '>' + b.icon + ' ' + b.name + '</option>';
-      }
-    });
-  }
-
   var inputStyle = 'width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 0.8rem';
   var labelStyle = 'color:#888;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.15rem';
 
@@ -1518,12 +1465,6 @@ window.openEditProfileModal = async function() {
     '<textarea id="ep-bio" maxlength="150" style="' + inputStyle + ';resize:none;height:55px">' + (data.bio || '') + '</textarea>' +
     '<label style="' + labelStyle + '">Banner</label>' +
     bannerHtml +
-    '<div style="display:flex;gap:0.8rem">' +
-      '<div style="flex:1"><label style="' + labelStyle + '">Favorite Game</label>' +
-      '<select id="ep-pinned" style="' + inputStyle + '">' + gameOptions + '</select></div>' +
-      '<div style="flex:1"><label style="' + labelStyle + '">Featured Badge</label>' +
-      '<select id="ep-badge" style="' + inputStyle + '">' + badgeOptions + '</select></div>' +
-    '</div>' +
     '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">' +
       '<button id="ep-cancel" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #2a2a4a;background:#0f0f1a;color:#aaa;font-weight:600">Cancel</button>' +
       '<button id="ep-save" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #ffd700;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#0f0f1a;font-weight:700">Save</button>' +
@@ -1640,15 +1581,11 @@ window.openEditProfileModal = async function() {
   // Save
   modal.querySelector('#ep-save').addEventListener('click', async function() {
     var bio = document.getElementById('ep-bio').value.trim().substring(0, 150);
-    var pinned = document.getElementById('ep-pinned').value;
-    var badge = document.getElementById('ep-badge').value;
     var msg = document.getElementById('ep-msg');
     try {
       await setDoc(ref, {
         bio: bio,
-        banner: selectedBanner,
-        pinnedGame: pinned,
-        featuredBadge: badge
+        banner: selectedBanner
       }, { merge: true });
       msg.style.color = '#2ed573';
       msg.textContent = 'Profile saved! Refreshing...';
