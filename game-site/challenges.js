@@ -156,8 +156,9 @@
 
   function _dayOfYear() {
     var now = new Date();
-    var start = new Date(now.getFullYear(), 0, 0);
-    return Math.floor((now - start) / 86400000);
+    var start = new Date(now.getFullYear(), 0, 1);
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((d - start) / 86400000) + 1;
   }
 
   function _weekId() {
@@ -280,7 +281,7 @@
     '.challenge-widget .cw-status{font-size:0.7rem;color:#888}' +
     '.challenge-widget.completed{border-color:#2ed573}' +
     '.challenge-widget.completed .cw-title{color:#2ed573}' +
-    '.gotd-banner{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#ffd700,#ffaa00);color:#0f0f1a;font-size:0.55rem;font-weight:700;padding:2px 10px;border-radius:0 0 8px 8px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;z-index:2}' +
+    '.gotd-banner{position:absolute;top:0;left:0;right:0;background:linear-gradient(90deg,#ffd700,#ffaa00);color:#0f0f1a;font-size:0.55rem;font-weight:700;padding:3px 0;border-radius:14px 14px 0 0;text-transform:uppercase;letter-spacing:1px;text-align:center;z-index:2}' +
     '.card.gotd{border-color:#ffd70088!important;box-shadow:0 0 20px rgba(255,215,0,0.15)!important;position:relative}' +
     '.card.gotd:hover{border-color:#ffd700!important;box-shadow:0 4px 25px rgba(255,215,0,0.3)!important}' +
     '.quest-card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:0.7rem 1rem;margin-bottom:0.5rem}' +

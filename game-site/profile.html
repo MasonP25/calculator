@@ -446,7 +446,7 @@
   <div id="challengesSection" style="display:none">
     <div class="section-header">Daily Challenge</div>
     <div id="profileChallengeWrap" style="max-width:900px;margin:0 auto 1rem"></div>
-    <div class="section-header">Weekly Quests</div>
+    <div class="section-header">Weekly Quests <span style="font-size:0.65rem;color:#888;font-weight:400;letter-spacing:0;text-transform:none;margin-left:0.4rem">Resets every Monday</span></div>
     <div id="profileQuestsWrap" style="max-width:900px;margin:0 auto 1rem"></div>
   </div>
 
@@ -781,10 +781,28 @@ async function loadProfile() {
     'fire': 'linear-gradient(135deg, #ff475722, #ff8c0022)',
     'midnight': 'linear-gradient(135deg, #2c3e5022, #3498db22)',
     'neon': 'linear-gradient(135deg, #ff00ff22, #00ff0022)',
-    'gold': 'linear-gradient(135deg, #ffd70022, #ff8c0022)'
+    'gold': 'linear-gradient(135deg, #ffd70022, #ff8c0022)',
+    'aurora': 'linear-gradient(135deg, #22d1a022, #7b5ef722)',
+    'cherry': 'linear-gradient(135deg, #e91e6322, #ff525222)',
+    'ice': 'linear-gradient(135deg, #a8edea22, #1a298022)',
+    'lava': 'linear-gradient(135deg, #f1271122, #f5af1922)',
+    'cotton': 'linear-gradient(135deg, #f093fb22, #f5576c22)',
+    'emerald': 'linear-gradient(135deg, #11998e22, #38ef7d22)',
+    'rose': 'linear-gradient(135deg, #b76e7922, #f0c27f22)',
+    'storm': 'linear-gradient(135deg, #3a1c7122, #d76d7722, #ffaf7b22)',
+    'deep': 'linear-gradient(135deg, #0f202722, #203a4322, #2c536422)',
+    'candy': 'linear-gradient(135deg, #fc5c7d22, #6a82fb22)'
   };
-  if (banner !== 'default' && BANNER_GRADIENTS[banner]) {
-    heroEl.style.background = BANNER_GRADIENTS[banner];
+  var bannerBg = '';
+  if (banner.startsWith('custom:')) {
+    // Custom gradient — apply with transparency
+    var grad = banner.replace('custom:', '');
+    bannerBg = grad.replace(/#([0-9a-fA-F]{6})/g, function(m, hex) { return '#' + hex + '22'; });
+  } else if (banner !== 'default') {
+    bannerBg = BANNER_GRADIENTS[banner] || '';
+  }
+  if (bannerBg) {
+    heroEl.style.background = bannerBg;
     heroEl.style.borderColor = '#3a3a5a';
   }
 
@@ -1393,7 +1411,7 @@ window.openEditProfileModal = async function() {
   var snap = await getDoc(ref);
   var data = snap.exists() ? snap.data() : {};
 
-  var BANNERS = [
+  var FREE_BANNERS = [
     {id:'default',label:'Default',css:''},
     {id:'sunset',label:'Sunset',css:'linear-gradient(135deg,#ff6b6b,#ffd700)'},
     {id:'ocean',label:'Ocean',css:'linear-gradient(135deg,#0077b6,#00d4ff)'},
@@ -1404,24 +1422,72 @@ window.openEditProfileModal = async function() {
     {id:'neon',label:'Neon',css:'linear-gradient(135deg,#ff00ff,#00ff00)'},
     {id:'gold',label:'Gold',css:'linear-gradient(135deg,#ffd700,#ff8c00)'}
   ];
+  var PREMIUM_BANNERS = [
+    {id:'aurora',label:'Aurora',css:'linear-gradient(135deg,#22d1a0,#7b5ef7)',cost:50},
+    {id:'cherry',label:'Cherry',css:'linear-gradient(135deg,#e91e63,#ff5252)',cost:50},
+    {id:'ice',label:'Ice',css:'linear-gradient(135deg,#a8edea,#1a2980)',cost:50},
+    {id:'lava',label:'Lava',css:'linear-gradient(135deg,#f12711,#f5af19)',cost:50},
+    {id:'cotton',label:'Cotton Candy',css:'linear-gradient(135deg,#f093fb,#f5576c)',cost:50},
+    {id:'emerald',label:'Emerald',css:'linear-gradient(135deg,#11998e,#38ef7d)',cost:50},
+    {id:'rose',label:'Rose Gold',css:'linear-gradient(135deg,#b76e79,#f0c27f)',cost:50},
+    {id:'storm',label:'Storm',css:'linear-gradient(135deg,#3a1c71,#d76d77,#ffaf7b)',cost:50},
+    {id:'deep',label:'Deep Sea',css:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)',cost:50},
+    {id:'candy',label:'Candy',css:'linear-gradient(135deg,#fc5c7d,#6a82fb)',cost:50}
+  ];
+
+  var inventory = data.inventory || [];
+  var ownedBanners = data.ownedBanners || [];
 
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100000;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",Tahoma,sans-serif';
 
   var modal = document.createElement('div');
-  modal.style.cssText = 'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:2rem;width:420px;max-width:90vw;max-height:80vh;overflow-y:auto';
+  modal.style.cssText = 'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:1.5rem 2rem;width:440px;max-width:90vw;max-height:85vh;overflow-y:auto';
 
   var selectedBanner = data.banner || 'default';
   var selectedPinnedGame = data.pinnedGame || '';
   var selectedFeaturedBadge = data.featuredBadge || '';
 
+  // Banner preview helper
+  function getBannerCss(id) {
+    var all = FREE_BANNERS.concat(PREMIUM_BANNERS);
+    for (var i = 0; i < all.length; i++) { if (all[i].id === id) return all[i].css; }
+    if (id && id.startsWith('custom:')) return id.replace('custom:', '');
+    return '';
+  }
+
   // Build banner picker
-  var bannerHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem">';
-  BANNERS.forEach(function(b) {
+  var bannerHtml = '<div id="ep-banner-preview" style="width:100%;height:28px;border-radius:10px;border:1px solid #2a2a4a;margin-bottom:0.5rem;background:' + (getBannerCss(selectedBanner) || '#1a1a2e') + '"></div>';
+  bannerHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.3rem">';
+  FREE_BANNERS.forEach(function(b) {
     var bg = b.css || '#1a1a2e';
     var sel = b.id === selectedBanner ? 'border-color:#ffd700' : 'border-color:#2a2a4a';
-    bannerHtml += '<div class="ep-banner-opt" data-banner="' + b.id + '" style="width:40px;height:40px;border-radius:8px;background:' + bg + ';border:2px solid;' + sel + ';cursor:pointer" title="' + b.label + '"></div>';
+    bannerHtml += '<div class="ep-banner-opt" data-banner="' + b.id + '" style="width:36px;height:36px;border-radius:8px;background:' + bg + ';border:2px solid;' + sel + ';cursor:pointer" title="' + b.label + '"></div>';
   });
+  bannerHtml += '</div>';
+  bannerHtml += '<div style="font-size:0.65rem;color:#888;margin-bottom:0.3rem">Premium Banners — 50 coins each</div>';
+  bannerHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.3rem">';
+  PREMIUM_BANNERS.forEach(function(b) {
+    var owned = ownedBanners.indexOf(b.id) !== -1;
+    var sel = b.id === selectedBanner ? 'border-color:#ffd700' : 'border-color:#2a2a4a';
+    var lock = owned ? '' : 'opacity:0.6;';
+    bannerHtml += '<div class="ep-banner-opt" data-banner="' + b.id + '" data-cost="' + b.cost + '" data-owned="' + (owned?'1':'0') + '" style="width:36px;height:36px;border-radius:8px;background:' + b.css + ';border:2px solid;' + sel + ';cursor:pointer;position:relative;' + lock + '" title="' + b.label + (owned ? '' : ' (50 coins)') + '">' +
+      (owned ? '' : '<span style="position:absolute;bottom:-1px;right:-1px;font-size:0.5rem;background:#0f0f1a;border-radius:4px;padding:0 2px">🔒</span>') + '</div>';
+  });
+  bannerHtml += '</div>';
+  // Custom gradient section
+  var customColors = [];
+  if (selectedBanner && selectedBanner.startsWith('custom:')) {
+    var match = selectedBanner.match(/#[0-9a-fA-F]{6}/g);
+    if (match) customColors = match;
+  }
+  bannerHtml += '<div style="font-size:0.65rem;color:#888;margin:0.4rem 0 0.3rem">Custom Gradient — 100 coins</div>';
+  bannerHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:0.8rem">';
+  bannerHtml += '<input type="color" id="ep-c1" value="' + (customColors[0] || '#7b2ff7') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
+  bannerHtml += '<input type="color" id="ep-c2" value="' + (customColors[1] || '#00d4ff') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
+  bannerHtml += '<input type="color" id="ep-c3" value="' + (customColors[2] || '#ffd700') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
+  bannerHtml += '<select id="ep-ccount" style="background:#0f0f1a;border:1px solid #2a2a4a;border-radius:6px;color:#e0e0e0;font-size:0.75rem;padding:3px 6px"><option value="2"' + (customColors.length !== 3 ? ' selected' : '') + '>2 colors</option><option value="3"' + (customColors.length === 3 ? ' selected' : '') + '>3 colors</option></select>';
+  bannerHtml += '<button id="ep-capply" style="background:#7b2ff7;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;font-weight:600">Apply</button>';
   bannerHtml += '</div>';
 
   // Build game picker
@@ -1443,17 +1509,22 @@ window.openEditProfileModal = async function() {
     });
   }
 
+  var inputStyle = 'width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 0.8rem';
+  var labelStyle = 'color:#888;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.15rem';
+
   modal.innerHTML =
-    '<h3 style="color:#e0e0e0;margin-bottom:1rem;font-size:1.2rem">Edit Profile</h3>' +
-    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Bio</label>' +
-    '<textarea id="ep-bio" maxlength="150" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.6rem;resize:none;height:60px;outline:none;margin:0.3rem 0 1rem">' + (data.bio || '') + '</textarea>' +
-    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Banner</label>' +
+    '<h3 style="color:#e0e0e0;margin:0 0 1rem;font-size:1.15rem;text-align:center">Edit Profile</h3>' +
+    '<label style="' + labelStyle + '">Bio</label>' +
+    '<textarea id="ep-bio" maxlength="150" style="' + inputStyle + ';resize:none;height:55px">' + (data.bio || '') + '</textarea>' +
+    '<label style="' + labelStyle + '">Banner</label>' +
     bannerHtml +
-    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Pinned Game</label>' +
-    '<select id="ep-pinned" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 1rem">' + gameOptions + '</select>' +
-    '<label style="color:#888;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px">Featured Badge</label>' +
-    '<select id="ep-badge" style="width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 1rem">' + badgeOptions + '</select>' +
-    '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem">' +
+    '<div style="display:flex;gap:0.8rem">' +
+      '<div style="flex:1"><label style="' + labelStyle + '">Favorite Game</label>' +
+      '<select id="ep-pinned" style="' + inputStyle + '">' + gameOptions + '</select></div>' +
+      '<div style="flex:1"><label style="' + labelStyle + '">Featured Badge</label>' +
+      '<select id="ep-badge" style="' + inputStyle + '">' + badgeOptions + '</select></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">' +
       '<button id="ep-cancel" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #2a2a4a;background:#0f0f1a;color:#aaa;font-weight:600">Cancel</button>' +
       '<button id="ep-save" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #ffd700;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#0f0f1a;font-weight:700">Save</button>' +
     '</div>' +
@@ -1462,13 +1533,103 @@ window.openEditProfileModal = async function() {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
+  function updatePreview() {
+    var el = document.getElementById('ep-banner-preview');
+    if (el) el.style.background = getBannerCss(selectedBanner) || '#1a1a2e';
+  }
+
   // Banner click handlers
   modal.querySelectorAll('.ep-banner-opt').forEach(function(opt) {
-    opt.addEventListener('click', function() {
-      selectedBanner = opt.getAttribute('data-banner');
+    opt.addEventListener('click', async function() {
+      var bid = opt.getAttribute('data-banner');
+      var cost = parseInt(opt.getAttribute('data-cost') || '0');
+      var owned = opt.getAttribute('data-owned') === '1';
+
+      if (cost > 0 && !owned) {
+        // Need to purchase
+        if (!window.ArcadeCoins || window.ArcadeCoins.getBalance() < cost) {
+          var msg = document.getElementById('ep-msg');
+          msg.style.color = '#ff4757';
+          msg.textContent = 'Not enough coins! Need ' + cost;
+          setTimeout(function() { msg.textContent = ''; }, 2000);
+          return;
+        }
+        window.ArcadeCoins.spend(cost, 'Banner: ' + bid);
+        ownedBanners.push(bid);
+        await setDoc(ref, { ownedBanners: ownedBanners }, { merge: true });
+        opt.setAttribute('data-owned', '1');
+        opt.style.opacity = '1';
+        opt.title = opt.title.replace(' (50 coins)', '');
+        var lock = opt.querySelector('span');
+        if (lock) lock.remove();
+        var msg = document.getElementById('ep-msg');
+        msg.style.color = '#2ed573';
+        msg.textContent = 'Banner purchased!';
+        setTimeout(function() { msg.textContent = ''; }, 1500);
+      }
+
+      selectedBanner = bid;
       modal.querySelectorAll('.ep-banner-opt').forEach(function(o) {
         o.style.borderColor = o.getAttribute('data-banner') === selectedBanner ? '#ffd700' : '#2a2a4a';
       });
+      updatePreview();
+    });
+  });
+
+  // Custom gradient apply
+  var capply = modal.querySelector('#ep-capply');
+  if (capply) {
+    capply.addEventListener('click', async function() {
+      var count = parseInt(document.getElementById('ep-ccount').value);
+      var c1 = document.getElementById('ep-c1').value;
+      var c2 = document.getElementById('ep-c2').value;
+      var c3 = document.getElementById('ep-c3').value;
+      var gradient = count === 3
+        ? 'linear-gradient(135deg,' + c1 + ',' + c2 + ',' + c3 + ')'
+        : 'linear-gradient(135deg,' + c1 + ',' + c2 + ')';
+      var customId = 'custom:' + gradient;
+
+      // Check if they already have a custom banner or need to pay
+      var hasCustom = ownedBanners.some(function(b) { return b.startsWith('custom:'); });
+      if (!hasCustom) {
+        if (!window.ArcadeCoins || window.ArcadeCoins.getBalance() < 100) {
+          var msg = document.getElementById('ep-msg');
+          msg.style.color = '#ff4757';
+          msg.textContent = 'Not enough coins! Custom gradient costs 100 coins.';
+          setTimeout(function() { msg.textContent = ''; }, 2000);
+          return;
+        }
+        window.ArcadeCoins.spend(100, 'Custom Gradient Banner');
+        ownedBanners.push('custom:unlocked');
+        await setDoc(ref, { ownedBanners: ownedBanners }, { merge: true });
+        var msg = document.getElementById('ep-msg');
+        msg.style.color = '#2ed573';
+        msg.textContent = 'Custom gradient unlocked!';
+        setTimeout(function() { msg.textContent = ''; }, 1500);
+      }
+
+      selectedBanner = customId;
+      modal.querySelectorAll('.ep-banner-opt').forEach(function(o) {
+        o.style.borderColor = '#2a2a4a';
+      });
+      updatePreview();
+    });
+  }
+
+  // Update preview on color input changes
+  ['ep-c1','ep-c2','ep-c3','ep-ccount'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
+      var count = parseInt(document.getElementById('ep-ccount').value);
+      var c1 = document.getElementById('ep-c1').value;
+      var c2 = document.getElementById('ep-c2').value;
+      var c3 = document.getElementById('ep-c3').value;
+      var preview = document.getElementById('ep-banner-preview');
+      if (count === 3) {
+        preview.style.background = 'linear-gradient(135deg,' + c1 + ',' + c2 + ',' + c3 + ')';
+      } else {
+        preview.style.background = 'linear-gradient(135deg,' + c1 + ',' + c2 + ')';
+      }
     });
   });
 

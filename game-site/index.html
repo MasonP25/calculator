@@ -54,7 +54,7 @@
     -webkit-text-fill-color: transparent;
   }
   .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
-  .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
+  .count { color: #555; font-size: 0.85rem; margin-bottom: 1.2rem; }
   .section-title {
     font-size: 1rem;
     text-transform: uppercase;
@@ -256,16 +256,18 @@
   .fav-btn:hover { transform: scale(1.2); }
 
   .gotd-banner {
-    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: linear-gradient(90deg, #ffd700, #ffaa00);
     color: #0f0f1a;
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 3px 10px;
-    border-radius: 8px;
-    margin-top: 0.5rem;
-    display: inline-block;
+    padding: 3px 0;
+    border-radius: 14px 14px 0 0;
+    text-align: center;
+    z-index: 2;
   }
 
   /* ── Chat Panel ── */
@@ -565,7 +567,7 @@
     .badge { font-size: 0.5rem; padding: 1px 5px; }
     .fav-btn { opacity: 0.7; font-size: 1rem; top: 5px; right: 5px; }
     .fav-btn.favorited { opacity: 1; }
-    .gotd-banner { font-size: 0.55rem; padding: 2px 7px; }
+    .gotd-banner { font-size: 0.5rem; padding: 2px 0; }
     #chat-panel { right: 0; left: 0; width: auto; border-radius: 14px 14px 0 0; }
     #chat-panel.expanded { height: 400px; }
     #feedback-btn { padding: 4px 10px; font-size: 0.72rem; }
@@ -1993,7 +1995,7 @@
           card.classList.add('gotd');
           var banner = document.createElement('div');
           banner.className = 'gotd-banner';
-          banner.textContent = '\u2B50 GAME OF THE DAY \u2014 2x Coins & XP!';
+          banner.textContent = '\u2B50 GAME OF THE DAY';
           card.style.position = 'relative';
           card.appendChild(banner);
         }
@@ -2081,9 +2083,13 @@
   var STEPS = [
     { title: 'Welcome to ARCADE!', text: 'Discover 90+ free browser games with leaderboards, avatars, and multiplayer. Let us show you around!', target: null },
     { title: 'Find Games', text: 'Search by name, filter by category, or hit the Random button to discover something new.', target: '.search-bar' },
+    { title: 'Daily Challenge', text: 'Complete a new challenge every day to earn bonus coins and XP. Check your progress here!', target: '#daily-challenge-container' },
     { title: 'Hall of Fame', text: 'Compete for high scores on global leaderboards. Every game tracks your best score!', target: 'a.fame-link[href="fame.html"]' },
     { title: 'Shop & Avatars', text: 'Earn coins by playing games, then spend them on hats, hair, shirts, and nametags to customize your look.', target: 'a.fame-link[href="shop.html"]' },
-    { title: 'Play with Friends', text: 'Join online multiplayer games, add friends, and track who\'s online. Have fun!', target: '.filter-btn[data-filter="multiplayer"]' }
+    { title: 'Your Profile', text: 'View your stats, badges, daily login streak, and weekly quests. Customize your bio and banner!', target: 'a.fame-link[href="profile.html"]' },
+    { title: 'Play with Friends', text: 'Join online multiplayer games, add friends, and track who\'s online.', target: '.filter-btn[data-filter="multiplayer"]' },
+    { title: 'Daily Spin', text: 'Spin the wheel once per day for free coins! Look for the wheel icon in the bottom-right corner.', target: '#daily-spin-btn' },
+    { title: 'Themes', text: 'Customize your look with 15+ color themes. Click the palette icon to switch anytime. Have fun!', target: '.theme-picker-btn' }
   ];
 
   var step = 0;
