@@ -70,6 +70,7 @@
     justify-content: center;
     max-width: 1050px;
     margin-bottom: 1rem;
+    perspective: 1000px;
   }
   .card {
     position: relative;
@@ -80,15 +81,22 @@
     width: 185px;
     text-align: center;
     cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    transition: transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s;
     text-decoration: none;
     color: inherit;
+    transform-style: preserve-3d;
+    overflow: hidden;
   }
   .card:hover {
-    transform: translateY(-6px);
     border-color: #7b2ff7;
     box-shadow: 0 8px 30px rgba(123, 47, 247, 0.3);
   }
+  .card .tilt-glow {
+    position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;
+    pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:1;
+    background:radial-gradient(circle at var(--glow-x,50%) var(--glow-y,50%),var(--t-glow,rgba(123,47,247,0.3)) 0%,transparent 70%);
+  }
+  .card:hover .tilt-glow { opacity:1; }
   .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
   .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
   .card p { color: #888; font-size: 0.75rem; line-height: 1.4; }
@@ -567,7 +575,7 @@
 <body>
   <h1>ARCADE</h1>
   <p class="subtitle">Pick a game to play</p>
-  <p class="count">93 games</p>
+  <p class="count">93 games <span id="online-count"></span></p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
@@ -1963,6 +1971,7 @@
 <script src="gifting.js?v=2"></script>
 <script src="trading.js?v=2"></script>
 <script src="challenges.js?v=1"></script>
+<script src="dailyspin.js?v=1"></script>
 <script src="activity.js?v=2"></script>
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
@@ -2012,6 +2021,214 @@
   } else {
     window.addEventListener('load', function() { setTimeout(init, 500); });
   }
+})();
+</script>
+<script>
+// ─── ANIMATED PARTICLE BACKGROUND ───
+(function() {
+  var canvas = document.createElement('canvas');
+  canvas.id = 'bg-particles';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.35';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var accentColor = '#7b2ff7', accent2Color = '#00d4ff';
+  var COUNT = window.innerWidth < 600 ? 20 : 50;
+  var paused = false;
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  var resizeTimer;
+  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 200); });
+
+  function readColors() {
+    var s = getComputedStyle(document.documentElement);
+    accentColor = s.getPropertyValue('--t-accent').trim() || '#7b2ff7';
+    accent2Color = s.getPropertyValue('--t-accent2').trim() || '#00d4ff';
+  }
+
+  function init() {
+    readColors();
+    particles = [];
+    for (var i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        r: 1.5 + Math.random() * 2.5,
+        a: 0.15 + Math.random() * 0.35,
+        color: i % 2 === 0 ? accentColor : accent2Color
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) { requestAnimationFrame(draw); return; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      if (p.y < -10) p.y = canvas.height + 10;
+      if (p.y > canvas.height + 10) p.y = -10;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.a;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  document.addEventListener('visibilitychange', function() { paused = document.hidden; });
+  window.addEventListener('themechange', function() {
+    readColors();
+    particles.forEach(function(p, i) { p.color = i % 2 === 0 ? accentColor : accent2Color; });
+  });
+
+  init();
+  draw();
+})();
+</script>
+
+<script>
+// ─── 3D TILT HOVER ON GAME CARDS ───
+(function() {
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
+  function handleMove(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var rect = card.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    var y = e.clientY - rect.top;
+    var rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -10;
+    var rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 10;
+    card.style.transform = 'perspective(600px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px) scale(1.03)';
+    card.style.setProperty('--glow-x', (x / rect.width * 100).toFixed(1) + '%');
+    card.style.setProperty('--glow-y', (y / rect.height * 100).toFixed(1) + '%');
+  }
+
+  function handleLeave(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    card.style.transform = '';
+  }
+
+  function addGlows() {
+    document.querySelectorAll('.card').forEach(function(card) {
+      if (!card.querySelector('.tilt-glow')) {
+        var glow = document.createElement('div');
+        glow.className = 'tilt-glow';
+        card.appendChild(glow);
+      }
+    });
+  }
+
+  document.addEventListener('mousemove', handleMove);
+  document.addEventListener('mouseleave', handleLeave, true);
+
+  addGlows();
+  var observer = new MutationObserver(function() { setTimeout(addGlows, 100); });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+<script>
+// ─── WELCOME TOUR ───
+(function() {
+  if (localStorage.getItem('arcade_tour_done')) return;
+
+  var STEPS = [
+    { title: 'Welcome to ARCADE!', text: 'Discover 90+ free browser games with leaderboards, avatars, and multiplayer. Let us show you around!', target: null },
+    { title: 'Find Games', text: 'Search by name, filter by category, or hit the Random button to discover something new.', target: '.search-bar' },
+    { title: 'Hall of Fame', text: 'Compete for high scores on global leaderboards. Every game tracks your best score!', target: 'a.fame-link[href="fame.html"]' },
+    { title: 'Shop & Avatars', text: 'Earn coins by playing games, then spend them on hats, hair, shirts, and nametags to customize your look.', target: 'a.fame-link[href="shop.html"]' },
+    { title: 'Play with Friends', text: 'Join online multiplayer games, add friends, and track who\'s online. Have fun!', target: '.filter-btn[data-filter="multiplayer"]' }
+  ];
+
+  var step = 0;
+  var overlay, box, svg;
+
+  function start() {
+    overlay = document.createElement('div');
+    overlay.id = 'tour-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;font-family:"Segoe UI",Tahoma,sans-serif;';
+
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    overlay.appendChild(svg);
+
+    box = document.createElement('div');
+    box.id = 'tour-box';
+    box.style.cssText = 'position:absolute;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-accent,#7b2ff7);border-radius:16px;padding:1.5rem;max-width:340px;width:90%;box-shadow:0 12px 50px rgba(0,0,0,0.7);z-index:100002;transition:all 0.3s ease';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    showStep();
+  }
+
+  function showStep() {
+    var s = STEPS[step];
+    var targetEl = s.target ? document.querySelector(s.target) : null;
+
+    // Spotlight
+    if (targetEl) {
+      var r = targetEl.getBoundingClientRect();
+      var pad = 8;
+      svg.innerHTML = '<defs><mask id="tour-mask"><rect width="100%" height="100%" fill="white"/>' +
+        '<rect x="'+(r.left-pad)+'" y="'+(r.top-pad)+'" width="'+(r.width+pad*2)+'" height="'+(r.height+pad*2)+'" rx="12" fill="black"/>' +
+        '</mask></defs><rect width="100%" height="100%" fill="rgba(10,10,20,0.85)" mask="url(#tour-mask)"/>';
+    } else {
+      svg.innerHTML = '<rect width="100%" height="100%" fill="rgba(10,10,20,0.85)"/>';
+    }
+
+    var isLast = step === STEPS.length - 1;
+    box.innerHTML =
+      '<div style="font-size:0.7rem;color:var(--t-dim,#888);margin-bottom:0.4rem">Step ' + (step + 1) + ' of ' + STEPS.length + '</div>' +
+      '<h3 style="color:var(--t-text,#e0e0e0);margin:0 0 0.5rem;font-size:1.15rem">' + s.title + '</h3>' +
+      '<p style="color:var(--t-dim,#aaa);font-size:0.85rem;line-height:1.5;margin:0 0 1.2rem">' + s.text + '</p>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<button id="tour-skip" style="background:none;border:none;color:var(--t-dim,#888);cursor:pointer;font-size:0.85rem;padding:6px 12px">Skip</button>' +
+        '<button id="tour-next" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:10px;padding:8px 22px;cursor:pointer;font-size:0.9rem;font-weight:600">' + (isLast ? 'Get Started!' : 'Next') + '</button>' +
+      '</div>';
+
+    // Position box
+    if (targetEl) {
+      var r = targetEl.getBoundingClientRect();
+      var bw = Math.min(340, window.innerWidth * 0.9);
+      var top = r.bottom + 16;
+      if (top + 200 > window.innerHeight) top = r.top - 200;
+      var left = Math.max(10, Math.min(r.left + r.width / 2 - bw / 2, window.innerWidth - bw - 10));
+      box.style.top = top + 'px';
+      box.style.left = left + 'px';
+    } else {
+      box.style.top = '50%';
+      box.style.left = '50%';
+      box.style.transform = 'translate(-50%,-50%)';
+    }
+
+    document.getElementById('tour-skip').onclick = finish;
+    document.getElementById('tour-next').onclick = function() {
+      if (window.SFX) window.SFX.click();
+      if (isLast) { finish(); return; }
+      step++;
+      box.style.transform = '';
+      showStep();
+    };
+  }
+
+  function finish() {
+    if (window.SFX) window.SFX.coin();
+    localStorage.setItem('arcade_tour_done', '1');
+    overlay.remove();
+  }
+
+  setTimeout(start, 2000);
 })();
 </script>
 </body>

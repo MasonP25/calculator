@@ -641,6 +641,20 @@
       input[type="color"]::-webkit-color-swatch-wrapper { padding:2px!important; }
       input[type="color"]::-webkit-color-swatch { border:none!important; border-radius:3px!important; }
       #custom-theme-editor { background:${t.bg3}!important; border-radius:8px!important; }
+
+      /* Custom cursor */
+      @media (hover:hover) {
+        body,.games,.section-title,.subtitle,.count,.activity-feed {
+          cursor: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><circle cx='11' cy='11' r='8' fill='none' stroke='${t.accent}' stroke-width='1.5' opacity='0.7'/><circle cx='11' cy='11' r='2' fill='${t.accent}' opacity='0.9'/><line x1='11' y1='1' x2='11' y2='6' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='11' y1='16' x2='11' y2='21' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='1' y1='11' x2='6' y2='11' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='16' y1='11' x2='22' y2='11' stroke='${t.accent}' stroke-width='1' opacity='0.5'/></svg>`)}") 11 11, crosshair !important;
+        }
+        a,button,.card,.filter-btn,.random-btn,.fame-link,.fav-btn,
+        .theme-picker-btn,.theme-option,#sfx-mute-btn,.auth-badge,
+        .chat-tab,.notif-item,[role="button"] {
+          cursor: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='24'><path d='M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z' fill='${t.accent}' stroke='${t.bg1}' stroke-width='1.2'/></svg>`)}") 4 1, pointer !important;
+        }
+        input:not([type="button"]):not([type="submit"]):not([type="color"]),
+        textarea,select { cursor:text!important; }
+      }
     `;
 
     // Update picker active state
@@ -964,4 +978,57 @@
       updatePresence(true);
     }
   });
+})();
+
+// ─── LIVE PLAYER COUNT ───
+(function() {
+  var page = (window.location.pathname.split('/').pop() || '').replace('.html', '');
+  if (page !== 'index' && page !== '') return;
+
+  var _countDb = null;
+
+  async function fetchCount() {
+    try {
+      if (!_countDb) {
+        var mods = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
+        ]);
+        var getApp = mods[0].getApp;
+        var initializeApp = mods[0].initializeApp;
+        var getFirestore = mods[1].getFirestore;
+        var config = { apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e" };
+        try { _countDb = getFirestore(getApp()); } catch(e) {
+          try { _countDb = getFirestore(initializeApp(config, 'count-app')); } catch(e2) { _countDb = getFirestore(initializeApp(config, 'count-app-' + Date.now())); }
+        }
+        window._countMods = mods[1];
+      }
+      var fb = window._countMods;
+      var q = fb.query(fb.collection(_countDb, 'users'), fb.where('online', '==', true));
+      var snap = await fb.getDocs(q);
+      var now = Date.now(), TWO_MIN = 120000, count = 0;
+      snap.forEach(function(d) {
+        var data = d.data();
+        if (data.lastSeen) {
+          var ts = data.lastSeen.toMillis ? data.lastSeen.toMillis() : data.lastSeen;
+          if (now - ts < TWO_MIN) count++;
+        }
+      });
+      return count;
+    } catch(e) { return 0; }
+  }
+
+  async function refresh() {
+    var count = await fetchCount();
+    var el = document.getElementById('online-count');
+    if (!el) return;
+    if (count > 0) {
+      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle"></span><span style="color:var(--t-accent2,#00d4ff);vertical-align:middle">' + count + ' online</span>';
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
+  setTimeout(refresh, 4000);
+  setInterval(refresh, 45000);
 })();
