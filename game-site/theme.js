@@ -4,7 +4,7 @@
     var link = document.createElement('link');
     link.rel = 'icon';
     link.type = 'image/svg+xml';
-    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 2 C32 2 14 22 14 38 C14 49 22 58 32 58 C42 58 50 49 50 38 C50 22 32 2 32 2Z" fill="#FF6D00"/><path d="M32 18 C32 18 22 30 22 39 C22 45 26.5 50 32 50 C37.5 50 42 45 42 39 C42 30 32 18 32 18Z" fill="#FFA726"/><path d="M32 30 C32 30 27 36 27 41 C27 44 29.2 46 32 46 C34.8 46 37 44 37 41 C37 36 32 30 32 30Z" fill="#FFCC02"/></svg>');
+    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 2 C26 14 12 24 12 40 C12 50 20 58 30 58 C22 54 18 46 22 38 C24 34 28 30 26 24 C28 28 36 32 38 38 C40 44 36 52 32 56 C34 57 36 58 38 58 C48 58 54 48 54 40 C54 28 42 18 40 14 C38 10 40 4 40 4 C38 6 34 8 32 2Z" fill="#FF6D00"/><path d="M30 22 C28 28 20 34 20 42 C20 50 26 54 32 54 C26 50 24 44 28 38 C30 34 34 32 32 26Z" fill="#FF9100"/><path d="M34 30 C32 34 26 38 26 44 C26 50 30 54 34 54 C38 54 42 50 42 44 C42 38 36 34 34 30Z" fill="#FFA726"/><path d="M34 40 C32 42 30 44 30 47 C30 50 31.5 52 34 52 C36.5 52 38 50 38 47 C38 44 36 42 34 40Z" fill="#FFCC02"/></svg>');
     document.head.appendChild(link);
   }
 })();
