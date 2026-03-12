@@ -795,7 +795,8 @@ async function loadProfile() {
     bannerBg = BANNER_GRADIENTS[banner] || '';
   }
   if (bannerBg) {
-    heroEl.style.background = bannerBg;
+    var bgColor = getComputedStyle(document.documentElement).getPropertyValue('--t-bg2').trim() || '#1a1a2e';
+    heroEl.style.setProperty('background', bannerBg + ',' + bgColor, 'important');
     heroEl.style.borderColor = '#3a3a5a';
   }
 

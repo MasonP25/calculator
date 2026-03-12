@@ -1092,7 +1092,7 @@
     var el = document.getElementById('online-count');
     if (!el) return;
     if (count > 0) {
-      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle"></span><span style="color:var(--t-dim,#555);vertical-align:middle">' + count + ' online</span>';
+      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + count + ' online</span>';
     } else {
       el.innerHTML = '';
     }
