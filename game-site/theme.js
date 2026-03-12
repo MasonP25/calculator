@@ -4,7 +4,7 @@
     var link = document.createElement('link');
     link.rel = 'icon';
     link.type = 'image/svg+xml';
-    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect rx="14" width="64" height="64" fill="#7b2ff7"/><g fill="none" stroke="white" stroke-width="5.5" stroke-linecap="round"><path d="M26 20 Q10 34 22 48 Q30 56 32 42"/><path d="M38 20 Q54 34 42 48 Q34 56 32 42"/></g><circle cx="32" cy="16" r="7" fill="white"/></svg>');
+    link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect rx="14" width="64" height="64" fill="#7b2ff7"/><path d="M32 6 C32 6 18 22 18 38 C18 46 24 54 32 54 C40 54 46 46 46 38 C46 22 32 6 32 6Z" fill="#FFA611"/><path d="M32 20 C32 20 24 30 24 38 C24 43 27.5 48 32 48 C36.5 48 40 43 40 38 C40 30 32 20 32 20Z" fill="#FFCA28"/><path d="M32 32 C32 32 28 36 28 40 C28 42.5 29.8 44 32 44 C34.2 44 36 42.5 36 40 C36 36 32 32 32 32Z" fill="white"/></svg>');
     document.head.appendChild(link);
   }
 })();
