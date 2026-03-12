@@ -264,7 +264,7 @@
     var btn = document.createElement('button');
     btn.id = 'daily-spin-btn';
     btn.innerHTML = '\uD83C\uDFA1';
-    btn.style.cssText = 'position:fixed;bottom:80px;right:18px;z-index:9996;width:48px;height:48px;border-radius:50%;border:2px solid var(--t-accent,#7b2ff7);background:var(--t-bg2,#1a1a2e);font-size:1.4rem;cursor:pointer;transition:transform 0.2s;display:flex;align-items:center;justify-content:center';
+    btn.style.cssText = 'position:fixed;bottom:68px;right:16px;z-index:999;width:42px;height:42px;border-radius:50%;border:2px solid;background:var(--t-bg2,#1a1a2e);font-size:1.2rem;cursor:pointer;transition:transform 0.2s;display:flex;align-items:center;justify-content:center;border-color:var(--t-border,#2a2a4a)';
     btn.onclick = openModal;
     btn.onmouseover = function() { btn.style.transform = 'scale(1.15)'; };
     btn.onmouseout = function() { btn.style.transform = ''; };

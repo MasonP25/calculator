@@ -575,7 +575,7 @@
 <body>
   <h1>ARCADE</h1>
   <p class="subtitle">Pick a game to play</p>
-  <p class="count">93 games <span id="online-count"></span></p>
+  <p class="count">93 games <span id="online-count" style="margin-left:2px"></span></p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
@@ -2024,84 +2024,20 @@
 })();
 </script>
 <script>
-// ─── ANIMATED PARTICLE BACKGROUND ───
-(function() {
-  var canvas = document.createElement('canvas');
-  canvas.id = 'bg-particles';
-  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.35';
-  document.body.insertBefore(canvas, document.body.firstChild);
-  var ctx = canvas.getContext('2d');
-  var particles = [];
-  var accentColor = '#7b2ff7', accent2Color = '#00d4ff';
-  var COUNT = window.innerWidth < 600 ? 20 : 50;
-  var paused = false;
-
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  resize();
-  var resizeTimer;
-  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 200); });
-
-  function readColors() {
-    var s = getComputedStyle(document.documentElement);
-    accentColor = s.getPropertyValue('--t-accent').trim() || '#7b2ff7';
-    accent2Color = s.getPropertyValue('--t-accent2').trim() || '#00d4ff';
-  }
-
-  function init() {
-    readColors();
-    particles = [];
-    for (var i = 0; i < COUNT; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        r: 1.5 + Math.random() * 2.5,
-        a: 0.15 + Math.random() * 0.35,
-        color: i % 2 === 0 ? accentColor : accent2Color
-      });
-    }
-  }
-
-  function draw() {
-    if (paused) { requestAnimationFrame(draw); return; }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (var i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < -10) p.x = canvas.width + 10;
-      if (p.x > canvas.width + 10) p.x = -10;
-      if (p.y < -10) p.y = canvas.height + 10;
-      if (p.y > canvas.height + 10) p.y = -10;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.a;
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    requestAnimationFrame(draw);
-  }
-
-  document.addEventListener('visibilitychange', function() { paused = document.hidden; });
-  window.addEventListener('themechange', function() {
-    readColors();
-    particles.forEach(function(p, i) { p.color = i % 2 === 0 ? accentColor : accent2Color; });
-  });
-
-  init();
-  draw();
-})();
-</script>
-
-<script>
 // ─── 3D TILT HOVER ON GAME CARDS ───
 (function() {
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
 
+  var activeCard = null;
+
   function handleMove(e) {
     var card = e.target.closest('.card');
+    if (activeCard && activeCard !== card) {
+      activeCard.style.transform = '';
+      activeCard = null;
+    }
     if (!card) return;
+    activeCard = card;
     var rect = card.getBoundingClientRect();
     var x = e.clientX - rect.left;
     var y = e.clientY - rect.top;
@@ -2112,12 +2048,6 @@
     card.style.setProperty('--glow-y', (y / rect.height * 100).toFixed(1) + '%');
   }
 
-  function handleLeave(e) {
-    var card = e.target.closest('.card');
-    if (!card) return;
-    card.style.transform = '';
-  }
-
   function addGlows() {
     document.querySelectorAll('.card').forEach(function(card) {
       if (!card.querySelector('.tilt-glow')) {
@@ -2125,11 +2055,17 @@
         glow.className = 'tilt-glow';
         card.appendChild(glow);
       }
+      if (!card._tiltBound) {
+        card._tiltBound = true;
+        card.addEventListener('mouseleave', function() {
+          this.style.transform = '';
+          if (activeCard === this) activeCard = null;
+        });
+      }
     });
   }
 
   document.addEventListener('mousemove', handleMove);
-  document.addEventListener('mouseleave', handleLeave, true);
 
   addGlows();
   var observer = new MutationObserver(function() { setTimeout(addGlows, 100); });

@@ -980,6 +980,75 @@
   });
 })();
 
+// ─── ANIMATED PARTICLE BACKGROUND ───
+(function() {
+  var canvas = document.createElement('canvas');
+  canvas.id = 'bg-particles';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.35';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var accentColor = '#7b2ff7', accent2Color = '#00d4ff';
+  var COUNT = window.innerWidth < 600 ? 20 : 50;
+  var paused = false;
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  var resizeTimer;
+  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 200); });
+
+  function readColors() {
+    var s = getComputedStyle(document.documentElement);
+    accentColor = s.getPropertyValue('--t-accent').trim() || '#7b2ff7';
+    accent2Color = s.getPropertyValue('--t-accent2').trim() || '#00d4ff';
+  }
+
+  function init() {
+    readColors();
+    particles = [];
+    for (var i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        r: 1.5 + Math.random() * 2.5,
+        a: 0.15 + Math.random() * 0.35,
+        color: i % 2 === 0 ? accentColor : accent2Color
+      });
+    }
+  }
+
+  function draw() {
+    if (paused) { requestAnimationFrame(draw); return; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+      if (p.y < -10) p.y = canvas.height + 10;
+      if (p.y > canvas.height + 10) p.y = -10;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.a;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  document.addEventListener('visibilitychange', function() { paused = document.hidden; });
+  window.addEventListener('themechange', function() {
+    readColors();
+    particles.forEach(function(p, i) { p.color = i % 2 === 0 ? accentColor : accent2Color; });
+  });
+
+  init();
+  draw();
+})();
+
 // ─── LIVE PLAYER COUNT ───
 (function() {
   var page = (window.location.pathname.split('/').pop() || '').replace('.html', '');
@@ -1023,7 +1092,7 @@
     var el = document.getElementById('online-count');
     if (!el) return;
     if (count > 0) {
-      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle"></span><span style="color:var(--t-accent2,#00d4ff);vertical-align:middle">' + count + ' online</span>';
+      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle"></span><span style="color:var(--t-dim,#555);vertical-align:middle">' + count + ' online</span>';
     } else {
       el.innerHTML = '';
     }
