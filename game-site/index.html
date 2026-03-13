@@ -1636,13 +1636,24 @@
     try {
       var resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + AI_KEY,
+          'HTTP-Referer': 'https://masonp25.github.io/calculator/game-site/',
+          'X-Title': 'GitHub Arcade'
+        },
         body: JSON.stringify({ model: AI_MODEL, messages: messages, max_tokens: 200 })
       });
       var data = await resp.json();
-      var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'Sorry, I couldn\'t respond right now.';
-      aiMsgs.push({ role: 'assistant', text: reply.trim(), time: hhmm(Date.now()), name: 'Arcade AI' });
+      console.log('[AI]', data);
+      if (data.error) {
+        aiMsgs.push({ role: 'assistant', text: 'Error: ' + (data.error.message || 'Unknown error'), time: hhmm(Date.now()), name: 'Arcade AI' });
+      } else {
+        var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'Sorry, I couldn\'t respond right now.';
+        aiMsgs.push({ role: 'assistant', text: reply.trim(), time: hhmm(Date.now()), name: 'Arcade AI' });
+      }
     } catch(e) {
+      console.error('[AI] Fetch error:', e);
       aiMsgs.push({ role: 'assistant', text: 'Oops, something went wrong. Try again!', time: hhmm(Date.now()), name: 'Arcade AI' });
     }
     aiThinking = false;
