@@ -1990,6 +1990,10 @@
         thinkDiv.innerHTML = '<span class="chat-name" style="color:#a855f7">Assistant</span><span class="chat-text" style="color:#888;font-style:italic">thinking...</span>';
         msgsDiv.appendChild(thinkDiv);
       }
+      var discl = document.createElement('div');
+      discl.style.cssText = 'text-align:center;font-size:10px;color:var(--t-dim,#888);padding:4px 0 2px;opacity:0.7';
+      discl.textContent = 'Some answers may be incorrect';
+      msgsDiv.appendChild(discl);
       msgsDiv.scrollTop = msgsDiv.scrollHeight;
       return;
     }
