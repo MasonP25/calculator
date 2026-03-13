@@ -79,6 +79,58 @@
     });
   }
 
+  // ─── CONFETTI ON LEVEL-UP ───
+  function _spawnConfetti() {
+    var canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;inset:0;z-index:999999;pointer-events:none';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    var colors = ['#ffd700','#ff4757','#7b2ff7','#00d4ff','#2ed573','#ff6b81','#1e90ff','#ffa502'];
+    var pieces = [];
+    for (var i = 0; i < 80; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * -canvas.height * 0.5,
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 6 + 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: Math.random() * 3 + 2,
+        rot: Math.random() * 360,
+        rv: (Math.random() - 0.5) * 10
+      });
+    }
+    var alpha = 1;
+    var frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = alpha;
+      for (var i = 0; i < pieces.length; i++) {
+        var p = pieces[i];
+        p.x += p.vx;
+        p.vy += 0.05;
+        p.y += p.vy;
+        p.rot += p.rv;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      frame++;
+      if (frame > 90) alpha -= 0.02;
+      if (alpha > 0) {
+        requestAnimationFrame(draw);
+      } else {
+        canvas.remove();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
   // Inject CSS
   var css = document.createElement('style');
   css.textContent =
@@ -180,6 +232,7 @@
 
       // Push level-up notification AFTER saving XP (so it can't overwrite)
       if (newLevel > oldLevel) {
+        _spawnConfetti();
         if (window.ArcadeNotifications) {
           var coinReward = MILESTONES[newLevel] || 0;
           var body = 'You reached Level ' + newLevel + '!';
