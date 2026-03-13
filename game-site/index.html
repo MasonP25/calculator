@@ -1628,10 +1628,11 @@
   }
   function saveAiHistory() {
     try {
-      localStorage.setItem(aiKey(), JSON.stringify(aiMsgs.slice(-50)));
+      if (aiMsgs.length > 0) localStorage.setItem(aiKey(), JSON.stringify(aiMsgs.slice(-50)));
     } catch(e) {}
   }
   loadAiHistory();
+  window.addEventListener('beforeunload', saveAiHistory);
 
   var AI_BLOCKED = /\b(homework|essay|assignment|worksheet|exam|quiz|test\s?answer|solve\s?(for|this|equation)|write\s?(me\s)?an?\s?(essay|paper|report)|what\s+is\s+the\s+(capital|formula|equation)|history\s+of\s+\w+\s+(war|revolution)|explain\s+(photosynthesis|mitosis|calculus|algebra|chemistry|physics|biology|geometry|trigonometry))\b/i;
 
@@ -1740,7 +1741,7 @@
     var now = Date.now();
     if (now - ts > 86400000) {
       var dt = new Date(ts);
-      return (dt.getDate()) + '/' + (dt.getMonth() + 1);
+      return (dt.getMonth() + 1) + '/' + dt.getDate();
     }
     return hhmm(ts);
   }
