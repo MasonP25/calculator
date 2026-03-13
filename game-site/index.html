@@ -1554,6 +1554,7 @@
   <div id="chat-body">
     <div id="chat-tabs">
       <button class="chat-tab active" data-channel="global">Global</button>
+      <button class="chat-tab" data-channel="__ai__">AI</button>
       <button id="chat-new-dm" title="New conversation">+</button>
     </div>
     <div id="chat-search-bar">
@@ -1576,12 +1577,67 @@
   /* ── state ── */
   var chatExpanded = false;
   var chatUnread = 0;
-  var activeChannel = 'global'; // 'global' or username for DM
+  var activeChannel = 'global'; // 'global', '__ai__', or username for DM
   var dmChannels = []; // [{name:'user', unread:0}]
   var globalMsgs = [];
   var dmCache = {}; // {username: [msgs]}
   var dmListeners = {}; // {chatId: unsubscribe}
   var initialGlobalLoad = true;
+
+  /* ── AI Chat ── */
+  var AI_KEY = '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';
+  var AI_MODEL = 'openai/gpt-4o-mini';
+  var AI_SYSTEM = 'You are Arcade AI, a friendly and helpful assistant built into the GitHub Arcade game site. You help users with game tips, site features, and general chat. Keep responses concise (1-3 sentences). Be fun and casual. The site has 90+ browser games, leaderboards, avatars, a coin economy, daily challenges, weekly quests, a daily spin wheel, and multiplayer games.';
+  var aiMsgs = []; // [{role:'user'|'assistant', text:'...', time:'HH:MM'}]
+  var aiThinking = false;
+
+  function loadAiHistory() {
+    try {
+      var key = 'arcade_ai_chat_' + (localStorage.getItem('arcade_currentUser') || 'guest');
+      var stored = localStorage.getItem(key);
+      if (stored) aiMsgs = JSON.parse(stored);
+    } catch(e) { aiMsgs = []; }
+  }
+  function saveAiHistory() {
+    try {
+      var key = 'arcade_ai_chat_' + (localStorage.getItem('arcade_currentUser') || 'guest');
+      var keep = aiMsgs.slice(-50);
+      localStorage.setItem(key, JSON.stringify(keep));
+    } catch(e) {}
+  }
+  loadAiHistory();
+
+  async function sendToAi(text) {
+    var me = getUser();
+    var now = Date.now();
+    aiMsgs.push({ role: 'user', text: text, time: hhmm(now), name: me });
+    aiThinking = true;
+    if (activeChannel === '__ai__') renderMessages();
+
+    var messages = [{ role: 'system', content: AI_SYSTEM }];
+    var recent = aiMsgs.slice(-20);
+    for (var i = 0; i < recent.length; i++) {
+      if (recent[i].role === 'user' || recent[i].role === 'assistant') {
+        messages.push({ role: recent[i].role, content: recent[i].text });
+      }
+    }
+
+    try {
+      var resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
+        body: JSON.stringify({ model: AI_MODEL, messages: messages, max_tokens: 200 })
+      });
+      var data = await resp.json();
+      var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'Sorry, I couldn\'t respond right now.';
+      aiMsgs.push({ role: 'assistant', text: reply.trim(), time: hhmm(Date.now()), name: 'Arcade AI' });
+    } catch(e) {
+      aiMsgs.push({ role: 'assistant', text: 'Oops, something went wrong. Try again!', time: hhmm(Date.now()), name: 'Arcade AI' });
+    }
+    aiThinking = false;
+    saveAiHistory();
+    if (activeChannel === '__ai__') renderMessages();
+  }
 
   /* ── Firebase ── */
   var firebaseConfig = {
@@ -1690,9 +1746,11 @@
         + (ch.unread > 0 ? '<span class="tab-dot" style="display:block"></span>' : '<span class="tab-dot"></span>');
       tabsDiv.insertBefore(btn, newDmBtn);
     }
-    /* update global tab active state */
+    /* update global + AI tab active state */
     var globalTab = tabsDiv.querySelector('[data-channel="global"]');
     if (globalTab) globalTab.className = 'chat-tab' + (activeChannel === 'global' ? ' active' : '');
+    var aiTab = tabsDiv.querySelector('[data-channel="__ai__"]');
+    if (aiTab) aiTab.className = 'chat-tab' + (activeChannel === '__ai__' ? ' active' : '');
   }
 
   tabsDiv.addEventListener('click', function(e) {
@@ -1712,11 +1770,12 @@
   function switchChannel(ch) {
     activeChannel = ch;
     /* clear unread for this dm */
-    if (ch !== 'global') {
+    if (ch !== 'global' && ch !== '__ai__') {
       clearDmUnreadsFor(ch);
     }
     searchBar.classList.remove('visible');
     searchErr.style.display = 'none';
+    input.placeholder = ch === '__ai__' ? 'Ask Arcade AI...' : 'Type a message...';
     renderTabs();
     renderMessages();
   }
@@ -1831,6 +1890,44 @@
   function renderMessages() {
     var me = getUser();
     var msgs;
+    if (activeChannel === '__ai__') {
+      msgsDiv.innerHTML = '';
+      if (aiMsgs.length === 0 && !aiThinking) {
+        var empty = document.createElement('div');
+        empty.className = 'chat-empty';
+        empty.innerHTML = '<span class="chat-empty-icon">&#129302;</span>Ask me anything about games, the site, or just chat!';
+        msgsDiv.appendChild(empty);
+        return;
+      }
+      for (var i = 0; i < aiMsgs.length; i++) {
+        var m = aiMsgs[i];
+        var div = document.createElement('div');
+        var isMe = m.role === 'user';
+        div.className = 'chat-msg' + (isMe ? ' me' : '');
+        var nameDisplay = isMe ? me : 'Arcade AI';
+        div.innerHTML = '<span class="chat-name"' + (isMe ? ' data-user="' + esc(me) + '"' : '') + ' style="' + (isMe ? '' : 'color:#a855f7') + '">' + esc(nameDisplay) + '</span>'
+          + '<span class="chat-text">' + esc(m.text) + '</span>'
+          + '<span class="chat-time">' + (m.time || '') + '</span>';
+        msgsDiv.appendChild(div);
+        if (isMe && window.ArcadeCoins && window.ArcadeAvatar && me !== 'Guest') {
+          (function(el, user) {
+            window.ArcadeCoins.getProfile(user).then(function(profile) {
+              var nameEl = el.querySelector('.chat-name');
+              if (nameEl && profile) window.ArcadeAvatar.styleName(nameEl, profile);
+            });
+          })(div, me);
+        }
+      }
+      if (aiThinking) {
+        var thinkDiv = document.createElement('div');
+        thinkDiv.className = 'chat-msg';
+        thinkDiv.innerHTML = '<span class="chat-name" style="color:#a855f7">Arcade AI</span><span class="chat-text" style="color:#888;font-style:italic">thinking...</span>';
+        msgsDiv.appendChild(thinkDiv);
+      }
+      msgsDiv.scrollTop = msgsDiv.scrollHeight;
+      return;
+    }
+
     if (activeChannel === 'global') {
       msgs = globalMsgs;
     } else {
@@ -1891,6 +1988,12 @@
     var me = getUser();
     var now = Date.now();
     var time = hhmm(now);
+
+    if (activeChannel === '__ai__') {
+      input.value = '';
+      sendToAi(text);
+      return;
+    }
 
     if (activeChannel === 'global') {
       db.collection('global_chat').add({
