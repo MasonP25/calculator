@@ -1617,22 +1617,7 @@
   var aiMsgs = []; // [{role:'user'|'assistant', text:'...', time:'HH:MM'}]
   var aiThinking = false;
 
-  function aiKey() {
-    return 'arcade_ai_chat_' + (localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'guest');
-  }
-  function loadAiHistory() {
-    try {
-      var stored = localStorage.getItem(aiKey());
-      if (stored) aiMsgs = JSON.parse(stored);
-    } catch(e) { aiMsgs = []; }
-  }
-  function saveAiHistory() {
-    try {
-      if (aiMsgs.length > 0) localStorage.setItem(aiKey(), JSON.stringify(aiMsgs.slice(-50)));
-    } catch(e) {}
-  }
-  loadAiHistory();
-  window.addEventListener('beforeunload', saveAiHistory);
+  function saveAiHistory() {};
 
   var AI_BLOCKED = /\b(homework|essay|assignment|worksheet|exam|quiz|test\s?answer|solve\s?(for|this|equation)|write\s?(me\s)?an?\s?(essay|paper|report)|what\s+is\s+the\s+(capital|formula|equation)|history\s+of\s+\w+\s+(war|revolution)|explain\s+(photosynthesis|mitosis|calculus|algebra|chemistry|physics|biology|geometry|trigonometry))\b/i;
 
