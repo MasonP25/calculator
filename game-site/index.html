@@ -1659,7 +1659,10 @@
       var data = await resp.json();
       console.log('[AI]', data);
       if (data.error) {
-        aiMsgs.push({ role: 'assistant', text: 'Error: ' + (data.error.message || 'Unknown error'), ts: Date.now(), name: 'Assistant' });
+        var errMsg = (data.error.code === 'rate_limit_exceeded' || (data.error.message && data.error.message.indexOf('Rate limit') !== -1))
+          ? 'Reached chatting limit. Try again in a few minutes.'
+          : 'Error: ' + (data.error.message || 'Unknown error');
+        aiMsgs.push({ role: 'assistant', text: errMsg, ts: Date.now(), name: 'Assistant' });
       } else {
         var reply = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || 'Sorry, I couldn\'t respond right now.';
         aiMsgs.push({ role: 'assistant', text: reply.trim(), ts: Date.now(), name: 'Assistant' });
