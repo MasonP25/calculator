@@ -221,11 +221,7 @@
     if (!getCurrentUser()) openModal();
   });
 
-  var _loadAnimRunning = false;
-  var _loadAnimDone = false;
-
   function updateBadge() {
-    if (_loadAnimRunning) return; // don't rebuild HTML while animation is playing
     var user = getCurrentUser();
     if (user) {
       // Level badge
@@ -234,13 +230,12 @@
         var prog = window.ArcadeLevels.getProgress();
         levelStr = '<span class="ab-level">Lv.' + prog.level + '</span>';
       }
-      // Coins (show 0 initially if first load, animate to real value)
+      // Coins — always show real value
       var coinStr = '';
-      var _coinTarget = 0;
       if (window.ArcadeCoins) {
-        _coinTarget = window.ArcadeCoins.getBalance();
-        var showVal = _lastCoinVal !== null ? _coinTarget : 0;
-        coinStr = '<span class="ab-coins" id="abCoins">&#129689; <span id="abCoinVal">' + showVal + '</span></span>';
+        var bal = window.ArcadeCoins.getBalance();
+        if (_lastCoinVal === null) _lastCoinVal = bal;
+        coinStr = '<span class="ab-coins" id="abCoins">&#129689; <span id="abCoinVal">' + bal + '</span></span>';
       }
       // Notification bell
       var bellStr = '';
@@ -252,13 +247,12 @@
       if (window._authFriendReqCount > 0) {
         reqBadge = '<span class="ab-req" title="' + window._authFriendReqCount + ' friend request(s)">' + window._authFriendReqCount + '</span>';
       }
-      // Build XP bar HTML (starts at 0% width, animates to real value)
+      // Build XP bar HTML — always at real value (animations only on actual changes)
       var xpHtml = '';
-      var _xpTarget = 0;
       if (window.ArcadeLevels) {
         var xpProg = window.ArcadeLevels.getProgress();
-        _xpTarget = Math.min(xpProg.percent, 100);
-        xpHtml = '<div class="ab-xp"><div class="xp-bar-outer"><div class="xp-bar-inner" id="abXpBar" style="width:0%"></div></div><div class="xp-bar-label" id="abXpLabel">' +
+        var xpPct = Math.min(xpProg.percent, 100);
+        xpHtml = '<div class="ab-xp"><div class="xp-bar-outer"><div class="xp-bar-inner" id="abXpBar" style="width:' + xpPct + '%"></div></div><div class="xp-bar-label" id="abXpLabel">' +
           xpProg.progressXP + ' / ' + xpProg.neededXP + ' XP</div></div>';
       }
       badge.innerHTML = '<div class="ab-row"><span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + levelStr + coinStr + bellStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span></div>' + xpHtml;
@@ -287,34 +281,6 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
-      // Animate XP bar and coins together on first load (single rAF loop)
-      if (!_loadAnimDone && (_xpTarget > 0 || (_lastCoinVal === null && _coinTarget > 0))) {
-        if (_loadAnimRunning) return; // already animating, don't restart
-        _loadAnimRunning = true;
-        var animCoin = _lastCoinVal === null && _coinTarget > 0;
-        if (animCoin) _lastCoinVal = _coinTarget;
-        var startTime = performance.now();
-        var duration = 1000;
-        function loadStep(ts) {
-          var p = Math.min((ts - startTime) / duration, 1);
-          var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-          if (_xpTarget > 0) {
-            var bar = document.getElementById('abXpBar');
-            if (bar) bar.style.width = (_xpTarget * eased) + '%';
-          }
-          if (animCoin) {
-            var el = document.getElementById('abCoinVal');
-            if (el) el.textContent = Math.round(_coinTarget * eased);
-          }
-          if (p < 1) requestAnimationFrame(loadStep);
-          else { _loadAnimRunning = false; _loadAnimDone = true; }
-        }
-        requestAnimationFrame(loadStep);
-      } else if (_loadAnimDone && _xpTarget > 0) {
-        // After initial animation, just set the bar directly
-        var bar = document.getElementById('abXpBar');
-        if (bar) bar.style.width = _xpTarget + '%';
-      }
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
     }
@@ -338,11 +304,11 @@
   var _lastCoinVal = null;
   var _coinAnimFrame = null;
   window.addEventListener('coins-updated', function() {
-    if (!window.ArcadeCoins) { updateBadge(); return; }
+    if (!window.ArcadeCoins) return;
     var newVal = window.ArcadeCoins.getBalance();
     var coinEl = document.getElementById('abCoinVal');
     if (!coinEl) {
-      // Badge not built yet or missing element — build it, then record the value
+      // Badge not built yet — rebuild it (will show real value)
       _lastCoinVal = newVal;
       updateBadge();
       return;
