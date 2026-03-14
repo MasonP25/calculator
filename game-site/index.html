@@ -46,20 +46,19 @@
     align-items: center;
     padding: 2rem 1rem;
   }
+  @keyframes arcadeShift {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
   h1 {
     font-size: 3rem;
     margin-bottom: 0.3rem;
-    background: linear-gradient(90deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7), var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7));
+    background: linear-gradient(90deg, #00d4ff, #7b2ff7, #00d4ff, #7b2ff7);
     background-size: 300% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: titleShift 4s ease-in-out infinite;
-  }
-  @keyframes titleShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    animation: arcadeShift 3s ease-in-out infinite;
   }
   .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
   .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
@@ -2266,7 +2265,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=2"></script>
-<script src="theme.js?v=7"></script>
+<script src="theme.js?v=8"></script>
 <script>
 // ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
 (function() {
