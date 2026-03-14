@@ -376,7 +376,7 @@
     setTimeout(function() {
       _startPolling();
       window.ArcadeFriends.refresh();
-    }, 2000);
+    }, 500);
   }
 
   window.addEventListener('arcade-auth-change', function() {
@@ -386,7 +386,7 @@
       setTimeout(function() {
         _startPolling();
         window.ArcadeFriends.refresh();
-      }, 1500);
+      }, 500);
     }
   });
 })();

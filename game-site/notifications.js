@@ -281,7 +281,7 @@
     setTimeout(function() {
       _poll();
       _pollTimer = setInterval(_poll, 30000);
-    }, 2000);
+    }, 500);
   }
 
   window.ArcadeNotifications = {

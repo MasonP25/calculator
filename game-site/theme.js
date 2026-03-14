@@ -988,7 +988,7 @@
 
   if (!_isGuest()) {
     // Set online after a short delay (let other scripts init first)
-    setTimeout(function() { updatePresence(true); }, 3000);
+    setTimeout(function() { updatePresence(true); }, 500);
     // Heartbeat every 60s
     setInterval(function() { if (!_isGuest()) updatePresence(true); }, 60000);
     // Offline on unload
@@ -1127,6 +1127,6 @@
     }
   }
 
-  setTimeout(refresh, 4000);
+  setTimeout(refresh, 500);
   setInterval(refresh, 45000);
 })();

@@ -465,12 +465,12 @@
   // Auto-check after page load (includes migration on first run)
   setTimeout(function() {
     if (!_isGuest()) _migrateExisting();
-  }, 3000);
+  }, 500);
 
   window.addEventListener('arcade-auth-change', function() {
     _earnedCache = null;
     if (!_isGuest()) {
-      setTimeout(function() { window.ArcadeBadges.check(); }, 1000);
+      setTimeout(function() { window.ArcadeBadges.check(); }, 500);
     }
   });
 })();

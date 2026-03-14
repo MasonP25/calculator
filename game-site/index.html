@@ -2131,12 +2131,14 @@
 })();
 </script>
 
-<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:16px;left:16px;z-index:9996;width:40px;height:40px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer;display:none;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s,opacity 0.3s" onmouseover="this.style.borderColor='var(--t-accent,#7b2ff7)';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--t-border,#2a2a4a)';this.style.color='var(--t-dim,#888)'">&uarr;</button>
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:16px;left:16px;z-index:9996;width:40px;height:40px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.35s,border-color 0.2s,color 0.2s" onmouseover="this.style.borderColor='var(--t-accent,#7b2ff7)';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--t-border,#2a2a4a)';this.style.color='var(--t-dim,#888)'">&uarr;</button>
 <script>
 (function(){
   var btn=document.getElementById('back-to-top');
   window.addEventListener('scroll',function(){
-    btn.style.display=window.scrollY>400?'flex':'none';
+    var show=window.scrollY>400;
+    btn.style.opacity=show?'1':'0';
+    btn.style.pointerEvents=show?'auto':'none';
   });
 })();
 </script>
@@ -2147,19 +2149,19 @@
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script src="coins.js"></script>
 <script src="avatar.js"></script>
-<script src="badges.js"></script>
-<script src="friends.js"></script>
-<script src="notifications.js?v=2"></script>
+<script src="badges.js?v=2"></script>
+<script src="friends.js?v=2"></script>
+<script src="notifications.js?v=3"></script>
 <script src="levels.js?v=3"></script>
 <script src="gifting.js?v=2"></script>
 <script src="trading.js?v=2"></script>
 <script src="challenges.js?v=2"></script>
-<script src="dailyspin.js?v=1"></script>
+<script src="dailyspin.js?v=2"></script>
 <script src="activity.js?v=2"></script>
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=2"></script>
-<script src="theme.js?v=5"></script>
+<script src="theme.js?v=6"></script>
 <script>
 // ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
 (function() {

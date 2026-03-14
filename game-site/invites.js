@@ -260,7 +260,7 @@
       }
 
       // Wait for page scripts to initialize before starting
-      setTimeout(runStep, 2500);
+      setTimeout(runStep, 500);
     }
   }
 
