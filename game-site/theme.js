@@ -220,8 +220,11 @@
       }
       body { background:${t.bg1}!important; color:${t.text}!important; }
       a { color:${t.accent}!important; }
-      h1 { background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
-           -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important; }
+      h1 { background:linear-gradient(90deg,${t.accent2},${t.accent},${t.accent2},${t.accent})!important;
+           background-size:300% 100%!important;
+           -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
+           background-clip:text!important;
+           animation:titleShift 4s ease-in-out infinite!important; }
       .subtitle,.hint,.controls,.hint-text { color:${t.dim}!important; }
       canvas { border-color:${t.border}!important; }
 
