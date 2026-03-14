@@ -2131,6 +2131,16 @@
 })();
 </script>
 
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:16px;left:16px;z-index:9996;width:40px;height:40px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer;display:none;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s,opacity 0.3s" onmouseover="this.style.borderColor='var(--t-accent,#7b2ff7)';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--t-border,#2a2a4a)';this.style.color='var(--t-dim,#888)'">&uarr;</button>
+<script>
+(function(){
+  var btn=document.getElementById('back-to-top');
+  window.addEventListener('scroll',function(){
+    btn.style.display=window.scrollY>400?'flex':'none';
+  });
+})();
+</script>
+
 <a id="feedback-btn" href="https://docs.google.com/forms/d/e/1FAIpQLScywdu46a47TLtImiZskfK_ohYu4pPxuQapXctj9rTjpZnxvw/viewform" target="_blank" style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;font-family:'Segoe UI',Tahoma,sans-serif;transition:border-color 0.2s,color 0.2s;cursor:pointer;" onmouseover="this.style.borderColor='#7b2ff7';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a2a4a';this.style.color='#aaa'">&#128172; Feedback</a>
 
 <script src="fame.js?v=4"></script>
