@@ -277,8 +277,8 @@
     if (!_isGuest() && !document.getElementById('daily-spin-btn')) init();
   });
 
-  if (document.readyState === 'complete') { setTimeout(init, 200); }
-  else { window.addEventListener('load', function() { setTimeout(init, 200); }); }
+  if (document.readyState === 'complete') { setTimeout(init, 5); }
+  else { window.addEventListener('load', function() { setTimeout(init, 5); }); }
 
   window.ArcadeDailySpin = { open: openModal };
 })();

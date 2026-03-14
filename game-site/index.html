@@ -2491,9 +2491,9 @@
 
   // Wait for modules to load
   if (document.readyState === 'complete') {
-    setTimeout(init, 50);
+    setTimeout(init, 5);
   } else {
-    window.addEventListener('load', function() { setTimeout(init, 50); });
+    window.addEventListener('load', function() { setTimeout(init, 5); });
   }
 })();
 </script>
