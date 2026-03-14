@@ -297,7 +297,7 @@
 
   // Init on auth
   window.addEventListener('auth-ready', function() { _load(); });
-  setTimeout(function() { _load(); }, 500);
+  setTimeout(function() { _load(); }, 100);
 
   window.ArcadeChallenges = {
     // ─── GAME OF THE DAY ───

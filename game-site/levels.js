@@ -316,7 +316,7 @@
 
   // Auto-load
   if (!_isGuest()) {
-    setTimeout(_load, 500);
+    setTimeout(_load, 100);
   }
 
   window.addEventListener('arcade-auth-change', function() {
