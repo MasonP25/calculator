@@ -137,7 +137,7 @@
     '.ab-level{font-size:0.62rem;font-weight:700;color:#ffd700;background:#ffd70020;padding:1px 5px;border-radius:6px;margin-left:0.15rem}' +
     '.xp-bar-wrap{position:fixed;top:44px;right:16px;width:170px;z-index:9997;font-family:"Segoe UI",Tahoma,sans-serif;pointer-events:none}' +
     '.xp-bar-outer{background:#0f0f1a;border:1px solid #2a2a4a;border-radius:5px;height:8px;overflow:hidden}' +
-    '.xp-bar-inner{height:100%;background:linear-gradient(90deg,#7b2ff7,#00d4ff);border-radius:5px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);min-width:0}' +
+    '.xp-bar-inner{height:100%;background:linear-gradient(90deg,#7b2ff7,#00d4ff);border-radius:5px;min-width:0}' +
     '.xp-bar-label{font-size:0.58rem;color:#888;text-align:center;margin-top:1px}' +
     '.level-badge{display:inline-block;font-size:0.75rem;font-weight:700;color:#ffd700;margin-left:0.3rem}' +
     '.hero-level{margin-top:0.3rem}' +

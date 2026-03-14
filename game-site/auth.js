@@ -283,30 +283,28 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
-      // Animate XP bar and coins together on first load
-      requestAnimationFrame(function() {
-        // XP bar
-        if (_xpTarget > 0) {
-          var bar = document.getElementById('abXpBar');
-          if (bar) bar.style.width = _xpTarget + '%';
-        }
-        // Coins count-up on first load
-        if (_lastCoinVal === null && _coinTarget > 0) {
-          _lastCoinVal = _coinTarget;
-          var startTime = null;
-          var duration = 800;
-          function coinStep(ts) {
-            if (!startTime) startTime = ts;
-            var p = Math.min((ts - startTime) / duration, 1);
-            var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-            var current = Math.round(_coinTarget * eased);
-            var el = document.getElementById('abCoinVal');
-            if (el) el.textContent = current;
-            if (p < 1) requestAnimationFrame(coinStep);
+      // Animate XP bar and coins together on first load (single rAF loop)
+      if (_xpTarget > 0 || (_lastCoinVal === null && _coinTarget > 0)) {
+        var animCoin = _lastCoinVal === null && _coinTarget > 0;
+        if (animCoin) _lastCoinVal = _coinTarget;
+        var startTime = null;
+        var duration = 800;
+        function loadStep(ts) {
+          if (!startTime) startTime = ts;
+          var p = Math.min((ts - startTime) / duration, 1);
+          var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          if (_xpTarget > 0) {
+            var bar = document.getElementById('abXpBar');
+            if (bar) bar.style.width = (_xpTarget * eased) + '%';
           }
-          requestAnimationFrame(coinStep);
+          if (animCoin) {
+            var el = document.getElementById('abCoinVal');
+            if (el) el.textContent = Math.round(_coinTarget * eased);
+          }
+          if (p < 1) requestAnimationFrame(loadStep);
         }
-      });
+        requestAnimationFrame(loadStep);
+      }
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
     }
@@ -390,6 +388,7 @@
   });
 
   // Update XP bar when level changes
+  var _xpAnimFrame = null;
   window.addEventListener('level-updated', function() {
     if (!window.ArcadeLevels) { updateBadge(); return; }
     var bar = document.getElementById('abXpBar');
@@ -397,7 +396,19 @@
     if (!bar || !label) { updateBadge(); return; }
     var prog = window.ArcadeLevels.getProgress();
     var target = Math.min(prog.percent, 100);
-    bar.style.width = target + '%';
+    var oldWidth = parseFloat(bar.style.width) || 0;
     label.textContent = prog.progressXP + ' / ' + prog.neededXP + ' XP';
+    if (_xpAnimFrame) cancelAnimationFrame(_xpAnimFrame);
+    var startTime = null;
+    var duration = 800;
+    function xpStep(ts) {
+      if (!startTime) startTime = ts;
+      var p = Math.min((ts - startTime) / duration, 1);
+      var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      bar.style.width = (oldWidth + (target - oldWidth) * eased) + '%';
+      if (p < 1) { _xpAnimFrame = requestAnimationFrame(xpStep); }
+      else { _xpAnimFrame = null; }
+    }
+    _xpAnimFrame = requestAnimationFrame(xpStep);
   });
 })();
