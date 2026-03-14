@@ -710,17 +710,20 @@
             // Remove banned flag
             return _setDoc(docRef, { banned: false, banReason: '' }, { merge: true }).then(function() {
               console.log('[Admin] Removed ban flag from ' + username);
-              // Remove fingerprint from bans collection
-              if (fp) {
-                return deleteDoc(_doc(_db, 'bans', fp)).then(function() {
-                  console.log('[Admin] Removed device fingerprint ban');
+              // Remove ALL bans matching this username (covers device transfers)
+              var q = _query(_collection(_db, 'bans'), where('username', '==', username));
+              return _getDocs(q).then(function(snap) {
+                var deletes = [];
+                snap.forEach(function(d) { deletes.push(deleteDoc(d.ref)); });
+                // Also delete by fingerprint if stored on user doc
+                if (fp && !snap.docs) {
+                  deletes.push(deleteDoc(_doc(_db, 'bans', fp)).catch(function() {}));
+                }
+                return Promise.all(deletes).then(function() {
+                  console.log('[Admin] Removed ' + deletes.length + ' ban entries');
                   console.log('[Admin] ✓ ' + username + ' is now unbanned');
-                }).catch(function() {
-                  console.log('[Admin] ✓ ' + username + ' is now unbanned (no fingerprint ban found)');
                 });
-              } else {
-                console.log('[Admin] ✓ ' + username + ' is now unbanned');
-              }
+              });
             });
           });
         });
