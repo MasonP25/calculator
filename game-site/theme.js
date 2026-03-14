@@ -199,6 +199,14 @@
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';
   let current = THEMES[saved] ? saved : 'midnight';
 
+  function btnTextColor(hex) {
+    var h = hex.replace('#','');
+    var r = parseInt(h.substring(0,2),16);
+    var g = parseInt(h.substring(2,4),16);
+    var b = parseInt(h.substring(4,6),16);
+    return (r*0.299 + g*0.587 + b*0.114) > 150 ? '#000' : '#fff';
+  }
+
   function applyTheme(id) {
     current = id;
     localStorage.setItem('arcadeTheme', id);
@@ -232,6 +240,9 @@
       }
       .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
+
+      /* Random button text contrast */
+      .random-btn { color:${btnTextColor(t.accent)}!important; }
 
       /* Filter bar */
       .filter-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
