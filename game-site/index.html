@@ -219,7 +219,7 @@
   }
   /* Random game button */
   .random-btn {
-    background: linear-gradient(135deg, #7b2ff7 0%, #00d4ff 100%);
+    background: linear-gradient(135deg, var(--t-accent, #7b2ff7) 0%, var(--t-accent2, #00d4ff) 100%);
     border: none;
     border-radius: 20px;
     color: #fff;
@@ -231,7 +231,7 @@
     transition: transform 0.2s, box-shadow 0.2s;
     white-space: nowrap;
   }
-  .random-btn:hover { transform: scale(1.05); box-shadow: 0 0 12px rgba(123,47,247,0.4); }
+  .random-btn:hover { transform: scale(1.05); box-shadow: 0 0 12px var(--t-glow, rgba(123,47,247,0.4)); }
   .random-btn.spinning { animation: randomPulse 0.15s infinite alternate; }
   @keyframes randomPulse { from { transform: scale(1); } to { transform: scale(1.06); } }
 
