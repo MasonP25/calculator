@@ -479,6 +479,9 @@
     padding: 4px 8px;
     border-radius: 8px;
     transition: background 0.15s;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .chat-msg:hover { background: #1a1a3222; }
   .chat-msg .chat-name {
@@ -498,6 +501,66 @@
     text-align: center;
     padding: 6px 0;
   }
+  /* Reaction popup */
+  .react-popup {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.5);
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    padding: 4px 6px;
+    display: flex;
+    gap: 2px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s, transform 0.15s;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .react-popup.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    pointer-events: auto;
+  }
+  .react-popup button {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 8px;
+    transition: transform 0.15s, background 0.15s;
+    line-height: 1;
+  }
+  .react-popup button:hover {
+    transform: scale(1.3);
+    background: #2a2a4a;
+  }
+  /* Reaction badges under messages */
+  .chat-reactions {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+  }
+  .chat-react-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #2a2a4a;
+    border: 1px solid #3a3a5a;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .chat-react-badge:hover { background: #3a3a5a; }
+  .chat-react-badge.mine { border-color: #7b2ff7; background: rgba(123,47,247,0.15); }
+  .chat-react-badge .react-emoji { font-size: 0.8rem; }
+  .chat-react-badge .react-count { color: #aaa; font-size: 0.65rem; }
 
   /* Empty state */
   .chat-empty {
@@ -2126,9 +2189,11 @@
       div.className = 'chat-msg' + (isMe ? ' me' : '');
 
       var nameDisplay = m.name || m.from || 'Guest';
+      if (m._id) { div.setAttribute('data-msg-id', m._id); div.setAttribute('data-msg-col', m._col); }
       div.innerHTML = '<span class="chat-name" data-user="' + esc(nameDisplay) + '">' + esc(nameDisplay) + '</span>'
         + '<span class="chat-text">' + esc(m.text) + '</span>'
-        + '<span class="chat-time">' + (m.timestamp ? formatTime(m.timestamp) : (m.time || '')) + '</span>';
+        + '<span class="chat-time">' + (m.timestamp ? formatTime(m.timestamp) : (m.time || '')) + '</span>'
+        + renderReactions(m);
       msgsDiv.appendChild(div);
       // Apply nametag style
       if (window.ArcadeCoins && window.ArcadeAvatar && nameDisplay !== 'Guest') {
@@ -2188,7 +2253,7 @@
   db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(80)
     .onSnapshot(function(snap) {
       globalMsgs = [];
-      snap.forEach(function(doc) { globalMsgs.push(doc.data()); });
+      snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; d._col = 'global_chat'; globalMsgs.push(d); });
       initialGlobalLoad = false;
       if (activeChannel === 'global') renderMessages();
     }, function(err) { console.error('Global chat error:', err); });
@@ -2204,7 +2269,7 @@
       .where('chatId', '==', cid)
       .onSnapshot(function(snap) {
         var msgs = [];
-        snap.forEach(function(doc) { msgs.push(doc.data()); });
+        snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; d._col = 'direct_messages'; msgs.push(d); });
         msgs.sort(function(a, b) { return a.timestamp - b.timestamp; });
         if (msgs.length > 80) msgs = msgs.slice(msgs.length - 80);
         dmCache[username] = msgs;
@@ -2219,6 +2284,125 @@
         if (activeChannel === username) renderMessages();
       }, function(err) { console.error('DM listener error:', err); });
   }
+
+  /* ── Reactions ── */
+  var REACTIONS = ['\uD83D\uDD25', '\uD83D\uDE02', '\uD83D\uDE22']; // 🔥😂😢
+  var activePopup = null;
+
+  function renderReactions(m) {
+    if (!m.reactions) return '';
+    var me = getUser();
+    var html = '<div class="chat-reactions">';
+    var emojis = ['\uD83D\uDD25', '\uD83D\uDE02', '\uD83D\uDE22'];
+    for (var i = 0; i < emojis.length; i++) {
+      var e = emojis[i];
+      var users = m.reactions[e];
+      if (users && users.length > 0) {
+        var isMine = users.indexOf(me) !== -1;
+        html += '<span class="chat-react-badge' + (isMine ? ' mine' : '') + '" data-emoji="' + e + '">'
+          + '<span class="react-emoji">' + e + '</span>'
+          + '<span class="react-count">' + users.length + '</span></span>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function closePopup() {
+    if (activePopup) { activePopup.classList.remove('show'); activePopup = null; }
+  }
+
+  function toggleReaction(msgId, col, emoji) {
+    var me = getUser();
+    if (me === 'Guest') return;
+    var ref = db.collection(col).doc(msgId);
+    ref.get().then(function(doc) {
+      if (!doc.exists) return;
+      var data = doc.data();
+      var reactions = data.reactions || {};
+      var list = reactions[emoji] || [];
+      var idx = list.indexOf(me);
+      if (idx === -1) { list.push(me); } else { list.splice(idx, 1); }
+      reactions[emoji] = list;
+      if (list.length === 0) delete reactions[emoji];
+      ref.update({ reactions: reactions });
+    });
+    closePopup();
+  }
+
+  // Long press / right-click to show reaction popup
+  var pressTimer = null;
+  var pressTarget = null;
+
+  function showReactPopup(msgEl) {
+    closePopup();
+    var msgId = msgEl.getAttribute('data-msg-id');
+    var msgCol = msgEl.getAttribute('data-msg-col');
+    if (!msgId) return;
+    var existing = msgEl.querySelector('.react-popup');
+    if (existing) existing.remove();
+    var popup = document.createElement('div');
+    popup.className = 'react-popup';
+    for (var i = 0; i < REACTIONS.length; i++) {
+      var btn = document.createElement('button');
+      btn.textContent = REACTIONS[i];
+      btn.setAttribute('data-emoji', REACTIONS[i]);
+      btn.onclick = (function(e, id, col) { return function(ev) { ev.stopPropagation(); toggleReaction(id, col, e); }; })(REACTIONS[i], msgId, msgCol);
+      popup.appendChild(btn);
+    }
+    msgEl.appendChild(popup);
+    activePopup = popup;
+    requestAnimationFrame(function() { popup.classList.add('show'); });
+  }
+
+  function getMsgEl(target) {
+    var el = target;
+    while (el && el !== msgsDiv) {
+      if (el.classList && el.classList.contains('chat-msg') && el.hasAttribute('data-msg-id')) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  // Touch: long press
+  msgsDiv.addEventListener('touchstart', function(e) {
+    var msg = getMsgEl(e.target);
+    if (!msg) return;
+    pressTarget = msg;
+    pressTimer = setTimeout(function() {
+      showReactPopup(msg);
+      pressTarget = null;
+    }, 500);
+  }, { passive: true });
+  msgsDiv.addEventListener('touchend', function() { clearTimeout(pressTimer); pressTarget = null; });
+  msgsDiv.addEventListener('touchmove', function() { clearTimeout(pressTimer); pressTarget = null; });
+
+  // Desktop: right-click
+  msgsDiv.addEventListener('contextmenu', function(e) {
+    var msg = getMsgEl(e.target);
+    if (!msg) return;
+    e.preventDefault();
+    showReactPopup(msg);
+  });
+
+  // Click reaction badge to toggle
+  msgsDiv.addEventListener('click', function(e) {
+    var badge = e.target.closest('.chat-react-badge');
+    if (badge) {
+      var msgEl = getMsgEl(badge);
+      if (!msgEl) return;
+      var emoji = badge.getAttribute('data-emoji');
+      var msgId = msgEl.getAttribute('data-msg-id');
+      var msgCol = msgEl.getAttribute('data-msg-col');
+      if (msgId && emoji) toggleReaction(msgId, msgCol, emoji);
+      return;
+    }
+    // Close popup on click elsewhere
+    if (!e.target.closest('.react-popup')) closePopup();
+  });
+
+  // Close on scroll
+  msgsDiv.addEventListener('scroll', closePopup);
 
   /* ── init ── */
   loadDmChannels();
