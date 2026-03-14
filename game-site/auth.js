@@ -287,10 +287,9 @@
       if (_xpTarget > 0 || (_lastCoinVal === null && _coinTarget > 0)) {
         var animCoin = _lastCoinVal === null && _coinTarget > 0;
         if (animCoin) _lastCoinVal = _coinTarget;
-        var startTime = null;
-        var duration = 800;
+        var startTime = performance.now();
+        var duration = 1000;
         function loadStep(ts) {
-          if (!startTime) startTime = ts;
           var p = Math.min((ts - startTime) / duration, 1);
           var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
           if (_xpTarget > 0) {
@@ -341,10 +340,9 @@
     _lastCoinVal = newVal;
     if (oldVal === newVal) return;
     if (_coinAnimFrame) cancelAnimationFrame(_coinAnimFrame);
-    var startTime = null;
-    var duration = 800;
+    var startTime = performance.now();
+    var duration = 1000;
     function step(ts) {
-      if (!startTime) startTime = ts;
       var p = Math.min((ts - startTime) / duration, 1);
       var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
       var current = Math.round(oldVal + (newVal - oldVal) * eased);
@@ -399,10 +397,9 @@
     var oldWidth = parseFloat(bar.style.width) || 0;
     label.textContent = prog.progressXP + ' / ' + prog.neededXP + ' XP';
     if (_xpAnimFrame) cancelAnimationFrame(_xpAnimFrame);
-    var startTime = null;
-    var duration = 800;
+    var startTime = performance.now();
+    var duration = 1000;
     function xpStep(ts) {
-      if (!startTime) startTime = ts;
       var p = Math.min((ts - startTime) / duration, 1);
       var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
       bar.style.width = (oldWidth + (target - oldWidth) * eased) + '%';
