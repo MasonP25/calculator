@@ -1016,7 +1016,7 @@
   });
 })();
 
-// ─── ANIMATED PARTICLE BACKGROUND ───
+// ─── ANIMATED PARTICLE BACKGROUND (parallax depth layers) ───
 (function() {
   var canvas = document.createElement('canvas');
   canvas.id = 'bg-particles';
@@ -1025,13 +1025,23 @@
   var ctx = canvas.getContext('2d');
   var particles = [];
   var accentColor = '#7b2ff7', accent2Color = '#00d4ff';
-  var COUNT = window.innerWidth < 600 ? 20 : 50;
+  var mobile = window.innerWidth < 600;
   var paused = false;
+  var scrollY = 0;
+
+  // 3 depth layers: far (small/slow/dim), mid, near (big/fast/bright)
+  var LAYERS = [
+    { count: mobile ? 12 : 25, speed: 0.2, rMin: 0.8, rMax: 1.8, aMin: 0.08, aMax: 0.2, parallax: 0.02 },
+    { count: mobile ? 8  : 18, speed: 0.45, rMin: 1.5, rMax: 2.8, aMin: 0.15, aMax: 0.35, parallax: 0.05 },
+    { count: mobile ? 5  : 12, speed: 0.7, rMin: 2.5, rMax: 4.0, aMin: 0.25, aMax: 0.5, parallax: 0.1 }
+  ];
 
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
   resize();
   var resizeTimer;
   window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 200); });
+
+  window.addEventListener('scroll', function() { scrollY = window.pageYOffset || 0; }, { passive: true });
 
   function readColors() {
     var s = getComputedStyle(document.documentElement);
@@ -1042,16 +1052,25 @@
   function init() {
     readColors();
     particles = [];
-    for (var i = 0; i < COUNT; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        r: 1.5 + Math.random() * 2.5,
-        a: 0.15 + Math.random() * 0.35,
-        color: i % 2 === 0 ? accentColor : accent2Color
-      });
+    var idx = 0;
+    for (var li = 0; li < LAYERS.length; li++) {
+      var L = LAYERS[li];
+      for (var i = 0; i < L.count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          baseY: 0,
+          vx: (Math.random() - 0.5) * L.speed * 2,
+          vy: (Math.random() - 0.5) * L.speed * 2,
+          r: L.rMin + Math.random() * (L.rMax - L.rMin),
+          a: L.aMin + Math.random() * (L.aMax - L.aMin),
+          color: idx % 2 === 0 ? accentColor : accent2Color,
+          parallax: L.parallax,
+          layer: li
+        });
+        particles[particles.length - 1].baseY = particles[particles.length - 1].y;
+        idx++;
+      }
     }
   }
 
@@ -1060,13 +1079,19 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
-      p.x += p.vx; p.y += p.vy;
+      p.x += p.vx;
+      p.baseY += p.vy;
+      // Wrap around edges
       if (p.x < -10) p.x = canvas.width + 10;
       if (p.x > canvas.width + 10) p.x = -10;
-      if (p.y < -10) p.y = canvas.height + 10;
-      if (p.y > canvas.height + 10) p.y = -10;
+      if (p.baseY < -10) p.baseY = canvas.height + 10;
+      if (p.baseY > canvas.height + 10) p.baseY = -10;
+      // Parallax offset based on scroll
+      var drawY = p.baseY - scrollY * p.parallax;
+      // Wrap the parallax-shifted y so particles always stay on screen
+      drawY = ((drawY % canvas.height) + canvas.height) % canvas.height;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, drawY, p.r, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.globalAlpha = p.a;
       ctx.fill();
