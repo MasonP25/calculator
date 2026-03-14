@@ -234,7 +234,7 @@
       var coinStr = '';
       if (window.ArcadeCoins) {
         var bal = window.ArcadeCoins.getBalance();
-        coinStr = '<span class="ab-coins">&#129689; ' + bal + '</span>';
+        coinStr = '<span class="ab-coins" id="abCoins">&#129689; <span id="abCoinVal">' + bal + '</span></span>';
       }
       // Notification bell
       var bellStr = '';
@@ -299,9 +299,31 @@
     updateBadge();
   });
 
-  // Update badge when coins change
+  // Update badge when coins change — animate the coin count
+  var _lastCoinVal = null;
+  var _coinAnimFrame = null;
   window.addEventListener('coins-updated', function() {
-    updateBadge();
+    if (!window.ArcadeCoins) { updateBadge(); return; }
+    var newVal = window.ArcadeCoins.getBalance();
+    var coinEl = document.getElementById('abCoinVal');
+    if (!coinEl) { updateBadge(); return; }
+    var oldVal = _lastCoinVal !== null ? _lastCoinVal : parseInt(coinEl.textContent) || 0;
+    _lastCoinVal = newVal;
+    if (oldVal === newVal) return;
+    if (_coinAnimFrame) cancelAnimationFrame(_coinAnimFrame);
+    var startTime = null;
+    var duration = 800;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var p = Math.min((ts - startTime) / duration, 1);
+      var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var current = Math.round(oldVal + (newVal - oldVal) * eased);
+      var el = document.getElementById('abCoinVal');
+      if (el) el.textContent = current;
+      if (p < 1) { _coinAnimFrame = requestAnimationFrame(step); }
+      else { _coinAnimFrame = null; updateBadge(); }
+    }
+    _coinAnimFrame = requestAnimationFrame(step);
   });
 
   // Make chat usernames clickable to profiles
