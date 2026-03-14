@@ -246,13 +246,19 @@
       if (!items.length) {
         list.innerHTML = '<div class="af-empty">No recent activity</div>';
       } else {
+        var seen = {};
         items.forEach(function(item) {
           var cfg = TYPE_CONFIG[item.type] || { icon: '\uD83D\uDD35', fmt: function(d) { return d.username + ' did something'; } };
+          var text = cfg.fmt(item);
+          // Skip duplicate entries (same type + username + text)
+          var key = item.type + '|' + item.username + '|' + text;
+          if (seen[key]) return;
+          seen[key] = true;
           var div = document.createElement('div');
           div.className = 'af-item';
           div.innerHTML =
             '<span class="af-icon">' + cfg.icon + '</span>' +
-            '<span class="af-text">' + cfg.fmt(item) + '</span>' +
+            '<span class="af-text">' + text + '</span>' +
             '<span class="af-time">' + _relativeTime(item.time) + '</span>';
           list.appendChild(div);
         });

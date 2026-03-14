@@ -237,7 +237,7 @@
       .mode-select button,.diff-btn,.round-btn,.mode-btn,
       .game-card,.stat-box,.online-panel,.online-info,.online-score,
       .score-display,.selector-btn,.lobby-container,.screen {
-        background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important;
+        background:${t.bg2}cc!important; border-color:${t.border}!important; color:${t.text}!important;
       }
       .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
@@ -342,7 +342,7 @@
 
       /* Hall of Fame link */
       .fame-link {
-        background:linear-gradient(135deg,${t.bg2},${t.bg3})!important;
+        background:linear-gradient(135deg,${t.bg2}cc,${t.bg3}cc)!important;
         border-color:${t.accent}33!important; color:${t.text}!important;
       }
       .fame-link:hover {
