@@ -225,6 +225,7 @@
   var _loadAnimDone = false;
 
   function updateBadge() {
+    if (_loadAnimRunning) return; // don't rebuild HTML while animation is playing
     var user = getCurrentUser();
     if (user) {
       // Level badge
