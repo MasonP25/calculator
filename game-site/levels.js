@@ -316,7 +316,7 @@
 
   // Auto-load
   if (!_isGuest()) {
-    setTimeout(_load, 2500);
+    setTimeout(_load, 500);
   }
 
   window.addEventListener('arcade-auth-change', function() {
@@ -324,7 +324,7 @@
     _xp = 0;
     _level = 0;
     if (!_isGuest()) {
-      setTimeout(_load, 1000);
+      setTimeout(_load, 300);
     }
   });
 })();
