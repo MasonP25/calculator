@@ -23,12 +23,16 @@ h1{font-size:1.8rem;margin-bottom:12px;background:linear-gradient(90deg,#7b2ff7,
 .size-bar button.active{background:#00d4ff;color:#0f0f1a;border-color:#00d4ff;font-weight:700}
 
 .color-section{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
-.current-color{width:36px;height:36px;border:2px solid #555;border-radius:6px;cursor:pointer}
-#colorPicker{width:0;height:0;padding:0;border:0;position:absolute;visibility:hidden}
-.palette{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.current-color{width:36px;height:36px;border:2px solid #555;border-radius:6px}
+.palette{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:340px}
 .palette .swatch{width:24px;height:24px;border:2px solid #333;border-radius:4px;cursor:pointer;transition:transform 0.15s}
 .palette .swatch:hover{transform:scale(1.2)}
 .palette .swatch.active{border-color:#fff;transform:scale(1.15)}
+.custom-color-wrap{display:flex;align-items:center;gap:8px;margin-top:4px}
+.custom-color-wrap label{font-size:0.8rem;color:#aaa}
+.custom-color-wrap input[type="color"]{width:48px;height:36px;border:2px solid #3a3a5a;border-radius:8px;cursor:pointer;padding:2px;background:transparent}
+.custom-color-wrap input[type="color"]::-webkit-color-swatch-wrapper{padding:2px}
+.custom-color-wrap input[type="color"]::-webkit-color-swatch{border:none;border-radius:4px}
 
 .canvas-wrap{position:relative;margin-bottom:14px}
 canvas#art{background:#1a1a2e;cursor:crosshair;border:2px solid #2a2a4a;border-radius:4px;image-rendering:pixelated}
@@ -68,16 +72,15 @@ canvas#art{background:#1a1a2e;cursor:crosshair;border:2px solid #2a2a4a;border-r
   <button onclick="setSize(8)" id="s8">8&times;8</button>
   <button onclick="setSize(16)" id="s16" class="active">16&times;16</button>
   <button onclick="setSize(32)" id="s32">32&times;32</button>
+  <button onclick="setSize(64)" id="s64">64&times;64</button>
 </div>
 
 <div class="toolbar">
   <button onclick="setTool('pencil')" id="tPencil" class="active" title="Pencil (B)">&#9998; Pencil</button>
   <button onclick="setTool('eraser')" id="tEraser" title="Eraser (E)">&#9003; Eraser</button>
-  <button onclick="setTool('fill')" id="tFill" title="Fill Bucket (G)">&#9640; Fill</button>
-  <button onclick="setTool('eyedropper')" id="tEye" title="Eyedropper (I)">&#128083; Pick</button>
   <div class="sep"></div>
-  <button onclick="undo()" title="Undo (Ctrl+Z)">&#8630; Undo</button>
-  <button onclick="redo()" title="Redo (Ctrl+Y)">&#8631; Redo</button>
+  <button onclick="doUndo()" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+  <button onclick="doRedo()" title="Redo (Ctrl+Y)">&#8631; Redo</button>
   <div class="sep"></div>
   <button onclick="toggleMirror()" id="tMirror" title="Mirror Mode (M)">&#8596; Mirror</button>
   <button onclick="toggleGrid()" id="tGrid" class="active" title="Toggle Grid (H)">&#9638; Grid</button>
@@ -85,9 +88,13 @@ canvas#art{background:#1a1a2e;cursor:crosshair;border:2px solid #2a2a4a;border-r
 </div>
 
 <div class="color-section">
-  <div class="current-color" id="curColor" style="background:#e0e0e0" onclick="document.getElementById('colorPicker').click()"></div>
-  <input type="color" id="colorPicker" value="#e0e0e0">
+  <div class="current-color" id="curColor" style="background:#e0e0e0"></div>
   <div class="palette" id="palette"></div>
+</div>
+<div class="custom-color-wrap">
+  <label>Custom:</label>
+  <input type="color" id="colorPicker" value="#e0e0e0">
+  <button onclick="useCustomColor()" style="background:#1a1a2e;color:#ccc;border:2px solid #3a3a5a;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.8rem">Use</button>
 </div>
 
 <div class="mirror-indicator" id="mirrorInd">&#8596; Mirror Mode ON</div>
@@ -124,8 +131,8 @@ var tool = 'pencil';
 var color = '#e0e0e0';
 var showGrid = true;
 var mirror = false;
-var history = [];
-var historyIdx = -1;
+var undoStack = [];
+var redoStack = [];
 var MAX_HISTORY = 30;
 var isDrawing = false;
 var lastCell = null;
@@ -145,9 +152,14 @@ var lastCell = null;
   }
 })();
 
+// Custom color picker — live preview as you drag
 document.getElementById('colorPicker').addEventListener('input', function() {
-  setColor(this.value);
+  document.getElementById('curColor').style.background = this.value;
 });
+
+function useCustomColor() {
+  setColor(document.getElementById('colorPicker').value);
+}
 
 function setColor(c) {
   color = c;
@@ -167,9 +179,8 @@ function initGrid() {
       grid[r][c] = null;
     }
   }
-  history = [];
-  historyIdx = -1;
-  pushHistory();
+  undoStack = [];
+  redoStack = [];
   draw();
 }
 
@@ -188,7 +199,7 @@ function draw() {
       }
     }
   }
-  if (showGrid) {
+  if (showGrid && gridSize <= 32) {
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     for (var i = 0; i <= gridSize; i++) {
@@ -236,42 +247,55 @@ function applyTool(cell) {
   if (tool === 'pencil') {
     grid[cell.r][cell.c] = color;
     if (mirror) {
-      var mc = gridSize - 1 - cell.c;
-      grid[cell.r][mc] = color;
+      grid[cell.r][gridSize - 1 - cell.c] = color;
     }
     draw();
   } else if (tool === 'eraser') {
     grid[cell.r][cell.c] = null;
     if (mirror) {
-      var mc = gridSize - 1 - cell.c;
-      grid[cell.r][mc] = null;
+      grid[cell.r][gridSize - 1 - cell.c] = null;
     }
     draw();
-  } else if (tool === 'fill') {
-    floodFill(cell.r, cell.c, color);
-    draw();
-  } else if (tool === 'eyedropper') {
-    var picked = grid[cell.r][cell.c];
-    if (picked) setColor(picked);
   }
 }
 
-function floodFill(r, c, fillColor) {
-  var target = grid[r][c];
-  if (target === fillColor) return;
-  var queue = [[r, c]];
-  var visited = {};
-  while (queue.length) {
-    var p = queue.shift();
-    var pr = p[0], pc = p[1];
-    var key = pr + ',' + pc;
-    if (visited[key]) continue;
-    if (pr < 0 || pr >= gridSize || pc < 0 || pc >= gridSize) continue;
-    if (grid[pr][pc] !== target) continue;
-    visited[key] = true;
-    grid[pr][pc] = fillColor;
-    queue.push([pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]);
+// Undo/Redo with two stacks
+function copyGrid() {
+  var g = [];
+  for (var r = 0; r < grid.length; r++) {
+    g[r] = grid[r].slice();
   }
+  return g;
+}
+
+function copyGridFrom(src) {
+  var g = [];
+  for (var r = 0; r < src.length; r++) {
+    g[r] = src[r].slice();
+  }
+  return g;
+}
+
+function saveState() {
+  undoStack.push(copyGrid());
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack = [];
+}
+
+function doUndo() {
+  if (undoStack.length === 0) return;
+  redoStack.push(copyGrid());
+  grid = undoStack.pop();
+  draw();
+  if (window.SFX) window.SFX.click();
+}
+
+function doRedo() {
+  if (redoStack.length === 0) return;
+  undoStack.push(copyGrid());
+  grid = redoStack.pop();
+  draw();
+  if (window.SFX) window.SFX.click();
 }
 
 // Mouse events
@@ -279,15 +303,9 @@ canvas.addEventListener('mousedown', function(e) {
   e.preventDefault();
   var cell = getCell(e);
   if (!cell) return;
-  if (tool === 'fill' || tool === 'eyedropper') {
-    pushHistory();
-    applyTool(cell);
-    if (tool !== 'eyedropper') pushHistory();
-    return;
-  }
   isDrawing = true;
   lastCell = cell;
-  pushHistory();
+  saveState();
   applyTool(cell);
 });
 
@@ -303,7 +321,6 @@ canvas.addEventListener('mouseup', function() {
   if (isDrawing) {
     isDrawing = false;
     lastCell = null;
-    pushHistory();
   }
 });
 
@@ -311,7 +328,6 @@ canvas.addEventListener('mouseleave', function() {
   if (isDrawing) {
     isDrawing = false;
     lastCell = null;
-    pushHistory();
   }
 });
 
@@ -320,15 +336,9 @@ canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
   var cell = getTouchCell(e);
   if (!cell) return;
-  if (tool === 'fill' || tool === 'eyedropper') {
-    pushHistory();
-    applyTool(cell);
-    if (tool !== 'eyedropper') pushHistory();
-    return;
-  }
   isDrawing = true;
   lastCell = cell;
-  pushHistory();
+  saveState();
   applyTool(cell);
 }, { passive: false });
 
@@ -346,64 +356,14 @@ canvas.addEventListener('touchend', function(e) {
   if (isDrawing) {
     isDrawing = false;
     lastCell = null;
-    pushHistory();
   }
 });
-
-// Undo/Redo
-function copyGrid() {
-  var g = [];
-  for (var r = 0; r < grid.length; r++) {
-    g[r] = grid[r].slice();
-  }
-  return g;
-}
-
-function pushHistory() {
-  var snap = copyGrid();
-  // Remove future states if we're not at the end
-  if (historyIdx < history.length - 1) {
-    history = history.slice(0, historyIdx + 1);
-  }
-  history.push(snap);
-  if (history.length > MAX_HISTORY) history.shift();
-  historyIdx = history.length - 1;
-}
-
-function undo() {
-  if (historyIdx > 0) {
-    historyIdx--;
-    grid = copyGridFrom(history[historyIdx]);
-    draw();
-    if (window.SFX) window.SFX.click();
-  }
-}
-
-function redo() {
-  if (historyIdx < history.length - 1) {
-    historyIdx++;
-    grid = copyGridFrom(history[historyIdx]);
-    draw();
-    if (window.SFX) window.SFX.click();
-  }
-}
-
-function copyGridFrom(src) {
-  var g = [];
-  for (var r = 0; r < src.length; r++) {
-    g[r] = src[r].slice();
-  }
-  return g;
-}
 
 // Tools
 function setTool(t) {
   tool = t;
   document.getElementById('tPencil').classList.toggle('active', t === 'pencil');
   document.getElementById('tEraser').classList.toggle('active', t === 'eraser');
-  document.getElementById('tFill').classList.toggle('active', t === 'fill');
-  document.getElementById('tEye').classList.toggle('active', t === 'eyedropper');
-  canvas.style.cursor = t === 'eyedropper' ? 'copy' : 'crosshair';
 }
 
 function toggleMirror() {
@@ -427,13 +387,12 @@ function clearCanvas() {
     if (hasPixels) break;
   }
   if (hasPixels && !confirm('Clear the canvas?')) return;
-  pushHistory();
+  saveState();
   for (var r = 0; r < gridSize; r++) {
     for (var c = 0; c < gridSize; c++) {
       grid[r][c] = null;
     }
   }
-  pushHistory();
   draw();
 }
 
@@ -451,18 +410,17 @@ function setSize(s) {
   document.getElementById('s8').classList.toggle('active', s === 8);
   document.getElementById('s16').classList.toggle('active', s === 16);
   document.getElementById('s32').classList.toggle('active', s === 32);
+  document.getElementById('s64').classList.toggle('active', s === 64);
   initGrid();
 }
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); return; }
-  if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); return; }
+  if (e.ctrlKey && e.key === 'z') { e.preventDefault(); doUndo(); return; }
+  if (e.ctrlKey && e.key === 'y') { e.preventDefault(); doRedo(); return; }
   if (e.key === 'b') setTool('pencil');
   if (e.key === 'e') setTool('eraser');
-  if (e.key === 'g') setTool('fill');
-  if (e.key === 'i') setTool('eyedropper');
   if (e.key === 'm') toggleMirror();
   if (e.key === 'h') toggleGrid();
   if (e.key === 'Delete') clearCanvas();
@@ -470,13 +428,12 @@ document.addEventListener('keydown', function(e) {
 
 // Save PNG
 function savePNG() {
-  var scale = gridSize <= 16 ? 16 : 8;
+  var scale = gridSize <= 16 ? 16 : (gridSize <= 32 ? 8 : 4);
   var size = gridSize * scale;
   var offscreen = document.createElement('canvas');
   offscreen.width = size;
   offscreen.height = size;
   var octx = offscreen.getContext('2d');
-  // Transparent background
   for (var r = 0; r < gridSize; r++) {
     for (var c = 0; c < gridSize; c++) {
       if (grid[r][c]) {
@@ -557,7 +514,6 @@ function renderGallery() {
       var item = gallery[idx];
       var div = document.createElement('div');
       div.className = 'gallery-item';
-      // Mini canvas
       var mc = document.createElement('canvas');
       var thumbSize = 80;
       mc.width = thumbSize;
@@ -588,7 +544,7 @@ function renderGallery() {
       div.appendChild(dateDiv);
       var del = document.createElement('div');
       del.className = 'del';
-      del.textContent = '✕';
+      del.textContent = '\u2715';
       del.onclick = function(e) {
         e.stopPropagation();
         if (!confirm('Delete "' + item.name + '"?')) return;
@@ -604,10 +560,10 @@ function renderGallery() {
         document.getElementById('s8').classList.toggle('active', gridSize === 8);
         document.getElementById('s16').classList.toggle('active', gridSize === 16);
         document.getElementById('s32').classList.toggle('active', gridSize === 32);
+        document.getElementById('s64').classList.toggle('active', gridSize === 64);
         grid = copyGridFrom(item.grid);
-        history = [];
-        historyIdx = -1;
-        pushHistory();
+        undoStack = [];
+        redoStack = [];
         draw();
         document.getElementById('gallery').style.display = 'none';
       };
