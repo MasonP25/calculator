@@ -221,6 +221,9 @@
     if (!getCurrentUser()) openModal();
   });
 
+  var _loadAnimRunning = false;
+  var _loadAnimDone = false;
+
   function updateBadge() {
     var user = getCurrentUser();
     if (user) {
@@ -284,7 +287,9 @@
         });
       }
       // Animate XP bar and coins together on first load (single rAF loop)
-      if (_xpTarget > 0 || (_lastCoinVal === null && _coinTarget > 0)) {
+      if (!_loadAnimDone && (_xpTarget > 0 || (_lastCoinVal === null && _coinTarget > 0))) {
+        if (_loadAnimRunning) return; // already animating, don't restart
+        _loadAnimRunning = true;
         var animCoin = _lastCoinVal === null && _coinTarget > 0;
         if (animCoin) _lastCoinVal = _coinTarget;
         var startTime = performance.now();
@@ -301,8 +306,13 @@
             if (el) el.textContent = Math.round(_coinTarget * eased);
           }
           if (p < 1) requestAnimationFrame(loadStep);
+          else { _loadAnimRunning = false; _loadAnimDone = true; }
         }
         requestAnimationFrame(loadStep);
+      } else if (_loadAnimDone && _xpTarget > 0) {
+        // After initial animation, just set the bar directly
+        var bar = document.getElementById('abXpBar');
+        if (bar) bar.style.width = _xpTarget + '%';
       }
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
