@@ -50,7 +50,7 @@
     '.easter-egg-fixed{position:fixed;font-size:1.3rem;cursor:pointer;opacity:0.15;transition:opacity 0.3s,transform 0.3s;z-index:9;user-select:none;-webkit-user-select:none;filter:grayscale(0.5)}' +
     '.easter-egg-fixed:hover{opacity:0.5;filter:grayscale(0)}' +
     '.easter-egg-fixed.found{opacity:0;pointer-events:none;transform:scale(2);transition:all 0.5s}' +
-    '#easter-counter{position:fixed;bottom:56px;left:16px;z-index:9996;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);padding:5px 12px;border-radius:8px;font-size:0.8rem;color:var(--t-dim,#aaa);font-family:"Segoe UI",Tahoma,sans-serif;display:flex;align-items:center;gap:6px;transition:border-color 0.3s,color 0.3s}' +
+    '#easter-counter{position:fixed;top:68px;right:16px;z-index:9996;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);padding:5px 12px;border-radius:8px;font-size:0.8rem;color:var(--t-dim,#aaa);font-family:"Segoe UI",Tahoma,sans-serif;display:flex;align-items:center;gap:6px;transition:border-color 0.3s,color 0.3s}' +
     '#easter-counter .ec-emoji{font-size:1rem}' +
     '#easter-counter.complete{border-color:#ffd700;color:#ffd700}' +
     '@keyframes eggPop{0%{transform:scale(1)}50%{transform:scale(1.8) rotate(15deg)}100%{transform:scale(0) rotate(30deg)}}' +
