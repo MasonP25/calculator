@@ -656,6 +656,98 @@
       }
     },
 
+    // ── Ban a user by username + device fingerprint ──
+    ban: function(username, reason) {
+      if (!username) return console.error('[Admin] Username required');
+      reason = reason || 'No reason given';
+      return _initFirebase().then(function() {
+        return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function(mod) {
+          var where = mod.where;
+          var key = username.toLowerCase();
+          var docRef = _doc(_db, 'users', key);
+          return _getDoc(docRef).then(function(snap) {
+            if (!snap.exists()) return console.error('[Admin] User "' + username + '" not found');
+            var data = snap.data();
+            var fp = data.fingerprint || null;
+            // Mark user as banned
+            return _setDoc(docRef, { banned: true, banReason: reason }, { merge: true }).then(function() {
+              console.log('[Admin] Marked ' + username + ' as banned');
+              // Add fingerprint to bans collection
+              if (fp) {
+                return _setDoc(_doc(_db, 'bans', fp), {
+                  fingerprint: fp,
+                  username: username,
+                  reason: reason,
+                  bannedAt: Date.now(),
+                  bannedBy: 'admin'
+                }).then(function() {
+                  console.log('[Admin] Banned device fingerprint: ' + fp);
+                  console.log('[Admin] ✓ ' + username + ' is now banned. Reason: ' + reason);
+                });
+              } else {
+                console.warn('[Admin] No device fingerprint on record for ' + username + ' — username banned but device not yet fingerprinted. They will be device-banned on next visit.');
+                console.log('[Admin] ✓ ' + username + ' is now banned. Reason: ' + reason);
+              }
+            });
+          });
+        });
+      });
+    },
+
+    // ── Unban a user ──
+    unban: function(username) {
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function(mod) {
+          var deleteDoc = mod.deleteDoc;
+          var where = mod.where;
+          var key = username.toLowerCase();
+          var docRef = _doc(_db, 'users', key);
+          return _getDoc(docRef).then(function(snap) {
+            if (!snap.exists()) return console.error('[Admin] User "' + username + '" not found');
+            var data = snap.data();
+            var fp = data.fingerprint || null;
+            // Remove banned flag
+            return _setDoc(docRef, { banned: false, banReason: '' }, { merge: true }).then(function() {
+              console.log('[Admin] Removed ban flag from ' + username);
+              // Remove fingerprint from bans collection
+              if (fp) {
+                return deleteDoc(_doc(_db, 'bans', fp)).then(function() {
+                  console.log('[Admin] Removed device fingerprint ban');
+                  console.log('[Admin] ✓ ' + username + ' is now unbanned');
+                }).catch(function() {
+                  console.log('[Admin] ✓ ' + username + ' is now unbanned (no fingerprint ban found)');
+                });
+              } else {
+                console.log('[Admin] ✓ ' + username + ' is now unbanned');
+              }
+            });
+          });
+        });
+      });
+    },
+
+    // ── List all bans ──
+    listBans: function() {
+      return _initFirebase().then(function() {
+        return _getDocs(_collection(_db, 'bans')).then(function(snap) {
+          if (snap.empty) return console.log('[Admin] No bans found');
+          var bans = [];
+          snap.forEach(function(d) { bans.push(d.data()); });
+          console.table(bans.map(function(b) {
+            return {
+              username: b.username,
+              reason: b.reason,
+              bannedAt: new Date(b.bannedAt).toLocaleString(),
+              bannedBy: b.bannedBy,
+              fingerprint: b.fingerprint
+            };
+          }));
+          console.log('[Admin] Total bans: ' + bans.length);
+        });
+      });
+    },
+
     help: function () {
       console.log(
         '── ArcadeAdmin Commands ──\n' +
@@ -690,6 +782,9 @@
         '  ArcadeAdmin.setBanner("user", "sunset")     — Set profile banner\n' +
         '  ArcadeAdmin.setCasinoStats("user", {...})   — Set casino stats\n' +
         '  ArcadeAdmin.postActivity("type", "user", {})— Post activity\n' +
+        '  ArcadeAdmin.ban("user", "reason")           — Ban user + device\n' +
+        '  ArcadeAdmin.unban("user")                   — Unban user + device\n' +
+        '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.help()                          — Show this help'
       );
     }
