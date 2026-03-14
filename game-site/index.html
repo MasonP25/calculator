@@ -2246,6 +2246,7 @@
 // ─── WELCOME TOUR ───
 (function() {
   if (localStorage.getItem('arcade_tour_done')) return;
+  document.body.style.overflow = 'hidden';
 
   var STEPS = [
     { title: 'Welcome to ARCADE!', text: 'Discover 90+ free browser games with leaderboards, avatars, and multiplayer. Let us show you around!', target: null },
