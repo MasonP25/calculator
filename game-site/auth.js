@@ -246,12 +246,13 @@
       if (window._authFriendReqCount > 0) {
         reqBadge = '<span class="ab-req" title="' + window._authFriendReqCount + ' friend request(s)">' + window._authFriendReqCount + '</span>';
       }
-      // Build XP bar HTML
+      // Build XP bar HTML (starts at 0% width, animates to real value)
       var xpHtml = '';
+      var _xpTarget = 0;
       if (window.ArcadeLevels) {
         var xpProg = window.ArcadeLevels.getProgress();
-        xpHtml = '<div class="ab-xp"><div class="xp-bar-outer"><div class="xp-bar-inner" style="width:' +
-          Math.min(xpProg.percent, 100) + '%"></div></div><div class="xp-bar-label">' +
+        _xpTarget = Math.min(xpProg.percent, 100);
+        xpHtml = '<div class="ab-xp"><div class="xp-bar-outer"><div class="xp-bar-inner" id="abXpBar" style="width:0%"></div></div><div class="xp-bar-label" id="abXpLabel">' +
           xpProg.progressXP + ' / ' + xpProg.neededXP + ' XP</div></div>';
       }
       badge.innerHTML = '<div class="ab-row"><span class="ab-icon">&#128100;</span><span class="ab-name ab-name-link" id="abNameLink">' + user + '</span>' + levelStr + coinStr + bellStr + reqBadge + '<span class="ab-out" id="abOut">Sign Out</span></div>' + xpHtml;
@@ -278,6 +279,13 @@
           e.stopPropagation();
           doSignOut();
           window.dispatchEvent(new Event('arcade-auth-change'));
+        });
+      }
+      // Animate XP bar from 0 to target
+      if (_xpTarget > 0) {
+        requestAnimationFrame(function() {
+          var bar = document.getElementById('abXpBar');
+          if (bar) bar.style.width = _xpTarget + '%';
         });
       }
     } else {
@@ -321,7 +329,7 @@
       var el = document.getElementById('abCoinVal');
       if (el) el.textContent = current;
       if (p < 1) { _coinAnimFrame = requestAnimationFrame(step); }
-      else { _coinAnimFrame = null; updateBadge(); }
+      else { _coinAnimFrame = null; }
     }
     _coinAnimFrame = requestAnimationFrame(step);
   });
@@ -359,6 +367,13 @@
 
   // Update XP bar when level changes
   window.addEventListener('level-updated', function() {
-    updateBadge();
+    if (!window.ArcadeLevels) { updateBadge(); return; }
+    var bar = document.getElementById('abXpBar');
+    var label = document.getElementById('abXpLabel');
+    if (!bar || !label) { updateBadge(); return; }
+    var prog = window.ArcadeLevels.getProgress();
+    var target = Math.min(prog.percent, 100);
+    bar.style.width = target + '%';
+    label.textContent = prog.progressXP + ' / ' + prog.neededXP + ' XP';
   });
 })();
