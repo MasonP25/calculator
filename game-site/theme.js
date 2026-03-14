@@ -1031,9 +1031,9 @@
 
   // 3 depth layers: far (small/slow/dim), mid, near (big/fast/bright)
   var LAYERS = [
-    { count: mobile ? 12 : 25, speed: 0.2, rMin: 0.8, rMax: 1.8, aMin: 0.08, aMax: 0.2, parallax: 0.02 },
-    { count: mobile ? 8  : 18, speed: 0.45, rMin: 1.5, rMax: 2.8, aMin: 0.15, aMax: 0.35, parallax: 0.05 },
-    { count: mobile ? 5  : 12, speed: 0.7, rMin: 2.5, rMax: 4.0, aMin: 0.25, aMax: 0.5, parallax: 0.1 }
+    { count: mobile ? 25 : 60, speed: 0.2, rMin: 0.8, rMax: 1.8, aMin: 0.08, aMax: 0.2, parallax: 0.02 },
+    { count: mobile ? 15 : 35, speed: 0.45, rMin: 1.5, rMax: 2.8, aMin: 0.15, aMax: 0.35, parallax: 0.05 },
+    { count: mobile ? 8  : 20, speed: 0.7, rMin: 2.5, rMax: 4.0, aMin: 0.25, aMax: 0.5, parallax: 0.1 }
   ];
 
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
