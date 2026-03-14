@@ -876,6 +876,30 @@
   }
 })();
 
+// ─── FULLSCREEN BUTTON ───
+(function() {
+  if (!document.fullscreenEnabled) return;
+  var btn = document.createElement('button');
+  btn.id = 'fullscreen-btn';
+  btn.innerHTML = '&#x26F6;';
+  btn.title = 'Fullscreen (F11)';
+  btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:997;width:36px;height:36px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s';
+  btn.onmouseover = function() { btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; };
+  btn.onmouseout = function() { btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; };
+  btn.onclick = function() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  };
+  document.addEventListener('fullscreenchange', function() {
+    btn.innerHTML = document.fullscreenElement ? '&#x2716;' : '&#x26F6;';
+    btn.title = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen (F11)';
+  });
+  document.body.appendChild(btn);
+})();
+
 // ─── PLAYER STATUS (presence tracking) ───
 (function() {
   var GAME_NAMES = {
