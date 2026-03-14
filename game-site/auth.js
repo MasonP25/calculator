@@ -221,7 +221,20 @@
     if (!getCurrentUser()) openModal();
   });
 
+  var _animating = false;
+  var _pendingBadgeUpdate = false;
+  var _lastCoinVal = null;
+  var _coinAnimFrame = null;
+  var _xpAnimFrame = null;
+  function _finishAnim() {
+    // Only clear if no other animation is still running
+    if (_coinAnimFrame || _xpAnimFrame) return;
+    _animating = false;
+    if (_pendingBadgeUpdate) { _pendingBadgeUpdate = false; updateBadge(); }
+  }
+
   function updateBadge() {
+    if (_animating) { _pendingBadgeUpdate = true; return; }
     var user = getCurrentUser();
     if (user) {
       // Level badge
@@ -301,8 +314,6 @@
   });
 
   // Update badge when coins change — animate the coin count
-  var _lastCoinVal = null;
-  var _coinAnimFrame = null;
   window.addEventListener('coins-updated', function() {
     if (!window.ArcadeCoins) return;
     var newVal = window.ArcadeCoins.getBalance();
@@ -317,6 +328,7 @@
     _lastCoinVal = newVal;
     if (oldVal === newVal) return;
     if (_coinAnimFrame) cancelAnimationFrame(_coinAnimFrame);
+    _animating = true;
     var startTime = performance.now();
     var duration = 1000;
     function step(ts) {
@@ -326,7 +338,7 @@
       var el = document.getElementById('abCoinVal');
       if (el) el.textContent = current;
       if (p < 1) { _coinAnimFrame = requestAnimationFrame(step); }
-      else { _coinAnimFrame = null; }
+      else { _coinAnimFrame = null; _finishAnim(); }
     }
     _coinAnimFrame = requestAnimationFrame(step);
   });
@@ -363,7 +375,6 @@
   });
 
   // Update XP bar when level changes
-  var _xpAnimFrame = null;
   window.addEventListener('level-updated', function() {
     if (!window.ArcadeLevels) { updateBadge(); return; }
     var bar = document.getElementById('abXpBar');
@@ -374,6 +385,7 @@
     var oldWidth = parseFloat(bar.style.width) || 0;
     label.textContent = prog.progressXP + ' / ' + prog.neededXP + ' XP';
     if (_xpAnimFrame) cancelAnimationFrame(_xpAnimFrame);
+    _animating = true;
     var startTime = performance.now();
     var duration = 1000;
     function xpStep(ts) {
@@ -381,7 +393,7 @@
       var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
       bar.style.width = (oldWidth + (target - oldWidth) * eased) + '%';
       if (p < 1) { _xpAnimFrame = requestAnimationFrame(xpStep); }
-      else { _xpAnimFrame = null; }
+      else { _xpAnimFrame = null; _finishAnim(); }
     }
     _xpAnimFrame = requestAnimationFrame(xpStep);
   });
