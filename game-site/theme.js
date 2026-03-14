@@ -1161,6 +1161,8 @@
     }
   }
 
-  setTimeout(refresh, 500);
+  setTimeout(refresh, 1500);
+  setTimeout(refresh, 5000);
+  setTimeout(refresh, 15000);
   setInterval(refresh, 45000);
 })();
