@@ -314,7 +314,12 @@
     if (!window.ArcadeCoins) { updateBadge(); return; }
     var newVal = window.ArcadeCoins.getBalance();
     var coinEl = document.getElementById('abCoinVal');
-    if (!coinEl) { updateBadge(); return; }
+    if (!coinEl) {
+      // Badge not built yet or missing element — build it, then record the value
+      _lastCoinVal = newVal;
+      updateBadge();
+      return;
+    }
     var oldVal = _lastCoinVal !== null ? _lastCoinVal : parseInt(coinEl.textContent) || 0;
     _lastCoinVal = newVal;
     if (oldVal === newVal) return;
