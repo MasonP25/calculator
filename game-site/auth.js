@@ -230,11 +230,13 @@
         var prog = window.ArcadeLevels.getProgress();
         levelStr = '<span class="ab-level">Lv.' + prog.level + '</span>';
       }
-      // Coins
+      // Coins (show 0 initially if first load, animate to real value)
       var coinStr = '';
+      var _coinTarget = 0;
       if (window.ArcadeCoins) {
-        var bal = window.ArcadeCoins.getBalance();
-        coinStr = '<span class="ab-coins" id="abCoins">&#129689; <span id="abCoinVal">' + bal + '</span></span>';
+        _coinTarget = window.ArcadeCoins.getBalance();
+        var showVal = _lastCoinVal !== null ? _coinTarget : 0;
+        coinStr = '<span class="ab-coins" id="abCoins">&#129689; <span id="abCoinVal">' + showVal + '</span></span>';
       }
       // Notification bell
       var bellStr = '';
@@ -281,13 +283,30 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
-      // Animate XP bar from 0 to target
-      if (_xpTarget > 0) {
-        requestAnimationFrame(function() {
+      // Animate XP bar and coins together on first load
+      requestAnimationFrame(function() {
+        // XP bar
+        if (_xpTarget > 0) {
           var bar = document.getElementById('abXpBar');
           if (bar) bar.style.width = _xpTarget + '%';
-        });
-      }
+        }
+        // Coins count-up on first load
+        if (_lastCoinVal === null && _coinTarget > 0) {
+          _lastCoinVal = _coinTarget;
+          var startTime = null;
+          var duration = 800;
+          function coinStep(ts) {
+            if (!startTime) startTime = ts;
+            var p = Math.min((ts - startTime) / duration, 1);
+            var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+            var current = Math.round(_coinTarget * eased);
+            var el = document.getElementById('abCoinVal');
+            if (el) el.textContent = current;
+            if (p < 1) requestAnimationFrame(coinStep);
+          }
+          requestAnimationFrame(coinStep);
+        }
+      });
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
     }
