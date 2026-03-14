@@ -235,8 +235,8 @@
       .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
 
-      /* Random button text matches background */
-      .random-btn { color:${t.bg1}!important; }
+      /* Random button text matches theme text */
+      .random-btn { color:${t.text}!important; }
 
       /* Filter bar */
       .filter-btn { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important; }
