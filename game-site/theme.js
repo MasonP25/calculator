@@ -1013,12 +1013,12 @@
 (function() {
   var canvas = document.createElement('canvas');
   canvas.id = 'bg-particles';
-  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.35';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.55';
   document.body.insertBefore(canvas, document.body.firstChild);
   var ctx = canvas.getContext('2d');
   var particles = [];
   var accentColor = '#7b2ff7', accent2Color = '#00d4ff';
-  var COUNT = window.innerWidth < 600 ? 20 : 50;
+  var COUNT = window.innerWidth < 600 ? 35 : 90;
   var paused = false;
 
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -1041,8 +1041,8 @@
         y: Math.random() * canvas.height,
         vx: (Math.random() - 0.5) * 0.6,
         vy: (Math.random() - 0.5) * 0.6,
-        r: 1.5 + Math.random() * 2.5,
-        a: 0.15 + Math.random() * 0.35,
+        r: 2 + Math.random() * 3,
+        a: 0.2 + Math.random() * 0.45,
         color: i % 2 === 0 ? accentColor : accent2Color
       });
     }

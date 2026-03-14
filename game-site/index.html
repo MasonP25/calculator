@@ -88,30 +88,33 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.3), 0 0 15px rgba(0,0,0,0.1);
   }
   .card:hover {
-    border-color: rgba(255,255,255,0.2);
-    box-shadow: 0 8px 30px rgba(123, 47, 247, 0.3), 0 0 20px rgba(0,0,0,0.2);
+    border-color: rgba(255,255,255,0.25);
+    box-shadow: 0 8px 30px rgba(255,255,255,0.08), 0 0 20px rgba(0,0,0,0.3);
   }
   .card:hover .lg-shine {
-    box-shadow: inset 2px 2px 1px 0 rgba(255,255,255,0.4),
-      inset -1px -1px 1px 1px rgba(255,255,255,0.3);
+    box-shadow: inset 2px 2px 2px 0 rgba(255,255,255,0.45),
+      inset -1px -1px 2px 1px rgba(255,255,255,0.3),
+      inset 0 0 20px rgba(255,255,255,0.08);
   }
   .card .lg-effect {
     position:absolute;inset:0;z-index:0;
-    backdrop-filter:blur(3px);
+    backdrop-filter:blur(6px) saturate(1.4);
+    -webkit-backdrop-filter:blur(6px) saturate(1.4);
     filter:url(#glass-distortion);
     overflow:hidden;isolation:isolate;
     border-radius:16px;
   }
   .card .lg-tint {
     position:absolute;inset:0;z-index:1;
-    background:rgba(26,26,46,0.65);
+    background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
     border-radius:16px;
   }
   .card .lg-shine {
     position:absolute;inset:0;z-index:2;
     overflow:hidden;border-radius:14px;
-    box-shadow: inset 1px 1px 1px 0 rgba(255,255,255,0.2),
-      inset -1px -1px 1px 0 rgba(255,255,255,0.1);
+    box-shadow: inset 1px 1px 2px 0 rgba(255,255,255,0.3),
+      inset -1px -1px 1px 0 rgba(255,255,255,0.1),
+      inset 0 0 12px rgba(255,255,255,0.05);
     transition: box-shadow 0.3s;
   }
   .card .icon,.card h2,.card p,.card .badge,.card .fav-btn,.card .gotd-banner,.card .new-badge { position:relative;z-index:3; }
@@ -2278,7 +2281,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=2"></script>
-<script src="theme.js?v=6"></script>
+<script src="theme.js?v=7"></script>
 <script>
 // ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
 (function() {
