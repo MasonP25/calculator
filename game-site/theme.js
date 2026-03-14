@@ -221,11 +221,11 @@
       body { background:${t.bg1}!important; color:${t.text}!important; }
       a { color:${t.accent}!important; }
       @keyframes arcadeShift {
-        0%,100% { background-position:0% 50%; }
-        50% { background-position:100% 50%; }
+        0% { filter:hue-rotate(0deg); }
+        50% { filter:hue-rotate(60deg); }
+        100% { filter:hue-rotate(0deg); }
       }
-      h1 { background:linear-gradient(90deg,${t.accent2},${t.accent},${t.accent2},${t.accent})!important;
-           background-size:300% 100%!important;
+      h1 { background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
            -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
            background-clip:text!important;
            animation:arcadeShift 3s ease-in-out infinite!important; }

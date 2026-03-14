@@ -47,14 +47,14 @@
     padding: 2rem 1rem;
   }
   @keyframes arcadeShift {
-    0%,100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    0% { filter: hue-rotate(0deg); }
+    50% { filter: hue-rotate(60deg); }
+    100% { filter: hue-rotate(0deg); }
   }
   h1 {
     font-size: 3rem;
     margin-bottom: 0.3rem;
-    background: linear-gradient(90deg, #00d4ff, #7b2ff7, #00d4ff, #7b2ff7);
-    background-size: 300% 100%;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
