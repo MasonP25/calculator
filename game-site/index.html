@@ -84,7 +84,6 @@
     transition: transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s;
     text-decoration: none;
     color: inherit;
-    transform-style: preserve-3d;
     overflow: hidden;
   }
   .card:hover {
@@ -2333,7 +2332,7 @@
     var y = e.clientY - rect.top;
     var rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -10;
     var rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 10;
-    card.style.transform = 'perspective(600px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px) scale(1.03)';
+    card.style.transform = 'translateY(-4px) scale(1.03)';
     card.style.setProperty('--glow-x', (x / rect.width * 100).toFixed(1) + '%');
     card.style.setProperty('--glow-y', (y / rect.height * 100).toFixed(1) + '%');
   }
