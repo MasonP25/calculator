@@ -265,7 +265,47 @@
   const saved = localStorage.getItem('arcadeTheme') || 'midnight';
   let current = THEMES[saved] ? saved : 'midnight';
 
+  // ── Custom cursor helpers ──
+  function _getEquippedCursor() {
+    try {
+      if (window.ArcadeCoins && window.ArcadeCoins.getEquipped) {
+        var eq = window.ArcadeCoins.getEquipped();
+        if (eq.cursor && window.ArcadeAvatar) {
+          // Allow 'custom' or any valid CURSORS entry
+          if (eq.cursor === 'custom' || (window.ArcadeAvatar.CURSORS && window.ArcadeAvatar.CURSORS[eq.cursor])) {
+            return eq.cursor;
+          }
+        }
+      }
+    } catch(e) {}
+    return null;
+  }
 
+  function _cursorDefault(t) {
+    var cid = _getEquippedCursor();
+    if (cid && window.ArcadeAvatar) {
+      var svg = window.ArcadeAvatar.getCursorSVG(cid);
+      if (svg) return encodeURIComponent(svg);
+    }
+    // Default crosshair cursor
+    return encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><circle cx='11' cy='11' r='8' fill='none' stroke='" + t.accent + "' stroke-width='1.5' opacity='0.7'/><circle cx='11' cy='11' r='2' fill='" + t.accent + "' opacity='0.9'/><line x1='11' y1='1' x2='11' y2='6' stroke='" + t.accent + "' stroke-width='1' opacity='0.5'/><line x1='11' y1='16' x2='11' y2='21' stroke='" + t.accent + "' stroke-width='1' opacity='0.5'/><line x1='1' y1='11' x2='6' y2='11' stroke='" + t.accent + "' stroke-width='1' opacity='0.5'/><line x1='16' y1='11' x2='22' y2='11' stroke='" + t.accent + "' stroke-width='1' opacity='0.5'/></svg>");
+  }
+
+  function _cursorPointer(t) {
+    var cid = _getEquippedCursor();
+    if (cid && window.ArcadeAvatar) {
+      var svg = window.ArcadeAvatar.getCursorSVG(cid);
+      if (svg) return encodeURIComponent(svg);
+    }
+    // Default pointer cursor
+    return encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='20' height='24'><path d='M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z' fill='" + t.accent + "' stroke='" + t.bg1 + "' stroke-width='1.2'/></svg>");
+  }
+
+  function _cursorHotspot(isPointer) {
+    var cid = _getEquippedCursor();
+    if (cid) return '4 1'; // custom cursors use pointer hotspot
+    return isPointer ? '4 1' : '11 11';
+  }
 
   function buildCSS(t) {
     return `
@@ -759,12 +799,12 @@
       /* Custom cursor */
       @media (hover:hover) {
         body,.games,.section-title,.subtitle,.count,.activity-feed {
-          cursor: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22'><circle cx='11' cy='11' r='8' fill='none' stroke='${t.accent}' stroke-width='1.5' opacity='0.7'/><circle cx='11' cy='11' r='2' fill='${t.accent}' opacity='0.9'/><line x1='11' y1='1' x2='11' y2='6' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='11' y1='16' x2='11' y2='21' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='1' y1='11' x2='6' y2='11' stroke='${t.accent}' stroke-width='1' opacity='0.5'/><line x1='16' y1='11' x2='22' y2='11' stroke='${t.accent}' stroke-width='1' opacity='0.5'/></svg>`)}") 11 11, crosshair !important;
+          cursor: url("data:image/svg+xml,${_cursorDefault(t)}") ${_cursorHotspot(false)}, crosshair !important;
         }
         a,button,.card,.filter-btn,.random-btn,.fame-link,.fav-btn,
         .theme-picker-btn,.theme-option,#sfx-mute-btn,.auth-badge,
         .chat-tab,.notif-item,[role="button"] {
-          cursor: url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='20' height='24'><path d='M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z' fill='${t.accent}' stroke='${t.bg1}' stroke-width='1.2'/></svg>`)}") 4 1, pointer !important;
+          cursor: url("data:image/svg+xml,${_cursorPointer(t)}") ${_cursorHotspot(true)}, pointer !important;
         }
         input:not([type="button"]):not([type="submit"]):not([type="color"]),
         textarea,select { cursor:text!important; }
@@ -974,6 +1014,11 @@
     document.body.appendChild(panel);
     document.body.appendChild(btn);
   }
+
+  // Re-apply cursor when equipped cursor changes
+  window.addEventListener('coins-updated', function() {
+    _setStyle(THEMES[current] || THEMES.midnight);
+  });
 
   // Init
   if (document.readyState === 'loading') {

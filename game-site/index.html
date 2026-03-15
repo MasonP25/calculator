@@ -577,6 +577,25 @@
   }
   .chat-empty-icon { font-size: 2rem; opacity: 0.4; }
 
+  #chat-typing {
+    padding: 2px 12px 0;
+    font-size: 0.7rem;
+    color: #888;
+    font-style: italic;
+    height: 16px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  #chat-typing .typing-dots {
+    display: inline-block;
+    animation: typingBounce 1.2s infinite;
+  }
+  @keyframes typingBounce {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+
   #chat-input-area {
     display: flex;
     gap: 6px;
@@ -1660,6 +1679,7 @@
     </div>
     <div id="chat-search-err"></div>
     <div id="chat-messages"></div>
+    <div id="chat-typing"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
       <button id="chat-send" onclick="sendChatMessage()">&#10148;</button>
@@ -2252,10 +2272,83 @@
       }).catch(function(err) { console.error('DM send error:', err); });
     }
     input.value = '';
+    // Clear typing indicator on send
+    if (typeof clearTypingStatus === 'function') clearTypingStatus();
   }
 
   window.sendChatMessage = send;
   input.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
+
+  /* ── typing indicator ── */
+  var typingDiv = document.getElementById('chat-typing');
+  var _typingTimeout = null;
+  var _lastTypingSent = 0;
+
+  // Send typing status to Firebase (throttled to every 2s)
+  function sendTypingStatus() {
+    var me = getUser();
+    if (me === 'Guest' || activeChannel === '__ai__') return;
+    var now = Date.now();
+    if (now - _lastTypingSent < 2000) return;
+    _lastTypingSent = now;
+    db.collection('typing_status').doc(me.toLowerCase()).set({
+      name: me,
+      channel: activeChannel,
+      timestamp: now
+    }).catch(function() {});
+  }
+
+  // Clear typing status
+  function clearTypingStatus() {
+    var me = getUser();
+    if (me === 'Guest') return;
+    db.collection('typing_status').doc(me.toLowerCase()).delete().catch(function() {});
+  }
+
+  // Track typing on input
+  input.addEventListener('input', function() {
+    if (!input.value.trim()) return;
+    sendTypingStatus();
+    clearTimeout(_typingTimeout);
+    _typingTimeout = setTimeout(clearTypingStatus, 3000);
+  });
+
+  // Listen for typing status changes
+  var _lastTypingSnap = null;
+  function _renderTyping() {
+    if (!_lastTypingSnap) { typingDiv.innerHTML = ''; return; }
+    var me = getUser();
+    var now = Date.now();
+    var typers = [];
+    _lastTypingSnap.forEach(function(doc) {
+      var d = doc.data();
+      if (d.name === me) return;
+      if (now - d.timestamp > 4000) return;
+      if (d.channel !== activeChannel) return;
+      typers.push(d.name);
+    });
+    if (typers.length === 0) {
+      typingDiv.innerHTML = '';
+    } else if (typers.length === 1) {
+      typingDiv.innerHTML = esc(typers[0]) + ' is typing<span class="typing-dots">...</span>';
+    } else if (typers.length === 2) {
+      typingDiv.innerHTML = esc(typers[0]) + ' and ' + esc(typers[1]) + ' are typing<span class="typing-dots">...</span>';
+    } else {
+      typingDiv.innerHTML = typers.length + ' people are typing<span class="typing-dots">...</span>';
+    }
+  }
+
+  db.collection('typing_status')
+    .onSnapshot(function(snap) {
+      _lastTypingSnap = snap;
+      _renderTyping();
+    }, function(err) { console.error('Typing status error:', err); });
+
+  // Re-check typing expiration every 2s
+  setInterval(_renderTyping, 2000);
+
+  // Clean up typing status on page unload
+  window.addEventListener('beforeunload', function() { clearTypingStatus(); });
 
   /* ── global listener ── */
   db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(80)
@@ -2444,8 +2537,8 @@
 <script src="ban.js"></script>
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
-<script src="coins.js?v=2"></script>
-<script src="avatar.js?v=4"></script>
+<script src="coins.js?v=3"></script>
+<script src="avatar.js?v=5"></script>
 <script src="badges.js?v=2"></script>
 <script src="friends.js?v=2"></script>
 <script src="notifications.js?v=3"></script>
@@ -2458,7 +2551,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=16"></script>
+<script src="theme.js?v=17"></script>
 <script>
 // ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
 (function() {
@@ -2571,7 +2664,8 @@
     { title: 'Play with Friends', text: 'Join online multiplayer games, add friends, and track who\'s online.', target: '.filter-btn[data-filter="multiplayer"]' },
     { title: 'Daily Spin', text: 'Spin the wheel once per day for free coins! Look for the wheel icon in the bottom-right corner.', target: '#daily-spin-btn' },
     { title: 'Themes', text: 'Customize your look with 15+ color themes. Click the palette icon to switch anytime.', target: '.theme-picker-btn' },
-    { title: 'Feedback', text: 'Got ideas, found a bug, or just want to say hi? Click the Feedback button anytime to let us know. Have fun!', target: '#feedback-btn' }
+    { title: 'Feedback', text: 'Got ideas, found a bug, or just want to say hi? Click the Feedback button anytime to let us know.', target: '#feedback-btn' },
+    { title: 'Egg Hunt!', text: 'Hidden eggs are scattered across the site! Find all 20 to earn coins. Keep an eye out — they could be anywhere. Good luck and have fun!', target: '#easter-counter' }
   ];
 
   var step = 0;

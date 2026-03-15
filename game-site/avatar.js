@@ -257,6 +257,18 @@
     ne_crown:    { name: 'Crown',       css: 'animation:neCrown 2s ease-in-out infinite', price: 0, exclusive: true }
   };
 
+  // ── Cursors ────────────────────────────────────────────────────────
+  var CURSORS = {
+    cur_flame:    { name: 'Flame',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ff4400" stroke="#ff8800" stroke-width="0.8"/><path d="M3 18C3 18 5 14 6 12C7 14 8 17 6 20C5 19 3 18 3 18Z" fill="#ff6600" opacity="0.7"/></svg>', price: 200 },
+    cur_ice:      { name: 'Ice',      svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#00d4ff" stroke="#88eeff" stroke-width="0.8"/><circle cx="6" cy="20" r="3" fill="#00d4ff" opacity="0.3"/></svg>', price: 200 },
+    cur_golden:   { name: 'Golden',   svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ffd700" stroke="#aa8800" stroke-width="1"/></svg>', price: 250 },
+    cur_pixel:    { name: 'Pixel',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="26"><rect x="4" y="0" width="3" height="3" fill="#fff"/><rect x="4" y="3" width="3" height="3" fill="#fff"/><rect x="4" y="6" width="3" height="3" fill="#fff"/><rect x="4" y="9" width="3" height="3" fill="#fff"/><rect x="4" y="12" width="3" height="3" fill="#fff"/><rect x="7" y="12" width="3" height="3" fill="#fff"/><rect x="10" y="12" width="3" height="3" fill="#ccc"/><rect x="7" y="15" width="3" height="3" fill="#ccc"/><rect x="10" y="15" width="3" height="3" fill="#fff"/><rect x="13" y="18" width="3" height="3" fill="#fff"/><rect x="10" y="18" width="3" height="3" fill="#ccc"/></svg>', price: 300 },
+    cur_neon:     { name: 'Neon',     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><defs><filter id="ng"><feGaussianBlur stdDeviation="1.5"/></filter></defs><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#7b2ff7" filter="url(#ng)" opacity="0.6"/><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="none" stroke="#bf7fff" stroke-width="1.2"/></svg>', price: 300 },
+    cur_rainbow:  { name: 'Rainbow',  svg: 'rainbow', price: 400 },
+    cur_skull:    { name: 'Skull',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ccc" stroke="#666" stroke-width="1"/><circle cx="8" cy="5" r="1.5" fill="#111"/><circle cx="13" cy="5" r="1.5" fill="#111"/><rect x="9" y="8" width="1" height="2" fill="#111"/><rect x="11" y="8" width="1" height="2" fill="#111"/></svg>', price: 350 },
+    cur_admin:    { name: 'Royal',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ffd700" stroke="#aa7700" stroke-width="1"/><path d="M2 1L5 5L8 2L11 5L14 1L13 6L3 6Z" fill="#ffd700" stroke="#aa7700" stroke-width="0.5"/></svg>', price: 0, exclusive: true }
+  };
+
   // Inject keyframes for name effects
   var _neCss = document.createElement('style');
   _neCss.textContent =
@@ -1506,6 +1518,25 @@
     applyCSS(nameElement, effect.css);
   }
 
+  // Build a cursor data URI from a CURSORS entry
+  function getCursorSVG(cursorId) {
+    if (!cursorId) return null;
+    // Custom drawn cursor (admin)
+    if (cursorId === 'custom') {
+      var custom = localStorage.getItem('arcade_custom_cursor');
+      return custom || null;
+    }
+    if (!CURSORS[cursorId]) return null;
+    var entry = CURSORS[cursorId];
+    if (entry.svg === 'rainbow') {
+      // Rainbow cursor cycles hue — generate an SVG with current hue
+      var hue = (Date.now() / 20) % 360;
+      var color = 'hsl(' + hue + ',100%,55%)';
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="' + color + '" stroke="#fff" stroke-width="1.2"/></svg>';
+    }
+    return entry.svg;
+  }
+
   // ── Expose API ────────────────────────────────────────────────────────
 
   window.ArcadeAvatar = {
@@ -1514,11 +1545,13 @@
     styleName: styleName,
     styleBubble: styleBubble,
     styleNameEffect: styleNameEffect,
+    getCursorSVG: getCursorSVG,
     ITEMS: ITEMS,
     NAMETAGS: NAMETAGS,
     SKIN_COLORS: SKIN_COLORS,
     CHAT_BUBBLES: CHAT_BUBBLES,
-    NAME_EFFECTS: NAME_EFFECTS
+    NAME_EFFECTS: NAME_EFFECTS,
+    CURSORS: CURSORS
   };
 
 })();

@@ -414,6 +414,107 @@
     font-size: 0.82rem;
   }
 
+  /* ─── Cursor Tab ─── */
+  .cursor-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .cursor-preview-box {
+    background: var(--t-bg2, #1a1a2e);
+    border: 2px solid var(--t-border, #2a2a4a);
+    border-radius: 16px;
+    padding: 2rem 3rem;
+    text-align: center;
+    min-width: 200px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+  }
+  .cursor-demo {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cursor-demo svg { width: 32px; height: 38px; }
+  .cursor-card {
+    background: var(--t-bg2, #1a1a2e);
+    border: 2px solid var(--t-border, #2a2a4a);
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .cursor-card:hover {
+    border-color: var(--t-bg3, #3a3a5a);
+    box-shadow: 0 2px 12px var(--t-glow, rgba(123, 47, 247, 0.1));
+  }
+  .cursor-card.equipped-card {
+    border-color: var(--t-accent, #7b2ff7);
+  }
+  .cursor-card-preview {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.4rem;
+  }
+  .cursor-card-preview svg { width: 28px; height: 34px; }
+
+  /* Custom cursor drawer (admin) */
+  .cursor-drawer {
+    background: var(--t-bg2, #1a1a2e);
+    border: 2px solid var(--t-border, #2a2a4a);
+    border-radius: 16px;
+    padding: 1rem 1.2rem;
+    margin-top: 1rem;
+  }
+  .cursor-drawer-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--t-dim, #888);
+    margin-bottom: 0.8rem;
+  }
+  .cursor-canvas-wrap {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .cursor-canvas-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #cursorCanvas {
+    border: 1px solid var(--t-border, #2a2a4a);
+    border-radius: 4px;
+    image-rendering: pixelated;
+    cursor: crosshair;
+  }
+  .cursor-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .cursor-tools label {
+    font-size: 0.8rem;
+    color: var(--t-dim, #aaa);
+  }
+  .cursor-tool-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   /* Responsive */
   @media (max-width: 600px) {
     .category-row { flex-direction: column; gap: 0.5rem; padding: 0.8rem; }
@@ -421,6 +522,7 @@
     .item-info { min-width: 0; flex-wrap: wrap; justify-content: center; }
     .nt-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     .top-bar h1 { font-size: 1.6rem; }
+    .cursor-canvas-wrap { justify-content: center; }
   }
 </style>
 </head>
@@ -436,6 +538,7 @@
 <div class="tab-toggle">
   <button class="tab-btn active" id="tabAvatar" onclick="switchTab('avatar')">Avatar</button>
   <button class="tab-btn" id="tabNametags" onclick="switchTab('nametags')">Nametags</button>
+  <button class="tab-btn" id="tabCursors" onclick="switchTab('cursors')">Cursors</button>
 </div>
 
 <div class="guest-msg" id="guestMsg" style="display:none;">Sign in to use the shop</div>
@@ -478,14 +581,29 @@
     <div class="nt-section-title">Name Effects</div>
     <div class="nt-grid" id="ntEffectGrid"></div>
   </div>
+
+  <!-- ── Cursors Tab ── -->
+  <div id="cursorTab" style="display:none;">
+    <div class="cursor-preview-wrap">
+      <div class="cursor-preview-box">
+        <div class="cursor-demo" id="cursorPreview"></div>
+        <div style="font-size:0.75rem;color:var(--t-dim,#666);">Your current cursor</div>
+      </div>
+    </div>
+
+    <div class="nt-section-title">Cursor Styles</div>
+    <div class="nt-grid" id="cursorGrid"></div>
+
+    <div id="cursorDrawerWrap"></div>
+  </div>
 </div>
 
 <script src="ban.js"></script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
-<script src="coins.js?v=2"></script>
-<script src="avatar.js?v=4"></script>
+<script src="coins.js?v=3"></script>
+<script src="avatar.js?v=5"></script>
 <script src="badges.js?v=2"></script>
 <script src="friends.js?v=2"></script>
 <script src="notifications.js?v=3"></script>
@@ -497,7 +615,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=16"></script>
+<script src="theme.js?v=17"></script>
 <script>
 (function() {
   'use strict';
@@ -598,6 +716,14 @@
       for (var i = 0; i < neItems.length; i++) { if (neItems[i].id === id) return; }
       neItems.push({ id: id, name: ne.name + ' \u2605', css: ne.css, price: 0 });
     });
+    // Cursors
+    Object.keys(CURSORS).forEach(function(id) {
+      var c = CURSORS[id];
+      if (!c.exclusive) return;
+      if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem(id)) return;
+      for (var i = 0; i < cursorItems.length; i++) { if (cursorItems[i].id === id) return; }
+      cursorItems.push({ id: id, name: c.name + ' \u2605', svg: c.svg, price: 0 });
+    });
   }
 
   // ── Helpers ──
@@ -622,14 +748,26 @@
     return false;
   }
 
+  // Build cursor list
+  var CURSORS = AA.CURSORS || {};
+  var cursorItems = [];
+  Object.keys(CURSORS).forEach(function(id) {
+    var c = CURSORS[id];
+    if (c.exclusive) return;
+    cursorItems.push({ id: id, name: c.name, svg: c.svg, price: c.price });
+  });
+
   // ── Tab switching ──
   window.switchTab = function(tab) {
     currentTab = tab;
     document.getElementById('tabAvatar').className = 'tab-btn' + (tab === 'avatar' ? ' active' : '');
     document.getElementById('tabNametags').className = 'tab-btn' + (tab === 'nametags' ? ' active' : '');
+    document.getElementById('tabCursors').className = 'tab-btn' + (tab === 'cursors' ? ' active' : '');
     document.getElementById('avatarTab').style.display = tab === 'avatar' ? '' : 'none';
     document.getElementById('nametagTab').style.display = tab === 'nametags' ? '' : 'none';
+    document.getElementById('cursorTab').style.display = tab === 'cursors' ? '' : 'none';
     if (tab === 'nametags') renderNametags();
+    if (tab === 'cursors') renderCursors();
   };
 
   // ── Balance display ──
@@ -1361,6 +1499,377 @@
     });
   }
 
+  // ── Cursor rendering ──
+  function getCursorPreviewSVG(entry) {
+    if (entry.svg === 'rainbow') {
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="34"><defs><linearGradient id="rbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff0000"/><stop offset="17%" stop-color="#ff8800"/><stop offset="33%" stop-color="#ffff00"/><stop offset="50%" stop-color="#00ff00"/><stop offset="67%" stop-color="#0088ff"/><stop offset="83%" stop-color="#8800ff"/><stop offset="100%" stop-color="#ff0088"/></linearGradient></defs><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="url(#rbg)" stroke="#fff" stroke-width="1.2"/></svg>';
+    }
+    return entry.svg;
+  }
+
+  function renderCursors() {
+    var container = document.getElementById('cursorGrid');
+    container.innerHTML = '';
+    var equipped = window.ArcadeCoins.getEquipped();
+
+    // Current cursor preview
+    var previewEl = document.getElementById('cursorPreview');
+    if (equipped.cursor && CURSORS[equipped.cursor]) {
+      previewEl.innerHTML = getCursorPreviewSVG(CURSORS[equipped.cursor]);
+    } else {
+      previewEl.innerHTML = '<span style="font-size:2rem;color:var(--t-dim,#666)">Default</span>';
+    }
+
+    // "None" card
+    var noneCard = document.createElement('div');
+    noneCard.className = 'cursor-card' + (!equipped.cursor ? ' equipped-card' : '');
+    noneCard.innerHTML = '<div class="cursor-card-preview"><span style="font-size:1.5rem;color:#555;">&#8709;</span></div>' +
+      '<div class="nt-card-style-name">Default</div>';
+    var noneActions = document.createElement('div');
+    noneActions.className = 'nt-card-actions';
+    if (!equipped.cursor) {
+      noneActions.innerHTML = '<span class="equipped-label">Current</span>';
+    } else {
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove';
+      removeBtn.textContent = 'Remove';
+      removeBtn.onclick = function() {
+        sfxClick();
+        window.ArcadeCoins.equipItem('cursor', '');
+        renderCursors();
+      };
+      noneActions.appendChild(removeBtn);
+    }
+    noneCard.appendChild(noneActions);
+    container.appendChild(noneCard);
+
+    // Cursor cards
+    cursorItems.forEach(function(cur) {
+      var card = document.createElement('div');
+      card.className = 'cursor-card' + (equipped.cursor === cur.id ? ' equipped-card' : '');
+
+      var preview = document.createElement('div');
+      preview.className = 'cursor-card-preview';
+      preview.innerHTML = getCursorPreviewSVG(cur);
+      card.appendChild(preview);
+
+      var sn = document.createElement('div');
+      sn.className = 'nt-card-style-name';
+      sn.textContent = cur.name;
+      card.appendChild(sn);
+
+      var actions = document.createElement('div');
+      actions.className = 'nt-card-actions';
+      var owned = window.ArcadeCoins.ownsItem(cur.id);
+      var isEquipped = equipped.cursor === cur.id;
+
+      if (isEquipped) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:0.4rem';
+        var eqLabel = document.createElement('span');
+        eqLabel.className = 'equipped-label';
+        eqLabel.innerHTML = 'Equipped &#10003;';
+        row.appendChild(eqLabel);
+        var rb = document.createElement('button');
+        rb.className = 'btn-remove';
+        rb.textContent = 'Remove';
+        rb.onclick = function() {
+          sfxClick();
+          window.ArcadeCoins.equipItem('cursor', '');
+          renderCursors();
+        };
+        row.appendChild(rb);
+        actions.appendChild(row);
+      } else if (owned) {
+        var equipBtn = document.createElement('button');
+        equipBtn.className = 'btn-equip';
+        equipBtn.textContent = 'Equip';
+        (function(cid) {
+          equipBtn.onclick = function() {
+            sfxClick();
+            window.ArcadeCoins.equipItem('cursor', cid);
+            renderCursors();
+          };
+        })(cur.id);
+        actions.appendChild(equipBtn);
+      } else {
+        var priceLabel = document.createElement('span');
+        priceLabel.className = 'item-price';
+        priceLabel.innerHTML = '&#x1FA99; ' + cur.price;
+        actions.appendChild(priceLabel);
+        var canAfford = window.ArcadeCoins.getBalance() >= cur.price;
+        var buyBtn = document.createElement('button');
+        buyBtn.className = 'btn-buy' + (canAfford ? '' : ' disabled');
+        buyBtn.textContent = 'Buy';
+        if (canAfford) {
+          (function(cid, cprice) {
+            buyBtn.onclick = function() {
+              var result = window.ArcadeCoins.buyItem(cid, cprice);
+              if (result.ok) {
+                sfxCoin();
+                window.ArcadeCoins.equipItem('cursor', cid);
+                updateBalance();
+                renderCursors();
+              }
+            };
+          })(cur.id, cur.price);
+        }
+        actions.appendChild(buyBtn);
+      }
+      card.appendChild(actions);
+      container.appendChild(card);
+    });
+
+    // Admin custom cursor drawer
+    buildCursorDrawer();
+  }
+
+  // ── Custom cursor drawer (admin only) ──
+  var _drawCanvas = null, _drawCtx = null, _drawGrid = 16, _drawScale = 12;
+  var _drawColor = '#ff4400';
+  var _drawPixels = [];
+  var _drawErasing = false;
+
+  function buildCursorDrawer() {
+    var wrap = document.getElementById('cursorDrawerWrap');
+    wrap.innerHTML = '';
+    if (!_hasExclusive()) return;
+
+    var drawer = document.createElement('div');
+    drawer.className = 'cursor-drawer';
+
+    var title = document.createElement('div');
+    title.className = 'cursor-drawer-title';
+    title.textContent = 'Custom Cursor Designer \u2605';
+    drawer.appendChild(title);
+
+    var canvasWrap = document.createElement('div');
+    canvasWrap.className = 'cursor-canvas-wrap';
+
+    // Canvas area
+    var canvasArea = document.createElement('div');
+    canvasArea.className = 'cursor-canvas-area';
+
+    _drawCanvas = document.createElement('canvas');
+    _drawCanvas.id = 'cursorCanvas';
+    _drawCanvas.width = _drawGrid * _drawScale;
+    _drawCanvas.height = _drawGrid * _drawScale;
+    _drawCtx = _drawCanvas.getContext('2d');
+    canvasArea.appendChild(_drawCanvas);
+
+    // Canvas label
+    var canvasLabel = document.createElement('div');
+    canvasLabel.style.cssText = 'font-size:0.7rem;color:var(--t-dim,#666);';
+    canvasLabel.textContent = _drawGrid + 'x' + _drawGrid + ' pixel canvas';
+    canvasArea.appendChild(canvasLabel);
+
+    canvasWrap.appendChild(canvasArea);
+
+    // Tools panel
+    var tools = document.createElement('div');
+    tools.className = 'cursor-tools';
+
+    // Color picker
+    var colorRow = document.createElement('div');
+    colorRow.className = 'cursor-tool-row';
+    var colorLabel = document.createElement('label');
+    colorLabel.textContent = 'Color:';
+    var colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = _drawColor;
+    colorInput.style.cssText = 'width:40px;height:30px;border:1px solid #3a3a5a;border-radius:4px;cursor:pointer;padding:1px;background:transparent';
+    colorInput.addEventListener('input', function() { _drawColor = colorInput.value; _drawErasing = false; });
+    colorRow.appendChild(colorLabel);
+    colorRow.appendChild(colorInput);
+    tools.appendChild(colorRow);
+
+    // Quick color palette
+    var paletteRow = document.createElement('div');
+    paletteRow.className = 'cursor-tool-row';
+    paletteRow.style.flexWrap = 'wrap';
+    var quickColors = ['#ff0000','#ff8800','#ffff00','#00ff00','#00aaff','#7b2ff7','#ff00ff','#ffffff','#888888','#000000','#ffd700','#00ffcc'];
+    quickColors.forEach(function(c) {
+      var swatch = document.createElement('div');
+      swatch.style.cssText = 'width:20px;height:20px;border-radius:3px;cursor:pointer;border:1px solid #555;';
+      swatch.style.background = c;
+      swatch.onclick = function() {
+        _drawColor = c;
+        colorInput.value = c;
+        _drawErasing = false;
+      };
+      paletteRow.appendChild(swatch);
+    });
+    tools.appendChild(paletteRow);
+
+    // Eraser toggle
+    var eraserBtn = document.createElement('button');
+    eraserBtn.className = 'btn-remove';
+    eraserBtn.textContent = 'Eraser';
+    eraserBtn.style.fontSize = '0.75rem';
+    eraserBtn.onclick = function() { _drawErasing = !_drawErasing; eraserBtn.style.borderColor = _drawErasing ? '#ff4444' : '#555'; };
+    tools.appendChild(eraserBtn);
+
+    // Clear button
+    var clearBtn = document.createElement('button');
+    clearBtn.className = 'btn-remove';
+    clearBtn.textContent = 'Clear';
+    clearBtn.style.fontSize = '0.75rem';
+    clearBtn.onclick = function() {
+      _drawPixels = [];
+      for (var i = 0; i < _drawGrid * _drawGrid; i++) _drawPixels.push(null);
+      _redrawCanvas();
+    };
+    tools.appendChild(clearBtn);
+
+    // Apply as cursor button
+    var applyBtn = document.createElement('button');
+    applyBtn.className = 'btn-equip';
+    applyBtn.textContent = 'Use as Cursor';
+    applyBtn.style.fontSize = '0.8rem';
+    applyBtn.onclick = function() {
+      var svg = _pixelsToSVG();
+      if (!svg) return;
+      // Store custom cursor SVG as a special equipped value
+      window.ArcadeCoins.equipItem('cursor', 'custom');
+      localStorage.setItem('arcade_custom_cursor', svg);
+      sfxClick();
+      renderCursors();
+    };
+    tools.appendChild(applyBtn);
+
+    // Live preview
+    var previewLabel = document.createElement('label');
+    previewLabel.textContent = 'Preview:';
+    tools.appendChild(previewLabel);
+    var previewDiv = document.createElement('div');
+    previewDiv.id = 'cursorDrawPreview';
+    previewDiv.style.cssText = 'width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--t-bg1,#0f0f1a);border-radius:8px;border:1px solid var(--t-border,#2a2a4a);';
+    tools.appendChild(previewDiv);
+
+    canvasWrap.appendChild(tools);
+    drawer.appendChild(canvasWrap);
+    wrap.appendChild(drawer);
+
+    // Init pixel grid
+    if (_drawPixels.length !== _drawGrid * _drawGrid) {
+      _drawPixels = [];
+      for (var i = 0; i < _drawGrid * _drawGrid; i++) _drawPixels.push(null);
+    }
+
+    // Load existing custom cursor if any
+    var saved = localStorage.getItem('arcade_custom_cursor');
+    if (saved) _loadSVGToPixels(saved);
+
+    _redrawCanvas();
+
+    // Mouse events
+    var _drawing = false;
+    _drawCanvas.addEventListener('mousedown', function(e) { _drawing = true; _drawPixel(e); });
+    _drawCanvas.addEventListener('mousemove', function(e) { if (_drawing) _drawPixel(e); });
+    _drawCanvas.addEventListener('mouseup', function() { _drawing = false; _updateDrawPreview(); });
+    _drawCanvas.addEventListener('mouseleave', function() { _drawing = false; });
+    // Touch events
+    _drawCanvas.addEventListener('touchstart', function(e) { e.preventDefault(); _drawing = true; _drawPixelTouch(e); });
+    _drawCanvas.addEventListener('touchmove', function(e) { e.preventDefault(); if (_drawing) _drawPixelTouch(e); });
+    _drawCanvas.addEventListener('touchend', function() { _drawing = false; _updateDrawPreview(); });
+  }
+
+  function _drawPixel(e) {
+    var rect = _drawCanvas.getBoundingClientRect();
+    var x = Math.floor((e.clientX - rect.left) / _drawScale);
+    var y = Math.floor((e.clientY - rect.top) / _drawScale);
+    if (x < 0 || x >= _drawGrid || y < 0 || y >= _drawGrid) return;
+    var idx = y * _drawGrid + x;
+    _drawPixels[idx] = _drawErasing ? null : _drawColor;
+    _redrawCanvas();
+  }
+
+  function _drawPixelTouch(e) {
+    var touch = e.touches[0];
+    var rect = _drawCanvas.getBoundingClientRect();
+    var x = Math.floor((touch.clientX - rect.left) / _drawScale);
+    var y = Math.floor((touch.clientY - rect.top) / _drawScale);
+    if (x < 0 || x >= _drawGrid || y < 0 || y >= _drawGrid) return;
+    var idx = y * _drawGrid + x;
+    _drawPixels[idx] = _drawErasing ? null : _drawColor;
+    _redrawCanvas();
+  }
+
+  function _redrawCanvas() {
+    if (!_drawCtx) return;
+    _drawCtx.clearRect(0, 0, _drawCanvas.width, _drawCanvas.height);
+    // Grid background
+    _drawCtx.fillStyle = '#1a1a2e';
+    _drawCtx.fillRect(0, 0, _drawCanvas.width, _drawCanvas.height);
+    // Grid lines
+    _drawCtx.strokeStyle = '#2a2a4a';
+    _drawCtx.lineWidth = 0.5;
+    for (var i = 0; i <= _drawGrid; i++) {
+      _drawCtx.beginPath();
+      _drawCtx.moveTo(i * _drawScale, 0);
+      _drawCtx.lineTo(i * _drawScale, _drawCanvas.height);
+      _drawCtx.stroke();
+      _drawCtx.beginPath();
+      _drawCtx.moveTo(0, i * _drawScale);
+      _drawCtx.lineTo(_drawCanvas.width, i * _drawScale);
+      _drawCtx.stroke();
+    }
+    // Pixels
+    for (var i = 0; i < _drawPixels.length; i++) {
+      if (!_drawPixels[i]) continue;
+      var px = (i % _drawGrid) * _drawScale;
+      var py = Math.floor(i / _drawGrid) * _drawScale;
+      _drawCtx.fillStyle = _drawPixels[i];
+      _drawCtx.fillRect(px, py, _drawScale, _drawScale);
+    }
+  }
+
+  function _pixelsToSVG() {
+    var hasPixels = false;
+    for (var i = 0; i < _drawPixels.length; i++) {
+      if (_drawPixels[i]) { hasPixels = true; break; }
+    }
+    if (!hasPixels) return null;
+    var rects = '';
+    for (var i = 0; i < _drawPixels.length; i++) {
+      if (!_drawPixels[i]) continue;
+      var x = i % _drawGrid;
+      var y = Math.floor(i / _drawGrid);
+      rects += '<rect x="' + (x * 1.5) + '" y="' + (y * 1.75) + '" width="1.5" height="1.75" fill="' + _drawPixels[i] + '"/>';
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28">' + rects + '</svg>';
+  }
+
+  function _loadSVGToPixels(svg) {
+    // Parse the SVG rects back to pixels
+    _drawPixels = [];
+    for (var i = 0; i < _drawGrid * _drawGrid; i++) _drawPixels.push(null);
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(svg, 'image/svg+xml');
+    var rects = doc.querySelectorAll('rect');
+    rects.forEach(function(r) {
+      var rx = parseFloat(r.getAttribute('x'));
+      var ry = parseFloat(r.getAttribute('y'));
+      var fill = r.getAttribute('fill');
+      var x = Math.round(rx / 1.5);
+      var y = Math.round(ry / 1.75);
+      if (x >= 0 && x < _drawGrid && y >= 0 && y < _drawGrid) {
+        _drawPixels[y * _drawGrid + x] = fill;
+      }
+    });
+  }
+
+  function _updateDrawPreview() {
+    var el = document.getElementById('cursorDrawPreview');
+    if (!el) return;
+    var svg = _pixelsToSVG();
+    if (svg) {
+      el.innerHTML = svg;
+    } else {
+      el.innerHTML = '<span style="font-size:0.7rem;color:#666;">Empty</span>';
+    }
+  }
+
   // ── Init ──
   function init() {
     if (isGuest()) {
@@ -1396,6 +1905,8 @@
     if (currentTab === 'avatar') {
       updateAllCategoryInfo();
       buildSkinColorRow();
+    } else if (currentTab === 'cursors') {
+      renderCursors();
     } else {
       renderNametags();
     }
