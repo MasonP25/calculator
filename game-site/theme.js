@@ -267,17 +267,8 @@
 
 
 
-  function applyTheme(id) {
-    current = id;
-    localStorage.setItem('arcadeTheme', id);
-    const t = THEMES[id];
-    let style = document.getElementById('theme-override');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'theme-override';
-      document.head.appendChild(style);
-    }
-    style.textContent = `
+  function buildCSS(t) {
+    return `
       :root {
         --t-bg1:${t.bg1}; --t-bg2:${t.bg2}; --t-bg3:${t.bg3};
         --t-border:${t.border}; --t-text:${t.text}; --t-dim:${t.dim};
@@ -779,53 +770,62 @@
         textarea,select { cursor:text!important; }
       }
     `;
+  }
 
-
-    // Update picker active state
-    document.querySelectorAll('.theme-option').forEach(el => {
-      el.classList.toggle('active', el.dataset.theme === id);
-    });
-
-    // Show/hide custom editor
-    var customEditor = document.getElementById('custom-theme-editor');
-    if (customEditor) customEditor.style.display = (id === 'custom') ? 'flex' : 'none';
-
-    // Expose theme to canvas-based games
+  function _setStyle(t) {
+    var style = document.getElementById('theme-override');
+    if (!style) { style = document.createElement('style'); style.id = 'theme-override'; document.head.appendChild(style); }
+    style.textContent = buildCSS(t);
     window.THEME = t;
-    // Pre-computed canvas colors with rgba overlay
     var _r=parseInt(t.canvasBg.slice(1,3),16),_g=parseInt(t.canvasBg.slice(3,5),16),_b=parseInt(t.canvasBg.slice(5,7),16);
     var _r2=parseInt(t.canvasBg2.slice(1,3),16),_g2=parseInt(t.canvasBg2.slice(3,5),16),_b2=parseInt(t.canvasBg2.slice(5,7),16);
     window.TC={bg:t.canvasBg,bg2:t.canvasBg2,dim:t.dim,text:t.text,accent:t.accent,accent2:t.accent2,border:t.border,
       overlay:function(a){return'rgba('+_r+','+_g+','+_b+','+(a||0.75)+')';},
       overlay2:function(a){return'rgba('+_r2+','+_g2+','+_b2+','+(a||0.75)+')';}};
-    window.dispatchEvent(new Event('themechange'));
+  }
 
-    // ─── Rainbow cycling ───
-    if (!window._rainbowTick) {
-      if (window._rainbowTimer) { clearInterval(window._rainbowTimer); window._rainbowTimer = null; }
-      if (id === 'rainbow') {
-        var _hue = 0;
-        function _hsl(h,s,l) {
-          var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
-          var r=0,g=0,b=0;
-          if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
-          else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
-          return '#'+[r+m,g+m,b+m].map(function(v){return Math.round(v*255).toString(16).padStart(2,'0');}).join('');
-        }
-        window._rainbowTimer = setInterval(function() {
-          if (current !== 'rainbow') { clearInterval(window._rainbowTimer); window._rainbowTimer = null; return; }
-          _hue = (_hue + 3) % 360;
-          THEMES.rainbow.accent = _hsl(_hue, 1, 0.55);
-          THEMES.rainbow.accent2 = _hsl((_hue + 120) % 360, 1, 0.55);
-          THEMES.rainbow.border = _hsl((_hue + 60) % 360, 0.6, 0.25);
-          var rgb = hexToRgb(THEMES.rainbow.accent);
-          THEMES.rainbow.glow = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.3)';
-          window._rainbowTick = true;
-          applyTheme('rainbow');
-          window._rainbowTick = false;
-        }, 150);
-      }
+  function applyTheme(id) {
+    current = id;
+    localStorage.setItem('arcadeTheme', id);
+    _setStyle(THEMES[id]);
+    // Update picker active state
+    document.querySelectorAll('.theme-option').forEach(function(el) {
+      el.classList.toggle('active', el.dataset.theme === id);
+    });
+    // Show/hide custom editor
+    var customEditor = document.getElementById('custom-theme-editor');
+    if (customEditor) customEditor.style.display = (id === 'custom') ? 'flex' : 'none';
+    window.dispatchEvent(new Event('themechange'));
+    // Start/stop rainbow cycling
+    if (window._rbRaf) { cancelAnimationFrame(window._rbRaf); window._rbRaf = null; }
+    if (id === 'rainbow') { _rbStep(); }
+  }
+
+  // ─── Rainbow color cycling ───
+  var _rbHue = 0, _rbLast = 0;
+  function _hsl2hex(h,s,l) {
+    var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+    var r=0,g=0,b=0;
+    if(h<60){r=c;g=x}else if(h<120){r=x;g=c}else if(h<180){g=c;b=x}
+    else if(h<240){g=x;b=c}else if(h<300){r=x;b=c}else{r=c;b=x}
+    return '#'+[r+m,g+m,b+m].map(function(v){return Math.round(v*255).toString(16).padStart(2,'0')}).join('');
+  }
+  function _rbStep(ts) {
+    if (current !== 'rainbow') return;
+    if (!ts) ts = performance.now();
+    // Only update every 100ms for performance
+    if (ts - _rbLast > 100) {
+      _rbLast = ts;
+      _rbHue = (_rbHue + 3) % 360;
+      var rb = THEMES.rainbow;
+      rb.accent = _hsl2hex(_rbHue, 1, 0.55);
+      rb.accent2 = _hsl2hex((_rbHue + 120) % 360, 1, 0.55);
+      rb.border = _hsl2hex((_rbHue + 60) % 360, 0.5, 0.22);
+      var rgb = hexToRgb(rb.accent);
+      rb.glow = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.3)';
+      _setStyle(rb);
     }
+    window._rbRaf = requestAnimationFrame(_rbStep);
   }
 
   // ─── UI ───
