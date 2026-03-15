@@ -779,14 +779,15 @@
         textarea,select { cursor:text!important; }
       }
     ` + (id === 'rainbow' ? `
-      @keyframes rainbowBorder { 0%{border-color:#ff3333} 16%{border-color:#ffaa00} 33%{border-color:#33ff33} 50%{border-color:#33ccff} 66%{border-color:#7b2ff7} 83%{border-color:#ff33aa} 100%{border-color:#ff3333} }
-      @keyframes rainbowText { 0%{color:#ff3333} 16%{color:#ffaa00} 33%{color:#33ff33} 50%{color:#33ccff} 66%{color:#7b2ff7} 83%{color:#ff33aa} 100%{color:#ff3333} }
-      @keyframes rainbowGlow { 0%{box-shadow:0 0 12px #ff333344} 16%{box-shadow:0 0 12px #ffaa0044} 33%{box-shadow:0 0 12px #33ff3344} 50%{box-shadow:0 0 12px #33ccff44} 66%{box-shadow:0 0 12px #7b2ff744} 83%{box-shadow:0 0 12px #ff33aa44} 100%{box-shadow:0 0 12px #ff333344} }
-      @keyframes rainbowBg { 0%{background:linear-gradient(135deg,#ff3333,#1e1e30)} 16%{background:linear-gradient(135deg,#ffaa00,#1e1e30)} 33%{background:linear-gradient(135deg,#33ff33,#1e1e30)} 50%{background:linear-gradient(135deg,#33ccff,#1e1e30)} 66%{background:linear-gradient(135deg,#7b2ff7,#1e1e30)} 83%{background:linear-gradient(135deg,#ff33aa,#1e1e30)} 100%{background:linear-gradient(135deg,#ff3333,#1e1e30)} }
+      @keyframes rainbowBorder { 0%{border-color:#ff3333!important} 16%{border-color:#ffaa00!important} 33%{border-color:#33ff33!important} 50%{border-color:#33ccff!important} 66%{border-color:#7b2ff7!important} 83%{border-color:#ff33aa!important} 100%{border-color:#ff3333!important} }
+      @keyframes rainbowText { 0%{color:#ff3333!important} 16%{color:#ffaa00!important} 33%{color:#33ff33!important} 50%{color:#33ccff!important} 66%{color:#7b2ff7!important} 83%{color:#ff33aa!important} 100%{color:#ff3333!important} }
+      @keyframes rainbowGlow { 0%{box-shadow:0 0 15px #ff333366!important} 16%{box-shadow:0 0 15px #ffaa0066!important} 33%{box-shadow:0 0 15px #33ff3366!important} 50%{box-shadow:0 0 15px #33ccff66!important} 66%{box-shadow:0 0 15px #7b2ff766!important} 83%{box-shadow:0 0 15px #ff33aa66!important} 100%{box-shadow:0 0 15px #ff333366!important} }
+      @keyframes rainbowBg { 0%{background:linear-gradient(135deg,#ff3333,#1e1e30)!important} 16%{background:linear-gradient(135deg,#ffaa00,#1e1e30)!important} 33%{background:linear-gradient(135deg,#33ff33,#1e1e30)!important} 50%{background:linear-gradient(135deg,#33ccff,#1e1e30)!important} 66%{background:linear-gradient(135deg,#7b2ff7,#1e1e30)!important} 83%{background:linear-gradient(135deg,#ff33aa,#1e1e30)!important} 100%{background:linear-gradient(135deg,#ff3333,#1e1e30)!important} }
+      @keyframes rainbowParticles { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
       h1 { animation:arcadeShift 2s linear infinite!important; }
       a { animation:rainbowText 4s linear infinite!important; }
-      .card:hover,.game-card:hover { animation:rainbowBorder 4s linear infinite, rainbowGlow 4s linear infinite!important; }
-      .card,.game-card { animation:rainbowBorder 8s linear infinite!important; }
+      .card,.game-card { animation:rainbowBorder 6s linear infinite!important; }
+      .card:hover,.game-card:hover { animation:rainbowBorder 3s linear infinite, rainbowGlow 3s linear infinite!important; }
       .filter-btn.active,.tab-btn.active,.auth-tab.active,.scope-btn.active,.casino-tab.active,
       .theme-option.active { animation:rainbowBorder 4s linear infinite!important; }
       .start-btn,.next-btn,.restart,button.restart,.new-game-btn,.online-btn,.menu-btn,.auth-btn,.buy-btn,
@@ -794,8 +795,7 @@
       .xp-bar-inner { animation:rainbowBg 4s linear infinite!important; background-size:100% 100%!important; }
       #chat-send { animation:rainbowBg 4s linear infinite!important; }
       .badge.mp { animation:rainbowBorder 4s linear infinite!important; }
-      #bg-particles { animation:none!important; filter:hue-rotate(0deg); animation:rainbowParticles 8s linear infinite!important; }
-      @keyframes rainbowParticles { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+      #bg-particles { animation:rainbowParticles 8s linear infinite!important; }
       .theme-picker-btn { animation:rainbowBorder 4s linear infinite!important; }
     ` : '');
 
