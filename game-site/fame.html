@@ -511,9 +511,12 @@ function setScope(scope) {
         window.ArcadeCoins.getProfile(name).then(function(profile) {
           if (!profile) return;
           window.ArcadeAvatar.renderMini(el, profile, 22);
-          // Apply nametag style to the name text
+          // Apply nametag style + effects to the name text
           var nameEl = el.parentElement.querySelector('.player-name-text[data-username="' + name + '"]');
-          if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+          if (nameEl) {
+            window.ArcadeAvatar.styleName(nameEl, profile);
+            window.ArcadeAvatar.styleNameEffect(nameEl, profile);
+          }
         }).catch(function() {});
       });
     }
@@ -671,7 +674,10 @@ function setScope(scope) {
         if (!profile) return;
         window.ArcadeAvatar.renderMini(el, profile);
         var nameEl = el.parentElement.querySelector('.player-name-text[data-username="' + name + '"]');
-        if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+        if (nameEl) {
+          window.ArcadeAvatar.styleName(nameEl, profile);
+          window.ArcadeAvatar.styleNameEffect(nameEl, profile);
+        }
       }).catch(function() {});
     });
   };
