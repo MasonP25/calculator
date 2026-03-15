@@ -158,6 +158,33 @@
     margin-top: 0.2rem;
   }
 
+  /* Cosmetics row */
+  .cosmetics-row {
+    max-width: 900px;
+    margin: 0 auto 1rem;
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .cosmetic-tag {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.78rem;
+    color: #ccc;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .cosmetic-tag .ct-label {
+    color: #888;
+    font-size: 0.7rem;
+  }
+  .cosmetic-tag .ct-value {
+    font-weight: 600;
+  }
+
   /* Section headers */
   .section-header {
     max-width: 900px;
@@ -428,6 +455,10 @@
 
   <!-- Stats -->
   <div class="stats-row" id="statsRow"></div>
+
+  <!-- Equipped Cosmetics -->
+  <div class="section-header" id="cosmeticsHeader" style="display:none">Equipped Cosmetics</div>
+  <div class="cosmetics-row" id="cosmeticsRow" style="display:none"></div>
 
   <!-- Daily Login Streak (own profile only) -->
   <div id="streakSection" style="display:none">
@@ -738,9 +769,44 @@ async function loadProfile() {
   var heroNameEl = document.getElementById('heroName');
   heroNameEl.textContent = profileData.username || targetUser;
 
-  // Apply nametag style
+  // Apply nametag style + name effect
   if (window.ArcadeAvatar && profileData.equipped) {
     window.ArcadeAvatar.styleName(heroNameEl, profileData.equipped);
+    window.ArcadeAvatar.styleNameEffect(heroNameEl, profileData.equipped);
+  }
+
+  // Show equipped cosmetics
+  var eq = profileData.equipped || {};
+  var cosmeticTags = [];
+  if (eq.nametagColor) {
+    var colorName = eq.nametagColor;
+    if (eq.nametagColor.charAt(0) === '#') {
+      colorName = eq.nametagColor;
+    } else if (window.ArcadeAvatar && window.ArcadeAvatar.NAMETAGS && window.ArcadeAvatar.NAMETAGS[eq.nametagColor]) {
+      colorName = window.ArcadeAvatar.NAMETAGS[eq.nametagColor].name;
+    }
+    cosmeticTags.push({ label: 'Color', value: colorName });
+  }
+  if (eq.nametagFont && window.ArcadeAvatar && window.ArcadeAvatar.NAMETAGS && window.ArcadeAvatar.NAMETAGS[eq.nametagFont]) {
+    cosmeticTags.push({ label: 'Font', value: window.ArcadeAvatar.NAMETAGS[eq.nametagFont].name });
+  }
+  if (eq.chatBubble && window.ArcadeAvatar && window.ArcadeAvatar.CHAT_BUBBLES && window.ArcadeAvatar.CHAT_BUBBLES[eq.chatBubble]) {
+    cosmeticTags.push({ label: 'Bubble', value: window.ArcadeAvatar.CHAT_BUBBLES[eq.chatBubble].name });
+  }
+  if (eq.nameEffect && window.ArcadeAvatar && window.ArcadeAvatar.NAME_EFFECTS && window.ArcadeAvatar.NAME_EFFECTS[eq.nameEffect]) {
+    cosmeticTags.push({ label: 'Effect', value: window.ArcadeAvatar.NAME_EFFECTS[eq.nameEffect].name });
+  }
+  if (cosmeticTags.length > 0) {
+    document.getElementById('cosmeticsHeader').style.display = '';
+    var cosmeticsRow = document.getElementById('cosmeticsRow');
+    cosmeticsRow.style.display = '';
+    cosmeticsRow.innerHTML = '';
+    cosmeticTags.forEach(function(t) {
+      var tag = document.createElement('span');
+      tag.className = 'cosmetic-tag';
+      tag.innerHTML = '<span class="ct-label">' + t.label + '</span><span class="ct-value">' + t.value + '</span>';
+      cosmeticsRow.appendChild(tag);
+    });
   }
 
   // Render avatar
