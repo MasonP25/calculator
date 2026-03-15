@@ -27,13 +27,17 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 #menu { justify-content: center; min-height: calc(100vh - 80px); gap: 16px; }
 #menu h2 { font-size: 28px; color: #00d4ff; margin-bottom: 8px; }
 #menu p { color: #888; margin-bottom: 16px; text-align: center; }
+.menu-modes { display: flex; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; justify-content: center; }
 .menu-btn {
-  padding: 14px 40px; font-size: 18px; font-family: inherit;
-  border: none; background: #7b2ff7; color: #fff; font-weight: 600;
-  border-radius: 8px; cursor: pointer; transition: background 0.25s, transform 0.15s; min-width: 260px;
+  background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+  padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 1rem;
+  font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: 600;
+  transition: border-color 0.25s, background 0.25s, transform 0.15s;
+  min-width: 140px;
 }
-.menu-btn:hover { background: #6a22e0; }
+.menu-btn:hover { border-color: #7b2ff7; background: #2a1a4e; transform: translateY(-2px); }
 .menu-btn:active { transform: scale(0.97); }
+.menu-btn.selected { border-color: #7b2ff7; background: #2a1a4e; color: #fff; }
 
 /* Setup */
 #setup { gap: 14px; padding-top: 10px; }
@@ -48,17 +52,21 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 .player-names { display: flex; flex-direction: column; gap: 8px; max-width: 300px; width: 100%; }
 .player-names input { width: 100%; }
 .diff-btn {
-  padding: 10px 24px; font-size: 14px; font-family: inherit;
-  border: 2px solid #2a2a4a; background: #1a1a2e; color: #e0e0e0;
-  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+  padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  transition: border-color 0.25s, background 0.25s;
 }
-.diff-btn:hover, .diff-btn.active { border-color: #7b2ff7; color: #7b2ff7; }
+.diff-btn:hover, .diff-btn.active { border-color: #7b2ff7; }
+.diff-btn.active { background: #2a1a4e; color: #fff; }
 .start-btn {
-  padding: 12px 36px; font-size: 16px; font-family: inherit;
-  background: linear-gradient(135deg,#7b2ff7,#1a1a2e); border: none; color: #fff;
-  border-radius: 8px; cursor: pointer; transition: transform 0.2s; margin-top: 8px;
+  background: linear-gradient(135deg, #7b2ff7, #5b1fd7); border: none; color: #fff;
+  padding: 12px 40px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  transition: opacity 0.2s, transform 0.15s; margin-top: 8px;
 }
-.start-btn:hover { transform: translateY(-2px); }
+.start-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.start-btn:active { transform: scale(0.97); }
 
 /* HUD */
 .hud { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center;
@@ -184,9 +192,11 @@ canvas { border: 2px solid #2a2a4a; border-radius: 8px; cursor: pointer; display
 <div class="screen active" id="menu">
   <h2>&#128039; Penguin Knockout</h2>
   <p>Launch penguins on ice! Knock opponents off the rink.</p>
-  <button class="menu-btn" onclick="showSetup('local')">&#127919; Local (Hot Seat)</button>
-  <button class="menu-btn" onclick="showSetup('ai')">&#129302; vs AI</button>
-  <button class="menu-btn" onclick="showSetup('online')">&#127760; Online</button>
+  <div class="menu-modes">
+    <button class="menu-btn" onclick="showSetup('local')">Local (Hot Seat)</button>
+    <button class="menu-btn" onclick="showSetup('ai')">vs AI</button>
+    <button class="menu-btn" onclick="showSetup('online')">Online</button>
+  </div>
 </div>
 
 <!-- Setup -->

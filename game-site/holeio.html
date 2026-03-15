@@ -37,28 +37,29 @@ a.back:hover { color: #e0e0e0; }
 #menuScreen .subtitle {
   color: #666; font-size: 1rem; margin-bottom: 2rem;
 }
+.menu-modes { display: flex; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; justify-content: center; }
 .menu-btn {
-  display: block; width: 260px; padding: 14px 0;
-  margin: 8px 0; border: 2px solid #2a2a4a;
-  background: #1a1a2e; color: #e0e0e0;
-  font-size: 1.1rem; border-radius: 10px;
-  cursor: pointer; transition: all 0.2s;
-  font-family: inherit;
+  background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+  padding: 12px 28px; border-radius: 8px; cursor: pointer; font-size: 1rem;
+  font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: 600;
+  transition: border-color 0.25s, background 0.25s, transform 0.15s;
+  min-width: 140px;
 }
-.menu-btn:hover { border-color: #00d4ff; color: #00d4ff; transform: scale(1.03); }
-.menu-btn.active { border-color: #00d4ff; background: #1a1a3e; }
+.menu-btn:hover { border-color: #7b2ff7; background: #2a1a4e; transform: translateY(-2px); }
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn.active { border-color: #7b2ff7; background: #2a1a4e; color: #fff; }
+.diff-label { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
 .difficulty-row {
-  display: flex; gap: 10px; margin-top: 16px; margin-bottom: 8px;
+  display: flex; gap: 0.6rem; margin-top: 8px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center;
 }
 .diff-btn {
-  padding: 8px 20px; border: 2px solid #2a2a4a;
-  background: #1a1a2e; color: #999; font-size: 0.9rem;
-  border-radius: 8px; cursor: pointer; font-family: inherit;
-  transition: all 0.2s;
+  background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
+  padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  transition: border-color 0.25s, background 0.25s;
 }
-.diff-btn:hover { border-color: #feca57; color: #feca57; }
-.diff-btn.sel { border-color: #feca57; color: #feca57; background: #2a2a2e; }
-.diff-label { color: #666; font-size: 0.85rem; margin-top: 12px; }
+.diff-btn:hover, .diff-btn.sel { border-color: #7b2ff7; }
+.diff-btn.sel { background: #2a1a4e; color: #fff; }
 
 /* Game HUD */
 #gameScreen { position: absolute; inset: 0; display: none; z-index: 50; }
@@ -166,9 +167,11 @@ a.back:hover { color: #e0e0e0; }
 <div id="menuScreen">
   <h1>Hole.io</h1>
   <div class="subtitle">Consume everything. Grow bigger. Dominate.</div>
-  <button class="menu-btn" onclick="startTwoPlayer()">2 Player</button>
-  <button class="menu-btn" onclick="startAI()">vs AI</button>
-  <button class="menu-btn" onclick="showLobby()">Online</button>
+  <div class="menu-modes">
+    <button class="menu-btn" onclick="startTwoPlayer()">2 Player</button>
+    <button class="menu-btn" onclick="startAI()">vs AI</button>
+    <button class="menu-btn" onclick="showLobby()">Online</button>
+  </div>
   <div class="diff-label">AI Difficulty</div>
   <div class="difficulty-row">
     <button class="diff-btn" data-d="easy" onclick="setDiff('easy',this)">Easy</button>

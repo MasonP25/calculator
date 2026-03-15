@@ -21,17 +21,17 @@
   .mode-select { display: flex; gap: 1rem; margin-bottom: 0.8rem; }
   .mode-select button {
     background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
-    padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    transition: border-color 0.25s, background 0.25s;
+    padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif; font-weight: 600;
+    transition: border-color 0.25s, background 0.25s, transform 0.15s;
   }
-  .mode-select button:hover, .mode-select button.active { border-color: #7b2ff7; }
-  .mode-select button.active { background: #2a1a4e; color: #ffffff; }
-  .diff-select { display: none; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap; justify-content: center; }
+  .mode-select button:hover { border-color: #7b2ff7; }
+  .mode-select button.active { border-color: #7b2ff7; background: #2a1a4e; color: #ffffff; }
+  .diff-select { display: none; gap: 0.6rem; margin-bottom: 0.8rem; flex-wrap: wrap; justify-content: center; }
   .diff-select.show { display: flex; }
   .diff-select button {
     background: #1a1a2e; border: 2px solid #2a2a4a; color: #e0e0e0;
-    padding: 0.35rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
+    padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
     font-family: 'Segoe UI', Tahoma, sans-serif;
     transition: border-color 0.25s, background 0.25s;
   }
