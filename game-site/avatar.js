@@ -243,7 +243,8 @@
     cb_glass:    { name: 'Glass',    css: 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)', price: 250 },
     cb_fire:     { name: 'Fire',     css: 'background:linear-gradient(135deg,#1a0a0a,#2a1000);border-left:3px solid #ff4400;box-shadow:0 0 10px #ff440033', price: 300 },
     cb_ice:      { name: 'Ice',      css: 'background:linear-gradient(135deg,#0a0a1a,#0a1a2a);border-left:3px solid #00d4ff;box-shadow:0 0 10px #00d4ff33', price: 300 },
-    cb_gold:     { name: 'Gold',     css: 'background:linear-gradient(135deg,#1a1500,#2a2000);border:1px solid #ffd70066;box-shadow:0 0 8px #ffd70022', price: 350 }
+    cb_gold:     { name: 'Gold',     css: 'background:linear-gradient(135deg,#1a1500,#2a2000);border:1px solid #ffd70066;box-shadow:0 0 8px #ffd70022', price: 350 },
+    cb_royal:    { name: 'Royal',    css: 'background:linear-gradient(135deg,#0a0020,#1a0040);border:2px solid #7b2ff7;box-shadow:0 0 12px #7b2ff766,0 0 24px #7b2ff733,inset 0 0 12px #7b2ff722', price: 0, exclusive: true }
   };
 
   // ── Name Effects ────────────────────────────────────────────────────
@@ -253,7 +254,8 @@
     ne_flicker:  { name: 'Flicker',     css: 'animation:neFlicker 3s linear infinite', price: 200 },
     ne_glitch:   { name: 'Glitch',      css: 'animation:neGlitch 2.5s steps(1) infinite', price: 250 },
     ne_rainbow:  { name: 'Rainbow',     css: 'animation:neRainbow 3s linear infinite', price: 300 },
-    ne_wave:     { name: 'Wave',        css: 'animation:neWave 2s ease-in-out infinite', price: 350 }
+    ne_wave:     { name: 'Wave',        css: 'animation:neWave 2s ease-in-out infinite', price: 350 },
+    ne_crown:    { name: 'Crown',       css: 'animation:neCrown 2s ease-in-out infinite', price: 0, exclusive: true }
   };
 
   // Inject keyframes for name effects
@@ -263,7 +265,8 @@
     '@keyframes neFlicker{0%,19%,21%,53%,55%,100%{opacity:1}20%,54%{opacity:0.4}}' +
     '@keyframes neGlitch{0%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff}25%{text-shadow:-2px -1px #ff0000,2px 1px #00ffff}50%{text-shadow:1px 2px #ff0000,-1px -2px #00ffff}75%{text-shadow:-1px 0 #ff0000,1px 0 #00ffff}100%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff}}' +
     '@keyframes neRainbow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}' +
-    '@keyframes neWave{0%,100%{transform:translateY(0)}25%{transform:translateY(-2px)}75%{transform:translateY(2px)}}';
+    '@keyframes neWave{0%,100%{transform:translateY(0)}25%{transform:translateY(-2px)}75%{transform:translateY(2px)}}' +
+    '@keyframes neCrown{0%,100%{text-shadow:0 0 6px #ffd700,0 0 12px #ffd70066}50%{text-shadow:0 0 12px #ffd700,0 0 24px #ffd700aa,0 0 36px #ffd70044}}';
   document.head.appendChild(_neCss);
 
   // ── Drawing helpers ───────────────────────────────────────────────────

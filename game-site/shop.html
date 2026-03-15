@@ -543,6 +543,7 @@
   var cbItems = [];
   Object.keys(CHAT_BUBBLES).forEach(function(id) {
     var cb = CHAT_BUBBLES[id];
+    if (cb.exclusive) return;
     cbItems.push({ id: id, name: cb.name, css: cb.css, price: cb.price });
   });
 
@@ -551,6 +552,7 @@
   var neItems = [];
   Object.keys(NAME_EFFECTS).forEach(function(id) {
     var ne = NAME_EFFECTS[id];
+    if (ne.exclusive) return;
     neItems.push({ id: id, name: ne.name, css: ne.css, price: ne.price });
   });
 
@@ -579,6 +581,22 @@
         for (var i = 0; i < ntColors.length; i++) { if (ntColors[i].id === id) return; }
         ntColors.push(entry);
       }
+    });
+    // Chat bubbles
+    Object.keys(CHAT_BUBBLES).forEach(function(id) {
+      var cb = CHAT_BUBBLES[id];
+      if (!cb.exclusive) return;
+      if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem(id)) return;
+      for (var i = 0; i < cbItems.length; i++) { if (cbItems[i].id === id) return; }
+      cbItems.push({ id: id, name: cb.name + ' \u2605', css: cb.css, price: 0 });
+    });
+    // Name effects
+    Object.keys(NAME_EFFECTS).forEach(function(id) {
+      var ne = NAME_EFFECTS[id];
+      if (!ne.exclusive) return;
+      if (!window.ArcadeCoins || !window.ArcadeCoins.ownsItem(id)) return;
+      for (var i = 0; i < neItems.length; i++) { if (neItems[i].id === id) return; }
+      neItems.push({ id: id, name: ne.name + ' \u2605', css: ne.css, price: 0 });
     });
   }
 
