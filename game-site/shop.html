@@ -1765,9 +1765,9 @@
     applyBtn.onclick = function() {
       var svg = _pixelsToSVG();
       if (!svg) return;
-      // Store custom cursor SVG as a special equipped value
-      window.ArcadeCoins.equipItem('cursor', 'cur_custom');
+      // Store SVG BEFORE equipping (equip triggers CSS rebuild that reads this)
       localStorage.setItem('arcade_custom_cursor', svg);
+      window.ArcadeCoins.equipItem('cursor', 'cur_custom');
       sfxClick();
       renderCursors();
     };
