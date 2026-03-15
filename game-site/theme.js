@@ -778,26 +778,7 @@
         input:not([type="button"]):not([type="submit"]):not([type="color"]),
         textarea,select { cursor:text!important; }
       }
-    ` + (id === 'rainbow' ? `
-      @keyframes rainbowBorder { 0%{border-color:#ff3333!important} 16%{border-color:#ffaa00!important} 33%{border-color:#33ff33!important} 50%{border-color:#33ccff!important} 66%{border-color:#7b2ff7!important} 83%{border-color:#ff33aa!important} 100%{border-color:#ff3333!important} }
-      @keyframes rainbowText { 0%{color:#ff3333!important} 16%{color:#ffaa00!important} 33%{color:#33ff33!important} 50%{color:#33ccff!important} 66%{color:#7b2ff7!important} 83%{color:#ff33aa!important} 100%{color:#ff3333!important} }
-      @keyframes rainbowGlow { 0%{box-shadow:0 0 15px #ff333366!important} 16%{box-shadow:0 0 15px #ffaa0066!important} 33%{box-shadow:0 0 15px #33ff3366!important} 50%{box-shadow:0 0 15px #33ccff66!important} 66%{box-shadow:0 0 15px #7b2ff766!important} 83%{box-shadow:0 0 15px #ff33aa66!important} 100%{box-shadow:0 0 15px #ff333366!important} }
-      @keyframes rainbowBg { 0%{background:linear-gradient(135deg,#ff3333,#1e1e30)!important} 16%{background:linear-gradient(135deg,#ffaa00,#1e1e30)!important} 33%{background:linear-gradient(135deg,#33ff33,#1e1e30)!important} 50%{background:linear-gradient(135deg,#33ccff,#1e1e30)!important} 66%{background:linear-gradient(135deg,#7b2ff7,#1e1e30)!important} 83%{background:linear-gradient(135deg,#ff33aa,#1e1e30)!important} 100%{background:linear-gradient(135deg,#ff3333,#1e1e30)!important} }
-      @keyframes rainbowParticles { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
-      h1 { animation:arcadeShift 2s linear infinite!important; }
-      a { animation:rainbowText 4s linear infinite!important; }
-      .card,.game-card { animation:rainbowBorder 6s linear infinite!important; }
-      .card:hover,.game-card:hover { animation:rainbowBorder 3s linear infinite, rainbowGlow 3s linear infinite!important; }
-      .filter-btn.active,.tab-btn.active,.auth-tab.active,.scope-btn.active,.casino-tab.active,
-      .theme-option.active { animation:rainbowBorder 4s linear infinite!important; }
-      .start-btn,.next-btn,.restart,button.restart,.new-game-btn,.online-btn,.menu-btn,.auth-btn,.buy-btn,
-      .profile-btn.primary { animation:rainbowBg 4s linear infinite!important; }
-      .xp-bar-inner { animation:rainbowBg 4s linear infinite!important; background-size:100% 100%!important; }
-      #chat-send { animation:rainbowBg 4s linear infinite!important; }
-      .badge.mp { animation:rainbowBorder 4s linear infinite!important; }
-      #bg-particles { animation:rainbowParticles 8s linear infinite!important; }
-      .theme-picker-btn { animation:rainbowBorder 4s linear infinite!important; }
-    ` : '');
+    `;
 
 
     // Update picker active state
@@ -818,6 +799,33 @@
       overlay:function(a){return'rgba('+_r+','+_g+','+_b+','+(a||0.75)+')';},
       overlay2:function(a){return'rgba('+_r2+','+_g2+','+_b2+','+(a||0.75)+')';}};
     window.dispatchEvent(new Event('themechange'));
+
+    // ─── Rainbow cycling ───
+    if (!window._rainbowTick) {
+      if (window._rainbowTimer) { clearInterval(window._rainbowTimer); window._rainbowTimer = null; }
+      if (id === 'rainbow') {
+        var _hue = 0;
+        function _hsl(h,s,l) {
+          var c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+          var r=0,g=0,b=0;
+          if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
+          else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+          return '#'+[r+m,g+m,b+m].map(function(v){return Math.round(v*255).toString(16).padStart(2,'0');}).join('');
+        }
+        window._rainbowTimer = setInterval(function() {
+          if (current !== 'rainbow') { clearInterval(window._rainbowTimer); window._rainbowTimer = null; return; }
+          _hue = (_hue + 3) % 360;
+          THEMES.rainbow.accent = _hsl(_hue, 1, 0.55);
+          THEMES.rainbow.accent2 = _hsl((_hue + 120) % 360, 1, 0.55);
+          THEMES.rainbow.border = _hsl((_hue + 60) % 360, 0.6, 0.25);
+          var rgb = hexToRgb(THEMES.rainbow.accent);
+          THEMES.rainbow.glow = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.3)';
+          window._rainbowTick = true;
+          applyTheme('rainbow');
+          window._rainbowTick = false;
+        }, 150);
+      }
+    }
   }
 
   // ─── UI ───
