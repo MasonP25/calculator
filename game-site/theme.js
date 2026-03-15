@@ -198,6 +198,12 @@
       text:'#c8f0d0', dim:'#509060', accent:'#30c860', accent2:'#ffd700',
       glow:'rgba(48,200,96,0.3)', canvasBg:'#0c2010', canvasBg2:'#061208',
     },
+    rainbow: {
+      name: 'Rainbow', icon: '🌈',
+      bg1:'#0a0a14', bg2:'#141420', bg3:'#1e1e30', border:'#2e2e44',
+      text:'#e8e8f0', dim:'#8888aa', accent:'#ff3333', accent2:'#33ccff',
+      glow:'rgba(255,51,51,0.3)', canvasBg:'#141420', canvasBg2:'#0a0a14',
+    },
   };
 
   // ─── Custom theme builder ───
@@ -772,7 +778,27 @@
         input:not([type="button"]):not([type="submit"]):not([type="color"]),
         textarea,select { cursor:text!important; }
       }
-    `;
+    ` + (id === 'rainbow' ? `
+      @keyframes rainbowBorder { 0%{border-color:#ff3333} 16%{border-color:#ffaa00} 33%{border-color:#33ff33} 50%{border-color:#33ccff} 66%{border-color:#7b2ff7} 83%{border-color:#ff33aa} 100%{border-color:#ff3333} }
+      @keyframes rainbowText { 0%{color:#ff3333} 16%{color:#ffaa00} 33%{color:#33ff33} 50%{color:#33ccff} 66%{color:#7b2ff7} 83%{color:#ff33aa} 100%{color:#ff3333} }
+      @keyframes rainbowGlow { 0%{box-shadow:0 0 12px #ff333344} 16%{box-shadow:0 0 12px #ffaa0044} 33%{box-shadow:0 0 12px #33ff3344} 50%{box-shadow:0 0 12px #33ccff44} 66%{box-shadow:0 0 12px #7b2ff744} 83%{box-shadow:0 0 12px #ff33aa44} 100%{box-shadow:0 0 12px #ff333344} }
+      @keyframes rainbowBg { 0%{background:linear-gradient(135deg,#ff3333,#1e1e30)} 16%{background:linear-gradient(135deg,#ffaa00,#1e1e30)} 33%{background:linear-gradient(135deg,#33ff33,#1e1e30)} 50%{background:linear-gradient(135deg,#33ccff,#1e1e30)} 66%{background:linear-gradient(135deg,#7b2ff7,#1e1e30)} 83%{background:linear-gradient(135deg,#ff33aa,#1e1e30)} 100%{background:linear-gradient(135deg,#ff3333,#1e1e30)} }
+      h1 { animation:arcadeShift 2s linear infinite!important; }
+      a { animation:rainbowText 4s linear infinite!important; }
+      .card:hover,.game-card:hover { animation:rainbowBorder 4s linear infinite, rainbowGlow 4s linear infinite!important; }
+      .card,.game-card { animation:rainbowBorder 8s linear infinite!important; }
+      .filter-btn.active,.tab-btn.active,.auth-tab.active,.scope-btn.active,.casino-tab.active,
+      .theme-option.active { animation:rainbowBorder 4s linear infinite!important; }
+      .start-btn,.next-btn,.restart,button.restart,.new-game-btn,.online-btn,.menu-btn,.auth-btn,.buy-btn,
+      .profile-btn.primary { animation:rainbowBg 4s linear infinite!important; }
+      .xp-bar-inner { animation:rainbowBg 4s linear infinite!important; background-size:100% 100%!important; }
+      #chat-send { animation:rainbowBg 4s linear infinite!important; }
+      .badge.mp { animation:rainbowBorder 4s linear infinite!important; }
+      #bg-particles { animation:none!important; filter:hue-rotate(0deg); animation:rainbowParticles 8s linear infinite!important; }
+      @keyframes rainbowParticles { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+      .theme-picker-btn { animation:rainbowBorder 4s linear infinite!important; }
+    ` : '');
+
 
     // Update picker active state
     document.querySelectorAll('.theme-option').forEach(el => {
