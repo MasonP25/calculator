@@ -1073,7 +1073,12 @@ a.back:hover { color: #e0e0e0; }
                 var name = el.dataset.chatUser;
                 if (name && window.ArcadeCoins.getProfile) {
                     window.ArcadeCoins.getProfile(name).then(function(profile) {
-                        if (profile) window.ArcadeAvatar.styleName(el, profile);
+                        if (profile) {
+                            window.ArcadeAvatar.styleName(el, profile);
+                            window.ArcadeAvatar.styleNameEffect(el, profile);
+                            var _md = el.closest('.chat-msg');
+                            if (_md) window.ArcadeAvatar.styleBubble(_md, profile);
+                        }
                     });
                 }
             });

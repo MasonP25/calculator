@@ -2144,7 +2144,11 @@
           (function(el, user) {
             window.ArcadeCoins.getProfile(user).then(function(profile) {
               var nameEl = el.querySelector('.chat-name');
-              if (nameEl && profile) window.ArcadeAvatar.styleName(nameEl, profile);
+              if (nameEl && profile) {
+                window.ArcadeAvatar.styleName(nameEl, profile);
+                window.ArcadeAvatar.styleNameEffect(nameEl, profile);
+                window.ArcadeAvatar.styleBubble(el, profile);
+              }
             });
           })(div, me);
         }
@@ -2200,7 +2204,11 @@
         (function(el, user) {
           window.ArcadeCoins.getProfile(user).then(function(profile) {
             var nameEl = el.querySelector('.chat-name');
-            if (nameEl && profile) window.ArcadeAvatar.styleName(nameEl, profile);
+            if (nameEl && profile) {
+              window.ArcadeAvatar.styleName(nameEl, profile);
+              window.ArcadeAvatar.styleNameEffect(nameEl, profile);
+              window.ArcadeAvatar.styleBubble(el, profile);
+            }
           });
         })(div, nameDisplay);
       }

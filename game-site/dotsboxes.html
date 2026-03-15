@@ -1147,7 +1147,12 @@ function renderChat(msgs) {
             var name = el.dataset.chatUser;
             if (name && window.ArcadeCoins.getProfile) {
                 window.ArcadeCoins.getProfile(name).then(function(profile) {
-                    if (profile) window.ArcadeAvatar.styleName(el, profile);
+                    if (profile) {
+                        window.ArcadeAvatar.styleName(el, profile);
+                        window.ArcadeAvatar.styleNameEffect(el, profile);
+                        var _md = el.closest('.chat-msg');
+                        if (_md) window.ArcadeAvatar.styleBubble(_md, profile);
+                    }
                 });
             }
         });

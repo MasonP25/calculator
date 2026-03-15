@@ -389,6 +389,31 @@
     gap: 0.4rem;
   }
 
+  /* Chat bubble preview */
+  .bubble-preview {
+    background: #0f0f1a;
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-align: left;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    color: #e0e0e0;
+    min-height: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bubble-preview-name {
+    color: #feca57;
+    font-weight: 700;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .bubble-preview-text {
+    color: #e0e0e0;
+    font-size: 0.82rem;
+  }
+
   /* Responsive */
   @media (max-width: 600px) {
     .category-row { flex-direction: column; gap: 0.5rem; padding: 0.8rem; }
@@ -446,6 +471,12 @@
 
     <div class="nt-section-title">Fonts</div>
     <div class="nt-grid" id="ntFontGrid"></div>
+
+    <div class="nt-section-title">Chat Bubbles</div>
+    <div class="nt-grid" id="ntBubbleGrid"></div>
+
+    <div class="nt-section-title">Name Effects</div>
+    <div class="nt-grid" id="ntEffectGrid"></div>
   </div>
 </div>
 
@@ -505,6 +536,22 @@
     } else {
       ntColors.push(entry);
     }
+  });
+
+  // Build chat bubble list
+  var CHAT_BUBBLES = AA.CHAT_BUBBLES || {};
+  var cbItems = [];
+  Object.keys(CHAT_BUBBLES).forEach(function(id) {
+    var cb = CHAT_BUBBLES[id];
+    cbItems.push({ id: id, name: cb.name, css: cb.css, price: cb.price });
+  });
+
+  // Build name effect list
+  var NAME_EFFECTS = AA.NAME_EFFECTS || {};
+  var neItems = [];
+  Object.keys(NAME_EFFECTS).forEach(function(id) {
+    var ne = NAME_EFFECTS[id];
+    neItems.push({ id: id, name: ne.name, css: ne.css, price: ne.price });
   });
 
   // Add owned exclusive items to their respective lists
@@ -994,11 +1041,107 @@
     container.appendChild(row);
   }
 
+  // ── Chat Bubble grid ──
+  function renderBubbleGrid() {
+    var container = document.getElementById('ntBubbleGrid');
+    container.innerHTML = '';
+    var equipped = window.ArcadeCoins.getEquipped();
+
+    cbItems.forEach(function(cb) {
+      var card = document.createElement('div');
+      card.className = 'nt-card' + (equipped.chatBubble === cb.id ? ' equipped-card' : '');
+
+      // Bubble preview (mini chat message)
+      var preview = document.createElement('div');
+      preview.className = 'bubble-preview';
+      applyNtCSS(preview, cb.css);
+      var pName = document.createElement('span');
+      pName.className = 'bubble-preview-name';
+      pName.textContent = getUser() + ':';
+      var pText = document.createElement('span');
+      pText.className = 'bubble-preview-text';
+      pText.textContent = 'Hello!';
+      preview.appendChild(pName);
+      preview.appendChild(pText);
+      card.appendChild(preview);
+
+      // Style name
+      var sn = document.createElement('div');
+      sn.className = 'nt-card-style-name';
+      sn.textContent = cb.name;
+      card.appendChild(sn);
+
+      // Actions
+      var actions = document.createElement('div');
+      actions.className = 'nt-card-actions';
+      var owned = window.ArcadeCoins.ownsItem(cb.id);
+      var isEquipped = equipped.chatBubble === cb.id;
+
+      if (isEquipped) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:0.4rem';
+        var eqLabel = document.createElement('span');
+        eqLabel.className = 'equipped-label';
+        eqLabel.innerHTML = 'Equipped &#10003;';
+        row.appendChild(eqLabel);
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-remove';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = function() {
+          sfxClick();
+          window.ArcadeCoins.equipItem('chatBubble', '');
+          renderNametags();
+        };
+        row.appendChild(removeBtn);
+        actions.appendChild(row);
+      } else if (owned) {
+        var equipBtn = document.createElement('button');
+        equipBtn.className = 'btn-equip';
+        equipBtn.textContent = 'Equip';
+        (function(cid) {
+          equipBtn.onclick = function() {
+            sfxClick();
+            window.ArcadeCoins.equipItem('chatBubble', cid);
+            renderNametags();
+          };
+        })(cb.id);
+        actions.appendChild(equipBtn);
+      } else {
+        var priceLabel = document.createElement('span');
+        priceLabel.className = 'item-price';
+        priceLabel.innerHTML = '&#x1FA99; ' + cb.price;
+        actions.appendChild(priceLabel);
+        var canAfford = window.ArcadeCoins.getBalance() >= cb.price;
+        var buyBtn = document.createElement('button');
+        buyBtn.className = 'btn-buy' + (canAfford ? '' : ' disabled');
+        buyBtn.textContent = 'Buy';
+        if (canAfford) {
+          (function(cid, cprice) {
+            buyBtn.onclick = function() {
+              var result = window.ArcadeCoins.buyItem(cid, cprice);
+              if (result.ok) {
+                sfxCoin();
+                window.ArcadeCoins.equipItem('chatBubble', cid);
+                updateBalance();
+                renderNametags();
+              }
+            };
+          })(cb.id, cb.price);
+        }
+        actions.appendChild(buyBtn);
+      }
+      card.appendChild(actions);
+      container.appendChild(card);
+    });
+  }
+
   // ── Nametag rendering ──
   function renderNametags() {
     renderNtGrid('ntColorGrid', ntColors, 'nametagColor');
     buildCustomNtColor();
     renderNtGrid('ntFontGrid', ntFonts, 'nametagFont');
+    renderBubbleGrid();
+    renderNtGrid('ntEffectGrid', neItems, 'nameEffect');
     updateNtPreview();
   }
 
@@ -1183,6 +1326,7 @@
     el.style.cssText = 'font-size:2rem;font-weight:700;min-height:2.5rem;';
     var equipped = window.ArcadeCoins.getEquipped();
     window.ArcadeAvatar.styleName(el, equipped);
+    window.ArcadeAvatar.styleNameEffect(el, equipped);
   }
 
   function applyNtCSS(element, cssString) {

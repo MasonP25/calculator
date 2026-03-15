@@ -234,6 +234,38 @@
     nt_phantom:   { name: 'Phantom',    type: 'font', css: 'opacity:0.6;font-style:italic;letter-spacing:2px', price: 0, exclusive: true }
   };
 
+  // ── Chat Bubbles ────────────────────────────────────────────────────
+  var CHAT_BUBBLES = {
+    cb_dark:     { name: 'Dark',     css: 'background:#0d0d1a;border-left:3px solid #7b2ff7', price: 100 },
+    cb_pixel:    { name: 'Pixel',    css: 'background:#111;border:2px dashed #555;border-radius:0;font-family:monospace', price: 150 },
+    cb_gradient: { name: 'Gradient', css: 'background:linear-gradient(135deg,#1a1a3a,#2a1a3a);border-left:3px solid #a855f7', price: 175 },
+    cb_neon:     { name: 'Neon',     css: 'background:#0a0a18;border:1px solid #7b2ff7;box-shadow:0 0 8px #7b2ff744,inset 0 0 8px #7b2ff711', price: 200 },
+    cb_glass:    { name: 'Glass',    css: 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)', price: 250 },
+    cb_fire:     { name: 'Fire',     css: 'background:linear-gradient(135deg,#1a0a0a,#2a1000);border-left:3px solid #ff4400;box-shadow:0 0 10px #ff440033', price: 300 },
+    cb_ice:      { name: 'Ice',      css: 'background:linear-gradient(135deg,#0a0a1a,#0a1a2a);border-left:3px solid #00d4ff;box-shadow:0 0 10px #00d4ff33', price: 300 },
+    cb_gold:     { name: 'Gold',     css: 'background:linear-gradient(135deg,#1a1500,#2a2000);border:1px solid #ffd70066;box-shadow:0 0 8px #ffd70022', price: 350 }
+  };
+
+  // ── Name Effects ────────────────────────────────────────────────────
+  var NAME_EFFECTS = {
+    ne_shadow:   { name: 'Long Shadow', css: 'animation:none;text-shadow:1px 1px 0 #7b2ff7,2px 2px 0 #7b2ff755,3px 3px 0 #7b2ff733', price: 150 },
+    ne_sparkle:  { name: 'Sparkle',     css: 'animation:neSparkle 2s ease-in-out infinite', price: 200 },
+    ne_flicker:  { name: 'Flicker',     css: 'animation:neFlicker 3s linear infinite', price: 200 },
+    ne_glitch:   { name: 'Glitch',      css: 'animation:neGlitch 2.5s steps(1) infinite', price: 250 },
+    ne_rainbow:  { name: 'Rainbow',     css: 'animation:neRainbow 3s linear infinite', price: 300 },
+    ne_wave:     { name: 'Wave',        css: 'animation:neWave 2s ease-in-out infinite', price: 350 }
+  };
+
+  // Inject keyframes for name effects
+  var _neCss = document.createElement('style');
+  _neCss.textContent =
+    '@keyframes neSparkle{0%,100%{text-shadow:0 0 4px currentColor,0 0 8px currentColor}50%{text-shadow:0 0 12px currentColor,0 0 24px currentColor,0 0 36px currentColor}}' +
+    '@keyframes neFlicker{0%,19%,21%,53%,55%,100%{opacity:1}20%,54%{opacity:0.4}}' +
+    '@keyframes neGlitch{0%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff}25%{text-shadow:-2px -1px #ff0000,2px 1px #00ffff}50%{text-shadow:1px 2px #ff0000,-1px -2px #00ffff}75%{text-shadow:-1px 0 #ff0000,1px 0 #00ffff}100%{text-shadow:2px 0 #ff0000,-2px 0 #00ffff}}' +
+    '@keyframes neRainbow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}' +
+    '@keyframes neWave{0%,100%{transform:translateY(0)}25%{transform:translateY(-2px)}75%{transform:translateY(2px)}}';
+  document.head.appendChild(_neCss);
+
   // ── Drawing helpers ───────────────────────────────────────────────────
 
   function getSkinColor(equipped) {
@@ -1458,15 +1490,33 @@
     });
   }
 
+  function styleBubble(msgElement, equipped) {
+    if (!msgElement || !equipped || !equipped.chatBubble) return;
+    var bubble = CHAT_BUBBLES[equipped.chatBubble];
+    if (!bubble) return;
+    applyCSS(msgElement, bubble.css);
+  }
+
+  function styleNameEffect(nameElement, equipped) {
+    if (!nameElement || !equipped || !equipped.nameEffect) return;
+    var effect = NAME_EFFECTS[equipped.nameEffect];
+    if (!effect) return;
+    applyCSS(nameElement, effect.css);
+  }
+
   // ── Expose API ────────────────────────────────────────────────────────
 
   window.ArcadeAvatar = {
     render: render,
     renderMini: renderMini,
     styleName: styleName,
+    styleBubble: styleBubble,
+    styleNameEffect: styleNameEffect,
     ITEMS: ITEMS,
     NAMETAGS: NAMETAGS,
-    SKIN_COLORS: SKIN_COLORS
+    SKIN_COLORS: SKIN_COLORS,
+    CHAT_BUBBLES: CHAT_BUBBLES,
+    NAME_EFFECTS: NAME_EFFECTS
   };
 
 })();
