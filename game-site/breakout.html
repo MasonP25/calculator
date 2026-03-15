@@ -183,7 +183,8 @@ function update() {
 }
 
 function draw() {
-  ctx.fillStyle = '#1a1a2e';
+  var T=window.TC||{};
+  ctx.fillStyle = T.bg||'#1a1a2e';
   ctx.fillRect(0, 0, W, H);
 
   // Bricks
@@ -222,13 +223,13 @@ function draw() {
   }
 
   if (gameOver) {
-    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    ctx.fillStyle = T.overlay?T.overlay(0.7):'rgba(15,15,26,0.7)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#ff4757';
     ctx.font = 'bold 36px Segoe UI';
     ctx.textAlign = 'center';
     ctx.fillText('GAME OVER', W/2, H/2 - 10);
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = T.dim||'#888';
     ctx.font = '18px Segoe UI';
     ctx.fillText('Score: ' + score, W/2, H/2 + 25);
   }
@@ -286,7 +287,7 @@ loop();
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

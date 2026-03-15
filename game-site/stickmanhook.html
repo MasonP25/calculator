@@ -1012,6 +1012,7 @@
   }
 
   function drawLevelComplete() {
+    var T=window.TC||{};
     completeTimer++;
     ctx.save();
 
@@ -1019,7 +1020,7 @@
     ctx.globalAlpha = alpha;
 
     // overlay
-    ctx.fillStyle = 'rgba(15,15,26,0.6)';
+    ctx.fillStyle = T.overlay?T.overlay(0.6):'rgba(15,15,26,0.6)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.font = 'bold 44px "Segoe UI", Tahoma, sans-serif';
@@ -1048,13 +1049,14 @@
   }
 
   function drawDead() {
+    var T=window.TC||{};
     deathTimer++;
     ctx.save();
 
     const alpha = Math.min(1, deathTimer / 20);
     ctx.globalAlpha = alpha;
 
-    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    ctx.fillStyle = T.overlay?T.overlay(0.7):'rgba(15,15,26,0.7)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.font = 'bold 38px "Segoe UI", Tahoma, sans-serif';
@@ -1187,7 +1189,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

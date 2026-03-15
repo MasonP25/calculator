@@ -451,7 +451,8 @@ function drawMenu() {
 }
 
 function drawGameOver() {
-  ctx.fillStyle = 'rgba(15,15,26,0.85)';
+  var T=window.TC||{};
+  ctx.fillStyle = T.overlay?T.overlay(0.85):'rgba(15,15,26,0.85)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   // Title
@@ -534,7 +535,7 @@ loop();
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

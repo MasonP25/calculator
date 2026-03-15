@@ -213,11 +213,12 @@ function ghostY() {
 }
 
 function draw() {
-  ctx.fillStyle = '#1a1a2e';
+  var T=window.TC||{};
+  ctx.fillStyle = T.bg||'#1a1a2e';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Grid lines
-  ctx.strokeStyle = '#1f1f35';
+  ctx.strokeStyle = T.bg2||'#1f1f35';
   ctx.lineWidth = 0.5;
   for (let x = 0; x <= COLS; x++) {
     ctx.beginPath(); ctx.moveTo(x*CELL, 0); ctx.lineTo(x*CELL, ROWS*CELL); ctx.stroke();
@@ -274,20 +275,20 @@ function draw() {
   }
 
   if (gameOver) {
-    ctx.fillStyle = 'rgba(15,15,26,0.75)';
+    ctx.fillStyle = T.overlay?T.overlay(0.75):'rgba(15,15,26,0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ff4757';
     ctx.font = 'bold 30px Segoe UI';
     ctx.textAlign = 'center';
     ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 10);
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = T.dim||'#888';
     ctx.font = '16px Segoe UI';
     ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 20);
   }
 }
 
 function drawNext() {
-  nctx.fillStyle = '#1a1a2e';
+  nctx.fillStyle = (window.TC||{}).bg||'#1a1a2e';
   nctx.fillRect(0, 0, 100, 100);
   const cells = PIECES[nextType];
   const color = COLORS[nextType + 1];
@@ -355,7 +356,7 @@ requestAnimationFrame(loop);
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

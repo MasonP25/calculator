@@ -394,11 +394,12 @@
   }
 
   function drawCave() {
+    var T=window.TC||{};
     const W = canvas.width;
     const H = canvas.height;
 
     // Draw ceiling (filled from top to ceiling line)
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = T.bg||'#1a1a2e';
     ctx.beginPath();
     ctx.moveTo(0, 0);
     for (let x = 0; x < W; x++) {
@@ -409,7 +410,7 @@
     ctx.fill();
 
     // Ceiling edge highlight
-    ctx.strokeStyle = '#2a2a4a';
+    ctx.strokeStyle = T.border||'#2a2a4a';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
@@ -419,7 +420,7 @@
     ctx.stroke();
 
     // Draw floor (filled from floor line to bottom)
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = T.bg||'#1a1a2e';
     ctx.beginPath();
     ctx.moveTo(0, H);
     for (let x = 0; x < W; x++) {
@@ -430,7 +431,7 @@
     ctx.fill();
 
     // Floor edge highlight
-    ctx.strokeStyle = '#2a2a4a';
+    ctx.strokeStyle = T.border||'#2a2a4a';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
@@ -477,9 +478,10 @@
   }
 
   function drawMenu() {
+    var T=window.TC||{};
     const W = canvas.width, H = canvas.height;
     // Dim overlay
-    ctx.fillStyle = 'rgba(15, 15, 26, 0.85)';
+    ctx.fillStyle = T.overlay?T.overlay(0.85):'rgba(15, 15, 26, 0.85)';
     ctx.fillRect(0, 0, W, H);
 
     // Title
@@ -526,10 +528,11 @@
   }
 
   function drawDead() {
+    var T=window.TC||{};
     const W = canvas.width, H = canvas.height;
 
     // Overlay
-    ctx.fillStyle = 'rgba(15, 15, 26, 0.8)';
+    ctx.fillStyle = T.overlay?T.overlay(0.8):'rgba(15, 15, 26, 0.8)';
     ctx.fillRect(0, 0, W, H);
 
     // Game Over
@@ -625,7 +628,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

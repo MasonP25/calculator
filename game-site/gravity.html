@@ -1251,7 +1251,7 @@ function draw(){
   if(state==='countdown'){
     const sec=Math.ceil(countdownTimer/60);
     if(sec!==lastCountdownSec){lastCountdownSec=sec;if(window.SFX&&sec>0)window.SFX.countdown(sec);}
-    ctx.fillStyle='rgba(15,15,26,0.5)';ctx.fillRect(0,0,W,H);
+    var T=window.TC||{};ctx.fillStyle=T.overlay?T.overlay(0.5):'rgba(15,15,26,0.5)';ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff';ctx.font='bold 72px Segoe UI';ctx.textAlign='center';
     ctx.shadowColor='#7b2ff7';ctx.shadowBlur=20;ctx.fillText(sec>0?sec:'GO!',W/2,H/2+20);ctx.shadowBlur=0;
   }
@@ -1302,7 +1302,7 @@ canvasEl.addEventListener('mousedown',()=>{if(state!=='playing')return;if(player
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

@@ -55,6 +55,7 @@ const PIPE_SPEED = 2.5;
 const BIRD_R = 14;
 
 let bird, pipes, score, bestScore, playing, gameOver, frameCount;
+
 bestScore = parseInt(_gb('flappyBest', '0'));
 document.getElementById('best').textContent = bestScore;
 
@@ -147,9 +148,10 @@ function die() {
 
 function draw() {
   // Background gradient
+  var T=window.TC||{};
   const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#0a0a20');
-  grad.addColorStop(1, '#1a1a3e');
+  grad.addColorStop(0, T.bg2||'#0a0a20');
+  grad.addColorStop(1, T.bg||'#1a1a3e');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
@@ -240,12 +242,12 @@ function draw() {
   ctx.shadowBlur = 0;
 
   if (gameOver) {
-    ctx.fillStyle = 'rgba(15,15,26,0.65)';
+    ctx.fillStyle = T.overlay2?T.overlay2(0.65):'rgba(15,15,26,0.65)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#ff4757';
     ctx.font = 'bold 36px Segoe UI';
     ctx.fillText('GAME OVER', W/2, H/2 - 15);
-    ctx.fillStyle = '#ccc';
+    ctx.fillStyle = T.dim||'#ccc';
     ctx.font = '18px Segoe UI';
     ctx.fillText('Score: ' + score, W/2, H/2 + 20);
   }
@@ -289,7 +291,7 @@ loop();
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

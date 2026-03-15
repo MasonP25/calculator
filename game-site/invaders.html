@@ -661,7 +661,8 @@ function draw() {
 
   // Start screen overlay
   if (!playing && !gameOverState) {
-    ctx.fillStyle = 'rgba(15,15,26,0.7)';
+    var T=window.TC||{};
+    ctx.fillStyle = T.overlay?T.overlay(0.7):'rgba(15,15,26,0.7)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = COLORS.purple;
     ctx.font = 'bold 28px "Segoe UI", Tahoma, sans-serif';
@@ -745,7 +746,7 @@ requestAnimationFrame(gameLoop);
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=9"></script>
+<script src="theme.js?v=10"></script>
 <script src="easter.js"></script>
 </body>
 </html>

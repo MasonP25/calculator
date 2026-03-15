@@ -654,6 +654,51 @@
       input[type="color"]::-webkit-color-swatch { border:none!important; border-radius:3px!important; }
       #custom-theme-editor { background:${t.bg3}!important; border-radius:8px!important; }
 
+      /* Game-specific overrides */
+      /* Board/cell states */
+      .cell { background:${t.bg1}!important; }
+      .cell:hover:not(.taken):not(.game-over):not(.p1):not(.p2):not(.revealed) { background:${t.bg3}!important; }
+      .cell.mine { background:#ff475744!important; }
+      .cell.flagged { background:${t.bg3}!important; }
+      .cell.flagged::after { color:#ff4757!important; }
+      .col-header { color:${t.dim}!important; }
+      .col-header:hover { color:${t.accent2}!important; }
+
+      /* Score/info panels */
+      .score-separator,.os-sep { color:${t.dim}!important; }
+      .selector-label { color:${t.dim}!important; }
+      .panel h3 { color:${t.dim}!important; }
+
+      /* UNO */
+      .info-bar { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .info-bar .turn-indicator { color:${t.accent}!important; }
+      .opponent-slot { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .opponent-slot.active-turn { border-color:${t.accent}!important; box-shadow:0 0 12px ${t.glow}!important; }
+      .opponent-slot .opp-cards { color:${t.dim}!important; }
+      .draw-pile { background:linear-gradient(135deg,${t.bg3},${t.bg2})!important; border-color:${t.border}!important; color:${t.accent}!important; }
+      .draw-pile-label { color:${t.dim}!important; }
+      .draw-stack-indicator { color:#ff4757!important; }
+      .hand-area { background:${t.bg2}!important; border-color:${t.border}!important; }
+      .hand-label { color:${t.dim}!important; }
+      .color-dot { border-color:${t.border}!important; }
+      .toast { background:${t.bg2}!important; border-color:${t.border}!important; color:${t.text}!important; }
+      .winner-overlay { background:${t.bg1}dd!important; }
+      .winner-overlay p { color:${t.dim}!important; }
+      .color-picker-overlay { background:${t.bg1}cc!important; }
+
+      /* Wordle/word games */
+      .message { background:${t.text}!important; color:${t.bg1}!important; }
+      .tile { border-color:${t.bg3}!important; color:${t.text}!important; }
+      .tile.filled { border-color:${t.border}!important; }
+      .key { background:${t.bg3}!important; color:${t.text}!important; }
+      .key:hover { background:${t.border}!important; }
+      .key.correct { background:#1b5e20!important; color:${t.text}!important; }
+      .key.present { background:#f9a825!important; color:${t.bg1}!important; }
+      .key.absent { background:${t.bg3}!important; color:${t.dim}!important; }
+
+      /* Win/game-over animations */
+      @keyframes winPulse { from { background:${t.bg2}; } to { background:${t.bg3}; } }
+
       /* Custom cursor */
       @media (hover:hover) {
         body,.games,.section-title,.subtitle,.count,.activity-feed {
@@ -680,6 +725,12 @@
 
     // Expose theme to canvas-based games
     window.THEME = t;
+    // Pre-computed canvas colors with rgba overlay
+    var _r=parseInt(t.canvasBg.slice(1,3),16),_g=parseInt(t.canvasBg.slice(3,5),16),_b=parseInt(t.canvasBg.slice(5,7),16);
+    var _r2=parseInt(t.canvasBg2.slice(1,3),16),_g2=parseInt(t.canvasBg2.slice(3,5),16),_b2=parseInt(t.canvasBg2.slice(5,7),16);
+    window.TC={bg:t.canvasBg,bg2:t.canvasBg2,dim:t.dim,text:t.text,accent:t.accent,accent2:t.accent2,border:t.border,
+      overlay:function(a){return'rgba('+_r+','+_g+','+_b+','+(a||0.75)+')';},
+      overlay2:function(a){return'rgba('+_r2+','+_g2+','+_b2+','+(a||0.75)+')';}};
     window.dispatchEvent(new Event('themechange'));
   }
 
