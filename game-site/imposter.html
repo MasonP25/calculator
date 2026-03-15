@@ -650,14 +650,24 @@ var db = getFirestore(app);
 
 // ---------- Word Lists ----------
 var WORDS = {
-    'Places': ['Beach','Airport','Hospital','Library','Restaurant','Zoo','Museum','Gym','Cinema','Supermarket'],
-    'Food': ['Pizza','Sushi','Chocolate','Burger','Pasta','Ice Cream','Tacos','Pancakes','Steak','Salad'],
-    'Animals': ['Elephant','Penguin','Dolphin','Eagle','Spider','Snake','Rabbit','Tiger','Whale','Monkey'],
-    'Activities': ['Swimming','Camping','Cooking','Dancing','Painting','Gaming','Reading','Surfing','Skiing','Fishing'],
-    'Objects': ['Umbrella','Guitar','Telescope','Skateboard','Candle','Backpack','Scissors','Microphone','Ladder','Trophy'],
-    'Occupations': ['Doctor','Astronaut','Chef','Firefighter','Pilot','Teacher','Detective','Magician','Farmer','DJ'],
-    'Nature': ['Volcano','Waterfall','Desert','Rainbow','Thunder','Glacier','Coral Reef','Aurora','Earthquake','Tornado'],
-    'Entertainment': ['Concert','Circus','Rollercoaster','Karaoke','Fireworks','Parade','Magic Show','Movie Theater','Comedy Club','Escape Room']
+    'Places': ['Beach','Airport','Hospital','Library','Restaurant','Zoo','Museum','Gym','Cinema','Supermarket','Castle','Lighthouse','Aquarium','Amusement Park','Laundromat','Barbershop','Bowling Alley','Post Office','Gas Station','Haunted House','Treehouse','Rooftop','Subway Station','Parking Garage','Planetarium'],
+    'Food': ['Pizza','Sushi','Chocolate','Burger','Pasta','Ice Cream','Tacos','Pancakes','Steak','Salad','Waffles','Ramen','Nachos','Croissant','Cheesecake','Popcorn','Dumplings','Lobster','Pretzel','Smoothie','Garlic Bread','Mozzarella Sticks','Fried Rice','Mac and Cheese','Churros'],
+    'Animals': ['Elephant','Penguin','Dolphin','Eagle','Spider','Snake','Rabbit','Tiger','Whale','Monkey','Octopus','Flamingo','Chameleon','Panda','Koala','Hedgehog','Jellyfish','Parrot','Sloth','Cheetah','Seahorse','Axolotl','Peacock','Raccoon','Otter'],
+    'Activities': ['Swimming','Camping','Cooking','Dancing','Painting','Gaming','Reading','Surfing','Skiing','Fishing','Rock Climbing','Skydiving','Yoga','Archery','Skateboarding','Gardening','Photography','Pottery','Karate','Juggling','Ice Skating','Scuba Diving','Bungee Jumping','Horseback Riding','Snowboarding'],
+    'Objects': ['Umbrella','Guitar','Telescope','Skateboard','Candle','Backpack','Scissors','Microphone','Ladder','Trophy','Compass','Binoculars','Trampoline','Typewriter','Hourglass','Magnifying Glass','Lava Lamp','Swiss Army Knife','Rubber Duck','Disco Ball','Fire Extinguisher','Snow Globe','Piggy Bank','Walkie Talkie','Megaphone'],
+    'Occupations': ['Doctor','Astronaut','Chef','Firefighter','Pilot','Teacher','Detective','Magician','Farmer','DJ','Lifeguard','Veterinarian','Archaeologist','Plumber','Barista','Tattoo Artist','Stuntman','Zookeeper','Electrician','Florist','Pharmacist','Carpenter','Meteorologist','Locksmith','Food Critic'],
+    'Nature': ['Volcano','Waterfall','Desert','Rainbow','Thunder','Glacier','Coral Reef','Aurora','Earthquake','Tornado','Tsunami','Avalanche','Geyser','Quicksand','Sinkhole','Tidal Wave','Monsoon','Blizzard','Wildfire','Fog','Hailstorm','Whirlpool','Sandstorm','Meteor Shower','Eclipse'],
+    'Entertainment': ['Concert','Circus','Rollercoaster','Karaoke','Fireworks','Parade','Magic Show','Movie Theater','Comedy Club','Escape Room','Water Park','Go Karts','Laser Tag','Haunted Maze','Talent Show','Game Show','Drive-In Movie','Open Mic Night','Trivia Night','Block Party','Rave','Music Festival','Stand-Up Comedy','Puppet Show','Street Performance'],
+    'Sports': ['Basketball','Soccer','Tennis','Baseball','Football','Hockey','Golf','Volleyball','Boxing','Wrestling','Fencing','Badminton','Cricket','Rugby','Table Tennis','Lacrosse','Dodgeball','Polo','Curling','Handball'],
+    'School': ['Homework','Recess','Detention','Field Trip','Pop Quiz','Cafeteria','Gym Class','Science Fair','Prom','Graduation','Study Hall','Locker Room','Assembly','Book Report','Fire Drill','Group Project','Parent Conference','Honor Roll','Substitute Teacher','Snow Day'],
+    'Technology': ['Smartphone','Laptop','Bluetooth','WiFi','GPS','Virtual Reality','Drone','Robot','3D Printer','Smartwatch','Alexa','Tablet','USB Drive','Webcam','AirPods','Projector','Hard Drive','Server','Satellite','Hologram'],
+    'Movies & TV': ['Star Wars','Harry Potter','Marvel','Batman','Jurassic Park','Finding Nemo','Shrek','SpongeBob','The Office','Stranger Things','Game of Thrones','Breaking Bad','Forrest Gump','Titanic','The Lion King','Frozen','Avatar','The Simpsons','Friends','Squid Game'],
+    'Music': ['Guitar Solo','Drum Roll','Karaoke','Concert','Album','Playlist','Remix','Beat Drop','Chorus','Encore','Vinyl Record','Mixtape','Acoustic','Autotune','Lullaby','Ringtone','Jingle','Mashup','Duet','Soundtrack'],
+    'Clothing': ['Sneakers','Hoodie','Jeans','Sunglasses','Baseball Cap','Flip Flops','Necktie','Raincoat','Pajamas','Tuxedo','Swimsuit','Overalls','Beanie','Scarf','Crocs','Hawaiian Shirt','Leather Jacket','Cargo Pants','Socks','Bathrobe'],
+    'Holidays': ['Christmas','Halloween','Thanksgiving','Easter','Valentines Day','New Years','Fourth of July','St Patricks Day','Mothers Day','Fathers Day','April Fools','Labor Day','Memorial Day','Cinco de Mayo','Mardi Gras','Black Friday','Hanukkah','Diwali','Chinese New Year','Birthday'],
+    'Vehicles': ['Monster Truck','Helicopter','Submarine','Jet Ski','Hot Air Balloon','Limousine','Ambulance','Fire Truck','Ice Cream Truck','Segway','Skateboard','Canoe','Yacht','Bicycle','Motorcycle','Tractor','School Bus','Taxi','Gondola','Hovercraft'],
+    'Desserts': ['Brownie','Cupcake','Tiramisu','Cheesecake','Creme Brulee','Eclair','Macaron','Sundae','Panna Cotta','Baklava','Cannoli','Mousse','Flan','Donut','Apple Pie','Gelato','Sorbet','Pudding','Cookie','Mochi'],
+    'Mythical Creatures': ['Dragon','Unicorn','Phoenix','Mermaid','Werewolf','Vampire','Bigfoot','Kraken','Griffin','Centaur','Yeti','Pegasus','Minotaur','Banshee','Goblin','Fairy','Troll','Cyclops','Hydra','Sphinx']
 };
 var ALL_WORDS = Object.values(WORDS).flat();
 
