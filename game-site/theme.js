@@ -1016,8 +1016,39 @@
   }
 
   // Re-apply cursor when equipped cursor changes
+  var _rcRaf = null;
+  var _rcHue = 0;
+  var _rcLast = 0;
+
+  function _startRainbowCursor() {
+    if (_rcRaf) return;
+    _rcStep();
+  }
+  function _stopRainbowCursor() {
+    if (_rcRaf) { cancelAnimationFrame(_rcRaf); _rcRaf = null; }
+    var el = document.getElementById('cursor-rainbow-override');
+    if (el) el.remove();
+  }
+  function _rcStep(ts) {
+    if (_getEquippedCursor() !== 'cur_rainbow') { _stopRainbowCursor(); return; }
+    if (!ts) ts = performance.now();
+    if (ts - _rcLast > 80) {
+      _rcLast = ts;
+      _rcHue = (_rcHue + 5) % 360;
+      var color = 'hsl(' + _rcHue + ',100%,55%)';
+      var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='20' height='24'><path d='M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z' fill='" + color + "' stroke='white' stroke-width='1.2'/></svg>";
+      var encoded = encodeURIComponent(svg);
+      var el = document.getElementById('cursor-rainbow-override');
+      if (!el) { el = document.createElement('style'); el.id = 'cursor-rainbow-override'; document.head.appendChild(el); }
+      el.textContent = '@media(hover:hover){body,.games,.section-title,.subtitle,.count,.activity-feed,a,button,.card,.filter-btn,.random-btn,.fame-link,.fav-btn,.theme-picker-btn,.theme-option,#sfx-mute-btn,.auth-badge,.chat-tab,.notif-item,[role="button"]{cursor:url("data:image/svg+xml,' + encoded + '") 4 1,pointer!important}}';
+    }
+    _rcRaf = requestAnimationFrame(_rcStep);
+  }
+
   window.addEventListener('coins-updated', function() {
     _setStyle(THEMES[current] || THEMES.midnight);
+    if (_getEquippedCursor() === 'cur_rainbow') _startRainbowCursor();
+    else _stopRainbowCursor();
   });
 
   // Init
@@ -1026,6 +1057,8 @@
   } else {
     createPicker(); applyTheme(current);
   }
+  // Start rainbow cursor if already equipped (after coins load)
+  setTimeout(function() { if (_getEquippedCursor() === 'cur_rainbow') _startRainbowCursor(); }, 1500);
 })();
 
 // Load invites module on multiplayer game pages
