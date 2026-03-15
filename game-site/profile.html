@@ -777,25 +777,51 @@ async function loadProfile() {
 
   // Show equipped cosmetics
   var eq = profileData.equipped || {};
+  var AA = window.ArcadeAvatar || {};
   var cosmeticTags = [];
+
+  // Avatar items
+  if (eq.hat && AA.ITEMS && AA.ITEMS[eq.hat]) {
+    cosmeticTags.push({ label: 'Hat', value: AA.ITEMS[eq.hat].name });
+  }
+  if (eq.hair && AA.ITEMS && AA.ITEMS[eq.hair]) {
+    cosmeticTags.push({ label: 'Hair', value: AA.ITEMS[eq.hair].name });
+  }
+  if (eq.face && AA.ITEMS && AA.ITEMS[eq.face]) {
+    cosmeticTags.push({ label: 'Face', value: AA.ITEMS[eq.face].name });
+  }
+  if (eq.shirt && AA.ITEMS && AA.ITEMS[eq.shirt]) {
+    cosmeticTags.push({ label: 'Shirt', value: AA.ITEMS[eq.shirt].name });
+  }
+
+  // Nametag color
   if (eq.nametagColor) {
     var colorName = eq.nametagColor;
+    var colorHex = '';
     if (eq.nametagColor.charAt(0) === '#') {
       colorName = eq.nametagColor;
-    } else if (window.ArcadeAvatar && window.ArcadeAvatar.NAMETAGS && window.ArcadeAvatar.NAMETAGS[eq.nametagColor]) {
-      colorName = window.ArcadeAvatar.NAMETAGS[eq.nametagColor].name;
+      colorHex = eq.nametagColor;
+    } else if (AA.NAMETAGS && AA.NAMETAGS[eq.nametagColor]) {
+      colorName = AA.NAMETAGS[eq.nametagColor].name;
     }
-    cosmeticTags.push({ label: 'Color', value: colorName });
+    cosmeticTags.push({ label: 'Color', value: colorName, hex: colorHex });
   }
-  if (eq.nametagFont && window.ArcadeAvatar && window.ArcadeAvatar.NAMETAGS && window.ArcadeAvatar.NAMETAGS[eq.nametagFont]) {
-    cosmeticTags.push({ label: 'Font', value: window.ArcadeAvatar.NAMETAGS[eq.nametagFont].name });
+
+  // Nametag font
+  if (eq.nametagFont && AA.NAMETAGS && AA.NAMETAGS[eq.nametagFont]) {
+    cosmeticTags.push({ label: 'Font', value: AA.NAMETAGS[eq.nametagFont].name });
   }
-  if (eq.chatBubble && window.ArcadeAvatar && window.ArcadeAvatar.CHAT_BUBBLES && window.ArcadeAvatar.CHAT_BUBBLES[eq.chatBubble]) {
-    cosmeticTags.push({ label: 'Bubble', value: window.ArcadeAvatar.CHAT_BUBBLES[eq.chatBubble].name });
+
+  // Chat bubble
+  if (eq.chatBubble && AA.CHAT_BUBBLES && AA.CHAT_BUBBLES[eq.chatBubble]) {
+    cosmeticTags.push({ label: 'Bubble', value: AA.CHAT_BUBBLES[eq.chatBubble].name });
   }
-  if (eq.nameEffect && window.ArcadeAvatar && window.ArcadeAvatar.NAME_EFFECTS && window.ArcadeAvatar.NAME_EFFECTS[eq.nameEffect]) {
-    cosmeticTags.push({ label: 'Effect', value: window.ArcadeAvatar.NAME_EFFECTS[eq.nameEffect].name });
+
+  // Name effect
+  if (eq.nameEffect && AA.NAME_EFFECTS && AA.NAME_EFFECTS[eq.nameEffect]) {
+    cosmeticTags.push({ label: 'Effect', value: AA.NAME_EFFECTS[eq.nameEffect].name });
   }
+
   if (cosmeticTags.length > 0) {
     document.getElementById('cosmeticsHeader').style.display = '';
     var cosmeticsRow = document.getElementById('cosmeticsRow');
@@ -804,7 +830,9 @@ async function loadProfile() {
     cosmeticTags.forEach(function(t) {
       var tag = document.createElement('span');
       tag.className = 'cosmetic-tag';
-      tag.innerHTML = '<span class="ct-label">' + t.label + '</span><span class="ct-value">' + t.value + '</span>';
+      var swatch = '';
+      if (t.hex) swatch = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + t.hex + ';margin-right:2px;vertical-align:middle"></span>';
+      tag.innerHTML = '<span class="ct-label">' + t.label + '</span>' + swatch + '<span class="ct-value">' + t.value + '</span>';
       cosmeticsRow.appendChild(tag);
     });
   }
