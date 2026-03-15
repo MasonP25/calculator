@@ -754,6 +754,7 @@
   Object.keys(CURSORS).forEach(function(id) {
     var c = CURSORS[id];
     if (c.exclusive) return;
+    if (id === 'cur_custom') return; // handled by drawer
     cursorItems.push({ id: id, name: c.name, svg: c.svg, price: c.price });
   });
 
@@ -1514,7 +1515,10 @@
 
     // Current cursor preview
     var previewEl = document.getElementById('cursorPreview');
-    if (equipped.cursor && CURSORS[equipped.cursor]) {
+    if (equipped.cursor === 'cur_custom' || equipped.cursor === 'custom') {
+      var customSvg = localStorage.getItem('arcade_custom_cursor');
+      previewEl.innerHTML = customSvg || '<span style="font-size:1.2rem;color:var(--t-dim,#666)">Custom</span>';
+    } else if (equipped.cursor && CURSORS[equipped.cursor]) {
       previewEl.innerHTML = getCursorPreviewSVG(CURSORS[equipped.cursor]);
     } else {
       previewEl.innerHTML = '<span style="font-size:2rem;color:var(--t-dim,#666)">Default</span>';
@@ -1633,14 +1637,46 @@
   function buildCursorDrawer() {
     var wrap = document.getElementById('cursorDrawerWrap');
     wrap.innerHTML = '';
-    if (!_hasExclusive()) return;
+
+    var ownsCustom = window.ArcadeCoins.ownsItem('cur_custom');
+
+    // Show buy prompt if not owned
+    if (!ownsCustom) {
+      var buyWrap = document.createElement('div');
+      buyWrap.className = 'cursor-drawer';
+      buyWrap.style.textAlign = 'center';
+      buyWrap.innerHTML = '<div class="cursor-drawer-title">Custom Cursor Designer</div>' +
+        '<p style="color:var(--t-dim,#888);font-size:0.85rem;margin-bottom:0.8rem;">Draw your own pixel cursor!</p>';
+      var canAfford = window.ArcadeCoins.getBalance() >= 1000;
+      var priceLabel = document.createElement('span');
+      priceLabel.className = 'item-price';
+      priceLabel.innerHTML = '&#x1FA99; 1000';
+      priceLabel.style.marginRight = '8px';
+      buyWrap.appendChild(priceLabel);
+      var buyBtn = document.createElement('button');
+      buyBtn.className = 'btn-buy' + (canAfford ? '' : ' disabled');
+      buyBtn.textContent = 'Unlock';
+      if (canAfford) {
+        buyBtn.onclick = function() {
+          var result = window.ArcadeCoins.buyItem('cur_custom', 1000);
+          if (result.ok) {
+            sfxCoin();
+            updateBalance();
+            renderCursors();
+          }
+        };
+      }
+      buyWrap.appendChild(buyBtn);
+      wrap.appendChild(buyWrap);
+      return;
+    }
 
     var drawer = document.createElement('div');
     drawer.className = 'cursor-drawer';
 
     var title = document.createElement('div');
     title.className = 'cursor-drawer-title';
-    title.textContent = 'Custom Cursor Designer \u2605';
+    title.textContent = 'Custom Cursor Designer';
     drawer.appendChild(title);
 
     var canvasWrap = document.createElement('div');
@@ -1730,7 +1766,7 @@
       var svg = _pixelsToSVG();
       if (!svg) return;
       // Store custom cursor SVG as a special equipped value
-      window.ArcadeCoins.equipItem('cursor', 'custom');
+      window.ArcadeCoins.equipItem('cursor', 'cur_custom');
       localStorage.setItem('arcade_custom_cursor', svg);
       sfxClick();
       renderCursors();

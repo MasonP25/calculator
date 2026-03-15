@@ -272,7 +272,7 @@
         var eq = window.ArcadeCoins.getEquipped();
         if (eq.cursor && window.ArcadeAvatar) {
           // Allow 'custom' or any valid CURSORS entry
-          if (eq.cursor === 'custom' || (window.ArcadeAvatar.CURSORS && window.ArcadeAvatar.CURSORS[eq.cursor])) {
+          if (eq.cursor === 'custom' || eq.cursor === 'cur_custom' || (window.ArcadeAvatar.CURSORS && window.ArcadeAvatar.CURSORS[eq.cursor])) {
             return eq.cursor;
           }
         }
@@ -1057,8 +1057,13 @@
   } else {
     createPicker(); applyTheme(current);
   }
-  // Start rainbow cursor if already equipped (after coins load)
-  setTimeout(function() { if (_getEquippedCursor() === 'cur_rainbow') _startRainbowCursor(); }, 1500);
+  // Re-apply theme after coins/avatar load so cursor takes effect
+  setTimeout(function() {
+    if (_getEquippedCursor()) {
+      _setStyle(THEMES[current] || THEMES.midnight);
+      if (_getEquippedCursor() === 'cur_rainbow') _startRainbowCursor();
+    }
+  }, 1500);
 })();
 
 // Load invites module on multiplayer game pages

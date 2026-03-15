@@ -266,6 +266,7 @@
     cur_neon:     { name: 'Neon',     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><defs><filter id="ng"><feGaussianBlur stdDeviation="1.5"/></filter></defs><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#7b2ff7" filter="url(#ng)" opacity="0.6"/><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="none" stroke="#bf7fff" stroke-width="1.2"/></svg>', price: 300 },
     cur_rainbow:  { name: 'Rainbow',  svg: 'rainbow', price: 400 },
     cur_skull:    { name: 'Skull',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ccc" stroke="#666" stroke-width="1"/><circle cx="8" cy="5" r="1.5" fill="#111"/><circle cx="13" cy="5" r="1.5" fill="#111"/><rect x="9" y="8" width="1" height="2" fill="#111"/><rect x="11" y="8" width="1" height="2" fill="#111"/></svg>', price: 350 },
+    cur_custom:   { name: 'Custom',   svg: 'custom', price: 1000 },
     cur_admin:    { name: 'Royal',    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="#ffd700" stroke="#aa7700" stroke-width="1"/><path d="M2 1L5 5L8 2L11 5L14 1L13 6L3 6Z" fill="#ffd700" stroke="#aa7700" stroke-width="0.5"/></svg>', price: 0, exclusive: true }
   };
 
@@ -1521,15 +1522,14 @@
   // Build a cursor data URI from a CURSORS entry
   function getCursorSVG(cursorId) {
     if (!cursorId) return null;
-    // Custom drawn cursor (admin)
-    if (cursorId === 'custom') {
+    // Custom drawn cursor
+    if (cursorId === 'custom' || cursorId === 'cur_custom') {
       var custom = localStorage.getItem('arcade_custom_cursor');
       return custom || null;
     }
     if (!CURSORS[cursorId]) return null;
     var entry = CURSORS[cursorId];
     if (entry.svg === 'rainbow') {
-      // Rainbow cursor cycles hue — generate an SVG with current hue
       var hue = (Date.now() / 20) % 360;
       var color = 'hsl(' + hue + ',100%,55%)';
       return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24"><path d="M4 1L4 17L8 13L12 21L15 19.5L11 12L16 12Z" fill="' + color + '" stroke="#fff" stroke-width="1.2"/></svg>';
