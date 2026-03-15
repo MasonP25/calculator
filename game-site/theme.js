@@ -330,16 +330,13 @@
       canvas { border-color:${t.border}!important; }
 
       /* Cards & panels */
-      .card { background:${t.bg2}!important; border:none!important; color:${t.text}!important; }
-      .card .lg-inner { background-color:${t.bg2}44!important; box-shadow:inset 6px 6px 0 -6px ${t.bg2}44,inset 0 0 8px 1px ${t.bg2}44!important; }
-      .card:hover { box-shadow:0 12px 35px ${t.glow}!important; }
-      .panel,.score-col,.results-box,#setup,.vs-scores,.board,
+      .card,.panel,.score-col,.results-box,#setup,.vs-scores,.board,
       .mode-select button,.diff-btn,.round-btn,.mode-btn,
       .game-card,.stat-box,.online-panel,.online-info,.online-score,
       .score-display,.selector-btn,.lobby-container,.screen {
         background:${t.bg2}cc!important; border-color:${t.border}!important; color:${t.text}!important;
       }
-      .game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
+      .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 8px 30px ${t.glow}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
 
       /* Random button text matches theme tint */
