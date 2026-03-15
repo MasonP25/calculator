@@ -231,7 +231,7 @@
     nt_inferno:   { name: 'Inferno',    type: 'gradient', css: 'background:linear-gradient(90deg,#ff0000,#ff4400,#ffff00,#ff4400,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent', price: 0, exclusive: true },
     nt_hacker:    { name: 'Hacker',     type: 'font', css: 'font-family:monospace;color:#39ff14;text-shadow:0 0 6px #39ff14', price: 0, exclusive: true },
     nt_glitchfont:{ name: 'Glitch+',    type: 'font', css: 'text-shadow:3px 0 #ff0000,-3px 0 #00ffff,0 3px #ff00ff;letter-spacing:3px;font-weight:900', price: 0, exclusive: true },
-    nt_phantom:   { name: 'Phantom',    type: 'font', css: 'opacity:0.6;font-style:italic;letter-spacing:2px', price: 0, exclusive: true }
+    nt_phantom:   { name: 'Phantom',    type: 'font', css: 'font-style:italic;letter-spacing:2px;text-shadow:0 0 8px currentColor', price: 0, exclusive: true }
   };
 
   // ── Chat Bubbles ────────────────────────────────────────────────────
