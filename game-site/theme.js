@@ -330,7 +330,7 @@
       canvas { border-color:${t.border}!important; }
 
       /* Cards & panels */
-      .card { background:transparent!important; border:none!important; color:${t.text}!important; }
+      .card { background:${t.bg2}!important; border:none!important; color:${t.text}!important; }
       .card .lg-inner { background-color:${t.bg2}44!important; box-shadow:inset 6px 6px 0 -6px ${t.bg2}44,inset 0 0 8px 1px ${t.bg2}44!important; }
       .card:hover { box-shadow:0 12px 35px ${t.glow}!important; }
       .panel,.score-col,.results-box,#setup,.vs-scores,.board,
