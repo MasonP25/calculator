@@ -244,7 +244,7 @@
     cb_fire:     { name: 'Fire',     css: 'background:linear-gradient(135deg,#1a0a0a,#2a1000);border-left:3px solid #ff4400;box-shadow:0 0 10px #ff440033', price: 300 },
     cb_ice:      { name: 'Ice',      css: 'background:linear-gradient(135deg,#0a0a1a,#0a1a2a);border-left:3px solid #00d4ff;box-shadow:0 0 10px #00d4ff33', price: 300 },
     cb_gold:     { name: 'Gold',     css: 'background:linear-gradient(135deg,#1a1500,#2a2000);border:1px solid #ffd70066;box-shadow:0 0 8px #ffd70022', price: 350 },
-    cb_royal:    { name: 'Royal',    css: 'background:linear-gradient(135deg,#0a0020,#1a0040);border:2px solid #7b2ff7;box-shadow:0 0 12px #7b2ff766,0 0 24px #7b2ff733,inset 0 0 12px #7b2ff722', price: 0, exclusive: true }
+    cb_royal:    { name: 'Royal',    css: 'background:linear-gradient(135deg,#1a1200,#2a1e00);border:2px solid #ffd700;box-shadow:0 0 12px #ffd70066,0 0 24px #ffd70033,inset 0 0 12px #ffd70022', price: 0, exclusive: true }
   };
 
   // ── Name Effects ────────────────────────────────────────────────────
