@@ -138,6 +138,66 @@
       text:'#d0e8ff', dim:'#6090c0', accent:'#88ccff', accent2:'#aae0ff',
       glow:'rgba(136,204,255,0.25)', canvasBg:'#0f1e30', canvasBg2:'#0a1420',
     },
+    synthwave: {
+      name: 'Synthwave', icon: '🎹',
+      bg1:'#0e0018', bg2:'#1a0030', bg3:'#2a0050', border:'#ff00aa33',
+      text:'#ffe0f8', dim:'#aa60c0', accent:'#ff2d95', accent2:'#00fff0',
+      glow:'rgba(255,45,149,0.3)', canvasBg:'#1a0030', canvasBg2:'#0e0018',
+    },
+    amber: {
+      name: 'Amber', icon: '🍯',
+      bg1:'#1a1208', bg2:'#261c0e', bg3:'#382a18', border:'#4a3820',
+      text:'#f0e0c8', dim:'#a08858', accent:'#e8a020', accent2:'#ffcc44',
+      glow:'rgba(232,160,32,0.3)', canvasBg:'#261c0e', canvasBg2:'#1a1208',
+    },
+    rose: {
+      name: 'Rose Gold', icon: '🌹',
+      bg1:'#1a1018', bg2:'#281822', bg3:'#3a2432', border:'#4a3040',
+      text:'#f8e0e8', dim:'#a87888', accent:'#e8788a', accent2:'#f0b8a0',
+      glow:'rgba(232,120,138,0.25)', canvasBg:'#281822', canvasBg2:'#1a1018',
+    },
+    storm: {
+      name: 'Storm', icon: '⛈️',
+      bg1:'#0a0e18', bg2:'#121822', bg3:'#1e2838', border:'#283848',
+      text:'#c8d8e8', dim:'#607080', accent:'#4488ff', accent2:'#88bbff',
+      glow:'rgba(68,136,255,0.3)', canvasBg:'#121822', canvasBg2:'#0a0e18',
+    },
+    abyss: {
+      name: 'Abyss', icon: '🐙',
+      bg1:'#020810', bg2:'#041018', bg3:'#081828', border:'#0c2838',
+      text:'#a0c8e0', dim:'#406080', accent:'#00ccaa', accent2:'#40ffdd',
+      glow:'rgba(0,204,170,0.25)', canvasBg:'#041018', canvasBg2:'#020810',
+    },
+    peach: {
+      name: 'Peach', icon: '🍑',
+      bg1:'#fff5ee', bg2:'#ffeee0', bg3:'#ffd8c0', border:'#e8c0a8',
+      text:'#3a2018', dim:'#a07060', accent:'#ff7043', accent2:'#ff9a76',
+      glow:'rgba(255,112,67,0.2)', canvasBg:'#ffeee0', canvasBg2:'#fff5ee',
+    },
+    noir: {
+      name: 'Noir', icon: '🕵️',
+      bg1:'#080808', bg2:'#111111', bg3:'#1c1c1c', border:'#2a2a2a',
+      text:'#d0d0d0', dim:'#666666', accent:'#d4a520', accent2:'#ffffff',
+      glow:'rgba(212,165,32,0.2)', canvasBg:'#111111', canvasBg2:'#080808',
+    },
+    rust: {
+      name: 'Rust', icon: '🔧',
+      bg1:'#1a0e0a', bg2:'#281612', bg3:'#3a221a', border:'#4a3028',
+      text:'#f0d8c8', dim:'#a07060', accent:'#c45030', accent2:'#e88050',
+      glow:'rgba(196,80,48,0.3)', canvasBg:'#281612', canvasBg2:'#1a0e0a',
+    },
+    bubblegum: {
+      name: 'Bubblegum', icon: '🫧',
+      bg1:'#1a0820', bg2:'#28103a', bg3:'#3a1850', border:'#4a2068',
+      text:'#f8e0ff', dim:'#a868c8', accent:'#ff44cc', accent2:'#aa88ff',
+      glow:'rgba(255,68,204,0.3)', canvasBg:'#28103a', canvasBg2:'#1a0820',
+    },
+    emerald: {
+      name: 'Emerald', icon: '💎',
+      bg1:'#061208', bg2:'#0c2010', bg3:'#143020', border:'#1c4028',
+      text:'#c8f0d0', dim:'#509060', accent:'#30c860', accent2:'#ffd700',
+      glow:'rgba(48,200,96,0.3)', canvasBg:'#0c2010', canvasBg2:'#061208',
+    },
   };
 
   // ─── Custom theme builder ───
