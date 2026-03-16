@@ -225,7 +225,7 @@
           resultEl.style.color = won >= 200 ? '#ffd700' : 'var(--t-accent2,#00d4ff)';
           resultEl.textContent = '\uD83C\uDF89 You won ' + won + ' coins!';
           if (window.SFX) window.SFX.coin();
-          if (window.ArcadeCoins) window.ArcadeCoins.earn(won, 'Daily Spin');
+          _arcadeEarnCoins(won, 'Daily Spin');
           if (window.ArcadeLevels) window.ArcadeLevels.addXP(15, 'daily_spin');
           _recordSpin(won);
           btn.textContent = 'Already Spun Today';

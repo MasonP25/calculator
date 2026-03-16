@@ -368,7 +368,7 @@
         await _saveDailyChallenge();
         if (_dailyChallenge.completed) {
           // Award rewards
-          if (window.ArcadeCoins) window.ArcadeCoins.earn(75, 'Daily Challenge');
+          _arcadeEarnCoins(75, 'Daily Challenge');
           if (window.ArcadeLevels) window.ArcadeLevels.addXP(25, 'daily_challenge');
           if (window.ArcadeNotifications) {
             window.ArcadeNotifications.pushSelf(
@@ -391,7 +391,7 @@
         _dailyChallenge.progress = (_dailyChallenge.progress || 0) + amount;
         if (_dailyChallenge.progress >= ch.target) {
           _dailyChallenge.completed = true;
-          if (window.ArcadeCoins) window.ArcadeCoins.earn(75, 'Daily Challenge');
+          _arcadeEarnCoins(75, 'Daily Challenge');
           if (window.ArcadeLevels) window.ArcadeLevels.addXP(25, 'daily_challenge');
           if (window.ArcadeNotifications) {
             window.ArcadeNotifications.pushSelf(
@@ -438,7 +438,7 @@
           if (quests[i].progress >= quests[i].target) {
             quests[i].completed = true;
             // Award per-quest reward
-            if (window.ArcadeCoins) window.ArcadeCoins.earn(100, 'Weekly Quest');
+            _arcadeEarnCoins(100, 'Weekly Quest');
             if (window.ArcadeLevels) window.ArcadeLevels.addXP(50, 'weekly_quest');
             if (window.ArcadeNotifications) {
               window.ArcadeNotifications.pushSelf(
@@ -456,7 +456,7 @@
         await _saveWeeklyQuests();
         // Bonus for completing all 3
         if (allDone && quests.length === 3) {
-          if (window.ArcadeCoins) window.ArcadeCoins.earn(200, 'All Quests Bonus');
+          _arcadeEarnCoins(200, 'All Quests Bonus');
           if (window.ArcadeLevels) window.ArcadeLevels.addXP(100, 'all_quests_bonus');
           if (window.ArcadeNotifications) {
             window.ArcadeNotifications.pushSelf(

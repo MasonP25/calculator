@@ -631,7 +631,7 @@
         var actualWin = Math.random() < 0.96; // 48% overall: 50% * 96%
         if (actualWin) {
           var winAmount = bet * 2;
-          window.ArcadeCoins.earn(winAmount, 'Coin Flip Win');
+          _arcadeEarnCoins(winAmount, 'Coin Flip Win');
           resultEl.className = 'result-msg win';
           resultEl.textContent = result.toUpperCase() + '! You won ' + winAmount + ' coins!';
           recordGame(bet, winAmount);
@@ -758,7 +758,7 @@
         var resultEl = document.getElementById('wheel-result');
         var winAmount = Math.floor(bet * seg.mult);
         if (winAmount > 0) {
-          window.ArcadeCoins.earn(winAmount, 'Wheel Spin ' + seg.label);
+          _arcadeEarnCoins(winAmount, 'Wheel Spin ' + seg.label);
           resultEl.className = 'result-msg ' + (seg.mult >= 2 ? 'win' : 'neutral');
           resultEl.textContent = seg.label + '! You won ' + winAmount + ' coins!';
         } else {
@@ -888,7 +888,7 @@
       var multIdx = Math.min(bestMatch - 3, mults.length - 1);
       var mult = mults[multIdx];
       var winAmount = cost * mult;
-      window.ArcadeCoins.earn(winAmount, 'Scratch Card ' + scratchTier);
+      _arcadeEarnCoins(winAmount, 'Scratch Card ' + scratchTier);
       resultEl.className = 'result-msg win';
       resultEl.textContent = bestMatch + 'x ' + matchSym + '! You won ' + winAmount + ' coins!';
       recordGame(cost, winAmount);

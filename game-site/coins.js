@@ -5,6 +5,24 @@
   var _equipped = { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '', chatBubble: '', nameEffect: '', cursor: '' };
   var _loaded = false;
   var _profileCache = {};
+  var _adminAuthed = false;
+
+  // Token key (obfuscated)
+  var _tk = [65,114,99,83,51,99,82,51,116].map(function(c){return String.fromCharCode(c)}).join('');
+
+  // Simple hash for token validation
+  function _hash(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    }
+    return h.toString(36);
+  }
+
+  function _makeToken(amount, reason) {
+    var t = Math.floor(Date.now() / 30000);
+    return _hash(amount + ':' + (reason || '') + ':' + t + ':' + _tk);
+  }
 
   // Firebase refs (set after firebase-lb.js loads)
   var _db = null;
@@ -115,6 +133,20 @@
     }));
   }
 
+  // Internal earn (no validation needed)
+  function _earnInternal(amount, reason) {
+    if (_isGuest() || amount <= 0) return;
+    _balance += amount;
+    _save();
+    _dispatch();
+    console.log('[Coins] +' + amount + (reason ? ' (' + reason + ')' : '') + ' → ' + _balance);
+    if (window.ArcadeBadges) window.ArcadeBadges.increment('totalCoinsEarned', amount);
+    if (window.ArcadeChallenges) {
+      window.ArcadeChallenges.incrementQuest('coins_earned', amount);
+      window.ArcadeChallenges.checkDailyCoinChallenge(amount);
+    }
+  }
+
   // ─── Public API ───
   window.ArcadeCoins = {
     init: function() {
@@ -125,17 +157,14 @@
 
     getBalance: function() { return _balance; },
 
-    earn: function(amount, reason) {
-      if (_isGuest() || amount <= 0) return;
-      _balance += amount;
-      _save();
-      _dispatch();
-      console.log('[Coins] +' + amount + (reason ? ' (' + reason + ')' : '') + ' → ' + _balance);
-      if (window.ArcadeBadges) window.ArcadeBadges.increment('totalCoinsEarned', amount);
-      if (window.ArcadeChallenges) {
-        window.ArcadeChallenges.incrementQuest('coins_earned', amount);
-        window.ArcadeChallenges.checkDailyCoinChallenge(amount);
+    // Token-protected earn — requires valid token from game code
+    earn: function(amount, reason, token) {
+      if (_adminAuthed) { _earnInternal(amount, reason); return; }
+      if (!token || token !== _makeToken(amount, reason)) {
+        console.warn('[Coins] Invalid token');
+        return;
       }
+      _earnInternal(amount, reason);
     },
 
     spend: function(amount) {
@@ -220,7 +249,20 @@
       _loaded = false;
       _profileCache = {};
       return _load();
-    }
+    },
+
+    // Admin auth
+    adminLogin: function(pw) {
+      if (pw === '123') {
+        _adminAuthed = true;
+        console.log('[Coins] Admin authenticated');
+        return true;
+      }
+      console.warn('[Coins] Wrong password');
+      return false;
+    },
+
+    isAdmin: function() { return _adminAuthed; }
   };
 
   // Auto-init
@@ -235,3 +277,15 @@
     window.ArcadeCoins.reload();
   });
 })();
+
+// ─── Coin reward helper (used by game pages) ───
+function _arcadeEarnCoins(amount, reason) {
+  var _tk = [65,114,99,83,51,99,82,51,116].map(function(c){return String.fromCharCode(c)}).join('');
+  var t = Math.floor(Date.now() / 30000);
+  var s = amount + ':' + (reason || '') + ':' + t + ':' + _tk;
+  var h = 0;
+  for (var i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  if (window.ArcadeCoins) window.ArcadeCoins.earn(amount, reason, h.toString(36));
+}

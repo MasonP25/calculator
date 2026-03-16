@@ -106,7 +106,7 @@
     updateCounter();
 
     if (window.ArcadeCoins) {
-      window.ArcadeCoins.earn(REWARD, 'Easter egg #' + (parseInt(id) + 1));
+      _arcadeEarnCoins(REWARD, 'Easter egg #' + (parseInt(id) + 1));
     }
 
     setTimeout(function() { egg.style.display = 'none'; }, 500);
@@ -114,7 +114,7 @@
     if (found.length >= TOTAL) {
       setTimeout(function() {
         var bonus = 50;
-        if (window.ArcadeCoins) window.ArcadeCoins.earn(bonus, 'Easter egg hunt complete!');
+        _arcadeEarnCoins(bonus, 'Easter egg hunt complete!');
         var msg = document.createElement('div');
         msg.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100001;background:var(--t-bg2,#1a1a2e);border:2px solid #ffd700;border-radius:16px;padding:2rem;text-align:center;font-family:"Segoe UI",Tahoma,sans-serif;box-shadow:0 12px 50px rgba(0,0,0,0.7);color:#e0e0e0;max-width:320px';
         msg.innerHTML = '<div style="font-size:2.5rem;margin-bottom:0.5rem">\uD83C\uDF89\uD83D\uDC30\uD83C\uDF89</div>'

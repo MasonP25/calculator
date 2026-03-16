@@ -56,7 +56,7 @@ window.HallOfFame = {
     localStorage.setItem(key, JSON.stringify(list));
     // Award coins for finishing a game (not idle miner — no finish state)
     if (window.ArcadeCoins && gameId !== 'idleminer') {
-      window.ArcadeCoins.earn(10, 'finish ' + gameId);
+      _arcadeEarnCoins(10, 'finish ' + gameId);
     }
     // Track games played for badges
     if (window.ArcadeBadges && gameId !== 'idleminer') {

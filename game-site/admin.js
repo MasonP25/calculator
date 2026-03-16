@@ -111,9 +111,32 @@
     return input;
   }
 
+  var _authed = false;
+
+  function _requireAuth() {
+    if (_authed) return true;
+    if (window.ArcadeCoins && window.ArcadeCoins.isAdmin && window.ArcadeCoins.isAdmin()) {
+      _authed = true;
+      return true;
+    }
+    console.warn('[Admin] Not authenticated. Run: ArcadeAdmin.login("password")');
+    return false;
+  }
+
   window.ArcadeAdmin = {
+    login: function(pw) {
+      if (window.ArcadeCoins && window.ArcadeCoins.adminLogin && window.ArcadeCoins.adminLogin(pw)) {
+        _authed = true;
+        console.log('[Admin] ✓ Authenticated. All commands unlocked.');
+        return true;
+      }
+      console.warn('[Admin] Wrong password');
+      return false;
+    },
+
     // ── Set a user's coin balance ──
     setCoins: function (username, amount) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       amount = parseInt(amount) || 0;
       return _initFirebase().then(function () {
@@ -133,6 +156,7 @@
 
     // ── Add coins to a user ──
     addCoins: function (username, amount) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       amount = parseInt(amount) || 0;
       return _initFirebase().then(function () {
@@ -151,6 +175,7 @@
 
     // ── Give a specific item to a user ──
     giveItem: function (username, itemId) {
+      if (!_requireAuth()) return;
       if (!username || !itemId) return console.error('[Admin] Username and itemId required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -171,6 +196,7 @@
 
     // ── Give ALL items to a user ──
     giveAllItems: function (username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       var allItems = [];
       if (window.ArcadeAvatar) {
@@ -202,6 +228,7 @@
     // ── Set equipped items for a user ──
     // Usage: ArcadeAdmin.setEquipped('mason', { hat: 'hat_crown', nametagColor: 'nt_rainbow', skin: 'skin_red' })
     setEquipped: function (username, equippedObj) {
+      if (!_requireAuth()) return;
       if (!username || !equippedObj) return console.error('[Admin] Username and equipped object required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -224,6 +251,7 @@
     // Usage: ArcadeAdmin.setScore('snake', 'mason', 9999)
     // Also accepts game names: ArcadeAdmin.setScore('Doodle Jump', 'mason', 9999)
     setScore: function (gameId, name, score) {
+      if (!_requireAuth()) return;
       if (!gameId || !name) return console.error('[Admin] gameId and name required');
       // Try to resolve game name to game id
       gameId = _resolveGameId(gameId);
@@ -255,6 +283,7 @@
 
     // ── Delete a leaderboard entry ──
     deleteScore: function (gameId, name) {
+      if (!_requireAuth()) return;
       if (!gameId || !name) return console.error('[Admin] gameId and name required');
       gameId = _resolveGameId(gameId);
       return _initFirebase().then(function () {
@@ -270,6 +299,7 @@
 
     // ── View a user's full profile ──
     viewUser: function (username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -288,6 +318,7 @@
 
     // ── List all available item IDs ──
     listItems: function () {
+      if (!_requireAuth()) return;
       if (!window.ArcadeAvatar) return console.error('[Admin] ArcadeAvatar not loaded');
       console.log('── Avatar Items ──');
       Object.keys(window.ArcadeAvatar.ITEMS).forEach(function (id) {
@@ -310,6 +341,7 @@
 
     // ── Unlock all exclusive items for a user ──
     unlockExclusives: function (username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       var exclusiveItems = [];
       if (window.ArcadeAvatar) {
@@ -343,6 +375,7 @@
 
     // ── Give a badge to a user ──
     giveBadge: function (username, badgeId) {
+      if (!_requireAuth()) return;
       if (!username || !badgeId) return console.error('[Admin] Username and badgeId required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -362,6 +395,7 @@
 
     // ── Reset all badges for a user ──
     resetBadges: function (username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -379,6 +413,7 @@
 
     // ── Add a friend for a user (bypass request) ──
     addFriend: function (username, friendName) {
+      if (!_requireAuth()) return;
       if (!username || !friendName) return console.error('[Admin] Both usernames required');
       return _initFirebase().then(function () {
         var key1 = username.toLowerCase();
@@ -402,6 +437,7 @@
 
     // ── View friend requests for a user ──
     viewRequests: function (username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function () {
         var key = username.toLowerCase();
@@ -420,6 +456,7 @@
 
     // ── List all badge IDs ──
     listBadges: function () {
+      if (!_requireAuth()) return;
       if (window.ArcadeBadges && window.ArcadeBadges.BADGES) {
         console.log('── All Badges ──');
         window.ArcadeBadges.BADGES.forEach(function (b) {
@@ -433,6 +470,7 @@
     // ── Quick help ──
     // ─── XP / Level Commands ───
     setXP: function(username, amount) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       amount = parseInt(amount) || 0;
       return _initFirebase().then(function() {
@@ -450,6 +488,7 @@
     },
 
     addXP: function(username, amount) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       amount = parseInt(amount) || 0;
       return _initFirebase().then(function() {
@@ -467,6 +506,7 @@
     },
 
     setLevel: function(username, level) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       level = parseInt(level) || 0;
       var xp = level * level * 25;
@@ -486,6 +526,7 @@
 
     // ─── Notification Commands ───
     pushNotif: function(username, title, body) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function() {
         var key = username.toLowerCase();
@@ -507,6 +548,7 @@
     },
 
     clearNotifs: function(username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function() {
         var key = username.toLowerCase();
@@ -523,6 +565,7 @@
 
     // ─── Trade Commands ───
     viewTrades: function(username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function() {
         var key = username.toLowerCase();
@@ -546,6 +589,7 @@
     },
 
     adminGift: function(fromUser, toUser, itemId) {
+      if (!_requireAuth()) return;
       if (!fromUser || !toUser || !itemId) return console.error('[Admin] fromUser, toUser, and itemId required');
       return _initFirebase().then(function() {
         var fRef = _doc(_db, 'users', fromUser.toLowerCase());
@@ -565,6 +609,7 @@
     },
 
     adminGiftCoins: function(fromUser, toUser, amount) {
+      if (!_requireAuth()) return;
       if (!fromUser || !toUser) return console.error('[Admin] fromUser and toUser required');
       amount = parseInt(amount) || 0;
       return _initFirebase().then(function() {
@@ -585,6 +630,7 @@
 
     // ─── NEW: Challenges/Activity/Ratings/Casino/Profile admin ───
     resetChallenge: function(user) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _setDoc(_doc(_db, 'users', user.toLowerCase()), { dailyChallenge: {} }, { merge: true }).then(function() {
           console.log('[Admin] Reset daily challenge for ' + user);
@@ -593,6 +639,7 @@
     },
 
     resetQuests: function(user) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _setDoc(_doc(_db, 'users', user.toLowerCase()), { weeklyQuests: {} }, { merge: true }).then(function() {
           console.log('[Admin] Reset weekly quests for ' + user);
@@ -601,6 +648,7 @@
     },
 
     viewRatings: function(gameId) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         var q = _query(_collection(_db, 'ratings'), _limit(50));
         return _getDocs(q).then(function(snap) {
@@ -617,6 +665,7 @@
     },
 
     deleteRating: function(gameId, user) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         var docId = gameId + '_' + user.toLowerCase();
         return _setDoc(_doc(_db, 'ratings', docId), { deleted: true }).then(function() {
@@ -626,6 +675,7 @@
     },
 
     setBio: function(user, text) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _setDoc(_doc(_db, 'users', user.toLowerCase()), { bio: (text || '').substring(0, 150) }, { merge: true }).then(function() {
           console.log('[Admin] Set bio for ' + user);
@@ -634,6 +684,7 @@
     },
 
     setBanner: function(user, banner) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _setDoc(_doc(_db, 'users', user.toLowerCase()), { banner: banner }, { merge: true }).then(function() {
           console.log('[Admin] Set banner for ' + user + ' to ' + banner);
@@ -642,6 +693,7 @@
     },
 
     setCasinoStats: function(user, stats) {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _setDoc(_doc(_db, 'users', user.toLowerCase()), { casinoStats: stats }, { merge: true }).then(function() {
           console.log('[Admin] Set casino stats for ' + user);
@@ -650,6 +702,7 @@
     },
 
     postActivity: function(type, user, data) {
+      if (!_requireAuth()) return;
       if (window.ArcadeActivity) {
         window.ArcadeActivity.post(type, data || {});
         console.log('[Admin] Posted activity: ' + type);
@@ -658,6 +711,7 @@
 
     // ── Ban a user by username + device fingerprint ──
     ban: function(username, reason) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       reason = reason || 'No reason given';
       return _initFirebase().then(function() {
@@ -696,6 +750,7 @@
 
     // ── Unban a user ──
     unban: function(username) {
+      if (!_requireAuth()) return;
       if (!username) return console.error('[Admin] Username required');
       return _initFirebase().then(function() {
         return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function(mod) {
@@ -732,6 +787,7 @@
 
     // ── List all bans ──
     listBans: function() {
+      if (!_requireAuth()) return;
       return _initFirebase().then(function() {
         return _getDocs(_collection(_db, 'bans')).then(function(snap) {
           if (snap.empty) return console.log('[Admin] No bans found');

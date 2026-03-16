@@ -332,7 +332,7 @@ a.back:hover { color: #7b2ff7; }
     // Coins
     if (window.ArcadeCoins && score > 0) {
       let earned = Math.floor(score / 50);
-      if (earned > 0) window.ArcadeCoins.earn(earned);
+      if (earned > 0) _arcadeEarnCoins(earned);
     }
   }
 

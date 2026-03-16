@@ -138,7 +138,7 @@ window.FirebaseLB = {
         for (var p = 0; p < scores.length && p < 3; p++) {
           if (scores[p].name === name) {
             var bonus = [50, 30, 15][p] * (isGOTD ? 2 : 1);
-            window.ArcadeCoins.earn(bonus, '#' + (p + 1) + ' on ' + gameId + (isGOTD ? ' (2x GOTD)' : ''));
+            _arcadeEarnCoins(bonus, '#' + (p + 1) + ' on ' + gameId + (isGOTD ? ' (2x GOTD)' : ''));
             // Post activity only for #1 on leaderboard
             if (p === 0 && window.ArcadeActivity) {
               window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
