@@ -2,11 +2,11 @@
   "manifest_version": 3,
   "name": "Mason's Arcade",
   "version": "1.0",
-  "description": "Quick launcher for Mason's Arcade - 100+ free browser games",
+  "description": "Play 100+ free arcade games right from your browser toolbar",
   "icons": { "128": "icon.svg" },
   "action": {
     "default_icon": "icon.svg",
-    "default_title": "Open Mason's Arcade"
-  },
-  "background": { "service_worker": "background.js" }
+    "default_title": "Mason's Arcade",
+    "default_popup": "popup.html"
+  }
 }
