@@ -1120,12 +1120,11 @@
   btn.innerHTML = '&#x26F6;';
   btn.title = 'Fullscreen';
   if (gc) {
-    gc.style.position = 'relative';
-    btn.style.cssText = 'position:absolute;bottom:10px;right:10px;z-index:10;width:36px;height:36px;border-radius:50%;background:rgba(26,26,46,0.85);border:1px solid rgba(255,255,255,0.2);color:#ccc;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s,opacity 0.2s;opacity:0.6';
-    btn.onmouseover = function() { btn.style.opacity = '1'; btn.style.borderColor = '#7b2ff7'; btn.style.color = '#fff'; };
-    btn.onmouseout = function() { btn.style.opacity = '0.6'; btn.style.borderColor = 'rgba(255,255,255,0.2)'; btn.style.color = '#ccc'; };
+    btn.style.cssText = 'position:fixed;bottom:16px;left:16px;z-index:997;width:36px;height:36px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s';
+    btn.onmouseover = function() { btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; };
+    btn.onmouseout = function() { btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; };
     var style = document.createElement('style');
-    style.textContent = '.game-container:fullscreen{border:none;border-radius:0;box-shadow:none;max-width:none;background:#000}.game-container:fullscreen iframe{width:100%;height:100%}.game-container:fullscreen #fullscreen-btn{position:fixed;bottom:16px;right:16px;z-index:99999}';
+    style.textContent = '.game-container:fullscreen{border:none;border-radius:0;box-shadow:none;max-width:none;background:#000}.game-container:fullscreen iframe{width:100%;height:100%}';
     document.head.appendChild(style);
     btn.onclick = function() {
       if (document.fullscreenElement) {
@@ -1134,7 +1133,7 @@
         gc.requestFullscreen();
       }
     };
-    gc.appendChild(btn);
+    document.body.appendChild(btn);
   } else {
     btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:997;width:36px;height:36px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s';
     btn.onmouseover = function() { btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; };
