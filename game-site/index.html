@@ -10,6 +10,12 @@
 <meta name="google-site-verification" content="aqiAwnKAFh8ZJjEWU1yz6dHdGqabH9QDMliMyYT2040" />
 <link rel="canonical" href="https://masonp25.github.io/calculator/game-site/">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4 C28 12 13 24 13 40 C13 51 21 60 32 60 C43 60 51 51 51 40 C51 30 44 20 40 14 C37 18 36 24 38 30 C34 24 30 16 32 4Z' fill='%23E65100'/%3E%3Cpath d='M32 18 C28 26 18 32 18 43 C18 52 24 58 32 58 C40 58 46 52 46 43 C46 34 38 26 32 18Z' fill='%23FF6D00'/%3E%3Cpath d='M32 30 C29 36 22 40 22 47 C22 53 27 57 32 57 C37 57 42 53 42 47 C42 40 35 36 32 30Z' fill='%23FFA726'/%3E%3Cpath d='M32 40 C30 44 27 46 27 50 C27 53 29 55 32 55 C35 55 37 53 37 50 C37 46 34 44 32 40Z' fill='%23FFCC02'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mason's Arcade">
+<link rel="apple-touch-icon" href="favicon.svg">
 <!-- Open Graph (social media sharing) -->
 <meta property="og:title" content="Mason's Arcade - Free Online Games">
 <meta property="og:description" content="Play 100+ free arcade games in your browser. Multiplayer, leaderboards, avatars, and more.">
@@ -2789,5 +2795,10 @@
 })();
 </script>
 <script src="easter.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
 </body>
 </html>

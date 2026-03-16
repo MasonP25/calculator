@@ -1,0 +1,20 @@
+{
+  "name": "Mason's Arcade",
+  "short_name": "Arcade",
+  "description": "Play 100+ free online arcade games in your browser. Multiplayer, leaderboards, avatars, and more.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0f0f1a",
+  "background_color": "#0f0f1a",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["games", "entertainment"]
+}
