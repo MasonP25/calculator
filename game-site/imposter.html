@@ -672,14 +672,15 @@ var WORDS = {
     'School': ['Homework','Recess','Detention','Field Trip','Pop Quiz','Cafeteria','Gym Class','Science Fair','Prom','Graduation','Study Hall','Locker Room','Assembly','Book Report','Fire Drill','Group Project','Parent Conference','Honor Roll','Substitute Teacher','Snow Day'],
     'Technology': ['Smartphone','Laptop','Bluetooth','WiFi','GPS','Virtual Reality','Drone','Robot','3D Printer','Smartwatch','Alexa','Tablet','USB Drive','Webcam','AirPods','Projector','Hard Drive','Server','Satellite','Hologram'],
     'Movies & TV': ['Star Wars','Harry Potter','Marvel','Batman','Jurassic Park','Finding Nemo','Shrek','SpongeBob','The Office','Stranger Things','Game of Thrones','Breaking Bad','Forrest Gump','Titanic','The Lion King','Frozen','Avatar','The Simpsons','Friends','Squid Game'],
-    'Music': ['Guitar Solo','Drum Roll','Karaoke','Concert','Album','Playlist','Remix','Beat Drop','Chorus','Encore','Vinyl Record','Mixtape','Acoustic','Autotune','Lullaby','Ringtone','Jingle','Mashup','Duet','Soundtrack'],
+    'Music': ['Guitar Solo','Drum Roll','Sing Along','Record Label','Album','Playlist','Remix','Beat Drop','Chorus','Encore','Vinyl Record','Mixtape','Acoustic','Autotune','Lullaby','Ringtone','Jingle','Mashup','Duet','Soundtrack'],
     'Clothing': ['Sneakers','Hoodie','Jeans','Sunglasses','Baseball Cap','Flip Flops','Necktie','Raincoat','Pajamas','Tuxedo','Swimsuit','Overalls','Beanie','Scarf','Crocs','Hawaiian Shirt','Leather Jacket','Cargo Pants','Socks','Bathrobe'],
     'Holidays': ['Christmas','Halloween','Thanksgiving','Easter','Valentines Day','New Years','Fourth of July','St Patricks Day','Mothers Day','Fathers Day','April Fools','Labor Day','Memorial Day','Cinco de Mayo','Mardi Gras','Black Friday','Hanukkah','Diwali','Chinese New Year','Birthday'],
-    'Vehicles': ['Monster Truck','Helicopter','Submarine','Jet Ski','Hot Air Balloon','Limousine','Ambulance','Fire Truck','Ice Cream Truck','Segway','Skateboard','Canoe','Yacht','Bicycle','Motorcycle','Tractor','School Bus','Taxi','Gondola','Hovercraft'],
-    'Desserts': ['Brownie','Cupcake','Tiramisu','Cheesecake','Creme Brulee','Eclair','Macaron','Sundae','Panna Cotta','Baklava','Cannoli','Mousse','Flan','Donut','Apple Pie','Gelato','Sorbet','Pudding','Cookie','Mochi'],
+    'Vehicles': ['Monster Truck','Helicopter','Submarine','Jet Ski','Hot Air Balloon','Limousine','Ambulance','Fire Truck','Ice Cream Truck','Segway','Snowmobile','Canoe','Yacht','Bicycle','Motorcycle','Tractor','School Bus','Taxi','Gondola','Hovercraft'],
+    'Desserts': ['Brownie','Cupcake','Tiramisu','Strawberry Shortcake','Creme Brulee','Eclair','Macaron','Sundae','Panna Cotta','Baklava','Cannoli','Mousse','Flan','Donut','Apple Pie','Gelato','Sorbet','Pudding','Cookie','Mochi'],
     'Mythical Creatures': ['Dragon','Unicorn','Phoenix','Mermaid','Werewolf','Vampire','Bigfoot','Kraken','Griffin','Centaur','Yeti','Pegasus','Minotaur','Banshee','Goblin','Fairy','Troll','Cyclops','Hydra','Sphinx']
 };
 var ALL_WORDS = Object.values(WORDS).flat();
+var usedWords = [];
 
 // ---------- Game State ----------
 var G = {
@@ -887,8 +888,11 @@ async function startNewRound(roundNum) {
     var data = G.data;
     var players = data.players;
 
-    // Pick random word and imposter (truly random using crypto if available)
-    var word = ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
+    // Pick random word that hasn't been used this session
+    var available = ALL_WORDS.filter(function(w) { return usedWords.indexOf(w) === -1; });
+    if (available.length === 0) { usedWords = []; available = ALL_WORDS.slice(); }
+    var word = available[Math.floor(Math.random() * available.length)];
+    usedWords.push(word);
     var imposterIdx;
     if (window.crypto && window.crypto.getRandomValues) {
         var arr = new Uint32Array(1);
@@ -922,8 +926,18 @@ async function startNewRound(roundNum) {
         'Activities': 'Activity',
         'Objects': 'Object',
         'Occupations': 'Person',
-        'Nature': 'Place',
-        'Entertainment': 'Place'
+        'Nature': 'Nature',
+        'Entertainment': 'Event',
+        'Sports': 'Sport',
+        'School': 'School',
+        'Technology': 'Tech',
+        'Movies & TV': 'Media',
+        'Music': 'Music',
+        'Clothing': 'Clothing',
+        'Holidays': 'Holiday',
+        'Vehicles': 'Vehicle',
+        'Desserts': 'Dessert',
+        'Mythical Creatures': 'Creature'
     };
     var imposterHint = '';
     var cats = Object.keys(WORDS);
