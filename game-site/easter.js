@@ -22,6 +22,7 @@
   // Determine which page we're on
   var page = (location.pathname.split('/').pop() || 'index.html').replace('.html', '');
   if (page === '' || page === 'index') page = 'index';
+  if (page === 'minecraft' || page === 'eaglercraft') return;
 
   // Each page has specific egg IDs assigned to it
   // index: 0-9 (on game cards), game pages: 10-14, fame: 15-16, shop: 17-18, profile: 19
