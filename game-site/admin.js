@@ -848,4 +848,24 @@
       );
     }
   };
+
+  // Make all command names case-insensitive (e.g. setcoins, SETCOINS, SetCoins all work)
+  var _methods = {};
+  Object.keys(window.ArcadeAdmin).forEach(function(k) {
+    _methods[k.toLowerCase()] = k;
+  });
+  window.ArcadeAdmin = new Proxy(window.ArcadeAdmin, {
+    get: function(target, prop) {
+      if (typeof prop === 'string') {
+        var real = _methods[prop.toLowerCase()];
+        if (real) return target[real];
+      }
+      return target[prop];
+    }
+  });
+
+  // Allow any casing for the global name too
+  window.arcadeadmin = window.ArcadeAdmin;
+  window.arcadeAdmin = window.ArcadeAdmin;
+  window.ARCADEADMIN = window.ArcadeAdmin;
 })();
