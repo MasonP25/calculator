@@ -726,6 +726,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://masonp25.github.io/calculator/game-site/growagarden.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://masonp25.github.io/calculator/game-site/obbybike.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://masonp25.github.io/calculator/game-site/colorraceobby.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://masonp25.github.io/calculator/game-site/tinyfishing.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://masonp25.github.io/calculator/game-site/goingballs.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
