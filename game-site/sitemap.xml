@@ -686,11 +686,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://masonp25.github.io/calculator/game-site/gtasimulator.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://masonp25.github.io/calculator/game-site/carfootball.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -702,11 +697,6 @@
   </url>
   <url>
     <loc>https://masonp25.github.io/calculator/game-site/catsimulator.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://masonp25.github.io/calculator/game-site/funnyshooter.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
