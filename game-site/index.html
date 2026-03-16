@@ -2817,12 +2817,26 @@
   ];
 
   var step = 0;
-  var overlay, box, svg;
+  var overlay, box, svg, currentTarget = null;
+
+  function updateSpotlight() {
+    if (!currentTarget) {
+      svg.innerHTML = '<rect width="100%" height="100%" fill="rgba(10,10,20,0.85)"/>';
+      return;
+    }
+    var r = currentTarget.getBoundingClientRect();
+    var pad = 8;
+    svg.innerHTML = '<defs><mask id="tour-mask"><rect width="100%" height="100%" fill="white"/>' +
+      '<rect x="'+(r.left-pad)+'" y="'+(r.top-pad)+'" width="'+(r.width+pad*2)+'" height="'+(r.height+pad*2)+'" rx="12" fill="black"/>' +
+      '</mask></defs><rect width="100%" height="100%" fill="rgba(10,10,20,0.85)" mask="url(#tour-mask)"/>';
+  }
+
+  function onScroll() { updateSpotlight(); }
 
   function start() {
     overlay = document.createElement('div');
     overlay.id = 'tour-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;font-family:"Segoe UI",Tahoma,sans-serif;';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;font-family:"Segoe UI",Tahoma,sans-serif;pointer-events:none;';
 
     svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
@@ -2832,26 +2846,23 @@
 
     box = document.createElement('div');
     box.id = 'tour-box';
-    box.style.cssText = 'position:absolute;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-accent,#7b2ff7);border-radius:16px;padding:1.5rem;max-width:340px;width:90%;box-shadow:0 12px 50px rgba(0,0,0,0.7);z-index:100002;transition:all 0.3s ease';
+    box.style.cssText = 'position:fixed;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-accent,#7b2ff7);border-radius:16px;padding:1.5rem;max-width:340px;width:90%;box-shadow:0 12px 50px rgba(0,0,0,0.7);z-index:100002;transition:all 0.3s ease;pointer-events:auto;';
     overlay.appendChild(box);
     document.body.appendChild(overlay);
+    window.addEventListener('scroll', onScroll, true);
     showStep();
   }
 
   function showStep() {
     var s = STEPS[step];
     var targetEl = s.target ? document.querySelector(s.target) : null;
+    currentTarget = targetEl;
 
-    // Spotlight
     if (targetEl) {
-      var r = targetEl.getBoundingClientRect();
-      var pad = 8;
-      svg.innerHTML = '<defs><mask id="tour-mask"><rect width="100%" height="100%" fill="white"/>' +
-        '<rect x="'+(r.left-pad)+'" y="'+(r.top-pad)+'" width="'+(r.width+pad*2)+'" height="'+(r.height+pad*2)+'" rx="12" fill="black"/>' +
-        '</mask></defs><rect width="100%" height="100%" fill="rgba(10,10,20,0.85)" mask="url(#tour-mask)"/>';
-    } else {
-      svg.innerHTML = '<rect width="100%" height="100%" fill="rgba(10,10,20,0.85)"/>';
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(updateSpotlight, 350);
     }
+    updateSpotlight();
 
     var isLast = step === STEPS.length - 1;
     box.innerHTML =
@@ -2863,27 +2874,17 @@
         '<button id="tour-next" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:10px;padding:8px 22px;cursor:pointer;font-size:0.9rem;font-weight:600">' + (isLast ? 'Get Started!' : 'Next') + '</button>' +
       '</div>';
 
-    // Position box
-    if (targetEl) {
-      var r = targetEl.getBoundingClientRect();
-      var bw = Math.min(340, window.innerWidth * 0.9);
-      var top = r.bottom + 16;
-      if (top + 200 > window.innerHeight) top = r.top - 200;
-      var left = Math.max(10, Math.min(r.left + r.width / 2 - bw / 2, window.innerWidth - bw - 10));
-      box.style.top = top + 'px';
-      box.style.left = left + 'px';
-    } else {
-      box.style.top = '50%';
-      box.style.left = '50%';
-      box.style.transform = 'translate(-50%,-50%)';
-    }
+    // Position box fixed at bottom-center of screen
+    box.style.top = '';
+    box.style.left = '50%';
+    box.style.bottom = '2rem';
+    box.style.transform = 'translateX(-50%)';
 
     document.getElementById('tour-skip').onclick = finish;
     document.getElementById('tour-next').onclick = function() {
       if (window.SFX) window.SFX.click();
       if (isLast) { finish(); return; }
       step++;
-      box.style.transform = '';
       showStep();
     };
   }
@@ -2892,6 +2893,7 @@
     if (window.SFX) window.SFX.coin();
     localStorage.setItem('arcade_tour_done', '1');
     document.body.style.overflow = '';
+    window.removeEventListener('scroll', onScroll, true);
     overlay.remove();
   }
 
