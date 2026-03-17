@@ -139,8 +139,8 @@ window.FirebaseLB = {
           if (scores[p].name === name) {
             var bonus = [50, 30, 15][p] * (isGOTD ? 2 : 1);
             _arcadeEarnCoins(bonus, '#' + (p + 1) + ' on ' + gameId + (isGOTD ? ' (2x GOTD)' : ''));
-            // Post activity only for #1 on leaderboard
-            if (p === 0 && window.ArcadeActivity) {
+            // Post activity only for NEW #1 on leaderboard (skip if already #1)
+            if (p === 0 && window.ArcadeActivity && !(oldTop3.length > 0 && oldTop3[0].name.toLowerCase() === name.toLowerCase())) {
               window.ArcadeActivity.post('high_score', { gameId: gameId, score: score });
             }
             // Record placement for badges (position is 1-indexed)
