@@ -374,6 +374,11 @@
         color:${t.accent2}!important;
       }
       .scores .label,.round-info,.section-title,.count,.stat-label,.score-type { color:${t.dim}!important; }
+      .section-title .stxt {
+        background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
+        -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
+        background-clip:text!important;
+      }
 
       /* Game specific */
       .player-row,.lb-row { background:${t.bg1}!important; }
@@ -816,6 +821,12 @@
     var style = document.getElementById('theme-override');
     if (!style) { style = document.createElement('style'); style.id = 'theme-override'; document.head.appendChild(style); }
     style.textContent = buildCSS(t);
+    document.querySelectorAll('.section-title .stxt').forEach(function(el) {
+      el.style.background = 'linear-gradient(135deg,' + t.accent2 + ',' + t.accent + ')';
+      el.style.webkitBackgroundClip = 'text';
+      el.style.webkitTextFillColor = 'transparent';
+      el.style.backgroundClip = 'text';
+    });
     window.THEME = t;
     var _r=parseInt(t.canvasBg.slice(1,3),16),_g=parseInt(t.canvasBg.slice(3,5),16),_b=parseInt(t.canvasBg.slice(5,7),16);
     var _r2=parseInt(t.canvasBg2.slice(1,3),16),_g2=parseInt(t.canvasBg2.slice(3,5),16),_b2=parseInt(t.canvasBg2.slice(5,7),16);
