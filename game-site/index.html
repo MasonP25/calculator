@@ -713,8 +713,8 @@
     <button class="random-btn" id="randomGameBtn">&#127922; Random</button>
   </div>
 
-  <div class="section-title">&#128293; Popular</div>
-  <div class="games">
+  <div class="section-title" id="popularSection">&#128293; Popular</div>
+  <div class="games" id="popularGames">
     <a class="card" href="basketrandom.html">
       <div class="icon">&#127936;</div>
       <h2>Basket Random</h2>
@@ -771,6 +771,12 @@
       <h2>Minecraft</h2>
       <p>Build, mine, and survive in the classic sandbox game! Eaglercraft 1.8 in your browser!</p>
       <span class="badge solo">WASD / Mouse</span>
+    </a>
+    <a class="card" href="fireboywater.html">
+      <div class="icon">&#128293;</div>
+      <h2>Fireboy & Watergirl</h2>
+      <p>Team up in the Forest Temple! Fireboy uses arrows, Watergirl uses WASD. Solve puzzles together!</p>
+      <span class="badge mp">2P Local</span>
     </a>
   </div>
 
@@ -1728,9 +1734,9 @@
 
   function applyFilters() {
     var q = searchInput.value.toLowerCase().trim();
-    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
-    var sections = document.querySelectorAll('.section-title:not(#favSection):not(#recentSection)');
-    var grids = document.querySelectorAll('.games:not(#favGames):not(#recentGames)');
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
+    var sections = document.querySelectorAll('.section-title:not(#favSection):not(#recentSection):not(#popularSection)');
+    var grids = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames)');
     var anyVisible = false;
 
     cards.forEach(function(card) {
@@ -1783,7 +1789,7 @@
   document.getElementById('randomGameBtn').addEventListener('click', function() {
     var btn = this;
     if (btn.classList.contains('spinning')) return;
-    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card:not(.hidden-search)');
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card:not(.hidden-search)');
     if (cards.length === 0) return;
     if (window.SFX && window.SFX.random) window.SFX.random();
     btn.classList.add('spinning');
@@ -1843,7 +1849,7 @@
   });
 
   function injectFavButtons() {
-    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
+    var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
     cards.forEach(function(card) {
       var gid = getGameId(card);
       if (!gid) return;
@@ -1879,7 +1885,7 @@
     favGames.style.display = '';
     favGames.innerHTML = '';
     favs.forEach(function(gid) {
-      var orig = document.querySelector('.games:not(#favGames):not(#recentGames) .card[href="' + gid + '.html"]');
+      var orig = document.querySelector('.games:not(#favGames):not(#recentGames):not(#popularGames) .card[href="' + gid + '.html"]');
       if (!orig) return;
       var clone = orig.cloneNode(true);
       var oldBtn = clone.querySelector('.fav-btn');
@@ -1913,7 +1919,7 @@
     var favs = getFavorites();
     recent.forEach(function(entry) {
       var gid = entry.gameId;
-      var orig = document.querySelector('.games:not(#favGames):not(#recentGames) .card[href="' + gid + '.html"]');
+      var orig = document.querySelector('.games:not(#favGames):not(#recentGames):not(#popularGames) .card[href="' + gid + '.html"]');
       if (!orig) return;
       var clone = orig.cloneNode(true);
       var oldBtn = clone.querySelector('.fav-btn');
@@ -2020,7 +2026,7 @@
     var parts = [];
     sections.forEach(function(sec) {
       var title = sec.textContent.replace(/[^\w\s\/]/g, '').trim();
-      if (!title || title === 'Favorites' || title === 'Recently Played') return;
+      if (!title || title === 'Favorites' || title === 'Recently Played' || title === 'Popular') return;
       var gamesDiv = sec.nextElementSibling;
       while (gamesDiv && !gamesDiv.classList.contains('games')) gamesDiv = gamesDiv.nextElementSibling;
       if (!gamesDiv) return;
@@ -2868,7 +2874,7 @@
     if (window.ArcadeChallenges) {
       var gotdId = window.ArcadeChallenges.getGOTD();
       var gotdName = window.ArcadeChallenges.getGOTDName();
-      var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames) .card');
+      var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
       cards.forEach(function(card) {
         var href = card.getAttribute('href') || '';
         var cardGameId = href.replace('.html', '');
