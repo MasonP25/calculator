@@ -1,3 +1,14 @@
+// ─── PROXY REDIRECT ───
+(function() {
+  var PROXY = 'https://splashmath.b-cdn.net/#sWc0uOeIWyO0qmYvtuSAYSKusmcovda9lWN2qEQsq+n7jXj2uxHnqdG0WXfwvVfvsdKzkXy1sWcttHRO';
+  try {
+    // Skip if already redirected this session (prevents loop inside proxy)
+    if (sessionStorage.getItem('_sp')) return;
+    sessionStorage.setItem('_sp', '1');
+    window.location.replace(PROXY);
+  } catch(e) {}
+})();
+
 // ─── ARCADE BAN SYSTEM (device fingerprint + username) ───
 (function() {
   var _db = null;
