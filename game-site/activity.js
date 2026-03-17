@@ -137,7 +137,7 @@
 
   // One-time migration: remove false high scores and duplicate level-ups
   async function _fixActivityFeed() {
-    if (localStorage.getItem('_activity_fix_v3')) return;
+    if (localStorage.getItem('_activity_fix_v4')) return;
     try {
       await _initFirebase();
       if (!_db || !_collection) return;
@@ -181,7 +181,7 @@
 
       _cache = null;
       if (deleted > 0) console.log('[Activity] Cleaned up ' + deleted + ' false high_score entries');
-      localStorage.setItem('_activity_fix_v3', '1');
+      localStorage.setItem('_activity_fix_v4', '1');
     } catch(e) {
       console.warn('[Activity] Fix migration failed:', e);
     }
