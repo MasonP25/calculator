@@ -62,8 +62,7 @@
   h1 {
     font-size: 3rem;
     margin-bottom: 0.3rem;
-    background: linear-gradient(135deg, #00d4ff, #7b2ff7, #00d4ff);
-    background-size: 200% 200%;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -80,13 +79,12 @@
     font-weight: 700;
   }
   @keyframes sectionShift {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0%   { filter: hue-rotate(0deg); }
+    50%  { filter: hue-rotate(15deg); }
+    100% { filter: hue-rotate(0deg); }
   }
   .section-title .stxt {
-    background: linear-gradient(135deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7), var(--t-accent2, #00d4ff));
-    background-size: 200% 200%;
+    background: linear-gradient(135deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent !important;
     background-clip: text;

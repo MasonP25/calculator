@@ -318,12 +318,11 @@
       body { background:${t.bg1}!important; color:${t.text}!important; }
       a { color:${t.accent}!important; }
       @keyframes sectionShift {
-        0%   { background-position:0% 50%; }
-        50%  { background-position:100% 50%; }
-        100% { background-position:0% 50%; }
+        0%   { filter:hue-rotate(0deg); }
+        50%  { filter:hue-rotate(15deg); }
+        100% { filter:hue-rotate(0deg); }
       }
-      h1 { background-image:linear-gradient(135deg,${t.accent2},${t.accent},${t.accent2})!important;
-           background-size:200% 200%!important;
+      h1 { background-image:linear-gradient(135deg,${t.accent2},${t.accent})!important;
            -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
            background-clip:text!important;
            animation:sectionShift 3s ease-in-out infinite!important; }
@@ -376,8 +375,7 @@
       }
       .scores .label,.round-info,.section-title,.count,.stat-label,.score-type { color:${t.dim}!important; }
       .section-title .stxt {
-        background-image:linear-gradient(135deg,${t.accent2},${t.accent},${t.accent2})!important;
-        background-size:200% 200%!important;
+        background-image:linear-gradient(135deg,${t.accent2},${t.accent})!important;
         -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
         background-clip:text!important;
         animation:sectionShift 3s ease-in-out infinite!important;
