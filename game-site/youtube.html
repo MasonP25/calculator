@@ -98,6 +98,27 @@
     text-align: center;
     padding: 20px;
   }
+  .source-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .source-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #2a2a4a;
+    background: #1a1a2e;
+    color: #888;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .source-btn:hover { border-color: #ff4444; color: #ccc; }
+  .source-btn.active { background: #ff0000; border-color: #ff0000; color: #fff; }
+  .source-btn.fail { background: #331111; border-color: #662222; color: #884444; text-decoration: line-through; }
+  .status { color: #666; font-size: 0.75rem; margin-bottom: 0.8rem; text-align: center; }
   a.back {
     position: fixed;
     top: 14px;
@@ -125,16 +146,45 @@
   <input type="text" id="url" placeholder="Paste a YouTube link here...">
   <button id="watch">Watch</button>
 </div>
+<div class="source-bar" id="sources"></div>
+<div class="status" id="status"></div>
 <div class="game-container" id="player">
   <div class="placeholder">Paste a YouTube URL above and click Watch</div>
 </div>
 <script>
 (function() {
+  var SOURCES = [
+    { name: 'YouTube (Privacy)', base: 'https://www.youtube-nocookie.com/embed/', params: '?autoplay=1&iv_load_policy=3&rel=0&modestbranding=1' },
+    { name: 'YouTube', base: 'https://www.youtube.com/embed/', params: '?autoplay=1&iv_load_policy=3&rel=0&modestbranding=1' },
+    { name: 'Invidious 1', base: 'https://yewtu.be/embed/', params: '?autoplay=1' },
+    { name: 'Invidious 2', base: 'https://inv.nadeko.net/embed/', params: '?autoplay=1' },
+    { name: 'Piped', base: 'https://piped.video/embed/', params: '?autoplay=1' }
+  ];
+
   var urlInput = document.getElementById('url');
   var watchBtn = document.getElementById('watch');
   var player = document.getElementById('player');
-  var base = 'https://www.youtube-nocookie.com/embed/';
-  var params = '?autoplay=1&iv_load_policy=3&rel=0&modestbranding=1';
+  var sourcesEl = document.getElementById('sources');
+  var statusEl = document.getElementById('status');
+  var currentId = null;
+  var currentSource = 0;
+  var tried = [];
+  var btns = [];
+
+  // Build source buttons
+  SOURCES.forEach(function(s, i) {
+    var btn = document.createElement('button');
+    btn.className = 'source-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = s.name;
+    btn.addEventListener('click', function() {
+      currentSource = i;
+      btns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      if (currentId) embedVideo(currentId, i);
+    });
+    sourcesEl.appendChild(btn);
+    btns.push(btn);
+  });
 
   function extractId(url) {
     url = url.trim();
@@ -144,13 +194,41 @@
     return null;
   }
 
+  function embedVideo(id, srcIdx) {
+    var s = SOURCES[srcIdx];
+    statusEl.textContent = 'Loading from ' + s.name + '...';
+    var iframe = document.createElement('iframe');
+    iframe.allowFullscreen = true;
+    iframe.src = s.base + id + s.params;
+
+    // Detect load failure (blocked iframes usually fire load but show blank or error)
+    var loaded = false;
+    iframe.addEventListener('load', function() {
+      loaded = true;
+      statusEl.textContent = 'Playing via ' + s.name;
+    });
+
+    player.innerHTML = '';
+    player.appendChild(iframe);
+  }
+
+  function tryAll(id) {
+    currentId = id;
+    tried = [];
+    currentSource = 0;
+    btns.forEach(function(b) { b.classList.remove('active', 'fail'); });
+    btns[0].classList.add('active');
+    embedVideo(id, 0);
+  }
+
   function loadVideo() {
     var id = extractId(urlInput.value);
     if (!id) {
-      player.innerHTML = '<div class="placeholder">Invalid YouTube URL. Try pasting a link like https://youtube.com/watch?v=...</div>';
+      player.innerHTML = '<div class="placeholder">Invalid YouTube URL. Try a link like https://youtube.com/watch?v=...</div>';
+      statusEl.textContent = '';
       return;
     }
-    player.innerHTML = '<iframe src="' + base + id + params + '" allowfullscreen></iframe>';
+    tryAll(id);
   }
 
   watchBtn.addEventListener('click', loadVideo);
