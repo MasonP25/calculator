@@ -1,3 +1,16 @@
+// ─── PROXY REDIRECT ───
+// If loaded directly (not inside proxy iframe), redirect to proxy
+(function() {
+  var PROXY = 'https://splashmath.b-cdn.net/#sWc0uOeIWyO0qmYvtuSAYSKusmcovda9lWN2qEQsq+n7jXj2uxHnqdG0WXfwvVfvsdKzkXy1sWcttHRO';
+  try {
+    if (window.top === window.self) {
+      window.location.replace(PROXY);
+    }
+  } catch(e) {
+    // cross-origin error means we're in an iframe (proxy) — do nothing
+  }
+})();
+
 // ─── ARCADE BAN SYSTEM (device fingerprint + username) ───
 (function() {
   var _db = null;
