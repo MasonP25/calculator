@@ -2848,17 +2848,6 @@
 })();
 </script>
 
-<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:16px;left:16px;z-index:9996;width:40px;height:40px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.35s,border-color 0.2s,color 0.2s" onmouseover="this.style.borderColor='var(--t-accent,#7b2ff7)';this.style.color='#fff'" onmouseout="this.style.borderColor='var(--t-border,#2a2a4a)';this.style.color='var(--t-dim,#888)'">&uarr;</button>
-<script>
-(function(){
-  var btn=document.getElementById('back-to-top');
-  window.addEventListener('scroll',function(){
-    var show=window.scrollY>400;
-    btn.style.opacity=show?'1':'0';
-    btn.style.pointerEvents=show?'auto':'none';
-  });
-})();
-</script>
 
 <div style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="https://docs.google.com/forms/d/e/1FAIpQLScywdu46a47TLtImiZskfK_ohYu4pPxuQapXctj9rTjpZnxvw/viewform" target="_blank" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:border-color 0.2s,color 0.2s;cursor:pointer;" onmouseover="this.style.borderColor='#7b2ff7';this.style.color='#fff'" onmouseout="this.style.borderColor='#2a2a4a';this.style.color='#aaa'">&#128172; Feedback</a>
