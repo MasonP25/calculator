@@ -822,6 +822,14 @@
     var style = document.getElementById('theme-override');
     if (!style) { style = document.createElement('style'); style.id = 'theme-override'; document.head.appendChild(style); }
     style.textContent = buildCSS(t);
+    // Re-apply animation after style injection (prevents reset)
+    setTimeout(function() {
+      document.querySelectorAll('.section-title .stxt, h1').forEach(function(el) {
+        el.style.animation = 'none';
+        el.offsetHeight; // force reflow
+        el.style.animation = '';
+      });
+    }, 0);
     window.THEME = t;
     var _r=parseInt(t.canvasBg.slice(1,3),16),_g=parseInt(t.canvasBg.slice(3,5),16),_b=parseInt(t.canvasBg.slice(5,7),16);
     var _r2=parseInt(t.canvasBg2.slice(1,3),16),_g2=parseInt(t.canvasBg2.slice(3,5),16),_b2=parseInt(t.canvasBg2.slice(5,7),16);
