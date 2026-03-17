@@ -517,7 +517,7 @@
       .btn,.action-btn { border-color:${t.border}!important; }
 
       /* Feedback button */
-      #feedback-btn {
+      #feedback-btn, #unblock-btn {
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important;
       }
 
