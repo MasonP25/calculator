@@ -375,9 +375,11 @@
       }
       .scores .label,.round-info,.section-title,.count,.stat-label,.score-type { color:${t.dim}!important; }
       .section-title .stxt {
-        background:linear-gradient(135deg,${t.accent2},${t.accent})!important;
+        background:linear-gradient(135deg,${t.accent2},${t.accent},${t.accent2})!important;
+        background-size:200% 200%!important;
         -webkit-background-clip:text!important; -webkit-text-fill-color:transparent!important;
         background-clip:text!important;
+        animation:sectionShift 3s ease-in-out infinite!important;
       }
 
       /* Game specific */
@@ -822,10 +824,12 @@
     if (!style) { style = document.createElement('style'); style.id = 'theme-override'; document.head.appendChild(style); }
     style.textContent = buildCSS(t);
     document.querySelectorAll('.section-title .stxt').forEach(function(el) {
-      el.style.background = 'linear-gradient(135deg,' + t.accent2 + ',' + t.accent + ')';
+      el.style.background = 'linear-gradient(135deg,' + t.accent2 + ',' + t.accent + ',' + t.accent2 + ')';
+      el.style.backgroundSize = '200% 200%';
       el.style.webkitBackgroundClip = 'text';
       el.style.webkitTextFillColor = 'transparent';
       el.style.backgroundClip = 'text';
+      el.style.animation = 'sectionShift 3s ease-in-out infinite';
     });
     window.THEME = t;
     var _r=parseInt(t.canvasBg.slice(1,3),16),_g=parseInt(t.canvasBg.slice(3,5),16),_b=parseInt(t.canvasBg.slice(5,7),16);

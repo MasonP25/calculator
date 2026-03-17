@@ -78,11 +78,18 @@
     margin-top: 1.5rem;
     font-weight: 700;
   }
+  @keyframes sectionShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   .section-title .stxt {
-    background: linear-gradient(135deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7));
+    background: linear-gradient(135deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7), var(--t-accent2, #00d4ff));
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent !important;
     background-clip: text;
+    animation: sectionShift 3s ease-in-out infinite;
   }
   .games {
     display: flex;
