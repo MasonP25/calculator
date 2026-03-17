@@ -807,6 +807,27 @@
       });
     },
 
+    // ── Reset a user's password ──
+    resetPassword: function(username, newPassword) {
+      if (!_requireAuth()) return;
+      if (!username || !newPassword) return console.error('[Admin] Username and new password required');
+      if (newPassword.length < 3) return console.error('[Admin] Password must be at least 3 characters');
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists()) return console.error('[Admin] User "' + username + '" not found');
+          var data = new TextEncoder().encode(newPassword + '_arcade_firebase_salt');
+          return crypto.subtle.digest('SHA-256', data).then(function(buf) {
+            var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+            return _setDoc(docRef, { passwordHash: h }, { merge: true }).then(function() {
+              console.log('[Admin] Password reset for ' + username);
+            });
+          });
+        });
+      });
+    },
+
     help: function () {
       console.log(
         '── ArcadeAdmin Commands ──\n' +
@@ -841,6 +862,7 @@
         '  ArcadeAdmin.setBanner("user", "sunset")     — Set profile banner\n' +
         '  ArcadeAdmin.setCasinoStats("user", {...})   — Set casino stats\n' +
         '  ArcadeAdmin.postActivity("type", "user", {})— Post activity\n' +
+        '  ArcadeAdmin.resetPassword("user", "newpass") — Reset user password\n' +
         '  ArcadeAdmin.ban("user", "reason")           — Ban user + device\n' +
         '  ArcadeAdmin.unban("user")                   — Unban user + device\n' +
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
