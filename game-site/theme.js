@@ -889,7 +889,7 @@
     btn.innerHTML = '&#9783;';
     btn.title = 'Change theme';
     Object.assign(btn.style, {
-      position:'fixed', bottom:'16px', right:'16px', zIndex:'999',
+      position:'fixed', top:'50px', left:'16px', zIndex:'999',
       width:'42px', height:'42px', borderRadius:'50%', border:'2px solid',
       fontSize:'1.3rem', cursor:'pointer', display:'flex', alignItems:'center',
       justifyContent:'center', transition:'transform 0.2s',
@@ -900,7 +900,7 @@
     const panel = document.createElement('div');
     panel.className = 'theme-panel';
     Object.assign(panel.style, {
-      position:'fixed', bottom:'68px', right:'16px', zIndex:'998',
+      position:'fixed', top:'50px', left:'68px', zIndex:'998',
       borderRadius:'12px', border:'2px solid', padding:'12px',
       display:'none', flexDirection:'column', gap:'6px', width:'210px',
       maxHeight:'min(500px, calc(100vh - 100px))', overflowY:'auto',
