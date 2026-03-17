@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Player</title>
+    <meta name="description" content="Watch YouTube videos on Mason's Arcade. No ads, no blocks!">
+    <meta property="og:title" content="YouTube Player - Mason's Arcade">
+    <meta property="og:description" content="Watch YouTube videos on Mason's Arcade. No ads, no blocks!">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://masonp25.github.io/calculator/game-site/favicon.svg">
+    <meta property="og:url" content="https://masonp25.github.io/calculator/game-site/youtube.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="YouTube Player - Mason's Arcade">
+    <meta name="twitter:description" content="Watch YouTube videos on Mason's Arcade. No ads, no blocks!">
+    <meta name="twitter:image" content="https://masonp25.github.io/calculator/game-site/favicon.svg">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 60px 20px 20px;
+  }
+  h1 {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(90deg, #ff0000, #ff4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  .game-container {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #231F20;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  .game-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  a.back {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 10001;
+    color: #aaa;
+    text-decoration: none;
+    font-size: 15px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+  }
+  a.back:hover {
+    background: #2a2a4a;
+    color: #fff;
+  }
+
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<h1>YouTube Player</h1>
+<div class="game-container">
+  <iframe src="https://jonahkc.github.io/youtube-unblcked/" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+</div>
+<script src="ban.js"></script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js?v=3"></script>
+<script src="avatar.js?v=5"></script>
+<script src="badges.js?v=2"></script>
+<script src="friends.js?v=2"></script>
+<script src="notifications.js?v=3"></script>
+<script src="levels.js?v=4"></script>
+<script src="gifting.js?v=2"></script>
+<script src="trading.js?v=2"></script>
+<script src="challenges.js?v=2"></script>
+<script src="activity.js?v=2"></script>
+<script src="ratings.js?v=2"></script>
+<script src="admin.js"></script>
+<script src="auth.js?v=3"></script>
+<script src="theme.js?v=21"></script>
+<script src="easter.js"></script>
+</body>
+</html>
