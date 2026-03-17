@@ -900,7 +900,7 @@
     const panel = document.createElement('div');
     panel.className = 'theme-panel';
     Object.assign(panel.style, {
-      position:'fixed', top:'50px', left:'68px', zIndex:'998',
+      position:'fixed', top:'50px', left:'68px', zIndex:'1000',
       borderRadius:'12px', border:'2px solid', padding:'12px',
       display:'none', flexDirection:'column', gap:'6px', width:'210px',
       maxHeight:'min(500px, calc(100vh - 100px))', overflowY:'auto',
