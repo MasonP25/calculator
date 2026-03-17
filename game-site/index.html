@@ -76,11 +76,14 @@
     letter-spacing: 3px;
     margin-bottom: 1rem;
     margin-top: 1.5rem;
+    font-weight: 700;
+  }
+  .section-title .stxt {
     background: linear-gradient(135deg, #00d4ff, #7b2ff7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-weight: 700;
+    animation: arcadeShift 3s ease-in-out infinite;
   }
   .games {
     display: flex;
@@ -717,7 +720,7 @@
     <button class="random-btn" id="randomGameBtn">&#127922; Random</button>
   </div>
 
-  <div class="section-title" id="popularSection">&#128293; Popular</div>
+  <div class="section-title" id="popularSection">&#128293; <span class="stxt">Popular</span></div>
   <div class="games" id="popularGames">
     <a class="card" href="basketrandom.html">
       <div class="icon">&#127936;</div>
@@ -784,13 +787,13 @@
     </a>
   </div>
 
-  <div class="section-title" id="favSection" style="display:none">&#11088; Favorites</div>
+  <div class="section-title" id="favSection" style="display:none">&#11088; <span class="stxt">Favorites</span></div>
   <div class="games" id="favGames" style="display:none"></div>
 
-  <div class="section-title" id="recentSection" style="display:none">&#128338; Recently Played</div>
+  <div class="section-title" id="recentSection" style="display:none">&#128338; <span class="stxt">Recently Played</span></div>
   <div class="games" id="recentGames" style="display:none"></div>
 
-  <div class="section-title">External</div>
+  <div class="section-title"><span class="stxt">External</span></div>
   <p style="color:#666;font-size:0.78rem;max-width:600px;text-align:center;margin-bottom:1rem;line-height:1.5;">These games are embedded from external sources online. There will be ads in some of these games. Avoid clicking on anything that looks suspicious or like an ad inside these games.</p>
   <div class="games">
     <a class="card" href="geodashlite.html">
@@ -1131,7 +1134,7 @@
     </a>
   </div>
 
-  <div class="section-title">Multiplayer / vs Bot</div>
+  <div class="section-title"><span class="stxt">Multiplayer / vs Bot</span></div>
   <p style="color:#666;font-size:0.78rem;max-width:600px;text-align:center;margin-bottom:1rem;line-height:1.5;">These games were built from scratch and run ad-free. No pop-ups, no interruptions.</p>
   <div class="games">
     <a class="card" href="snakeio.html">
@@ -1264,7 +1267,7 @@
     </a>
   </div>
 
-  <div class="section-title">Solo Games</div>
+  <div class="section-title"><span class="stxt">Solo Games</span></div>
   <p style="color:#666;font-size:0.78rem;max-width:600px;text-align:center;margin-bottom:1rem;line-height:1.5;">These games were built from scratch and run ad-free. No pop-ups, no interruptions.</p>
   <div class="games">
     <a class="card" href="parkingjam.html">
