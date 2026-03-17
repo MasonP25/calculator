@@ -62,11 +62,12 @@
   h1 {
     font-size: 3rem;
     margin-bottom: 0.3rem;
-    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7, #00d4ff);
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: arcadeShift 3s ease-in-out infinite;
+    animation: sectionShift 3s ease-in-out infinite;
   }
   .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
   .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
@@ -2880,7 +2881,7 @@
 <script src="ratings.js?v=2"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
-<script src="theme.js?v=20"></script>
+<script src="theme.js?v=21"></script>
 <script>
 // ─── Index Page Init: GOTD highlight, Activity Feed, Daily Challenge ───
 (function() {
