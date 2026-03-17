@@ -76,10 +76,16 @@
 <a class="back" href="index.html">&#8592; Back</a>
 <h1>Minecraft</h1>
 <div class="game-container">
-  <iframe src="eaglercraft.html" allowfullscreen allow="pointer-lock; keyboard-map; fullscreen; autoplay; gamepad"></iframe>
+  <iframe id="mcframe" src="eaglercraft.html" allowfullscreen allow="pointer-lock; keyboard-map; fullscreen; autoplay; gamepad" tabindex="0"></iframe>
 </div>
 <p id="notice" style="margin-top:1rem;color:#f39c12;font-size:0.9rem;max-width:960px;text-align:center;transition:opacity 1s;">Turn on profanity filter (Not sure why it asks that but just to be safe, do it. I haven't played the whole game so I don't know when it would show up)</p>
-<script>setTimeout(function(){var n=document.getElementById('notice');n.style.opacity='0';setTimeout(function(){n.remove()},1000)},60000);</script>
+<script>
+setTimeout(function(){var n=document.getElementById('notice');n.style.opacity='0';setTimeout(function(){n.remove()},1000)},60000);
+// Auto-focus iframe for keyboard input
+var mcf=document.getElementById('mcframe');
+mcf.addEventListener('load',function(){mcf.focus();});
+document.querySelector('.game-container').addEventListener('click',function(){mcf.focus();});
+</script>
 <script src="ban.js"></script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
