@@ -520,6 +520,11 @@
       #feedback-btn, #unblock-btn {
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important;
       }
+      #feedback-btn:hover, #unblock-btn:hover {
+        transform:translateY(-4px) scale(1.03)!important;
+        border-color:${t.accent}!important; color:#fff!important;
+        box-shadow:0 8px 25px ${t.accent}44!important;
+      }
 
       /* Auth box ARCADE heading */
       .auth-box h2 {
@@ -884,6 +889,8 @@
 
   // ─── UI ───
   function createPicker() {
+    var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
+    if (pg !== 'index' && pg !== '') return;
     const btn = document.createElement('button');
     btn.className = 'theme-picker-btn';
     btn.innerHTML = '&#9783;';

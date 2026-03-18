@@ -1506,7 +1506,7 @@ window.openEditProfileModal = async function() {
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100000;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",Tahoma,sans-serif';
 
   var modal = document.createElement('div');
-  modal.style.cssText = 'background:#1a1a2e;border:2px solid #2a2a4a;border-radius:18px;padding:1.5rem 2rem;width:440px;max-width:90vw;max-height:85vh;overflow-y:auto';
+  modal.style.cssText = 'background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);border-radius:18px;padding:1.5rem 2rem;width:440px;max-width:90vw;max-height:85vh;overflow-y:auto';
 
   var selectedBanner = data.banner || 'default';
 
@@ -1548,21 +1548,21 @@ window.openEditProfileModal = async function() {
   bannerHtml += '<input type="color" id="ep-c1" value="' + (customColors[0] || '#7b2ff7') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
   bannerHtml += '<input type="color" id="ep-c2" value="' + (customColors[1] || '#00d4ff') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
   bannerHtml += '<input type="color" id="ep-c3" value="' + (customColors[2] || '#ffd700') + '" style="width:32px;height:32px;border:none;cursor:pointer;background:none;padding:0">';
-  bannerHtml += '<select id="ep-ccount" style="background:#0f0f1a;border:1px solid #2a2a4a;border-radius:6px;color:#e0e0e0;font-size:0.75rem;padding:3px 6px"><option value="2"' + (customColors.length !== 3 ? ' selected' : '') + '>2 colors</option><option value="3"' + (customColors.length === 3 ? ' selected' : '') + '>3 colors</option></select>';
-  bannerHtml += '<button id="ep-capply" style="background:#7b2ff7;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;font-weight:600">Apply</button>';
+  bannerHtml += '<select id="ep-ccount" style="background:var(--t-bg,#0f0f1a);border:1px solid var(--t-border,#2a2a4a);border-radius:6px;color:var(--t-text,#e0e0e0);font-size:0.75rem;padding:3px 6px"><option value="2"' + (customColors.length !== 3 ? ' selected' : '') + '>2 colors</option><option value="3"' + (customColors.length === 3 ? ' selected' : '') + '>3 colors</option></select>';
+  bannerHtml += '<button id="ep-capply" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.7rem;cursor:pointer;font-weight:600">Apply</button>';
   bannerHtml += '</div>';
 
-  var inputStyle = 'width:100%;background:#0f0f1a;border:1px solid #2a2a4a;border-radius:10px;color:#e0e0e0;font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 0.8rem';
-  var labelStyle = 'color:#888;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.15rem';
+  var inputStyle = 'width:100%;background:var(--t-bg,#0f0f1a);border:1px solid var(--t-border,#2a2a4a);border-radius:10px;color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;padding:0.5rem;outline:none;margin:0.3rem 0 0.8rem';
+  var labelStyle = 'color:var(--t-dim,#888);font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:0.15rem';
 
   modal.innerHTML =
-    '<h3 style="color:#e0e0e0;margin:0 0 1rem;font-size:1.15rem;text-align:center">Edit Profile</h3>' +
+    '<h3 style="color:var(--t-text,#e0e0e0);margin:0 0 1rem;font-size:1.15rem;text-align:center">Edit Profile</h3>' +
     '<label style="' + labelStyle + '">Bio</label>' +
     '<textarea id="ep-bio" maxlength="150" style="' + inputStyle + ';resize:none;height:55px">' + (data.bio || '') + '</textarea>' +
     '<label style="' + labelStyle + '">Banner</label>' +
     bannerHtml +
     '<div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">' +
-      '<button id="ep-cancel" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #2a2a4a;background:#0f0f1a;color:#aaa;font-weight:600">Cancel</button>' +
+      '<button id="ep-cancel" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid var(--t-border,#2a2a4a);background:var(--t-bg,#0f0f1a);color:var(--t-dim,#aaa);font-weight:600">Cancel</button>' +
       '<button id="ep-save" style="padding:0.5rem 1.5rem;border-radius:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;border:2px solid #ffd700;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#0f0f1a;font-weight:700">Save</button>' +
     '</div>' +
     '<div id="ep-msg" style="font-size:0.75rem;color:#888;margin-top:0.5rem;text-align:center"></div>';

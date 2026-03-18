@@ -289,3 +289,18 @@ function _arcadeEarnCoins(amount, reason) {
   }
   if (window.ArcadeCoins) window.ArcadeCoins.earn(amount, reason, h.toString(36));
 }
+
+// ─── TIME-BASED REWARD FOR EXTERNAL GAMES ───
+(function() {
+  var EXTERNAL = ['geodashlite','getontop','basketballstars','twoball3d','tagrun','basketrandom','growagarden','obbybike','colorraceobby','stickmanhooks','tinyfishing','goingballs','ludo','colorsand','volleybeans','unoonline','flipbottle','impossiblequiz','watersort','fireboywater','slope','totm','subway','drifthunters','crazykarts','survivalkarts','stackball','fortnite','run3','championisland','volleyrandom','doodlebaseball','gardengnomes','doodlesnake','doodlepacman','fnaf','minecraft','worldhardest','hextris','spelunky','astray','0hh1','gswitch3','motox3m','cuttherope','driftboss','jellytruck','paperio3d','awesometanks2','learntofly3','vex8','sonic','carfootball','darknesssurvivors','catsimulator'];
+  var pg = (location.pathname.split('/').pop() || '').replace('.html', '');
+  if (EXTERNAL.indexOf(pg) === -1) return;
+  var key = '_ext_coin_' + pg;
+  if (sessionStorage.getItem(key)) return;
+  setTimeout(function() {
+    var user = localStorage.getItem('arcade_currentUser');
+    if (!user || user === 'Guest') return;
+    sessionStorage.setItem(key, '1');
+    _arcadeEarnCoins(10, 'Played ' + pg);
+  }, 60000);
+})();
