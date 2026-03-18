@@ -3100,7 +3100,18 @@
     overlay.remove();
   }
 
-  setTimeout(start, 2000);
+  // Start tour based on auth state
+  if (localStorage.getItem('arcade_currentUser')) {
+    // Already signed in — start tour after short delay
+    setTimeout(start, 2000);
+  } else {
+    // Not signed in — wait for sign-in, then start tour
+    window.addEventListener('arcade-auth-change', function _tourOnAuth() {
+      if (!localStorage.getItem('arcade_currentUser')) return;
+      window.removeEventListener('arcade-auth-change', _tourOnAuth);
+      setTimeout(start, 1000);
+    });
+  }
 })();
 </script>
 <script src="easter.js"></script>

@@ -12,6 +12,15 @@
   var REWARD = 5;
   var found = JSON.parse(localStorage.getItem('arcade_easter_found') || '[]');
 
+  // ─── One-time reset (clears mismatched data from before sync fix) ───
+  var _eResetNeeded = false;
+  if (!localStorage.getItem('_easter_reset_v2')) {
+    found = [];
+    localStorage.setItem('arcade_easter_found', '[]');
+    localStorage.setItem('_easter_reset_v2', '1');
+    _eResetNeeded = true;
+  }
+
   // ─── Firebase sync (uses shared _arcadeDB from firebase-lb.js) ───
   function _eGetUser() {
     var u = localStorage.getItem('arcade_currentUser');
@@ -30,6 +39,12 @@
     var user = _eGetUser();
     if (!user || !window._arcadeDB) return Promise.resolve();
     var fdb = window._arcadeDB;
+    // If reset was just triggered, clear cloud data instead of loading
+    if (_eResetNeeded) {
+      _eResetNeeded = false;
+      return fdb.setDoc(fdb.doc(fdb.db, 'users', user.toLowerCase()), { easterEggs: [] }, { merge: true })
+        .catch(function(e) { console.warn('Easter reset failed:', e); });
+    }
     return fdb.getDoc(fdb.doc(fdb.db, 'users', user.toLowerCase())).then(function(snap) {
       if (snap.exists() && snap.data().easterEggs) {
         var cloudEggs = snap.data().easterEggs;

@@ -66,7 +66,9 @@
       window.FirebaseAuth.signOut();
     }
     setCurrentUser(null);
+    localStorage.removeItem('arcade_tour_done');
     updateBadge();
+    openModal();
   }
 
   // ─── Inject styles ───
@@ -138,7 +140,6 @@
         '<input class="auth-inp" id="authP2" type="password" placeholder="Confirm Password" style="display:none">' +
         '<button class="auth-btn" type="submit" id="authGo">Sign In</button>' +
       '</form>' +
-      '<button class="auth-guest" id="authSkip">Continue as Guest</button>' +
       '<p class="auth-info">Synced across all your devices</p>' +
     '</div>';
   document.body.appendChild(overlay);
@@ -199,7 +200,6 @@
   });
 
   document.getElementById('authX').addEventListener('click', closeModal);
-  document.getElementById('authSkip').addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
 
   function openModal() {
@@ -208,11 +208,14 @@
     tab = 'in';
     tabBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.t === 'in'); });
     updateFormFields();
+    // Hide X button when not signed in (mandatory)
+    document.getElementById('authX').style.display = getCurrentUser() ? '' : 'none';
     overlay.classList.add('show');
     setTimeout(function() { uEl.focus(); }, 100);
   }
 
   function closeModal() {
+    if (!getCurrentUser()) return; // can't close if not signed in
     overlay.classList.remove('show');
   }
 
@@ -307,6 +310,9 @@
   };
 
   updateBadge();
+
+  // Auto-open sign-in modal if not signed in (mandatory)
+  if (!getCurrentUser()) openModal();
 
   // Listen for Firebase auth state (auto-login if already signed in)
   window.addEventListener('firebase-auth-ready', function() {
