@@ -473,4 +473,15 @@
       setTimeout(function() { window.ArcadeBadges.check(); }, 500);
     }
   });
+
+  // Auto-record recently played for External (iframe) games
+  var _extGames = ['geodashlite','getontop','basketballstars','twoball3d','tagrun','basketrandom','growagarden','obbybike','colorraceobby','stickmanhooks','tinyfishing','goingballs','ludo','colorsand','volleybeans','unoonline','flipbottle','impossiblequiz','watersort','fireboywater','slope','totm','subway','drifthunters','crazykarts','survivalkarts','stackball','fortnite','run3','championisland','volleyrandom','doodlebaseball','gardengnomes','doodlesnake','doodlepacman','fnaf','minecraft','worldhardest','hextris','spelunky','astray','0hh1','gswitch3','motox3m','cuttherope','driftboss','jellytruck','paperio3d','awesometanks2','learntofly3','vex8','sonic','carfootball','darknesssurvivors','catsimulator'];
+  var _pg = (location.pathname.split('/').pop() || '').replace('.html', '');
+  if (_extGames.indexOf(_pg) !== -1) {
+    setTimeout(function() {
+      if (!_isGuest() && window.ArcadeBadges && window.ArcadeBadges.recordRecentGame) {
+        window.ArcadeBadges.recordRecentGame(_pg);
+      }
+    }, 2000);
+  }
 })();

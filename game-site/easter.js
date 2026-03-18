@@ -77,9 +77,8 @@
     }).catch(function() {});
   }
 
-  // Sync from cloud on load
-  _eLoadFromCloud().then(function() {
-    // Update counter after cloud sync
+  // Sync from cloud on load + on sign-in
+  function _eUpdateAfterSync() {
     var el = document.getElementById('ec-text');
     if (el) {
       el.textContent = found.length + '/' + TOTAL;
@@ -88,6 +87,15 @@
         if (c) { c.classList.add('complete'); c.innerHTML = '<span class="ec-emoji">\uD83D\uDC30</span><span>All found! \uD83C\uDF89</span>'; }
       }
     }
+    // Hide already-found eggs on page
+    found.forEach(function(id) {
+      var egg = document.querySelector('[data-egg-id="' + id + '"]');
+      if (egg) egg.style.display = 'none';
+    });
+  }
+  _eLoadFromCloud().then(_eUpdateAfterSync);
+  window.addEventListener('arcade-auth-change', function() {
+    setTimeout(function() { _eLoadFromCloud().then(_eUpdateAfterSync); }, 1000);
   });
   var EMOJIS = [
     '\uD83E\uDD5A', '\uD83D\uDC23', '\uD83D\uDC30', '\uD83C\uDF37',
