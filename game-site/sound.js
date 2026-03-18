@@ -105,11 +105,12 @@
     btn.title = muted ? 'Unmute sounds' : 'Mute sounds';
     btn.innerHTML = muted ? '&#128263;' : '&#128266;';
     Object.assign(btn.style, {
-      position: 'fixed', bottom: '16px', right: '64px', zIndex: '999',
-      width: '42px', height: '42px', borderRadius: '50%', border: '2px solid #2a2a4a',
-      background: '#1a1a2e', fontSize: '1.2rem', cursor: 'pointer',
+      position: 'fixed', bottom: '16px', left: '16px', zIndex: '999',
+      width: '42px', height: '42px', borderRadius: '50%',
+      border: '2px solid var(--t-border,#2a2a4a)',
+      background: 'var(--t-bg2,#1a1a2e)', fontSize: '1.2rem', cursor: 'pointer',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      transition: 'transform 0.2s', color: '#e0e0e0',
+      transition: 'transform 0.2s', color: 'var(--t-text,#e0e0e0)',
     });
     btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.1)');
     btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
