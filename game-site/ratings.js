@@ -86,7 +86,7 @@
     '.rating-stars-static .star.filled{color:#ffd700}' +
     '.rating-stars-static .star.half{color:#ffd700}' +
     '.rating-count{font-size:0.6rem;color:#666;margin-left:3px}' +
-    '.rate-btn{position:fixed;bottom:80px;right:16px;z-index:9990;background:linear-gradient(135deg,#1a1a2e,#1f1a3e);border:2px solid #ffd70066;border-radius:12px;padding:0.5rem 1rem;color:#ffd700;font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:all 0.2s;display:flex;align-items:center;gap:0.5rem}' +
+    '.rate-btn{position:fixed;bottom:68px;left:16px;z-index:9990;background:linear-gradient(135deg,var(--t-bg2,#1a1a2e),#1f1a3e);border:2px solid #ffd70066;border-radius:12px;padding:0.5rem 1rem;color:#ffd700;font-family:"Segoe UI",Tahoma,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:all 0.2s;display:flex;align-items:center;gap:0.5rem}' +
     '.rate-btn:hover{border-color:#ffd700;transform:translateY(-2px)}' +
     '.rate-btn .rb-stars{display:inline-flex;gap:0;font-size:0.75rem}' +
     '.rate-btn .rb-stars .star{color:#2a2a4a}' +

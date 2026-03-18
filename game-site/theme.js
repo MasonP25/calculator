@@ -1142,7 +1142,7 @@
   btn.innerHTML = '&#x26F6;';
   btn.title = 'Fullscreen';
   if (!gc) return; // Only show fullscreen button on game pages
-  btn.style.cssText = 'position:fixed;bottom:16px;left:64px;z-index:997;width:36px;height:36px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s';
+  btn.style.cssText = 'position:fixed;bottom:16px;left:64px;z-index:997;width:42px;height:42px;border-radius:50%;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s,color 0.2s,transform 0.2s';
   btn.onmouseover = function() { btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; };
   btn.onmouseout = function() { btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; };
   var style = document.createElement('style');
