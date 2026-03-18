@@ -15,6 +15,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Expose Firestore utilities for other scripts (easter.js, etc.)
+window._arcadeDB = { db, doc, getDoc, setDoc };
+
 // ─── Password hashing (SHA-256) ───
 async function hashPassword(pw) {
   var data = new TextEncoder().encode(pw + '_arcade_firebase_salt');

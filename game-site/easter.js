@@ -12,36 +12,7 @@
   var REWARD = 5;
   var found = JSON.parse(localStorage.getItem('arcade_easter_found') || '[]');
 
-  // ─── Firebase sync ───
-  var _edb = null, _edoc = null, _egetDoc = null, _esetDoc = null;
-  function _eInitFirebase() {
-    if (_edb) return Promise.resolve();
-    return Promise.all([
-      import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
-      import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
-    ]).then(function(mods) {
-      var initializeApp = mods[0].initializeApp;
-      var getApp = mods[0].getApp;
-      var getFirestore = mods[1].getFirestore;
-      _edoc = mods[1].doc;
-      _egetDoc = mods[1].getDoc;
-      _esetDoc = mods[1].setDoc;
-      var config = {
-        apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
-        authDomain: "calculator-81d08.firebaseapp.com",
-        projectId: "calculator-81d08",
-        storageBucket: "calculator-81d08.firebasestorage.app",
-        messagingSenderId: "375406495739",
-        appId: "1:375406495739:web:fd28553263599864426d5e"
-      };
-      try { _edb = getFirestore(getApp('easter-app')); } catch(e) {
-        try { _edb = getFirestore(initializeApp(config, 'easter-app')); } catch(e2) {
-          _edb = getFirestore(initializeApp(config, 'easter-app-' + Date.now()));
-        }
-      }
-    }).catch(function() {});
-  }
-
+  // ─── Firebase sync (uses shared _arcadeDB from firebase-lb.js) ───
   function _eGetUser() {
     var u = localStorage.getItem('arcade_currentUser');
     return (u && u !== 'Guest') ? u : null;
@@ -49,32 +20,30 @@
 
   function _eSaveToCloud() {
     var user = _eGetUser();
-    if (!user) return;
-    _eInitFirebase().then(function() {
-      if (!_edb) return;
-      _esetDoc(_edoc(_edb, 'users', user.toLowerCase()), { easterEggs: found }, { merge: true });
-    }).catch(function() {});
+    if (!user || !window._arcadeDB) return;
+    var fdb = window._arcadeDB;
+    fdb.setDoc(fdb.doc(fdb.db, 'users', user.toLowerCase()), { easterEggs: found }, { merge: true })
+      .catch(function(e) { console.warn('Easter save failed:', e); });
   }
 
   function _eLoadFromCloud() {
     var user = _eGetUser();
-    if (!user) return Promise.resolve();
-    return _eInitFirebase().then(function() {
-      if (!_edb) return;
-      return _egetDoc(_edoc(_edb, 'users', user.toLowerCase())).then(function(snap) {
-        if (snap.exists() && snap.data().easterEggs) {
-          var cloudEggs = snap.data().easterEggs;
-          var merged = found.slice();
-          for (var i = 0; i < cloudEggs.length; i++) {
-            if (merged.indexOf(cloudEggs[i]) === -1) merged.push(cloudEggs[i]);
-          }
-          if (merged.length > found.length) {
-            found = merged;
-            localStorage.setItem('arcade_easter_found', JSON.stringify(found));
-          }
+    if (!user || !window._arcadeDB) return Promise.resolve();
+    var fdb = window._arcadeDB;
+    return fdb.getDoc(fdb.doc(fdb.db, 'users', user.toLowerCase())).then(function(snap) {
+      if (snap.exists() && snap.data().easterEggs) {
+        var cloudEggs = snap.data().easterEggs;
+        var merged = found.slice();
+        for (var i = 0; i < cloudEggs.length; i++) {
+          if (merged.indexOf(cloudEggs[i]) === -1) merged.push(cloudEggs[i]);
         }
-      });
-    }).catch(function() {});
+        if (merged.length > found.length) {
+          found = merged;
+          localStorage.setItem('arcade_easter_found', JSON.stringify(found));
+          _eSaveToCloud(); // push merged list back to cloud
+        }
+      }
+    }).catch(function(e) { console.warn('Easter load failed:', e); });
   }
 
   // Sync from cloud on load + on sign-in
@@ -93,7 +62,16 @@
       if (egg) egg.style.display = 'none';
     });
   }
-  _eLoadFromCloud().then(_eUpdateAfterSync);
+
+  // Try syncing immediately if Firebase is already ready
+  if (window._arcadeDB) {
+    _eLoadFromCloud().then(_eUpdateAfterSync);
+  }
+  // Also sync when firebase-lb.js finishes loading (module scripts are deferred)
+  window.addEventListener('firebase-auth-ready', function() {
+    setTimeout(function() { _eLoadFromCloud().then(_eUpdateAfterSync); }, 500);
+  });
+  // Sync on sign-in/sign-out
   window.addEventListener('arcade-auth-change', function() {
     setTimeout(function() { _eLoadFromCloud().then(_eUpdateAfterSync); }, 1000);
   });
