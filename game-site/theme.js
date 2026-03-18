@@ -897,7 +897,8 @@
     btn.title = 'Change theme';
     Object.assign(btn.style, {
       position:'fixed', top:'50px', left:'16px', zIndex:'999',
-      width:'42px', height:'42px', borderRadius:'50%', border:'2px solid',
+      width:'42px', height:'42px', borderRadius:'50%', border:'2px solid var(--t-border,#2a2a4a)',
+      background:'var(--t-bg2,#1a1a2e)', color:'var(--t-dim,#888)',
       fontSize:'1.3rem', cursor:'pointer', display:'flex', alignItems:'center',
       justifyContent:'center', transition:'transform 0.2s',
     });
