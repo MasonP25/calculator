@@ -696,6 +696,10 @@
     #chat-panel.expanded { height: 400px; }
     #feedback-btn { padding: 4px 10px; font-size: 0.72rem; }
   }
+  @keyframes unblockPulse {
+    0%, 100% { box-shadow: 0 0 4px #7b2ff733; }
+    50% { box-shadow: 0 0 12px #7b2ff766, 0 0 24px #7b2ff722; }
+  }
 </style>
 </head>
 <body>
@@ -2923,7 +2927,7 @@
 
 <div style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="https://docs.google.com/forms/d/e/1FAIpQLScywdu46a47TLtImiZskfK_ohYu4pPxuQapXctj9rTjpZnxvw/viewform" target="_blank" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128172; Feedback</a>
-<a id="unblock-btn" href="https://splashmath.b-cdn.net/#sWc0uOeIWyO0qmYvtuSAYSKusmcovda9lWN2qEQsq+n7jXj2uxHnqdG0WXfwvVfvsdKzkXy1sWcttHRO" target="_blank" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128279; Alternate Link</a>
+<a id="unblock-btn" href="https://splashmath.b-cdn.net/#sWc0uOeIWyO0qmYvtuSAYSKusmcovda9lWN2qEQsq+n7jXj2uxHnqdG0WXfwvVfvsdKzkXy1sWcttHRO" target="_blank" style="display:flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#1a1a2e,#1e1a30);border:1px solid #7b2ff7;padding:6px 14px;border-radius:8px;color:#c4a8ff;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:unblockPulse 2s ease-in-out infinite;position:relative;">&#128275; Unblocker <span style="font-size:0.55rem;background:#7b2ff7;color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;letter-spacing:0.5px;">NEW</span></a>
 </div>
 
 <script src="ban.js"></script>
