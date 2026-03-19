@@ -1239,11 +1239,13 @@
       document.querySelectorAll('.proxy-link').forEach(function(a) {
         a.href = _sp + encodeURI(a.href);
       });
-      var ub = document.getElementById('unblock-btn');
-      if (ub) {
-        ub.href = _sp + 'https://masonp25.github.io/calculator/game-site/';
-        ub.style.display = 'flex';
-      }
+      window.addEventListener('DOMContentLoaded', function() {
+        var ub = document.getElementById('unblock-btn');
+        if (ub) {
+          ub.href = _sp + 'https://masonp25.github.io/calculator/game-site/';
+          ub.style.display = 'flex';
+        }
+      });
     }
     </script>
   </div>
