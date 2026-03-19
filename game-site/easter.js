@@ -46,17 +46,17 @@
         .catch(function(e) { console.warn('Easter reset failed:', e); });
     }
     return fdb.getDoc(fdb.doc(fdb.db, 'users', user.toLowerCase())).then(function(snap) {
-      if (snap.exists() && snap.data().easterEggs) {
-        var cloudEggs = snap.data().easterEggs;
-        var merged = found.slice();
-        for (var i = 0; i < cloudEggs.length; i++) {
-          if (merged.indexOf(cloudEggs[i]) === -1) merged.push(cloudEggs[i]);
-        }
-        if (merged.length > found.length) {
-          found = merged;
-          localStorage.setItem('arcade_easter_found', JSON.stringify(found));
-          _eSaveToCloud(); // push merged list back to cloud
-        }
+      var cloudEggs = (snap.exists() && snap.data().easterEggs) ? snap.data().easterEggs : [];
+      var merged = found.slice();
+      for (var i = 0; i < cloudEggs.length; i++) {
+        if (merged.indexOf(cloudEggs[i]) === -1) merged.push(cloudEggs[i]);
+      }
+      var cloudChanged = merged.length > cloudEggs.length;
+      var localChanged = merged.length > found.length;
+      if (localChanged || cloudChanged) {
+        found = merged;
+        localStorage.setItem('arcade_easter_found', JSON.stringify(found));
+        _eSaveToCloud();
       }
     }).catch(function(e) { console.warn('Easter load failed:', e); });
   }
