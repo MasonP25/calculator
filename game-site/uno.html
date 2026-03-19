@@ -1560,7 +1560,6 @@ var db = getFirestore(app);
 
 var uno = window._unoGame;
 var previousState = null;
-
 function startListening(roomId) {
     if (window._unoUnsubscribe) {
         window._unoUnsubscribe();
@@ -1601,6 +1600,7 @@ function startListening(roomId) {
 
             previousState = JSON.parse(JSON.stringify(data));
             uno.renderGameState(data);
+
         }
     });
 }
