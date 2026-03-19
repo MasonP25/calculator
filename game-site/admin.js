@@ -975,6 +975,36 @@
       });
     },
 
+    // Usage: ArcadeAdmin.grantExtLinks('mason')  — let a user see external link cards
+    grantExtLinks: function(username) {
+      if (!_requireAuth()) return;
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function(mod) {
+          var setDoc = mod.setDoc;
+          var docRef = _doc(_db, 'users', username.toLowerCase());
+          return setDoc(docRef, { extLinksAccess: true }, { merge: true }).then(function() {
+            console.log('[Admin] Granted external links access to ' + username);
+          });
+        });
+      });
+    },
+
+    // Usage: ArcadeAdmin.revokeExtLinks('mason')  — hide external link cards from a user
+    revokeExtLinks: function(username) {
+      if (!_requireAuth()) return;
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function(mod) {
+          var setDoc = mod.setDoc;
+          var docRef = _doc(_db, 'users', username.toLowerCase());
+          return setDoc(docRef, { extLinksAccess: false }, { merge: true }).then(function() {
+            console.log('[Admin] Revoked external links access from ' + username);
+          });
+        });
+      });
+    },
+
     // Usage: ArcadeAdmin.listExtLinks()
     listExtLinks: function() {
       if (!_requireAuth()) return;
@@ -1050,6 +1080,8 @@
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
         '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
+        '  ArcadeAdmin.grantExtLinks("user")             — Let user see external links\n' +
+        '  ArcadeAdmin.revokeExtLinks("user")            — Hide external links from user\n' +
         '  ArcadeAdmin.addExtLink("Name","url","emoji","desc") — Add external link card\n' +
         '  ArcadeAdmin.removeExtLink("Name")            — Remove external link card\n' +
         '  ArcadeAdmin.listExtLinks()                   — List custom external links\n' +

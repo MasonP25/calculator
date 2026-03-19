@@ -1208,6 +1208,7 @@
       <p>Live life as a cat! Explore, hunt, and cause mischief in a 3D open world!</p>
       <span class="badge solo">WASD / Mouse</span>
     </a>
+    <div id="ext-links-wrap" style="display:none;contents:none">
     <a class="card proxy-link" href="https://open.spotify.com" target="_blank" rel="noopener">
       <div class="icon">&#127925;</div>
       <h2>Spotify</h2>
@@ -1239,44 +1240,10 @@
       <span class="badge solo">External Link</span>
     </a>
     <div id="custom-ext-links"></div>
+    </div>
     <script>
-    // Load custom external links from Firebase
-    (function() {
-      function _loadCustomExtLinks() {
-        try {
-          var db = firebase.firestore(firebase.app('global-chat'));
-        } catch(e) { return; }
-        db.collection('config').doc('externalLinks').get().then(function(snap) {
-          if (!snap.exists) return;
-          var links = snap.data().links || [];
-          var container = document.getElementById('custom-ext-links');
-          if (!container || links.length === 0) return;
-          var onProxy = location.hostname.indexOf('github.io') !== -1;
-          var spBase = onProxy ? [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('') : '';
-          links.forEach(function(link) {
-            var a = document.createElement('a');
-            a.className = 'card proxy-link';
-            a.target = '_blank';
-            a.rel = 'noopener';
-            if (onProxy) {
-              a.href = spBase + '#inject=' + encodeURI(link.url);
-            } else {
-              a.href = link.url;
-            }
-            a.innerHTML = '<div class="icon">' + link.emoji + '</div>' +
-              '<h2>' + link.name + '</h2>' +
-              '<p>' + (link.desc || '') + '</p>' +
-              '<span class="badge solo">External Link</span>';
-            container.appendChild(a);
-          });
-        }).catch(function() {});
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { setTimeout(_loadCustomExtLinks, 1500); });
-      } else {
-        setTimeout(_loadCustomExtLinks, 1500);
-      }
-    })();
+    // extLinksAccess is checked inside the favorites loader (line ~2142) to avoid extra reads
+    </script>
     // On github.io, wrap external links through proxy and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
       var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('');
@@ -2130,8 +2097,11 @@
         try {
           var db = firebase.firestore(firebase.app('global-chat'));
           db.collection('users').doc(user.toLowerCase()).get().then(function(doc) {
-            if (doc.exists && doc.data().favorites) {
-              var remote = doc.data().favorites;
+            if (!doc.exists) return;
+            var d = doc.data();
+            // Merge favorites
+            if (d.favorites) {
+              var remote = d.favorites;
               var local = getFavorites();
               var merged = local.slice();
               remote.forEach(function(g) { if (merged.indexOf(g) === -1) merged.push(g); });
@@ -2139,6 +2109,36 @@
                 saveFavorites(merged);
                 refreshFavState();
               }
+            }
+            // Show external links if user has access
+            if (d.extLinksAccess) {
+              var wrap = document.getElementById('ext-links-wrap');
+              if (wrap) wrap.style.display = 'contents';
+              // Load custom links from config (1 extra read only for granted users)
+              db.collection('config').doc('externalLinks').get().then(function(cSnap) {
+                if (!cSnap.exists) return;
+                var links = cSnap.data().links || [];
+                var container = document.getElementById('custom-ext-links');
+                if (!container || links.length === 0) return;
+                var onProxy = location.hostname.indexOf('github.io') !== -1;
+                var spBase = onProxy ? [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('') : '';
+                links.forEach(function(link) {
+                  var a = document.createElement('a');
+                  a.className = 'card proxy-link';
+                  a.target = '_blank';
+                  a.rel = 'noopener';
+                  if (onProxy) {
+                    a.href = spBase + '#inject=' + encodeURI(link.url);
+                  } else {
+                    a.href = link.url;
+                  }
+                  a.innerHTML = '<div class="icon">' + link.emoji + '</div>' +
+                    '<h2>' + link.name + '</h2>' +
+                    '<p>' + (link.desc || '') + '</p>' +
+                    '<span class="badge solo">External Link</span>';
+                  container.appendChild(a);
+                });
+              }).catch(function() {});
             }
           }).catch(function(){});
         } catch(e) {}
