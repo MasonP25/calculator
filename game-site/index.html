@@ -1214,7 +1214,7 @@
       <p>Listen to music while you play!</p>
       <span class="badge solo">External Link</span>
     </a>
-    <a class="card proxy-link" href="https://www.youtube.com" target="_blank" rel="noopener">
+    <a class="card proxy-link" href="https://www.youtube.com" data-hash="#sWc0uOeIWyO+vFnuwdODoHnprhDjt9F+" target="_blank" rel="noopener">
       <div class="icon">&#9654;&#65039;</div>
       <h2>YouTube</h2>
       <p>Watch videos. May be slow through proxy.</p>
@@ -1235,14 +1235,18 @@
     <script>
     // On github.io, wrap external links through proxy and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
-      var _sp = ['https://','splash','.best/#inject='].join('');
+      var _spBase = ['https://','splash','.best/'].join('');
       document.querySelectorAll('.proxy-link').forEach(function(a) {
-        a.href = _sp + encodeURI(a.href);
+        if (a.dataset.hash) {
+          a.href = _spBase + a.dataset.hash;
+        } else {
+          a.href = _spBase + '#inject=' + encodeURI(a.href);
+        }
       });
       window.addEventListener('DOMContentLoaded', function() {
         var ub = document.getElementById('unblock-btn');
         if (ub) {
-          ub.href = _sp + 'https://masonp25.github.io/calculator/game-site/';
+          ub.href = _spBase + '#inject=https://masonp25.github.io/calculator/game-site/';
           ub.style.display = 'flex';
         }
       });
