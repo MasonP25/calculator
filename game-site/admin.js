@@ -97,6 +97,8 @@
     'slime farmer':'slimefarmer','slime':'slimefarmer','clumsy bird':'clumsybird',
     'biz tycoon':'biztycoon','business tycoon':'biztycoon','tycoon':'biztycoon',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
+    'poker':'poker','parkingjam':'parkingjam','parking jam':'parkingjam',
+    'word scramble':'wordscramble','wordscramble':'wordscramble',
   };
 
   function _resolveGameId(input) {
@@ -849,6 +851,88 @@
       });
     },
 
+    // ── Clean up scores from external/invalid games ──
+    // Usage: ArcadeAdmin.cleanScores()        — scan only (shows invalid gameIds)
+    //        ArcadeAdmin.cleanScores(true)     — scan AND delete invalid scores
+    cleanScores: function (doDelete) {
+      if (!_requireAuth()) return;
+      return _initFirebase().then(function () {
+        return import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js").then(function (mod) {
+          var deleteDoc = mod.deleteDoc;
+          // Build set of valid game IDs from _gameNames values
+          var validIds = {};
+          Object.keys(_gameNames).forEach(function (k) {
+            validIds[_gameNames[k]] = true;
+          });
+          console.log('[Admin] Valid game IDs (' + Object.keys(validIds).length + '): ' + Object.keys(validIds).sort().join(', '));
+
+          // Query ALL score documents
+          console.log('[Admin] Querying all score documents...');
+          return _getDocs(_collection(_db, 'scores')).then(function (snap) {
+            console.log('[Admin] Total score documents: ' + snap.size);
+
+            var invalid = [];   // { docId, gameId, name, score }
+            var validCount = 0;
+            var byGameId = {};  // gameId -> count of invalid docs
+
+            snap.forEach(function (d) {
+              var data = d.data();
+              var gid = data.gameId || '(missing)';
+              if (validIds[gid]) {
+                validCount++;
+              } else {
+                invalid.push({ docId: d.id, gameId: gid, name: data.name, score: data.score });
+                byGameId[gid] = (byGameId[gid] || 0) + 1;
+              }
+            });
+
+            console.log('[Admin] Valid scores: ' + validCount);
+            console.log('[Admin] Invalid scores: ' + invalid.length);
+
+            if (invalid.length === 0) {
+              console.log('[Admin] No invalid scores found. Collection is clean!');
+              return;
+            }
+
+            // Summary by gameId
+            console.log('\n[Admin] ── Invalid gameIds found ──');
+            var sortedIds = Object.keys(byGameId).sort(function (a, b) { return byGameId[b] - byGameId[a]; });
+            sortedIds.forEach(function (gid) {
+              console.log('  ' + gid + ': ' + byGameId[gid] + ' score(s)');
+            });
+
+            // Show individual entries
+            console.log('\n[Admin] ── All invalid score entries ──');
+            console.table(invalid.map(function (e) {
+              return { docId: e.docId, gameId: e.gameId, player: e.name, score: e.score };
+            }));
+
+            if (!doDelete) {
+              console.log('\n[Admin] DRY RUN — no scores deleted.');
+              console.log('[Admin] To delete these scores, run: ArcadeAdmin.cleanScores(true)');
+              return;
+            }
+
+            // Actually delete
+            console.log('\n[Admin] Deleting ' + invalid.length + ' invalid score documents...');
+            var batch = [];
+            invalid.forEach(function (e) {
+              batch.push(
+                deleteDoc(_doc(_db, 'scores', e.docId)).then(function () {
+                  console.log('  Deleted: ' + e.docId + ' (' + e.gameId + ' / ' + e.name + ')');
+                }).catch(function (err) {
+                  console.error('  FAILED to delete ' + e.docId + ':', err.message);
+                })
+              );
+            });
+            return Promise.all(batch).then(function () {
+              console.log('[Admin] Done! Deleted ' + invalid.length + ' invalid score documents.');
+            });
+          });
+        });
+      });
+    },
+
     // ── Site banner toggle ──
     hideBanner: function() {
       localStorage.setItem('_site_banner_hidden', '1');
@@ -903,6 +987,8 @@
         '  ArcadeAdmin.ban("user", "reason")           — Ban user + device\n' +
         '  ArcadeAdmin.unban("user")                   — Unban user + device\n' +
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
+        '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
+        '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
         '  ArcadeAdmin.hideBanner()                     — Hide site-wide banner\n' +
         '  ArcadeAdmin.showBanner()                     — Show site-wide banner\n' +
         '  ArcadeAdmin.help()                          — Show this help'
