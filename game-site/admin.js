@@ -828,6 +828,21 @@
       });
     },
 
+    // ── Site banner toggle ──
+    hideBanner: function() {
+      localStorage.setItem('_site_banner_hidden', '1');
+      var b = document.getElementById('site-banner');
+      if (b) b.style.display = 'none';
+      console.log('[Admin] Banner hidden. Reload other pages to take effect.');
+    },
+
+    showBanner: function() {
+      localStorage.removeItem('_site_banner_hidden');
+      var b = document.getElementById('site-banner');
+      if (b) b.style.display = '';
+      console.log('[Admin] Banner visible again.');
+    },
+
     help: function () {
       console.log(
         '── ArcadeAdmin Commands ──\n' +
@@ -866,6 +881,8 @@
         '  ArcadeAdmin.ban("user", "reason")           — Ban user + device\n' +
         '  ArcadeAdmin.unban("user")                   — Unban user + device\n' +
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
+        '  ArcadeAdmin.hideBanner()                     — Hide site-wide banner\n' +
+        '  ArcadeAdmin.showBanner()                     — Show site-wide banner\n' +
         '  ArcadeAdmin.help()                          — Show this help'
       );
     }

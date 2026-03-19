@@ -694,6 +694,17 @@
 </style>
 </head>
 <body>
+  <div id="site-banner" style="display:none;background:linear-gradient(135deg,#ff4757,#ff6b81);color:#fff;text-align:center;padding:12px 20px;font-family:'Segoe UI',Tahoma,sans-serif;font-size:0.88rem;line-height:1.5;position:relative;z-index:9990;">
+    <strong>Heads up!</strong> We're experiencing temporary server issues — your coins, inventory, levels, and progress may not load correctly right now. Don't worry, <strong>nothing is lost</strong>. Everything will be back to normal soon!
+  </div>
+  <script>
+  (function(){
+    var key = '_site_banner_hidden';
+    if (localStorage.getItem(key)) return;
+    var b = document.getElementById('site-banner');
+    if (b) b.style.display = '';
+  })();
+  </script>
   <h1>ARCADE</h1>
   <p class="subtitle">Pick a game to play</p>
   <p class="count">134 games <span id="online-count" style="margin-left:2px"></span></p>
