@@ -1516,6 +1516,11 @@
     if (!nameElement || !equipped || !equipped.nameEffect) return;
     var effect = NAME_EFFECTS[equipped.nameEffect];
     if (!effect) return;
+    // Isolate animation so it doesn't bleed into surrounding elements
+    nameElement.style.display = 'inline-block';
+    nameElement.style.isolation = 'isolate';
+    nameElement.style.willChange = 'transform, opacity, filter';
+    nameElement.style.contain = 'layout style paint';
     applyCSS(nameElement, effect.css);
   }
 

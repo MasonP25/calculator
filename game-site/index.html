@@ -70,6 +70,8 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: sectionShift 3s ease-in-out infinite;
+    isolation: isolate;
+    contain: layout style paint;
   }
   .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
   .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
@@ -92,6 +94,9 @@
     -webkit-text-fill-color: transparent !important;
     background-clip: text;
     animation: sectionShift 3s ease-in-out infinite;
+    display: inline-block;
+    isolation: isolate;
+    contain: layout style paint;
   }
   .games {
     display: flex;
