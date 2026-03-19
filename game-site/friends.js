@@ -78,7 +78,7 @@
           }));
         }
       } catch(e) { /* ignore polling errors */ }
-    }, 30000);
+    }, 60000);
   }
 
   window.ArcadeFriends = {

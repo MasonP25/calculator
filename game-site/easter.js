@@ -78,17 +78,25 @@
     });
   }
 
-  // Try syncing immediately if Firebase is already ready
-  if (window._arcadeDB) {
-    _eLoadFromCloud().then(_eUpdateAfterSync);
+  // Sync once per session (not on every page load)
+  var _eSynced = sessionStorage.getItem('_fb_easter_synced');
+  function _eDoSync() {
+    if (_eSynced && !_eResetNeeded) { _eUpdateAfterSync(); return; }
+    _eLoadFromCloud().then(function() {
+      sessionStorage.setItem('_fb_easter_synced', '1');
+      _eSynced = '1';
+      _eUpdateAfterSync();
+    });
   }
-  // Also sync when firebase-lb.js finishes loading (module scripts are deferred)
+  if (window._arcadeDB) {
+    _eDoSync();
+  }
   window.addEventListener('firebase-auth-ready', function() {
-    setTimeout(function() { _eLoadFromCloud().then(_eUpdateAfterSync); }, 500);
+    setTimeout(_eDoSync, 500);
   });
-  // Sync on sign-in/sign-out
   window.addEventListener('arcade-auth-change', function() {
-    setTimeout(function() { _eLoadFromCloud().then(_eUpdateAfterSync); }, 1000);
+    _eSynced = null; sessionStorage.removeItem('_fb_easter_synced');
+    setTimeout(_eDoSync, 1000);
   });
   var EMOJIS = [
     '\uD83E\uDD5A', '\uD83D\uDC23', '\uD83D\uDC30', '\uD83C\uDF37',

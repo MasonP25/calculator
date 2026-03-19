@@ -210,6 +210,18 @@
   // ─── Load user state ───
   async function _load() {
     if (_isGuest() || _loaded) return;
+    // Session cache: skip Firebase read if already loaded this session
+    var sessKey = '_fb_challenges';
+    var cached = sessionStorage.getItem(sessKey);
+    if (cached) {
+      try {
+        var c = JSON.parse(cached);
+        _dailyChallenge = c.dc || {};
+        _weeklyQuests = c.wq || {};
+        _loaded = true;
+        return;
+      } catch(e) {}
+    }
     try {
       await _initFirebase();
       if (!_db) return;
@@ -249,6 +261,7 @@
       }
 
       _loaded = true;
+      try { sessionStorage.setItem(sessKey, JSON.stringify({ dc: _dailyChallenge, wq: _weeklyQuests })); } catch(e2) {}
     } catch(e) {
       console.warn('[Challenges] Load failed:', e);
     }
