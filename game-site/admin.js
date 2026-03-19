@@ -933,6 +933,67 @@
       });
     },
 
+    // ── External Link Cards (on index.html) ──
+    // Usage: ArcadeAdmin.addExtLink('Discord', 'https://discord.com', '💬', 'Chat with friends')
+    addExtLink: function(name, url, emoji, desc) {
+      if (!_requireAuth()) return;
+      if (!name || !url) return console.error('[Admin] name and url required. Usage: addExtLink("Name", "https://...", "emoji", "description")');
+      emoji = emoji || '🔗';
+      desc = desc || '';
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'externalLinks');
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : {};
+          var links = data.links || [];
+          // Remove existing link with same name (case-insensitive)
+          links = links.filter(function(l) { return l.name.toLowerCase() !== name.toLowerCase(); });
+          links.push({ name: name, url: url, emoji: emoji, desc: desc });
+          return _setDoc(docRef, { links: links }).then(function() {
+            console.log('[Admin] Added external link: ' + emoji + ' ' + name + ' → ' + url);
+            console.log('[Admin] Reload index.html to see it.');
+          });
+        });
+      });
+    },
+
+    // Usage: ArcadeAdmin.removeExtLink('Discord')
+    removeExtLink: function(name) {
+      if (!_requireAuth()) return;
+      if (!name) return console.error('[Admin] name required');
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'externalLinks');
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists()) return console.log('[Admin] No custom external links found');
+          var links = snap.data().links || [];
+          var before = links.length;
+          links = links.filter(function(l) { return l.name.toLowerCase() !== name.toLowerCase(); });
+          if (links.length === before) return console.log('[Admin] No link found with name "' + name + '"');
+          return _setDoc(docRef, { links: links }).then(function() {
+            console.log('[Admin] Removed external link: ' + name);
+          });
+        });
+      });
+    },
+
+    // Usage: ArcadeAdmin.listExtLinks()
+    listExtLinks: function() {
+      if (!_requireAuth()) return;
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'externalLinks');
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists() || !(snap.data().links || []).length) {
+            return console.log('[Admin] No custom external links');
+          }
+          var links = snap.data().links;
+          console.log('── Custom External Links ──');
+          links.forEach(function(l, i) {
+            console.log('  ' + (i+1) + '. ' + l.emoji + ' ' + l.name + ' → ' + l.url + (l.desc ? ' (' + l.desc + ')' : ''));
+          });
+          console.log('[Admin] Total: ' + links.length + ' custom link(s)');
+        });
+      });
+    },
+
     // ── Site banner toggle ──
     hideBanner: function() {
       localStorage.setItem('_site_banner_hidden', '1');
@@ -989,6 +1050,9 @@
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
         '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
+        '  ArcadeAdmin.addExtLink("Name","url","emoji","desc") — Add external link card\n' +
+        '  ArcadeAdmin.removeExtLink("Name")            — Remove external link card\n' +
+        '  ArcadeAdmin.listExtLinks()                   — List custom external links\n' +
         '  ArcadeAdmin.hideBanner()                     — Hide site-wide banner\n' +
         '  ArcadeAdmin.showBanner()                     — Show site-wide banner\n' +
         '  ArcadeAdmin.help()                          — Show this help'

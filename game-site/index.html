@@ -1232,7 +1232,51 @@
       <p>Browse Roblox. Gameplay requires the app.</p>
       <span class="badge solo">External Link</span>
     </a>
+    <a class="card proxy-link" href="https://www.pinterest.com" target="_blank" rel="noopener">
+      <div class="icon">&#128204;</div>
+      <h2>Pinterest</h2>
+      <p>Browse pins and boards.</p>
+      <span class="badge solo">External Link</span>
+    </a>
+    <div id="custom-ext-links"></div>
     <script>
+    // Load custom external links from Firebase
+    (function() {
+      function _loadCustomExtLinks() {
+        try {
+          var db = firebase.firestore(firebase.app('global-chat'));
+        } catch(e) { return; }
+        db.collection('config').doc('externalLinks').get().then(function(snap) {
+          if (!snap.exists) return;
+          var links = snap.data().links || [];
+          var container = document.getElementById('custom-ext-links');
+          if (!container || links.length === 0) return;
+          var onProxy = location.hostname.indexOf('github.io') !== -1;
+          var spBase = onProxy ? [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('') : '';
+          links.forEach(function(link) {
+            var a = document.createElement('a');
+            a.className = 'card proxy-link';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            if (onProxy) {
+              a.href = spBase + '#inject=' + encodeURI(link.url);
+            } else {
+              a.href = link.url;
+            }
+            a.innerHTML = '<div class="icon">' + link.emoji + '</div>' +
+              '<h2>' + link.name + '</h2>' +
+              '<p>' + (link.desc || '') + '</p>' +
+              '<span class="badge solo">External Link</span>';
+            container.appendChild(a);
+          });
+        }).catch(function() {});
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(_loadCustomExtLinks, 1500); });
+      } else {
+        setTimeout(_loadCustomExtLinks, 1500);
+      }
+    })();
     // On github.io, wrap external links through proxy and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
       var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('');
