@@ -99,6 +99,10 @@
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
     'poker':'poker','parkingjam':'parkingjam','parking jam':'parkingjam',
     'word scramble':'wordscramble','wordscramble':'wordscramble',
+    'block blaster':'blockblaster','blockblaster':'blockblaster',
+    'color match':'colormatch','colormatch':'colormatch',
+    'man runner 2048':'manrunner2048','manrunner2048':'manrunner2048','man runner':'manrunner2048',
+    'tangle master':'tanglemaster','tanglemaster':'tanglemaster',
   };
 
   function _resolveGameId(input) {

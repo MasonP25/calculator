@@ -1,4 +1,4 @@
-var CACHE_NAME = 'arcade-v19';
+var CACHE_NAME = 'arcade-v20';
 
 var PRE_CACHE = [
   './',
