@@ -87,25 +87,11 @@
     });
   }
 
-  // Load user data from Firebase (with session cache to reduce reads)
-  var _coinsSessKey = '_fb_coins';
+  // Load user data from Firebase
   function _load() {
     if (_isGuest()) {
       _loaded = true;
       return Promise.resolve();
-    }
-    // Session cache: skip Firebase read if already loaded this session
-    var cached = sessionStorage.getItem(_coinsSessKey);
-    if (cached) {
-      try {
-        var c = JSON.parse(cached);
-        _balance = c.coins || 0;
-        _inventory = c.inventory || [];
-        _equipped = c.equipped || { hat: '', hair: '', face: '', shirt: '', skin: '', nametagColor: '', nametagFont: '', chatBubble: '', nameEffect: '', cursor: '' };
-        _loaded = true;
-        _dispatch();
-        return Promise.resolve();
-      } catch(e) {}
     }
     return _initFirebase().then(function() {
       if (!_db) return;
@@ -120,52 +106,26 @@
         }
         _loaded = true;
         _dispatch();
-        _updateCoinsCache();
       });
     }).catch(function(e) {
       console.warn('[Coins] Load failed:', e);
       _loaded = true;
     });
   }
-  function _updateCoinsCache() {
-    try { sessionStorage.setItem(_coinsSessKey, JSON.stringify({ coins: _balance, inventory: _inventory, equipped: _equipped })); } catch(e) {}
-  }
 
   // Save to Firebase (merge: only update coins/inventory/equipped)
-  var _saveTimer = null;
-  var _saveDirty = false;
-
-  function _saveNow() {
+  function _save() {
     if (_isGuest() || !_db || !_loaded) return Promise.resolve();
-    _saveDirty = false;
-    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
     var key = _getUser().toLowerCase();
     var docRef = _doc(_db, 'users', key);
     return _setDoc(docRef, {
       coins: _balance,
       inventory: _inventory,
       equipped: _equipped
-    }, { merge: true }).then(function() {
-      _updateCoinsCache();
-    }).catch(function(e) {
+    }, { merge: true }).catch(function(e) {
       console.warn('[Coins] Save failed:', e);
     });
   }
-
-  function _save() {
-    _updateCoinsCache();
-    _saveDirty = true;
-    if (_saveTimer) return;
-    _saveTimer = setTimeout(function() {
-      _saveTimer = null;
-      if (_saveDirty) _saveNow();
-    }, 5000);
-  }
-
-  // Flush pending saves when leaving the page
-  window.addEventListener('beforeunload', function() {
-    if (_saveDirty) _saveNow();
-  });
 
   function _dispatch() {
     window.dispatchEvent(new CustomEvent('coins-updated', {

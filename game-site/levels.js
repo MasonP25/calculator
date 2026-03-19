@@ -148,19 +148,6 @@
 
   async function _load() {
     if (_isGuest() || _loaded) return;
-    // Session cache: skip Firebase read if already loaded this session
-    var sessKey = '_fb_levels';
-    var cached = sessionStorage.getItem(sessKey);
-    if (cached) {
-      try {
-        var c = JSON.parse(cached);
-        _xp = c.xp || 0;
-        _level = _levelFromXP(_xp);
-        _loaded = true;
-        _dispatch();
-        return;
-      } catch(e) {}
-    }
     try {
       await _initFirebase();
       if (!_db) return;
@@ -195,7 +182,6 @@
         await _setDoc(ref, loginUpdates, { merge: true });
       }
 
-      try { sessionStorage.setItem(sessKey, JSON.stringify({ xp: _xp })); } catch(e2) {}
       _dispatch();
     } catch(e) {
       console.warn('[Levels] Load failed:', e);

@@ -78,13 +78,8 @@
     });
   }
 
-  // Sync once per session (not on every page load)
-  var _eSynced = sessionStorage.getItem('_fb_easter_synced');
   function _eDoSync() {
-    if (_eSynced && !_eResetNeeded) { _eUpdateAfterSync(); return; }
     _eLoadFromCloud().then(function() {
-      sessionStorage.setItem('_fb_easter_synced', '1');
-      _eSynced = '1';
       _eUpdateAfterSync();
     });
   }
@@ -95,7 +90,6 @@
     setTimeout(_eDoSync, 500);
   });
   window.addEventListener('arcade-auth-change', function() {
-    _eSynced = null; sessionStorage.removeItem('_fb_easter_synced');
     setTimeout(_eDoSync, 1000);
   });
   var EMOJIS = [

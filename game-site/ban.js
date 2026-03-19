@@ -135,8 +135,6 @@
 
   // ─── Main Ban Check ───
   async function _checkBan() {
-    // Session cache: only check ban once per session
-    if (sessionStorage.getItem('_fb_ban_checked')) return;
     try {
       var fp = _generateFingerprint();
       // Store fingerprint locally
@@ -195,7 +193,6 @@
         }
       } catch(e) {}
 
-      sessionStorage.setItem('_fb_ban_checked', '1');
     } catch(e) {
       console.warn('[Ban] Check failed:', e);
     }
