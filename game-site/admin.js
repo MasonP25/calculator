@@ -937,6 +937,71 @@
       });
     },
 
+    // ── Custom Games (dynamic, no file creation needed) ──
+    // Usage: ArcadeAdmin.addGame('Bridge Race', 'https://games.crazygames.com/en_US/bridge-race/index.html', '🏗️', 'Collect bricks and build bridges!', 'Swipe / Mouse')
+    addGame: function(name, url, emoji, desc, badge) {
+      if (!_requireAuth()) return;
+      if (!name || !url) return console.error('[Admin] name and url required.\nUsage: addGame("Name", "https://games.crazygames.com/en_US/slug/index.html", "emoji", "description", "badge")');
+      emoji = emoji || '🎮';
+      desc = desc || '';
+      badge = badge || 'Mouse';
+      var id = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'customGames');
+        return _getDoc(docRef).then(function(snap) {
+          var data = snap.exists() ? snap.data() : {};
+          var games = data.games || [];
+          games = games.filter(function(g) { return g.id !== id; });
+          games.push({ id: id, name: name, url: url, emoji: emoji, desc: desc, badge: badge });
+          return _setDoc(docRef, { games: games }).then(function() {
+            console.log('[Admin] Added game: ' + emoji + ' ' + name);
+            console.log('[Admin] ID: ' + id);
+            console.log('[Admin] URL: ' + url);
+            console.log('[Admin] Reload index.html to see the card.');
+          });
+        });
+      });
+    },
+
+    // Usage: ArcadeAdmin.removeGame('Bridge Race')  or  ArcadeAdmin.removeGame('bridgerace')
+    removeGame: function(name) {
+      if (!_requireAuth()) return;
+      if (!name) return console.error('[Admin] name required');
+      var id = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'customGames');
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists()) return console.log('[Admin] No custom games found');
+          var games = snap.data().games || [];
+          var before = games.length;
+          games = games.filter(function(g) { return g.id !== id; });
+          if (games.length === before) return console.log('[Admin] No game found with name "' + name + '" (id: ' + id + ')');
+          return _setDoc(docRef, { games: games }).then(function() {
+            console.log('[Admin] Removed game: ' + name);
+          });
+        });
+      });
+    },
+
+    // Usage: ArcadeAdmin.listGames()
+    listGames: function() {
+      if (!_requireAuth()) return;
+      return _initFirebase().then(function() {
+        var docRef = _doc(_db, 'config', 'customGames');
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists() || !(snap.data().games || []).length) {
+            return console.log('[Admin] No custom games');
+          }
+          var games = snap.data().games;
+          console.log('── Custom Games ──');
+          games.forEach(function(g, i) {
+            console.log('  ' + (i+1) + '. ' + g.emoji + ' ' + g.name + ' [' + g.badge + '] → ' + g.url);
+          });
+          console.log('[Admin] Total: ' + games.length + ' custom game(s)');
+        });
+      });
+    },
+
     // ── External Link Cards (on index.html) ──
     // Usage: ArcadeAdmin.addExtLink('Discord', 'https://discord.com', '💬', 'Chat with friends')
     addExtLink: function(name, url, emoji, desc) {
@@ -1084,6 +1149,9 @@
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
         '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
+        '  ArcadeAdmin.addGame("Name","url","emoji","desc","badge") — Add game card\n' +
+        '  ArcadeAdmin.removeGame("Name")                — Remove game card\n' +
+        '  ArcadeAdmin.listGames()                       — List custom games\n' +
         '  ArcadeAdmin.grantExtLinks("user")             — Let user see external links\n' +
         '  ArcadeAdmin.revokeExtLinks("user")            — Hide external links from user\n' +
         '  ArcadeAdmin.addExtLink("Name","url","emoji","desc") — Add external link card\n' +
