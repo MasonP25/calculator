@@ -1788,15 +1788,19 @@
 
     document.getElementById('noResults').style.display = ((q || activeFilter !== 'all') && !anyVisible) ? 'block' : 'none';
 
-    // Hide fav/recent sections when filtering
+    // Hide fav/recent/popular sections when filtering
     var favS = document.getElementById('favSection');
     var favG = document.getElementById('favGames');
     var recS = document.getElementById('recentSection');
     var recG = document.getElementById('recentGames');
+    var popS = document.getElementById('popularSection');
+    var popG = document.getElementById('popularGames');
     if (q || activeFilter !== 'all') {
       favS.style.display = 'none'; favG.style.display = 'none';
       recS.style.display = 'none'; recG.style.display = 'none';
+      popS.style.display = 'none'; popG.style.display = 'none';
     } else {
+      popS.style.display = ''; popG.style.display = '';
       renderFavorites();
       renderRecentlyPlayed();
     }
