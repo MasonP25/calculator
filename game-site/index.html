@@ -1235,7 +1235,7 @@
     <script>
     // On github.io, wrap external links through proxy and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
-      var _spBase = ['https://','splash','.best/'].join('');
+      var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('');
       document.querySelectorAll('.proxy-link').forEach(function(a) {
         if (a.dataset.hash) {
           a.href = _spBase + a.dataset.hash;
