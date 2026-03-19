@@ -241,6 +241,11 @@ h1 {
     flex-wrap: wrap;
 }
 
+.opponents-area.compact {
+    gap: 8px;
+    padding: 8px 12px;
+}
+
 .opponent-slot {
     background: #1a1a2e;
     border: 2px solid #2a2a4a;
@@ -249,6 +254,12 @@ h1 {
     text-align: center;
     min-width: 120px;
     transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.compact .opponent-slot {
+    padding: 5px 10px;
+    min-width: 80px;
+    border-radius: 8px;
 }
 
 .opponent-slot.active-turn {
@@ -266,9 +277,19 @@ h1 {
     max-width: 120px;
 }
 
+.compact .opponent-slot .opp-name {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+    max-width: 80px;
+}
+
 .opponent-slot .opp-cards {
     font-size: 0.8rem;
     color: #888;
+}
+
+.compact .opponent-slot .opp-cards {
+    font-size: 0.68rem;
 }
 
 .opponent-slot .uno-badge {
@@ -1090,6 +1111,7 @@ h1 {
 
         // Opponents
         opponentsArea.innerHTML = '';
+        opponentsArea.classList.toggle('compact', data.players.length > 6);
         for (var i = 0; i < data.players.length; i++) {
             if (i === myIndex) continue;
             var pName = data.players[i];
