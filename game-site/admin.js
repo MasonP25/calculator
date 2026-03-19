@@ -938,10 +938,16 @@
     },
 
     // ── Custom Games (dynamic, no file creation needed) ──
-    // Usage: ArcadeAdmin.addGame('Bridge Race', 'https://games.crazygames.com/en_US/bridge-race/index.html', '🏗️', 'Collect bricks and build bridges!', 'Swipe / Mouse')
+    // Usage: ArcadeAdmin.addGame('Agar.io', 'https://www.crazygames.com/game/agario', '🟢', 'Eat cells and grow!', 'Mouse')
     addGame: function(name, url, emoji, desc, badge) {
       if (!_requireAuth()) return;
-      if (!name || !url) return console.error('[Admin] name and url required.\nUsage: addGame("Name", "https://games.crazygames.com/en_US/slug/index.html", "emoji", "description", "badge")');
+      if (!name || !url) return console.error('[Admin] name and url required.\nUsage: addGame("Name", "https://www.crazygames.com/game/slug", "emoji", "desc", "badge")');
+      // Auto-convert crazygames.com/game/slug → games.crazygames.com embed URL
+      var cgMatch = url.match(/crazygames\.com\/game\/([a-z0-9\-]+)/i);
+      if (cgMatch) {
+        url = 'https://games.crazygames.com/en_US/' + cgMatch[1] + '/index.html';
+        console.log('[Admin] Converted to embed URL: ' + url);
+      }
       emoji = emoji || '🎮';
       desc = desc || '';
       badge = badge || 'Mouse';
@@ -956,7 +962,7 @@
           return _setDoc(docRef, { games: games }).then(function() {
             console.log('[Admin] Added game: ' + emoji + ' ' + name);
             console.log('[Admin] ID: ' + id);
-            console.log('[Admin] URL: ' + url);
+            console.log('[Admin] Embed: ' + url);
             console.log('[Admin] Reload index.html to see the card.');
           });
         });
@@ -1149,7 +1155,7 @@
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
         '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
-        '  ArcadeAdmin.addGame("Name","url","emoji","desc","badge") — Add game card\n' +
+        '  ArcadeAdmin.addGame("Name","crazygames.com/game/slug","emoji","desc","badge") — Add game\n' +
         '  ArcadeAdmin.removeGame("Name")                — Remove game card\n' +
         '  ArcadeAdmin.listGames()                       — List custom games\n' +
         '  ArcadeAdmin.grantExtLinks("user")             — Let user see external links\n' +
