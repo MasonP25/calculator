@@ -1232,7 +1232,6 @@
       <p>Live life as a cat! Explore, hunt, and cause mischief in a 3D open world!</p>
       <span class="badge solo">WASD / Mouse</span>
     </a>
-    <div id="custom-games"></div>
     <div id="ext-links-wrap" style="display:none;contents:none">
     <a class="card proxy-link" href="https://open.spotify.com" target="_blank" rel="noopener">
       <div class="icon">&#127925;</div>
@@ -2168,37 +2167,6 @@
       }
     }, 2000);
   });
-})();
-</script>
-<script>
-// Load custom games from Firebase (admin-added via addGame command)
-(function() {
-  function _loadCustomGames() {
-    try {
-      var db = firebase.firestore(firebase.app('global-chat'));
-    } catch(e) { return; }
-    db.collection('config').doc('customGames').get().then(function(snap) {
-      if (!snap.exists) return;
-      var games = snap.data().games || [];
-      var container = document.getElementById('custom-games');
-      if (!container || games.length === 0) return;
-      games.forEach(function(g) {
-        var a = document.createElement('a');
-        a.className = 'card';
-        a.href = 'cgame.html?id=' + encodeURIComponent(g.id);
-        a.innerHTML = '<div class="icon">' + g.emoji + '</div>' +
-          '<h2>' + g.name + '</h2>' +
-          '<p>' + (g.desc || '') + '</p>' +
-          '<span class="badge solo">' + (g.badge || 'Mouse') + '</span>';
-        container.appendChild(a);
-      });
-    }).catch(function() {});
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(_loadCustomGames, 1800); });
-  } else {
-    setTimeout(_loadCustomGames, 1800);
-  }
 })();
 </script>
 

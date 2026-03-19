@@ -937,75 +937,29 @@
       });
     },
 
-    // ── Custom Games (dynamic, no file creation needed) ──
+    // ── Generate game code (outputs HTML for Claude to add) ──
     // Usage: ArcadeAdmin.addGame('Agar.io', 'https://www.crazygames.com/game/agario', '🟢', 'Eat cells and grow!', 'Mouse')
     addGame: function(name, url, emoji, desc, badge) {
       if (!_requireAuth()) return;
-      if (!name || !url) return console.error('[Admin] name and url required.\nUsage: addGame("Name", "https://www.crazygames.com/game/slug", "emoji", "desc", "badge")');
-      // Auto-convert crazygames.com/game/slug → games.crazygames.com embed URL
+      if (!name || !url) return console.error('[Admin] Usage: addGame("Name", "https://www.crazygames.com/game/slug", "emoji", "desc", "badge")');
+      // Auto-convert crazygames.com/game/slug → embed URL
       var cgMatch = url.match(/crazygames\.com\/game\/([a-z0-9\-]+)/i);
       if (cgMatch) {
         url = 'https://games.crazygames.com/en_US/' + cgMatch[1] + '/index.html';
-        console.log('[Admin] Converted to embed URL: ' + url);
       }
       emoji = emoji || '🎮';
       desc = desc || '';
       badge = badge || 'Mouse';
       var id = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-      return _initFirebase().then(function() {
-        var docRef = _doc(_db, 'config', 'customGames');
-        return _getDoc(docRef).then(function(snap) {
-          var data = snap.exists() ? snap.data() : {};
-          var games = data.games || [];
-          games = games.filter(function(g) { return g.id !== id; });
-          games.push({ id: id, name: name, url: url, emoji: emoji, desc: desc, badge: badge });
-          return _setDoc(docRef, { games: games }).then(function() {
-            console.log('[Admin] Added game: ' + emoji + ' ' + name);
-            console.log('[Admin] ID: ' + id);
-            console.log('[Admin] Embed: ' + url);
-            console.log('[Admin] Reload index.html to see the card.');
-          });
-        });
-      });
-    },
-
-    // Usage: ArcadeAdmin.removeGame('Bridge Race')  or  ArcadeAdmin.removeGame('bridgerace')
-    removeGame: function(name) {
-      if (!_requireAuth()) return;
-      if (!name) return console.error('[Admin] name required');
-      var id = name.toLowerCase().replace(/[^a-z0-9]+/g, '');
-      return _initFirebase().then(function() {
-        var docRef = _doc(_db, 'config', 'customGames');
-        return _getDoc(docRef).then(function(snap) {
-          if (!snap.exists()) return console.log('[Admin] No custom games found');
-          var games = snap.data().games || [];
-          var before = games.length;
-          games = games.filter(function(g) { return g.id !== id; });
-          if (games.length === before) return console.log('[Admin] No game found with name "' + name + '" (id: ' + id + ')');
-          return _setDoc(docRef, { games: games }).then(function() {
-            console.log('[Admin] Removed game: ' + name);
-          });
-        });
-      });
-    },
-
-    // Usage: ArcadeAdmin.listGames()
-    listGames: function() {
-      if (!_requireAuth()) return;
-      return _initFirebase().then(function() {
-        var docRef = _doc(_db, 'config', 'customGames');
-        return _getDoc(docRef).then(function(snap) {
-          if (!snap.exists() || !(snap.data().games || []).length) {
-            return console.log('[Admin] No custom games');
-          }
-          var games = snap.data().games;
-          console.log('── Custom Games ──');
-          games.forEach(function(g, i) {
-            console.log('  ' + (i+1) + '. ' + g.emoji + ' ' + g.name + ' [' + g.badge + '] → ' + g.url);
-          });
-          console.log('[Admin] Total: ' + games.length + ' custom game(s)');
-        });
-      });
+      console.log('%c── ADD THIS GAME ──', 'font-weight:bold;font-size:14px');
+      console.log('Name: ' + name);
+      console.log('File: ' + id + '.html');
+      console.log('Embed URL: ' + url);
+      console.log('Emoji: ' + emoji);
+      console.log('Description: ' + desc);
+      console.log('Badge: ' + badge);
+      console.log('\n%cCopy this and give it to Claude:', 'font-weight:bold;color:#7b2ff7');
+      console.log('addGame ' + name + ' | ' + url + ' | ' + emoji + ' | ' + desc + ' | ' + badge);
     },
 
     // ── External Link Cards (on index.html) ──
@@ -1155,9 +1109,7 @@
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
         '  ArcadeAdmin.cleanScores()                    — Scan for invalid game scores (dry run)\n' +
         '  ArcadeAdmin.cleanScores(true)                — Delete all invalid game scores\n' +
-        '  ArcadeAdmin.addGame("Name","crazygames.com/game/slug","emoji","desc","badge") — Add game\n' +
-        '  ArcadeAdmin.removeGame("Name")                — Remove game card\n' +
-        '  ArcadeAdmin.listGames()                       — List custom games\n' +
+        '  ArcadeAdmin.addGame("Name","crazygames.com/game/slug","emoji","desc","badge") — Generate game code\n' +
         '  ArcadeAdmin.grantExtLinks("user")             — Let user see external links\n' +
         '  ArcadeAdmin.revokeExtLinks("user")            — Hide external links from user\n' +
         '  ArcadeAdmin.addExtLink("Name","url","emoji","desc") — Add external link card\n' +
