@@ -1391,17 +1391,10 @@
         window._countMods = mods[1];
       }
       var fb = window._countMods;
-      var q = fb.query(fb.collection(_countDb, 'users'), fb.where('online', '==', true));
-      var snap = await fb.getDocs(q);
-      var now = Date.now(), TWO_MIN = 120000, count = 0;
-      snap.forEach(function(d) {
-        var data = d.data();
-        if (data.lastSeen) {
-          var ts = data.lastSeen.toMillis ? data.lastSeen.toMillis() : data.lastSeen;
-          if (now - ts < TWO_MIN) count++;
-        }
-      });
-      return count;
+      var twoMinAgo = new Date(Date.now() - 120000);
+      var q = fb.query(fb.collection(_countDb, 'users'), fb.where('lastSeen', '>', twoMinAgo));
+      var countSnap = await fb.getCountFromServer(q);
+      return countSnap.data().count;
     } catch(e) { return 0; }
   }
 
