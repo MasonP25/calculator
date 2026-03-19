@@ -509,14 +509,23 @@
     document.getElementById('stat-biggest').textContent = stats.biggestWin;
   }
 
+  var _statsSaveTimer = null;
+  var _statsDirty = false;
+
   function recordGame(betAmount, winAmount) {
     stats.gamesPlayed++;
     stats.totalBet += betAmount;
     stats.totalWon += winAmount;
     if (winAmount > stats.biggestWin) stats.biggestWin = winAmount;
     updateStats();
-    // Save stats to Firestore
-    _saveStats();
+    // Debounced save — only writes every 10 seconds
+    _statsDirty = true;
+    if (!_statsSaveTimer) {
+      _statsSaveTimer = setTimeout(function() {
+        _statsSaveTimer = null;
+        if (_statsDirty) _saveStatsNow();
+      }, 10000);
+    }
     // Award XP
     if (window.ArcadeLevels) window.ArcadeLevels.addXP(2, 'casino');
     // Post activity for big wins (5x+ bet)
@@ -525,66 +534,27 @@
     }
   }
 
-  async function _saveStats() {
-    if (!window.ArcadeCoins || !window.ArcadeCoins.getBalance) return;
-    try {
-      var mods = await Promise.all([
-        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
-        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
-      ]);
-      var getApp = mods[0].getApp;
-      var initializeApp = mods[0].initializeApp;
-      var getFirestore = mods[1].getFirestore;
-      var doc = mods[1].doc;
-      var setDoc = mods[1].setDoc;
-      var config = {
-        apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
-        authDomain: "calculator-81d08.firebaseapp.com",
-        projectId: "calculator-81d08",
-        storageBucket: "calculator-81d08.firebasestorage.app",
-        messagingSenderId: "375406495739",
-        appId: "1:375406495739:web:fd28553263599864426d5e"
-      };
-      var db;
-      try { db = getFirestore(getApp('casino-app')); }
-      catch(e) {
-        try { db = getFirestore(initializeApp(config, 'casino-app')); }
-        catch(e2) { db = getFirestore(initializeApp(config, 'casino-app-' + Date.now())); }
-      }
-      var user = localStorage.getItem('arcade_currentUser');
-      if (!user || user === 'Guest') return;
-      await setDoc(doc(db, 'users', user.toLowerCase()), { casinoStats: stats }, { merge: true });
-    } catch(e) { /* ignore */ }
+  function _saveStatsNow() {
+    _statsDirty = false;
+    if (!window._arcadeDB) return;
+    var user = localStorage.getItem('arcade_currentUser');
+    if (!user || user === 'Guest') return;
+    var fdb = window._arcadeDB;
+    fdb.setDoc(fdb.doc(fdb.db, 'users', user.toLowerCase()), { casinoStats: stats }, { merge: true })
+      .catch(function(e) { console.warn('[Casino] Stats save failed:', e); });
   }
 
-  async function _loadStats() {
-    try {
-      var mods = await Promise.all([
-        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
-        import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
-      ]);
-      var getApp = mods[0].getApp;
-      var initializeApp = mods[0].initializeApp;
-      var getFirestore = mods[1].getFirestore;
-      var doc = mods[1].doc;
-      var getDoc = mods[1].getDoc;
-      var config = {
-        apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
-        authDomain: "calculator-81d08.firebaseapp.com",
-        projectId: "calculator-81d08",
-        storageBucket: "calculator-81d08.firebasestorage.app",
-        messagingSenderId: "375406495739",
-        appId: "1:375406495739:web:fd28553263599864426d5e"
-      };
-      var db;
-      try { db = getFirestore(getApp('casino-app')); }
-      catch(e) {
-        try { db = getFirestore(initializeApp(config, 'casino-app')); }
-        catch(e2) { db = getFirestore(initializeApp(config, 'casino-app-' + Date.now())); }
-      }
-      var user = localStorage.getItem('arcade_currentUser');
-      if (!user || user === 'Guest') return;
-      var snap = await getDoc(doc(db, 'users', user.toLowerCase()));
+  // Save stats when leaving page
+  window.addEventListener('beforeunload', function() {
+    if (_statsDirty) _saveStatsNow();
+  });
+
+  function _loadStats() {
+    if (!window._arcadeDB) return;
+    var user = localStorage.getItem('arcade_currentUser');
+    if (!user || user === 'Guest') return;
+    var fdb = window._arcadeDB;
+    fdb.getDoc(fdb.doc(fdb.db, 'users', user.toLowerCase())).then(function(snap) {
       if (snap.exists() && snap.data().casinoStats) {
         var s = snap.data().casinoStats;
         stats.totalBet = s.totalBet || 0;
@@ -593,7 +563,7 @@
         stats.gamesPlayed = s.gamesPlayed || 0;
         updateStats();
       }
-    } catch(e) { /* ignore */ }
+    }).catch(function(e) { console.warn('[Casino] Stats load failed:', e); });
   }
 
   // ─── Tab switching ───

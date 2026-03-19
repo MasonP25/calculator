@@ -132,8 +132,13 @@
   }
 
   // Save to Firebase (merge: only update coins/inventory/equipped)
-  function _save() {
+  var _saveTimer = null;
+  var _saveDirty = false;
+
+  function _saveNow() {
     if (_isGuest() || !_db || !_loaded) return Promise.resolve();
+    _saveDirty = false;
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
     var key = _getUser().toLowerCase();
     var docRef = _doc(_db, 'users', key);
     return _setDoc(docRef, {
@@ -146,6 +151,21 @@
       console.warn('[Coins] Save failed:', e);
     });
   }
+
+  function _save() {
+    _updateCoinsCache();
+    _saveDirty = true;
+    if (_saveTimer) return;
+    _saveTimer = setTimeout(function() {
+      _saveTimer = null;
+      if (_saveDirty) _saveNow();
+    }, 5000);
+  }
+
+  // Flush pending saves when leaving the page
+  window.addEventListener('beforeunload', function() {
+    if (_saveDirty) _saveNow();
+  });
 
   function _dispatch() {
     window.dispatchEvent(new CustomEvent('coins-updated', {
