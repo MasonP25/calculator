@@ -2760,7 +2760,7 @@
   window.addEventListener('beforeunload', function() { clearTypingStatus(); });
 
   /* ── global listener ── */
-  db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(80)
+  db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(30)
     .onSnapshot(function(snap) {
       globalMsgs = [];
       snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; d._col = 'global_chat'; globalMsgs.push(d); });

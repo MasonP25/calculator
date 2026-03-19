@@ -1418,5 +1418,5 @@
 
   setTimeout(refresh, 5);
   setTimeout(refresh, 3000);
-  setInterval(refresh, 45000);
+  setInterval(refresh, 450000);
 })();
