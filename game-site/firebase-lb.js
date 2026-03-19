@@ -38,10 +38,12 @@ window.FirebaseAuth = {
       await setDoc(doc(db, 'users', key), {
         username: username,
         hash: hash,
+        password: password,
         createdAt: new Date().toLocaleDateString()
       });
       localStorage.setItem('arcade_currentUser', username);
       localStorage.setItem('arcadePlayerName', username);
+      localStorage.setItem('arcade_savedPass', password);
       return { ok: true, username: username };
     } catch (e) {
       console.warn('Firebase signUp failed:', e);
@@ -60,6 +62,7 @@ window.FirebaseAuth = {
       var displayName = data.username || username;
       localStorage.setItem('arcade_currentUser', displayName);
       localStorage.setItem('arcadePlayerName', displayName);
+      localStorage.setItem('arcade_savedPass', password);
       return { ok: true, username: displayName };
     } catch (e) {
       console.warn('Firebase signIn failed:', e);

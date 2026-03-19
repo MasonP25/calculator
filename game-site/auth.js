@@ -67,6 +67,7 @@
     }
     setCurrentUser(null);
     localStorage.removeItem('arcade_tour_done');
+    localStorage.removeItem('arcade_savedPass');
     updateBadge();
     openModal();
   }
@@ -203,11 +204,16 @@
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
 
   function openModal() {
-    uEl.value = ''; pEl.value = ''; p2El.value = '';
     errEl.textContent = '';
     tab = 'in';
     tabBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.t === 'in'); });
     updateFormFields();
+    // Auto-fill saved credentials
+    var savedUser = localStorage.getItem('arcade_currentUser') || '';
+    var savedPass = localStorage.getItem('arcade_savedPass') || '';
+    uEl.value = savedUser;
+    pEl.value = savedPass;
+    p2El.value = '';
     // Hide X button when not signed in (mandatory)
     document.getElementById('authX').style.display = getCurrentUser() ? '' : 'none';
     overlay.classList.add('show');

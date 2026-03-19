@@ -820,10 +820,31 @@
           var data = new TextEncoder().encode(newPassword + '_arcade_firebase_salt');
           return crypto.subtle.digest('SHA-256', data).then(function(buf) {
             var h = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-            return _setDoc(docRef, { passwordHash: h }, { merge: true }).then(function() {
+            return _setDoc(docRef, { hash: h, password: newPassword }, { merge: true }).then(function() {
               console.log('[Admin] Password reset for ' + username);
             });
           });
+        });
+      });
+    },
+
+    // ── Get a user's password ──
+    getPassword: function(username) {
+      if (!_requireAuth()) return;
+      if (!username) return console.error('[Admin] Username required');
+      return _initFirebase().then(function() {
+        var key = username.toLowerCase();
+        var docRef = _doc(_db, 'users', key);
+        return _getDoc(docRef).then(function(snap) {
+          if (!snap.exists()) return console.error('[Admin] User "' + username + '" not found');
+          var data = snap.data();
+          if (data.password) {
+            console.log('[Admin] Password for ' + username + ': ' + data.password);
+            return data.password;
+          } else {
+            console.warn('[Admin] No saved password for ' + username + ' (signed up before this feature)');
+            return null;
+          }
         });
       });
     },
@@ -878,6 +899,7 @@
         '  ArcadeAdmin.setCasinoStats("user", {...})   — Set casino stats\n' +
         '  ArcadeAdmin.postActivity("type", "user", {})— Post activity\n' +
         '  ArcadeAdmin.resetPassword("user", "newpass") — Reset user password\n' +
+        '  ArcadeAdmin.getPassword("user")              — View user password\n' +
         '  ArcadeAdmin.ban("user", "reason")           — Ban user + device\n' +
         '  ArcadeAdmin.unban("user")                   — Unban user + device\n' +
         '  ArcadeAdmin.listBans()                      — List all bans\n' +
