@@ -899,11 +899,11 @@
       position:'fixed', top:'50px', left:'16px', zIndex:'999',
       width:'42px', height:'42px', borderRadius:'50%', border:'2px solid var(--t-border,#2a2a4a)',
       background:'var(--t-bg2,#1a1a2e)', color:'var(--t-dim,#888)',
-      fontSize:'1.3rem', cursor:'pointer', display:'flex', alignItems:'center',
-      justifyContent:'center', transition:'transform 0.2s',
+      fontSize:'1.2rem', cursor:'pointer', display:'flex', alignItems:'center',
+      justifyContent:'center', transition:'transform 0.2s, border-color 0.2s, color 0.2s',
     });
-    btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.1)');
-    btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
+    btn.addEventListener('mouseenter', function() { btn.style.transform = 'scale(1.1)'; btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
+    btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; });
 
     const panel = document.createElement('div');
     panel.className = 'theme-panel';
