@@ -454,6 +454,7 @@
 
       /* Theme picker itself */
       .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
+      .theme-picker-btn:hover,#daily-spin-btn:hover,#cloak-btn:hover { border-color:${t.accent}!important; color:#fff!important; transform:scale(1.1); }
       .theme-panel { background:${t.bg2}; border-color:${t.border}; }
       .theme-option { border-color:${t.border}; }
       .theme-option:hover,.theme-option.active { border-color:${t.accent}; }
@@ -1178,11 +1179,15 @@
       document.title = origTitle;
       setFavicon(origFavicon);
       localStorage.removeItem(KEY);
+      // Tell parent frame (for proxy/Splash) to reset
+      try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: '', favicon: '' }, '*'); } catch(e) {}
       return;
     }
     document.title = c.title;
     setFavicon(c.favicon);
     localStorage.setItem(KEY, id);
+    // Tell parent frame (for proxy/Splash) to apply cloak
+    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: c.title, favicon: c.favicon }, '*'); } catch(e) {}
   }
 
   // Apply saved cloak on every page

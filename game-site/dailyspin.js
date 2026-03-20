@@ -240,7 +240,7 @@
     var btn = document.getElementById('daily-spin-btn');
     if (!btn) return;
     if (spun) {
-      btn.style.opacity = '0.5';
+      btn.style.opacity = '0.75';
       btn.style.animation = 'none';
       btn.title = 'Already spun today';
     } else {
