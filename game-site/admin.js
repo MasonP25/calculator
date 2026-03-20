@@ -99,7 +99,6 @@
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
     'poker':'poker','parkingjam':'parkingjam','parking jam':'parkingjam',
     'word scramble':'wordscramble','wordscramble':'wordscramble',
-    'agar.io':'agario','agario':'agario','agar':'agario',
     'block blaster':'blockblaster','blockblaster':'blockblaster',
     'color match':'colormatch','colormatch':'colormatch',
     'man runner 2048':'manrunner2048','manrunner2048':'manrunner2048','man runner':'manrunner2048',
