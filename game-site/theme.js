@@ -1185,15 +1185,22 @@
     localStorage.setItem(KEY, id);
   }
 
-  function createCloakUI() {
+  // Apply saved cloak on every page
+  function initCloak() {
     origTitle = document.title;
     origFavicon = getOrigFavicon();
-
-    // Apply saved cloak
     var saved = localStorage.getItem(KEY);
     if (saved && CLOAKS[saved]) {
       applyCloak(saved);
     }
+  }
+
+  // Only show the button + panel on index.html
+  function createCloakUI() {
+    var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
+    if (pg !== 'index' && pg !== '') return;
+
+    var saved = localStorage.getItem(KEY);
 
     var btn = document.createElement('button');
     btn.id = 'cloak-btn';
@@ -1310,10 +1317,15 @@
     document.body.appendChild(panel);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createCloakUI);
-  } else {
+  function onReady() {
+    initCloak();
     createCloakUI();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady);
+  } else {
+    onReady();
   }
 })();
 
