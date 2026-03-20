@@ -1133,6 +1133,190 @@
   }
 })();
 
+// ─── TAB CLOAK ───
+(function() {
+  var CLOAKS = {
+    default: { name: 'Default', icon: '\u{1F3AE}' },
+    gdocs: { name: 'Google Docs', icon: '\u{1F4C4}', title: 'Untitled document - Google Docs', favicon: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
+    gslides: { name: 'Google Slides', icon: '\u{1F4CA}', title: 'Untitled presentation - Google Slides', favicon: 'https://ssl.gstatic.com/docs/presentations/images/favicon5.ico' },
+    gsheets: { name: 'Google Sheets', icon: '\u{1F4D7}', title: 'Untitled spreadsheet - Google Sheets', favicon: 'https://ssl.gstatic.com/docs/spreadsheets/images/favicon3.ico' },
+    classroom: { name: 'Google Classroom', icon: '\u{1F393}', title: 'Home', favicon: 'https://ssl.gstatic.com/classroom/favicon.png' },
+    canvas: { name: 'Canvas', icon: '\u{1F7E7}', title: 'Dashboard', favicon: 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico' },
+    clever: { name: 'Clever', icon: '\u{1F537}', title: 'Clever | Portal', favicon: 'https://assets.clever.com/resource/icons/favicon.ico' },
+    ixl: { name: 'IXL', icon: '\u{1F4D0}', title: 'IXL | Dashboard', favicon: 'https://www.ixl.com/favicon.ico' },
+    deltamath: { name: 'DeltaMath', icon: '\u{1F4C8}', title: 'DeltaMath', favicon: 'https://www.deltamath.com/favicon.ico' },
+    khan: { name: 'Khan Academy', icon: '\u{1F7E2}', title: 'Khan Academy | Free Online Courses', favicon: 'https://cdn.kastatic.org/images/favicon.ico' },
+    wikipedia: { name: 'Wikipedia', icon: '\u{1F4D6}', title: 'Wikipedia, the free encyclopedia', favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
+  };
+
+  var KEY = 'arcadeCloak';
+  var origTitle = document.title;
+  var origFavicon = '';
+
+  function getOrigFavicon() {
+    var link = document.querySelector('link[rel="icon"]');
+    return link ? link.getAttribute('href') : '';
+  }
+
+  function setFavicon(href) {
+    var link = document.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    if (href) {
+      link.setAttribute('href', href);
+    } else {
+      link.setAttribute('href', origFavicon);
+    }
+  }
+
+  function applyCloak(id) {
+    var c = CLOAKS[id];
+    if (!c || id === 'default') {
+      document.title = origTitle;
+      setFavicon(origFavicon);
+      localStorage.removeItem(KEY);
+      return;
+    }
+    document.title = c.title;
+    setFavicon(c.favicon);
+    localStorage.setItem(KEY, id);
+  }
+
+  function createCloakUI() {
+    origTitle = document.title;
+    origFavicon = getOrigFavicon();
+
+    // Apply saved cloak
+    var saved = localStorage.getItem(KEY);
+    if (saved && CLOAKS[saved]) {
+      applyCloak(saved);
+    }
+
+    var btn = document.createElement('button');
+    btn.id = 'cloak-btn';
+    btn.innerHTML = '\u{1F576}\u{FE0F}';
+    btn.title = 'Tab Cloak';
+    Object.assign(btn.style, {
+      position: 'fixed', bottom: '16px', right: '16px', zIndex: '997',
+      width: '42px', height: '42px', borderRadius: '50%',
+      border: '2px solid var(--t-border,#2a2a4a)',
+      background: 'var(--t-bg2,#1a1a2e)', color: 'var(--t-dim,#888)',
+      fontSize: '1.2rem', cursor: 'pointer', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      transition: 'transform 0.2s, border-color 0.2s, color 0.2s',
+    });
+    btn.addEventListener('mouseenter', function() { btn.style.transform = 'scale(1.1)'; btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
+    btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; });
+
+    var panel = document.createElement('div');
+    panel.id = 'cloak-panel';
+    Object.assign(panel.style, {
+      position: 'fixed', bottom: '68px', right: '16px', zIndex: '998',
+      borderRadius: '12px', border: '2px solid var(--t-border,#2a2a4a)',
+      padding: '10px', display: 'none', flexDirection: 'column', gap: '4px',
+      width: '220px', maxHeight: 'min(420px, calc(100vh - 100px))', overflowY: 'auto',
+      background: 'var(--t-bg2,#1a1a2e)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+      fontFamily: "'Segoe UI', Tahoma, sans-serif",
+    });
+
+    // Header
+    var header = document.createElement('div');
+    header.textContent = 'Tab Cloak';
+    Object.assign(header.style, { color: 'var(--t-text,#e0e0e0)', fontWeight: '700', fontSize: '0.85rem', padding: '4px 6px 8px', borderBottom: '1px solid var(--t-border,#2a2a4a)', marginBottom: '4px' });
+    panel.appendChild(header);
+
+    var currentCloak = saved || 'default';
+
+    Object.keys(CLOAKS).forEach(function(id) {
+      var c = CLOAKS[id];
+      var opt = document.createElement('div');
+      opt.dataset.cloak = id;
+      Object.assign(opt.style, {
+        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+        borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+        color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+        border: '2px solid ' + (id === currentCloak ? 'var(--t-accent,#7b2ff7)' : 'transparent'),
+      });
+      opt.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">' + c.icon + '</span><span>' + c.name + '</span>';
+      opt.addEventListener('mouseenter', function() { if (id !== currentCloak) opt.style.background = 'var(--t-bg3,#2a2a4a)'; });
+      opt.addEventListener('mouseleave', function() { opt.style.background = 'none'; });
+      opt.addEventListener('click', function() {
+        currentCloak = id;
+        applyCloak(id);
+        panel.querySelectorAll('[data-cloak]').forEach(function(el) {
+          el.style.borderColor = el.dataset.cloak === id ? 'var(--t-accent,#7b2ff7)' : 'transparent';
+        });
+      });
+      panel.appendChild(opt);
+    });
+
+    // Separator
+    var sep = document.createElement('div');
+    Object.assign(sep.style, { borderTop: '1px solid var(--t-border,#2a2a4a)', margin: '6px 0' });
+    panel.appendChild(sep);
+
+    // about:blank opener
+    var abBtn = document.createElement('div');
+    Object.assign(abBtn.style, {
+      display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+      borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+      color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+    });
+    abBtn.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">\u{1F4C3}</span><span>Open in about:blank</span>';
+    abBtn.addEventListener('mouseenter', function() { abBtn.style.background = 'var(--t-bg3,#2a2a4a)'; });
+    abBtn.addEventListener('mouseleave', function() { abBtn.style.background = 'none'; });
+    abBtn.addEventListener('click', function() {
+      var w = window.open('about:blank', '_blank');
+      if (w) {
+        w.document.write('<!DOCTYPE html><html><head><title>' + (document.title || '') + '</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>');
+        w.document.close();
+      }
+    });
+    panel.appendChild(abBtn);
+
+    // blob opener
+    var blobBtn = document.createElement('div');
+    Object.assign(blobBtn.style, {
+      display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+      borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+      color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+    });
+    blobBtn.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">\u{1F310}</span><span>Open in blob URL</span>';
+    blobBtn.addEventListener('mouseenter', function() { blobBtn.style.background = 'var(--t-bg3,#2a2a4a)'; });
+    blobBtn.addEventListener('mouseleave', function() { blobBtn.style.background = 'none'; });
+    blobBtn.addEventListener('click', function() {
+      var html = '<!DOCTYPE html><html><head><title>' + (document.title || '') + '</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>';
+      var blob = new Blob([html], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    });
+    panel.appendChild(blobBtn);
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var showing = panel.style.display === 'flex';
+      panel.style.display = showing ? 'none' : 'flex';
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+      }
+    });
+
+    document.body.appendChild(btn);
+    document.body.appendChild(panel);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', createCloakUI);
+  } else {
+    createCloakUI();
+  }
+})();
+
 // ─── FULLSCREEN BUTTON ───
 (function() {
   if (!document.fullscreenEnabled) return;
