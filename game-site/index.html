@@ -1269,7 +1269,7 @@
     <script>
     // On github.io, wrap external links through proxy and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
-      var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('');
+      var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,45,102,105,118,101,45,112,105,110,107,46,118,101,114,99,101,108,46,97,112,112,47].map(function(c){return String.fromCharCode(c)}).join('');
       document.querySelectorAll('.proxy-link').forEach(function(a) {
         if (a.dataset.hash) {
           a.href = _spBase + a.dataset.hash;
@@ -2143,7 +2143,7 @@
                 var container = document.getElementById('custom-ext-links');
                 if (!container || links.length === 0) return;
                 var onProxy = location.hostname.indexOf('github.io') !== -1;
-                var spBase = onProxy ? [104,116,116,112,115,58,47,47,115,112,108,97,115,104,46,98,101,115,116,47].map(function(c){return String.fromCharCode(c)}).join('') : '';
+                var spBase = onProxy ? [104,116,116,112,115,58,47,47,115,112,108,97,115,104,45,102,105,118,101,45,112,105,110,107,46,118,101,114,99,101,108,46,97,112,112,47].map(function(c){return String.fromCharCode(c)}).join('') : '';
                 links.forEach(function(link) {
                   var a = document.createElement('a');
                   a.className = 'card proxy-link';
