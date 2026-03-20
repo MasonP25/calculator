@@ -1173,21 +1173,39 @@
     }
   }
 
+  function setCloakOnTop(title, favicon) {
+    // Try every method to reach the actual browser tab
+    try {
+      if (window.top && window.top !== window) {
+        window.top.document.title = title;
+        var tLink = window.top.document.querySelector('link[rel="icon"]');
+        if (!tLink) { tLink = window.top.document.createElement('link'); tLink.rel = 'icon'; window.top.document.head.appendChild(tLink); }
+        if (favicon) { tLink.href = favicon; } else { tLink.removeAttribute('href'); }
+      }
+    } catch(e) {}
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.document.title = title;
+        var pLink = window.parent.document.querySelector('link[rel="icon"]');
+        if (!pLink) { pLink = window.parent.document.createElement('link'); pLink.rel = 'icon'; window.parent.document.head.appendChild(pLink); }
+        if (favicon) { pLink.href = favicon; } else { pLink.removeAttribute('href'); }
+      }
+    } catch(e) {}
+  }
+
   function applyCloak(id) {
     var c = CLOAKS[id];
     if (!c || id === 'default') {
       document.title = origTitle;
       setFavicon(origFavicon);
       localStorage.removeItem(KEY);
-      // Tell parent frame (for proxy/Splash) to reset
-      try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: '', favicon: '' }, '*'); } catch(e) {}
+      setCloakOnTop(origTitle, origFavicon);
       return;
     }
     document.title = c.title;
     setFavicon(c.favicon);
     localStorage.setItem(KEY, id);
-    // Tell parent frame (for proxy/Splash) to apply cloak
-    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: c.title, favicon: c.favicon }, '*'); } catch(e) {}
+    setCloakOnTop(c.title, c.favicon);
   }
 
   // Apply saved cloak on every page
