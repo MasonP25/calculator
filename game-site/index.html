@@ -3294,9 +3294,19 @@
 <script src="easter.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg) {
-    reg.update();
-  }).catch(function(){});
+  if (location.hostname === 'masonp25.github.io') {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg) {
+      reg.update();
+    }).catch(function(){});
+  } else {
+    // Proxied domain: clean up any arcade SW/caches registered here
+    caches.keys().then(function(names) {
+      names.forEach(function(n) { if (n.startsWith('arcade-')) caches.delete(n); });
+    });
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) { r.unregister(); });
+    });
+  }
 }
 </script>
 </body>
