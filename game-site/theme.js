@@ -1207,7 +1207,7 @@
     btn.innerHTML = '\u{1F576}\u{FE0F}';
     btn.title = 'Tab Cloak';
     Object.assign(btn.style, {
-      position: 'fixed', bottom: '16px', right: '16px', zIndex: '997',
+      position: 'fixed', top: '50px', left: '104px', zIndex: '999',
       width: '42px', height: '42px', borderRadius: '50%',
       border: '2px solid var(--t-border,#2a2a4a)',
       background: 'var(--t-bg2,#1a1a2e)', color: 'var(--t-dim,#888)',
@@ -1221,7 +1221,7 @@
     var panel = document.createElement('div');
     panel.id = 'cloak-panel';
     Object.assign(panel.style, {
-      position: 'fixed', bottom: '68px', right: '16px', zIndex: '998',
+      position: 'fixed', top: '100px', left: '104px', zIndex: '1000',
       borderRadius: '12px', border: '2px solid var(--t-border,#2a2a4a)',
       padding: '10px', display: 'none', flexDirection: 'column', gap: '4px',
       width: '220px', maxHeight: 'min(420px, calc(100vh - 100px))', overflowY: 'auto',
