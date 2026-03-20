@@ -1271,7 +1271,7 @@
     Object.assign(helpIcon.style, { width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-bg3,#2a2a4a)', color: 'var(--t-dim,#888)', fontSize: '0.7rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'help', position: 'relative' });
     var tooltip = document.createElement('div');
     tooltip.textContent = 'Makes your browser tab look like a different website (changes the tab name and icon). Pick a preset to disguise this tab, or choose Default to turn it off.';
-    Object.assign(tooltip.style, { display: 'none', position: 'absolute', bottom: '26px', right: '0', width: '190px', padding: '8px 10px', borderRadius: '8px', background: 'var(--t-bg1,#0f0f1a)', border: '1px solid var(--t-border,#2a2a4a)', color: 'var(--t-text,#e0e0e0)', fontSize: '0.72rem', fontWeight: '400', lineHeight: '1.4', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', zIndex: '1001' });
+    Object.assign(tooltip.style, { display: 'none', position: 'absolute', top: '26px', right: '0', width: '190px', padding: '8px 10px', borderRadius: '8px', background: 'var(--t-bg1,#0f0f1a)', border: '1px solid var(--t-border,#2a2a4a)', color: 'var(--t-text,#e0e0e0)', fontSize: '0.72rem', fontWeight: '400', lineHeight: '1.4', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', zIndex: '1001' });
     helpIcon.appendChild(tooltip);
     helpIcon.addEventListener('mouseenter', function() { tooltip.style.display = 'block'; });
     helpIcon.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
