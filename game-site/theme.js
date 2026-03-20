@@ -1174,7 +1174,7 @@
   }
 
   function setCloakOnTop(title, favicon) {
-    // Try every method to reach the actual browser tab
+    // Try direct parent/top access
     try {
       if (window.top && window.top !== window) {
         window.top.document.title = title;
@@ -1191,6 +1191,14 @@
         if (favicon) { pLink.href = favicon; } else { pLink.removeAttribute('href'); }
       }
     } catch(e) {}
+    // BroadcastChannel (bypasses Scramjet proxy interception)
+    try {
+      var bc = new BroadcastChannel('arcade-cloak');
+      bc.postMessage({ title: title, favicon: favicon });
+      bc.close();
+    } catch(e) {}
+    // postMessage to parent
+    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: title, favicon: favicon }, '*'); } catch(e) {}
   }
 
   function applyCloak(id) {
