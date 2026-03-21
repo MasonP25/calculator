@@ -17,7 +17,6 @@
     .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
     .movie-thumb { position: relative; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .15s, border-color .2s; }
     .movie-thumb:hover { transform: translateY(-3px); border-color: rgba(139,122,255,.4); }
-    .movie-poster { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #1a1a2e; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
     .movie-poster-emoji { width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; font-size: 4rem; background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%); }
     .movie-info { padding: 10px 12px; }
     .movie-info h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
@@ -25,11 +24,14 @@
     .movie-play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) translate(0, -20px); width: 48px; height: 48px; background: rgba(0,0,0,.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
     .movie-thumb:hover .movie-play-icon { opacity: 1; }
     .movie-play-icon::after { content: ''; border-style: solid; border-width: 8px 0 8px 14px; border-color: transparent transparent transparent #fff; margin-left: 3px; }
+    .collection-badge { position: absolute; top: 8px; right: 8px; background: rgba(139,122,255,.7); color: #fff; font-size: 0.65rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
 
     /* Player view */
     #player-view { display: none; }
     #player-view.active { display: block; }
     #browse-view.hidden { display: none; }
+    #collection-view { display: none; }
+    #collection-view.active { display: block; }
     .player-back { display: inline-flex; align-items: center; gap: 6px; color: #aaa; font-size: 0.85rem; cursor: pointer; padding: 6px 10px; border-radius: 8px; border: none; background: none; font-family: inherit; transition: background .15s; margin-bottom: 16px; }
     .player-back:hover { background: rgba(255,255,255,.08); color: #fff; }
     .player-title { font-size: 1.3rem; font-weight: 600; margin: 0 0 16px; }
@@ -40,16 +42,20 @@
 <body>
   <div class="movies-container">
     <div class="movies-header">
-      <a class="back-btn" href="index.html">&#8592;</a>
-      <h1>&#127916; Movies</h1>
+      <a class="back-btn" href="index.html" id="main-back">&#8592;</a>
+      <h1 id="page-title">&#127916; Movies</h1>
     </div>
 
     <div id="browse-view">
       <div class="movies-grid" id="movies-grid"></div>
     </div>
 
+    <div id="collection-view">
+      <div class="movies-grid" id="collection-grid"></div>
+    </div>
+
     <div id="player-view">
-      <button class="player-back" id="player-back">&#8592; Back to movies</button>
+      <button class="player-back" id="player-back">&#8592; Back</button>
       <h2 class="player-title" id="player-title"></h2>
       <div class="player-wrapper">
         <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
@@ -58,209 +64,167 @@
   </div>
 
   <script>
-    const MOVIES = [
+    var MOVIES = [
       {
-        title: "Cars 1",
-        desc: "Lightning McQueen's journey to the Piston Cup",
-        emoji: "🏎️",
-        src: "https://drive.google.com/file/d/1PHbwDSv_nzy9KVoRn9561Le-6-C2uUQa/preview"
-      },
-      {
-        title: "Cars 2",
-        desc: "Mater gets caught up in international espionage",
-        emoji: "🏎️",
-        src: "https://drive.google.com/file/d/1V_NqIAHOgKjhklWQO7XzC8ideK4LOe6n/preview"
-      },
-      {
-        title: "Cars 3",
-        desc: "Lightning McQueen faces a new generation of racers",
-        emoji: "🏎️",
-        src: "https://drive.google.com/file/d/1pv9o7dvaM04DYqWrAOCz_0DfQztn9At8/preview"
+        title: "Cars",
+        desc: "The complete Cars trilogy",
+        emoji: "\uD83C\uDFCE\uFE0F",
+        collection: [
+          { title: "Cars 1", desc: "Lightning McQueen's journey to the Piston Cup", src: "https://drive.google.com/file/d/1PHbwDSv_nzy9KVoRn9561Le-6-C2uUQa/preview" },
+          { title: "Cars 2", desc: "Mater gets caught up in international espionage", src: "https://drive.google.com/file/d/1V_NqIAHOgKjhklWQO7XzC8ideK4LOe6n/preview" },
+          { title: "Cars 3", desc: "Lightning McQueen faces a new generation of racers", src: "https://drive.google.com/file/d/1pv9o7dvaM04DYqWrAOCz_0DfQztn9At8/preview" }
+        ]
       },
       {
         title: "K-Pop Demon Hunters",
         desc: "",
-        emoji: "😈",
+        emoji: "\uD83D\uDE08",
         src: "https://drive.google.com/file/d/1noq1VYLdEerrGhx6cb0oxc_kESaMi4gA/preview"
       },
       {
         title: "A Minecraft Movie",
         desc: "",
-        emoji: "⛏️",
+        emoji: "\u26CF\uFE0F",
         src: "https://drive.google.com/file/d/1MAaR6vGifjMCr7A5afVP7hW2B3rndLhv/preview"
       },
       {
         title: "Spongebob Collection",
         desc: "Browse Spongebob movies & episodes",
-        emoji: "🧽",
+        emoji: "\uD83E\uDDBD",
         folder: "https://drive.google.com/drive/folders/1MLQuRuLJA9TEvbL6N24gGhbIxQNe23NL"
       },
       {
-        title: "Dragon Ball Z",
-        desc: "The legendary anime series",
-        emoji: "🐉",
-        src: "https://drive.google.com/file/d/1CA0psyd_gHWcWUW8LyHKOc5Uspu3igHQ/preview"
-      },
-      {
-        title: "Dragon Ball Z: Saiyan Saga",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/saiyan-saga"
-      },
-      {
-        title: "Dragon Ball Z: Dead Zone",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-dead-zone"
-      },
-      {
-        title: "Dragon Ball Z: World's Strongest",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-worlds-strongest"
-      },
-      {
-        title: "Dragon Ball Z: Tree of Might",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-tree-of-might"
-      },
-      {
-        title: "Dragon Ball Z: Lord Slug",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-lord-slug"
-      },
-      {
-        title: "Dragon Ball Z: Cooler's Revenge",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-coolers-revenge"
-      },
-      {
         title: "Dragon Ball",
-        desc: "Where it all began",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragonball"
+        desc: "Series, movies & sagas",
+        emoji: "\uD83D\uDC09",
+        collection: [
+          { title: "Dragon Ball Z", desc: "The legendary anime series", src: "https://drive.google.com/file/d/1CA0psyd_gHWcWUW8LyHKOc5Uspu3igHQ/preview" },
+          { title: "Dragon Ball Z: Saiyan Saga", link: "https://sites.google.com/view/odazshow/anime/saiyan-saga" },
+          { title: "Dragon Ball Z: Dead Zone", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-dead-zone" },
+          { title: "Dragon Ball Z: World's Strongest", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-worlds-strongest" },
+          { title: "Dragon Ball Z: Tree of Might", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-tree-of-might" },
+          { title: "Dragon Ball Z: Lord Slug", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-lord-slug" },
+          { title: "Dragon Ball Z: Cooler's Revenge", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-coolers-revenge" },
+          { title: "Dragon Ball", desc: "Where it all began", link: "https://sites.google.com/view/odazshow/anime/dragonball" },
+          { title: "Curse of the Blood Rubies", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-curse-of-the-blood-rubies" },
+          { title: "Sleeping Princess in Devil Castle", link: "https://sites.google.com/view/odazshow/anime/sleeping-princess-in-devil-castle" },
+          { title: "Mystical Adventure", link: "https://sites.google.com/view/odazshow/anime/mystical-adventure" },
+          { title: "Dragon Ball GT", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-gt" },
+          { title: "Dragon Ball Super", link: "https://sites.google.com/view/odazshow/anime/dragon-ball-super" },
+          { title: "Super Dragon Ball Heroes", link: "https://sites.google.com/view/odazshow/anime/super-dragon-ball-heroes" }
+        ]
       },
       {
-        title: "Dragon Ball: Curse of the Blood Rubies",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-curse-of-the-blood-rubies"
-      },
-      {
-        title: "Dragon Ball: Sleeping Princess",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/sleeping-princess-in-devil-castle"
-      },
-      {
-        title: "Dragon Ball: Mystical Adventure",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/mystical-adventure"
-      },
-      {
-        title: "Dragon Ball GT",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-gt"
-      },
-      {
-        title: "Dragon Ball Super",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-super"
-      },
-      {
-        title: "Super Dragon Ball Heroes",
-        desc: "",
-        emoji: "🐉",
-        link: "https://sites.google.com/view/odazshow/anime/super-dragon-ball-heroes"
+        title: "One Piece",
+        desc: "Movies & adventures",
+        emoji: "\uD83C\uDFF4\u200D\u2620\uFE0F",
+        collection: [
+          { title: "One Piece Movie 1", link: "https://sites.google.com/view/odazshow/anime/one-piece-movie-1" },
+          { title: "One Piece: Dead End", link: "https://sites.google.com/view/odazshow/anime/one-piece-dead-end" },
+          { title: "One Piece: Clockwork Island", link: "https://sites.google.com/view/odazshow/anime/one-piece-clockwork-island-adventure" },
+          { title: "One Piece: Film Gold", link: "https://sites.google.com/view/odazshow/anime/one-piece-the-movie-13-film-gold" },
+          { title: "One Piece: Chopper's Kingdom", link: "https://sites.google.com/view/odazshow/anime/one-piece-chopper-kingdom-of-strange-animal-island" }
+        ]
       },
       {
         title: "Blue Lock",
         desc: "Soccer anime",
-        emoji: "⚽",
+        emoji: "\u26BD",
         link: "https://sites.google.com/view/odazshow/anime/bluelock"
-      },
-      {
-        title: "One Piece Movie 1",
-        desc: "",
-        emoji: "🏴‍☠️",
-        link: "https://sites.google.com/view/odazshow/anime/one-piece-movie-1"
-      },
-      {
-        title: "One Piece: Dead End",
-        desc: "",
-        emoji: "🏴‍☠️",
-        link: "https://sites.google.com/view/odazshow/anime/one-piece-dead-end"
-      },
-      {
-        title: "One Piece: Clockwork Island",
-        desc: "",
-        emoji: "🏴‍☠️",
-        link: "https://sites.google.com/view/odazshow/anime/one-piece-clockwork-island-adventure"
-      },
-      {
-        title: "One Piece: Film Gold",
-        desc: "",
-        emoji: "🏴‍☠️",
-        link: "https://sites.google.com/view/odazshow/anime/one-piece-the-movie-13-film-gold"
-      },
-      {
-        title: "One Piece: Chopper's Kingdom",
-        desc: "",
-        emoji: "🏴‍☠️",
-        link: "https://sites.google.com/view/odazshow/anime/one-piece-chopper-kingdom-of-strange-animal-island"
       }
     ];
 
-    const grid = document.getElementById("movies-grid");
-    const browseView = document.getElementById("browse-view");
-    const playerView = document.getElementById("player-view");
-    const playerTitle = document.getElementById("player-title");
-    const playerIframe = document.getElementById("player-iframe");
-    const playerBack = document.getElementById("player-back");
+    var currentCollection = null;
+    var grid = document.getElementById("movies-grid");
+    var browseView = document.getElementById("browse-view");
+    var collectionView = document.getElementById("collection-view");
+    var collectionGrid = document.getElementById("collection-grid");
+    var playerView = document.getElementById("player-view");
+    var playerTitle = document.getElementById("player-title");
+    var playerIframe = document.getElementById("player-iframe");
+    var playerBack = document.getElementById("player-back");
+    var mainBack = document.getElementById("main-back");
+    var pageTitle = document.getElementById("page-title");
+
+    function buildCard(item, onClick) {
+      var card = document.createElement("div");
+      card.className = "movie-thumb";
+      var emoji = item.emoji || "\uD83C\uDFAC";
+      card.innerHTML =
+        '<div class="movie-poster-emoji">' + emoji + '</div>' +
+        '<div class="movie-play-icon"></div>' +
+        '<div class="movie-info"><h3>' + item.title + '</h3>' +
+        (item.desc ? '<p>' + item.desc + '</p>' : '') +
+        '</div>' +
+        (item.collection ? '<div class="collection-badge">' + item.collection.length + ' titles</div>' : '');
+      card.addEventListener("click", onClick);
+      return card;
+    }
 
     function renderGrid() {
       grid.innerHTML = "";
       MOVIES.forEach(function(movie, i) {
-        const card = document.createElement("div");
-        card.className = "movie-thumb";
-        card.innerHTML =
-          '<div class="movie-poster-emoji">' + movie.emoji + '</div>' +
-          '<div class="movie-play-icon"></div>' +
-          '<div class="movie-info"><h3>' + movie.title + '</h3>' +
-          (movie.desc ? '<p>' + movie.desc + '</p>' : '') +
-          '</div>';
-        card.addEventListener("click", function() {
-          if (movie.folder) {
+        var card = buildCard(movie, function() {
+          if (movie.collection) {
+            openCollection(movie);
+          } else if (movie.folder) {
             window.open(movie.folder, "_blank");
           } else if (movie.link) {
             window.open(movie.link, "_blank");
           } else {
-            openMovie(i);
+            openPlayer(movie.title, movie.src);
           }
         });
         grid.appendChild(card);
       });
     }
 
-    function openMovie(index) {
-      const movie = MOVIES[index];
-      if (!movie) return;
-      playerTitle.textContent = movie.title;
-      playerIframe.src = movie.src;
+    function openCollection(movie) {
+      currentCollection = movie;
       browseView.classList.add("hidden");
+      collectionView.classList.add("active");
+      pageTitle.textContent = movie.emoji + " " + movie.title;
+      mainBack.href = "#";
+      mainBack.onclick = function(e) { e.preventDefault(); closeCollection(); };
+      collectionGrid.innerHTML = "";
+      movie.collection.forEach(function(item) {
+        var card = buildCard(item, function() {
+          if (item.link) {
+            window.open(item.link, "_blank");
+          } else if (item.src) {
+            openPlayer(item.title, item.src);
+          }
+        });
+        collectionGrid.appendChild(card);
+      });
+    }
+
+    function closeCollection() {
+      currentCollection = null;
+      collectionView.classList.remove("active");
+      browseView.classList.remove("hidden");
+      pageTitle.textContent = "\uD83C\uDFAC Movies";
+      mainBack.href = "index.html";
+      mainBack.onclick = null;
+    }
+
+    function openPlayer(title, src) {
+      playerTitle.textContent = title;
+      playerIframe.src = src;
+      browseView.classList.add("hidden");
+      collectionView.classList.remove("active");
       playerView.classList.add("active");
+      playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to movies";
     }
 
     function closePlayer() {
       playerIframe.src = "";
       playerView.classList.remove("active");
-      browseView.classList.remove("hidden");
+      if (currentCollection) {
+        openCollection(currentCollection);
+      } else {
+        browseView.classList.remove("hidden");
+      }
     }
 
     playerBack.addEventListener("click", closePlayer);
