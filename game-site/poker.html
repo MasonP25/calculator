@@ -323,19 +323,7 @@ a.back:hover { color:#e0e0e0; }
     <div id="online-create-area" style="display:none;">
       <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Share this code with your friend:</p>
       <div class="room-code-display" id="room-code-display">----</div>
-      <div class="online-wager-select" id="online-wager-select">
-        <label>Coin Wager:</label>
-        <select id="online-wager-amount" style="background:#0f0f1a;border:2px solid #2a2a4a;color:#ffd700;padding:6px 12px;border-radius:6px;font-size:0.9rem;font-weight:700;">
-          <option value="0">Free Play</option>
-          <option value="10">10 coins</option>
-          <option value="25">25 coins</option>
-          <option value="50">50 coins</option>
-          <option value="100">100 coins</option>
-          <option value="250">250 coins</option>
-          <option value="500">500 coins</option>
-        </select>
-        <div style="color:#ffd700;font-size:0.8rem;margin-top:4px;" id="online-host-balance"></div>
-      </div>
+      <input type="hidden" id="online-wager-amount" value="0">
       <p class="waiting-msg" id="waiting-msg">Waiting for opponent to join...</p>
       <button class="leave-btn" id="online-leave-btn" onclick="leaveOnlineRoom()">Cancel</button>
     </div>
@@ -623,12 +611,6 @@ function showOnlinePanel() {
   document.getElementById('online-join-area').style.display = 'none';
   document.getElementById('room-code-display').textContent = '....';
   document.getElementById('waiting-msg').textContent = 'Connecting...';
-  // Update host balance display
-  if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
-    Promise.resolve(window.ArcadeCoins.getBalance()).then(function(bal) {
-      document.getElementById('online-host-balance').textContent = 'Your balance: ' + bal + ' coins';
-    });
-  }
   if (window._pokerOnlineCreateGame) {
     window._pokerOnlineCreateGame();
   } else {
@@ -2157,7 +2139,7 @@ window._pokerOnlineJoinGame = async function(code) {
         window._pokerOnlineState = {
             roomId: code,
             myRole: 'guest',
-            playing: true,
+            playing: false,
             coinWager: wagerAmount,
             coinAwarded: false
         };
