@@ -619,15 +619,22 @@ function updateCoinInfo() {
 function showOnlinePanel() {
   var panel = document.getElementById('online-panel');
   panel.style.display = 'block';
-  document.getElementById('online-create-area').style.display = 'none';
+  document.getElementById('online-create-area').style.display = '';
   document.getElementById('online-join-area').style.display = 'none';
+  document.getElementById('room-code-display').textContent = '....';
+  document.getElementById('waiting-msg').textContent = 'Connecting...';
   // Update host balance display
   if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
     window.ArcadeCoins.getBalance().then(function(bal) {
       document.getElementById('online-host-balance').textContent = 'Your balance: ' + bal + ' coins';
     });
   }
-  if (window._pokerOnlineCreateGame) window._pokerOnlineCreateGame();
+  if (window._pokerOnlineCreateGame) {
+    window._pokerOnlineCreateGame();
+  } else {
+    document.getElementById('waiting-msg').textContent = 'Firebase not loaded yet. Try again in a moment.';
+    document.getElementById('waiting-msg').style.color = '#ff4757';
+  }
 }
 
 function showJoinPanel() {
