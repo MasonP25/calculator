@@ -208,6 +208,8 @@
       collectionView.classList.remove("active");
       playerView.classList.add("active");
       playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to movies";
+      mainBack.href = "#";
+      mainBack.onclick = function(e) { e.preventDefault(); closePlayer(); };
     }
 
     function closePlayer() {
@@ -217,6 +219,9 @@
         openCollection(currentCollection);
       } else {
         browseView.classList.remove("hidden");
+        pageTitle.textContent = "\uD83C\uDFAC Movies";
+        mainBack.href = "index.html";
+        mainBack.onclick = null;
       }
     }
 
