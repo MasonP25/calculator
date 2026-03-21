@@ -60,10 +60,40 @@
   <script>
     const MOVIES = [
       {
-        title: "Movie 1",
-        desc: "",
-        emoji: "🎬",
+        title: "Cars 1",
+        desc: "Lightning McQueen's journey to the Piston Cup",
+        emoji: "🏎️",
         src: "https://drive.google.com/file/d/1PHbwDSv_nzy9KVoRn9561Le-6-C2uUQa/preview"
+      },
+      {
+        title: "Cars 2",
+        desc: "Mater gets caught up in international espionage",
+        emoji: "🏎️",
+        src: "https://drive.google.com/file/d/1V_NqIAHOgKjhklWQO7XzC8ideK4LOe6n/preview"
+      },
+      {
+        title: "Cars 3",
+        desc: "Lightning McQueen faces a new generation of racers",
+        emoji: "🏎️",
+        src: "https://drive.google.com/file/d/1pv9o7dvaM04DYqWrAOCz_0DfQztn9At8/preview"
+      },
+      {
+        title: "K-Pop Demon Hunters",
+        desc: "",
+        emoji: "😈",
+        src: "https://drive.google.com/file/d/1noq1VYLdEerrGhx6cb0oxc_kESaMi4gA/preview"
+      },
+      {
+        title: "A Minecraft Movie",
+        desc: "",
+        emoji: "⛏️",
+        src: "https://drive.google.com/file/d/1MAaR6vGifjMCr7A5afVP7hW2B3rndLhv/preview"
+      },
+      {
+        title: "Spongebob Collection",
+        desc: "Browse Spongebob movies & episodes",
+        emoji: "🧽",
+        folder: "https://drive.google.com/drive/folders/1MLQuRuLJA9TEvbL6N24gGhbIxQNe23NL"
       }
     ];
 
@@ -85,7 +115,13 @@
           '<div class="movie-info"><h3>' + movie.title + '</h3>' +
           (movie.desc ? '<p>' + movie.desc + '</p>' : '') +
           '</div>';
-        card.addEventListener("click", function() { openMovie(i); });
+        card.addEventListener("click", function() {
+          if (movie.folder) {
+            window.open(movie.folder, "_blank");
+          } else {
+            openMovie(i);
+          }
+        });
         grid.appendChild(card);
       });
     }
