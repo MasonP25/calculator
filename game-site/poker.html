@@ -540,7 +540,7 @@ function toggleCoinMatch() {
 
 function refreshCoinBalance() {
   if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
-    window.ArcadeCoins.getBalance().then(function(bal) {
+    Promise.resolve(window.ArcadeCoins.getBalance()).then(function(bal) {
       document.getElementById('coinBalance').textContent = 'Balance: ' + bal + ' coins';
       // Disable wager buttons that exceed balance
       document.querySelectorAll('.wager-btn').forEach(function(btn) {
@@ -625,7 +625,7 @@ function showOnlinePanel() {
   document.getElementById('waiting-msg').textContent = 'Connecting...';
   // Update host balance display
   if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
-    window.ArcadeCoins.getBalance().then(function(bal) {
+    Promise.resolve(window.ArcadeCoins.getBalance()).then(function(bal) {
       document.getElementById('online-host-balance').textContent = 'Your balance: ' + bal + ' coins';
     });
   }
