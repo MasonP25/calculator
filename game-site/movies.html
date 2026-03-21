@@ -94,6 +94,126 @@
         desc: "Browse Spongebob movies & episodes",
         emoji: "🧽",
         folder: "https://drive.google.com/drive/folders/1MLQuRuLJA9TEvbL6N24gGhbIxQNe23NL"
+      },
+      {
+        title: "Dragon Ball Z",
+        desc: "The legendary anime series",
+        emoji: "🐉",
+        src: "https://drive.google.com/file/d/1CA0psyd_gHWcWUW8LyHKOc5Uspu3igHQ/preview"
+      },
+      {
+        title: "Dragon Ball Z: Saiyan Saga",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/saiyan-saga"
+      },
+      {
+        title: "Dragon Ball Z: Dead Zone",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-dead-zone"
+      },
+      {
+        title: "Dragon Ball Z: World's Strongest",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-worlds-strongest"
+      },
+      {
+        title: "Dragon Ball Z: Tree of Might",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-the-tree-of-might"
+      },
+      {
+        title: "Dragon Ball Z: Lord Slug",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-lord-slug"
+      },
+      {
+        title: "Dragon Ball Z: Cooler's Revenge",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-z-coolers-revenge"
+      },
+      {
+        title: "Dragon Ball",
+        desc: "Where it all began",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragonball"
+      },
+      {
+        title: "Dragon Ball: Curse of the Blood Rubies",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-curse-of-the-blood-rubies"
+      },
+      {
+        title: "Dragon Ball: Sleeping Princess",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/sleeping-princess-in-devil-castle"
+      },
+      {
+        title: "Dragon Ball: Mystical Adventure",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/mystical-adventure"
+      },
+      {
+        title: "Dragon Ball GT",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-gt"
+      },
+      {
+        title: "Dragon Ball Super",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/dragon-ball-super"
+      },
+      {
+        title: "Super Dragon Ball Heroes",
+        desc: "",
+        emoji: "🐉",
+        link: "https://sites.google.com/view/odazshow/anime/super-dragon-ball-heroes"
+      },
+      {
+        title: "Blue Lock",
+        desc: "Soccer anime",
+        emoji: "⚽",
+        link: "https://sites.google.com/view/odazshow/anime/bluelock"
+      },
+      {
+        title: "One Piece Movie 1",
+        desc: "",
+        emoji: "🏴‍☠️",
+        link: "https://sites.google.com/view/odazshow/anime/one-piece-movie-1"
+      },
+      {
+        title: "One Piece: Dead End",
+        desc: "",
+        emoji: "🏴‍☠️",
+        link: "https://sites.google.com/view/odazshow/anime/one-piece-dead-end"
+      },
+      {
+        title: "One Piece: Clockwork Island",
+        desc: "",
+        emoji: "🏴‍☠️",
+        link: "https://sites.google.com/view/odazshow/anime/one-piece-clockwork-island-adventure"
+      },
+      {
+        title: "One Piece: Film Gold",
+        desc: "",
+        emoji: "🏴‍☠️",
+        link: "https://sites.google.com/view/odazshow/anime/one-piece-the-movie-13-film-gold"
+      },
+      {
+        title: "One Piece: Chopper's Kingdom",
+        desc: "",
+        emoji: "🏴‍☠️",
+        link: "https://sites.google.com/view/odazshow/anime/one-piece-chopper-kingdom-of-strange-animal-island"
       }
     ];
 
@@ -118,6 +238,8 @@
         card.addEventListener("click", function() {
           if (movie.folder) {
             window.open(movie.folder, "_blank");
+          } else if (movie.link) {
+            window.open(movie.link, "_blank");
           } else {
             openMovie(i);
           }
