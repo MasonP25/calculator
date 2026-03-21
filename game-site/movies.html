@@ -51,6 +51,7 @@
     </div>
 
     <div id="collection-view">
+      <button class="player-back" id="collection-back">&#8592; Back to movies</button>
       <div class="movies-grid" id="collection-grid"></div>
     </div>
 
@@ -138,6 +139,18 @@
     var playerBack = document.getElementById("player-back");
     var mainBack = document.getElementById("main-back");
     var pageTitle = document.getElementById("page-title");
+    var collectionBack = document.getElementById("collection-back");
+
+    function showView(view) {
+      browseView.classList.toggle("hidden", view !== "browse");
+      collectionView.classList.toggle("active", view === "collection");
+      playerView.classList.toggle("active", view === "player");
+      if (view === "browse") {
+        pageTitle.textContent = "\uD83C\uDFAC Movies";
+        mainBack.href = "index.html";
+        mainBack.onclick = null;
+      }
+    }
 
     function buildCard(item, onClick) {
       var card = document.createElement("div");
@@ -174,8 +187,7 @@
 
     function openCollection(movie) {
       currentCollection = movie;
-      browseView.classList.add("hidden");
-      collectionView.classList.add("active");
+      showView("collection");
       pageTitle.textContent = movie.emoji + " " + movie.title;
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closeCollection(); };
@@ -194,19 +206,13 @@
 
     function closeCollection() {
       currentCollection = null;
-      collectionView.classList.remove("active");
-      browseView.classList.remove("hidden");
-      pageTitle.textContent = "\uD83C\uDFAC Movies";
-      mainBack.href = "index.html";
-      mainBack.onclick = null;
+      showView("browse");
     }
 
     function openPlayer(title, src) {
       playerTitle.textContent = title;
       playerIframe.src = src;
-      browseView.classList.add("hidden");
-      collectionView.classList.remove("active");
-      playerView.classList.add("active");
+      showView("player");
       playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to movies";
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closePlayer(); };
@@ -214,18 +220,15 @@
 
     function closePlayer() {
       playerIframe.src = "";
-      playerView.classList.remove("active");
       if (currentCollection) {
         openCollection(currentCollection);
       } else {
-        browseView.classList.remove("hidden");
-        pageTitle.textContent = "\uD83C\uDFAC Movies";
-        mainBack.href = "index.html";
-        mainBack.onclick = null;
+        showView("browse");
       }
     }
 
     playerBack.addEventListener("click", closePlayer);
+    collectionBack.addEventListener("click", closeCollection);
     renderGrid();
   </script>
 
