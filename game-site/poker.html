@@ -41,6 +41,98 @@ a.back:hover { color:#e0e0e0; }
 }
 .menu-btn:hover { border-color:#7b2ff7; color:#7b2ff7; }
 .menu-btn small { display:block; color:#666; font-size:0.75rem; margin-top:2px; }
+.menu-divider {
+  color:#555; font-size:0.8rem; margin:1rem auto 0.3rem; letter-spacing:3px; font-weight:600;
+}
+
+/* Coin Match UI */
+#coinMatchPanel {
+  display:none; margin-top:0.5rem; text-align:center;
+}
+#coinMatchPanel .coin-balance {
+  color:#ffd700; font-weight:700; margin-bottom:0.5rem;
+}
+.wager-btns {
+  display:flex; flex-wrap:wrap; gap:0.4rem; justify-content:center; margin:0.5rem 0;
+}
+.wager-btn {
+  background:#1a1a2e; border:2px solid #2a2a4a; color:#ffd700;
+  padding:0.4rem 0.8rem; border-radius:8px; cursor:pointer;
+  font-size:0.85rem; font-weight:600; transition:all 0.2s;
+}
+.wager-btn:hover { border-color:#ffd700; }
+.wager-btn.active { border-color:#ffd700; background:#2a1a0a; }
+.wager-btn:disabled { opacity:0.3; cursor:default; }
+.coin-diff-btns {
+  display:flex; gap:0.4rem; justify-content:center; margin:0.5rem 0;
+}
+.coin-diff-btn {
+  background:#1a1a2e; border:2px solid #2a2a4a; color:#e0e0e0;
+  padding:0.4rem 0.8rem; border-radius:8px; cursor:pointer;
+  font-size:0.85rem; transition:all 0.2s;
+}
+.coin-diff-btn:hover { border-color:#7b2ff7; }
+.coin-diff-btn.active { border-color:#7b2ff7; background:#2a1a4e; color:#fff; }
+.coin-start-btn {
+  background:linear-gradient(135deg,#ffd700,#ffaa00);
+  color:#1a1a2e; border:none; padding:0.6rem 1.5rem;
+  border-radius:8px; font-size:0.95rem; font-weight:700; cursor:pointer;
+  margin-top:0.5rem; transition:opacity 0.2s;
+}
+.coin-start-btn:hover { opacity:0.9; }
+.coin-start-btn:disabled { opacity:0.3; cursor:default; }
+
+/* Online panel */
+.online-panel {
+  background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px;
+  padding:20px; width:100%; max-width:400px; text-align:center;
+  margin:0.5rem auto; display:none;
+}
+.online-panel h3 { margin-bottom:15px; color:#e0e0e0; font-size:1rem; }
+.online-lobby-btns { display:flex; gap:12px; justify-content:center; }
+.online-btn {
+  background:#7b2ff7; color:#fff; border:none; padding:10px 24px;
+  font-size:0.95rem; font-weight:600; font-family:inherit; border-radius:8px;
+  cursor:pointer; transition:background 0.25s, transform 0.15s;
+}
+.online-btn:hover { background:#6a22e0; }
+.online-btn:active { transform:scale(0.97); }
+.online-btn.secondary { background:#2a2a4a; }
+.online-btn.secondary:hover { background:#3a3a5a; }
+.room-code-display {
+  font-size:2.5rem; font-weight:700; color:#feca57;
+  letter-spacing:8px; margin:15px 0; font-family:monospace;
+}
+.waiting-msg {
+  color:#888; font-size:0.9rem; animation:pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+.join-area { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.join-input {
+  background:#0f0f1a; border:2px solid #2a2a4a; color:#feca57;
+  font-size:1.8rem; font-weight:700; font-family:monospace;
+  letter-spacing:6px; text-align:center; padding:8px 16px;
+  border-radius:8px; width:160px; text-transform:uppercase; outline:none;
+}
+.join-input:focus { border-color:#7b2ff7; }
+.join-input::placeholder { color:#444; letter-spacing:2px; font-size:1rem; }
+.join-error { color:#ff4757; font-size:0.85rem; }
+.leave-btn {
+  background:none; border:1px solid #ff475766; color:#ff4757;
+  padding:4px 14px; font-size:0.8rem; font-family:inherit;
+  border-radius:6px; cursor:pointer; margin-top:6px; transition:background 0.2s;
+}
+.leave-btn:hover { background:#ff475722; }
+.online-info {
+  background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px;
+  padding:12px 20px; width:100%; max-width:460px; text-align:center;
+  font-size:0.85rem; color:#888; margin-bottom:0.8rem; display:none;
+}
+.online-info .room-label { color:#feca57; font-weight:700; font-family:monospace; letter-spacing:3px; }
+.online-wager-select {
+  margin:0.8rem 0; text-align:center;
+}
+.online-wager-select label { color:#ffd700; font-weight:600; margin-right:0.5rem; }
 
 /* Game area */
 #gameArea { display:none; width:100%; max-width:800px; }
@@ -51,6 +143,7 @@ a.back:hover { color:#e0e0e0; }
 .info-bar span { font-size:0.9rem; }
 .info-bar .streak { color:#ffd700; font-weight:700; }
 .info-bar .chips-display { color:#00d4ff; font-weight:700; }
+.info-bar .coin-info { color:#ffd700; font-weight:600; font-size:0.85rem; }
 
 /* Table */
 .table {
@@ -171,6 +264,31 @@ a.back:hover { color:#e0e0e0; }
   border-radius:8px; font-size:1rem; cursor:pointer;
 }
 
+/* Chat Sidebar */
+#chat-toggle{position:fixed;bottom:120px;right:16px;width:50px;height:50px;border-radius:50%;background:#7b2ff7;border:none;color:#fff;font-size:1.5rem;cursor:pointer;z-index:9999;box-shadow:0 2px 12px rgba(123,47,247,0.4);transition:transform 0.2s;display:none;}
+#chat-toggle:hover{transform:scale(1.1);}
+#chat-badge{position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:0.7rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+#chat-panel{position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1a1a2e;border-left:2px solid #2a2a4a;z-index:10000;display:flex;flex-direction:column;transition:right 0.3s;}
+#chat-panel.open{right:0;}
+#chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid #2a2a4a;}
+#chat-header span{font-weight:700;color:#e0e0e0;font-size:1rem;}
+#chat-close{background:#2a2a4a;border:none;color:#e0e0e0;font-size:1.1rem;cursor:pointer;padding:4px 10px;border-radius:6px;transition:all .2s}
+#chat-close:hover{background:#3a3a5a;color:#fff}
+#chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:#2a2a4a #1a1a2e;}
+#chat-messages::-webkit-scrollbar{width:6px;}
+#chat-messages::-webkit-scrollbar-track{background:#1a1a2e;}
+#chat-messages::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:3px;}
+.chat-msg .chat-name{color:#feca57;font-weight:700;font-size:0.8rem;margin-right:6px;}
+.chat-msg .chat-text{color:#e0e0e0;font-size:0.85rem;word-break:break-word;}
+.chat-msg .chat-time{color:#555;font-size:0.7rem;margin-left:6px;}
+#chat-input-area{display:flex;gap:6px;padding:10px;border-top:2px solid #2a2a4a;}
+#chat-input{flex:1;background:#0f0f1a;border:2px solid #2a2a4a;color:#e0e0e0;font-size:0.85rem;font-family:inherit;padding:8px 10px;border-radius:6px;outline:none;}
+#chat-input:focus{border-color:#7b2ff7;}
+#chat-send{background:#7b2ff7;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.85rem;}
+#chat-send:hover{background:#6a22e0;}
+
+.lobby-avatar { display: inline-flex; align-items: center; vertical-align: middle; }
+
 @media (max-width:600px) {
   .card { width:44px; height:62px; font-size:0.7rem; }
   .card .big-suit { font-size:1.1rem; }
@@ -186,16 +304,95 @@ a.back:hover { color:#e0e0e0; }
 <!-- Menu -->
 <div id="menu">
   <h2>Texas Hold'em</h2>
-  <button class="menu-btn" onclick="startGame('easy')">vs AI — Easy<small>AI plays loosely</small></button>
-  <button class="menu-btn" onclick="startGame('medium')">vs AI — Medium<small>Balanced play</small></button>
-  <button class="menu-btn" onclick="startGame('hard')">vs AI — Hard<small>Aggressive &amp; smart</small></button>
+
+  <div class="menu-divider">&#9472;&#9472; Solo &#9472;&#9472;</div>
+  <button class="menu-btn" onclick="startGame('easy')">vs AI &#8212; Easy<small>AI plays loosely</small></button>
+  <button class="menu-btn" onclick="startGame('medium')">vs AI &#8212; Medium<small>Balanced play</small></button>
+  <button class="menu-btn" onclick="startGame('hard')">vs AI &#8212; Hard<small>Aggressive &amp; smart</small></button>
+
+  <div class="menu-divider">&#9472;&#9472; Local &#9472;&#9472;</div>
   <button class="menu-btn" onclick="startGame('hotseat')">2 Player Hotseat<small>Pass &amp; play on one device</small></button>
+
+  <div class="menu-divider">&#9472;&#9472; Online &#9472;&#9472;</div>
+  <button class="menu-btn" onclick="showOnlinePanel()">Create Game<small>Host a room</small></button>
+  <button class="menu-btn" onclick="showJoinPanel()">Join Game<small>Enter a room code</small></button>
+
+  <!-- Online Panel (inline in menu) -->
+  <div class="online-panel" id="online-panel">
+    <h3>Online Multiplayer</h3>
+    <div id="online-create-area" style="display:none;">
+      <p style="color:#888;font-size:0.85rem;margin-bottom:8px;">Share this code with your friend:</p>
+      <div class="room-code-display" id="room-code-display">----</div>
+      <div class="online-wager-select" id="online-wager-select">
+        <label>Coin Wager:</label>
+        <select id="online-wager-amount" style="background:#0f0f1a;border:2px solid #2a2a4a;color:#ffd700;padding:6px 12px;border-radius:6px;font-size:0.9rem;font-weight:700;">
+          <option value="0">Free Play</option>
+          <option value="10">10 coins</option>
+          <option value="25">25 coins</option>
+          <option value="50">50 coins</option>
+          <option value="100">100 coins</option>
+          <option value="250">250 coins</option>
+          <option value="500">500 coins</option>
+        </select>
+        <div style="color:#ffd700;font-size:0.8rem;margin-top:4px;" id="online-host-balance"></div>
+      </div>
+      <p class="waiting-msg" id="waiting-msg">Waiting for opponent to join...</p>
+      <button class="leave-btn" id="online-leave-btn" onclick="leaveOnlineRoom()">Cancel</button>
+    </div>
+    <div id="online-join-area" class="join-area" style="display:none;">
+      <p style="color:#888;font-size:0.85rem;">Enter room code:</p>
+      <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="CODE">
+      <button class="online-btn" id="join-submit-btn">Join</button>
+      <button class="leave-btn" id="join-back-btn">Back</button>
+      <p class="join-error" id="join-error" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div class="menu-divider">&#9472;&#9472; Coin Match &#9472;&#9472;</div>
+  <button class="menu-btn" onclick="toggleCoinMatch()" id="coinMatchToggle">Wager Coins vs AI<small>Risk coins for double reward</small></button>
+  <div id="coinMatchPanel">
+    <div class="coin-balance" id="coinBalance">Balance: --- coins</div>
+    <div style="color:#888;font-size:0.8rem;margin-bottom:0.4rem;">Difficulty:</div>
+    <div class="coin-diff-btns">
+      <button class="coin-diff-btn active" data-d="easy" onclick="setCoinDiff('easy',this)">Easy</button>
+      <button class="coin-diff-btn" data-d="medium" onclick="setCoinDiff('medium',this)">Medium</button>
+      <button class="coin-diff-btn" data-d="hard" onclick="setCoinDiff('hard',this)">Hard</button>
+    </div>
+    <div style="color:#888;font-size:0.8rem;margin-bottom:0.4rem;margin-top:0.4rem;">Wager:</div>
+    <div class="wager-btns" id="wagerBtns">
+      <button class="wager-btn active" data-w="10" onclick="setWager(10,this)">10</button>
+      <button class="wager-btn" data-w="25" onclick="setWager(25,this)">25</button>
+      <button class="wager-btn" data-w="50" onclick="setWager(50,this)">50</button>
+      <button class="wager-btn" data-w="100" onclick="setWager(100,this)">100</button>
+      <button class="wager-btn" data-w="250" onclick="setWager(250,this)">250</button>
+      <button class="wager-btn" data-w="500" onclick="setWager(500,this)">500</button>
+    </div>
+    <button class="coin-start-btn" id="coinStartBtn" onclick="startCoinMatch()">Start Coin Match</button>
+    <div style="color:#ff4757;font-size:0.8rem;margin-top:0.3rem;display:none;" id="coinError"></div>
+  </div>
+</div>
+
+<!-- Online Info (shown during online game) -->
+<div class="online-info" id="online-info">
+  <span>Room: <span class="room-label" id="game-room-code"></span></span>
+  <div id="game-player-info" style="margin:6px 0;"></div>
+  <div id="online-wager-info" style="color:#ffd700;font-size:0.85rem;display:none;"></div>
+  <button class="leave-btn" id="online-leave-game-btn" onclick="leaveOnlineRoom()">Leave Game</button>
+</div>
+
+<!-- Chat Sidebar -->
+<button id="chat-toggle"><span style="font-size:1.4rem">&#x1F4AC;</span><span id="chat-badge">0</span></button>
+<div id="chat-panel">
+    <div id="chat-header"><span>Chat</span><button id="chat-close">&#x2715;</button></div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area"><input id="chat-input" type="text" placeholder="Type a message..." maxlength="200" autocomplete="off"><button id="chat-send">Send</button></div>
 </div>
 
 <!-- Game -->
 <div id="gameArea">
   <div class="info-bar">
     <span>Mode: <strong id="modeLabel"></strong></span>
+    <span class="coin-info" id="coinInfoLabel" style="display:none;"></span>
     <span class="streak" id="streakLabel"></span>
     <span><button class="act-btn" onclick="backToMenu()" style="font-size:0.8rem;padding:0.3rem 0.8rem;">Menu</button></span>
   </div>
@@ -285,6 +482,15 @@ let gameOver = false;
 let handInProgress = false;
 let hotseatResolve = null;
 
+// Coin match state
+let coinMatchActive = false;
+let coinWager = 0;
+let coinDifficulty = 'easy';
+let selectedWager = 10;
+
+// Online state
+let onlineMode = false;
+
 // DOM
 const menuEl = document.getElementById('menu');
 const gameAreaEl = document.getElementById('gameArea');
@@ -295,6 +501,239 @@ const actionsEl = document.getElementById('actions');
 const raiseControlsEl = document.getElementById('raiseControls');
 const nextHandBtnEl = document.getElementById('nextHandBtn');
 const hotseatOverlay = document.getElementById('hotseatOverlay');
+
+// ======================== COIN HELPERS ========================
+function _arcadeEarnCoins(amount, reason) {
+  var t = Math.floor(Date.now() / 30000);
+  var s = amount + ':' + reason + ':' + t + ':' + 'ArcS3cR3t';
+  var hash = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  hash = Math.abs(hash).toString(36);
+  window.ArcadeCoins.earn(amount, reason, hash);
+}
+
+function getMyUsername() {
+  return localStorage.getItem('arcade_currentUser') || localStorage.getItem('arcadePlayerName') || 'Guest';
+}
+
+function generateRoomCode() {
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  var code = '';
+  for (var i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+// ======================== COIN MATCH UI ========================
+function toggleCoinMatch() {
+  var panel = document.getElementById('coinMatchPanel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    refreshCoinBalance();
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function refreshCoinBalance() {
+  if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
+    window.ArcadeCoins.getBalance().then(function(bal) {
+      document.getElementById('coinBalance').textContent = 'Balance: ' + bal + ' coins';
+      // Disable wager buttons that exceed balance
+      document.querySelectorAll('.wager-btn').forEach(function(btn) {
+        var w = parseInt(btn.dataset.w);
+        btn.disabled = w > bal;
+        if (w > bal && btn.classList.contains('active')) {
+          btn.classList.remove('active');
+        }
+      });
+    }).catch(function() {
+      document.getElementById('coinBalance').textContent = 'Balance: Sign in to use coins';
+    });
+  } else {
+    document.getElementById('coinBalance').textContent = 'Balance: Sign in to use coins';
+  }
+}
+
+function setCoinDiff(diff, btn) {
+  coinDifficulty = diff;
+  document.querySelectorAll('.coin-diff-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.d === diff);
+  });
+}
+
+function setWager(amount, btn) {
+  selectedWager = amount;
+  document.querySelectorAll('.wager-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.w) === amount);
+  });
+}
+
+async function startCoinMatch() {
+  var errEl = document.getElementById('coinError');
+  errEl.style.display = 'none';
+
+  if (!window.ArcadeCoins || !window.ArcadeCoins.getBalance) {
+    errEl.textContent = 'Sign in to play coin matches!';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  var bal = await window.ArcadeCoins.getBalance();
+  if (bal < selectedWager) {
+    errEl.textContent = 'Not enough coins! You have ' + bal + '.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Spend the wager
+  var spent = await window.ArcadeCoins.spend(selectedWager);
+  if (!spent) {
+    errEl.textContent = 'Failed to spend coins. Try again.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  coinMatchActive = true;
+  coinWager = selectedWager;
+  startGame(coinDifficulty);
+}
+
+function updateCoinInfo() {
+  var el = document.getElementById('coinInfoLabel');
+  if (coinMatchActive && coinWager > 0) {
+    el.style.display = '';
+    el.textContent = 'Wager: ' + coinWager + ' coins';
+  } else if (onlineMode && window._pokerOnlineState && window._pokerOnlineState.coinWager > 0) {
+    el.style.display = '';
+    el.textContent = 'Wager: ' + window._pokerOnlineState.coinWager + ' coins';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ======================== ONLINE UI ========================
+function showOnlinePanel() {
+  var panel = document.getElementById('online-panel');
+  panel.style.display = 'block';
+  document.getElementById('online-create-area').style.display = 'none';
+  document.getElementById('online-join-area').style.display = 'none';
+  // Update host balance display
+  if (window.ArcadeCoins && window.ArcadeCoins.getBalance) {
+    window.ArcadeCoins.getBalance().then(function(bal) {
+      document.getElementById('online-host-balance').textContent = 'Your balance: ' + bal + ' coins';
+    });
+  }
+  if (window._pokerOnlineCreateGame) window._pokerOnlineCreateGame();
+}
+
+function showJoinPanel() {
+  var panel = document.getElementById('online-panel');
+  panel.style.display = 'block';
+  document.getElementById('online-create-area').style.display = 'none';
+  document.getElementById('online-join-area').style.display = '';
+  document.getElementById('join-code-input').value = '';
+  document.getElementById('join-error').style.display = 'none';
+  document.getElementById('join-code-input').focus();
+}
+
+function leaveOnlineRoom() {
+  if (window._pokerOnlineUnsubscribe) {
+    window._pokerOnlineUnsubscribe();
+    window._pokerOnlineUnsubscribe = null;
+  }
+  window._pokerOnlineState = null;
+  onlineMode = false;
+  document.getElementById('online-info').style.display = 'none';
+  document.getElementById('online-panel').style.display = 'none';
+  resetChat();
+  backToMenu();
+}
+
+// Wire up join buttons
+document.getElementById('join-submit-btn').addEventListener('click', function() {
+  if (window.SFX) window.SFX.click();
+  var code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (window._pokerOnlineJoinGame) window._pokerOnlineJoinGame(code);
+});
+document.getElementById('join-code-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (window.SFX) window.SFX.click();
+    var code = document.getElementById('join-code-input').value.trim().toUpperCase();
+    if (window._pokerOnlineJoinGame) window._pokerOnlineJoinGame(code);
+  }
+});
+document.getElementById('join-back-btn').addEventListener('click', function() {
+  if (window.SFX) window.SFX.click();
+  document.getElementById('online-panel').style.display = 'none';
+});
+
+// ======================== CHAT ========================
+var chatPanel = document.getElementById('chat-panel');
+var chatToggle = document.getElementById('chat-toggle');
+var chatClose = document.getElementById('chat-close');
+var chatMessagesEl = document.getElementById('chat-messages');
+var chatInputEl = document.getElementById('chat-input');
+var chatSendBtn = document.getElementById('chat-send');
+var chatBadgeEl = document.getElementById('chat-badge');
+var chatIsOpen = false, chatUnread = 0, chatPrevCount = 0;
+
+chatToggle.addEventListener('click', function() {
+  chatIsOpen = !chatIsOpen; chatPanel.classList.toggle('open', chatIsOpen);
+  if (chatIsOpen) { chatUnread = 0; chatBadgeEl.style.display = 'none'; chatInputEl.focus(); requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; }); }
+});
+chatClose.addEventListener('click', function() { chatIsOpen = false; chatPanel.classList.remove('open'); });
+chatSendBtn.addEventListener('click', function() { if (window._pokerChatSend) { var t = chatInputEl.value.trim(); if (t) { chatInputEl.value = ''; window._pokerChatSend(t); } } });
+chatInputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter' && window._pokerChatSend) { var t = chatInputEl.value.trim(); if (t) { chatInputEl.value = ''; window._pokerChatSend(t); } } });
+
+function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderChat(msgs) {
+  if (!msgs) msgs = [];
+  var inRoom = window._pokerOnlineState && window._pokerOnlineState.roomId;
+  chatToggle.style.display = inRoom ? 'block' : 'none';
+  if (!inRoom) { chatPanel.classList.remove('open'); chatIsOpen = false; return; }
+  if (msgs.length > chatPrevCount && !chatIsOpen) {
+    chatUnread += msgs.length - chatPrevCount;
+    chatBadgeEl.textContent = chatUnread > 99 ? '99+' : chatUnread;
+    chatBadgeEl.style.display = 'flex';
+    if (chatPrevCount > 0 && window.SFX) window.SFX.coin();
+  }
+  chatPrevCount = msgs.length;
+  chatMessagesEl.innerHTML = '';
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    var div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = '<span class="chat-name" data-chat-user="' + escHtml(m.name) + '">' + escHtml(m.name) + '</span><span class="chat-text">' + escHtml(m.text) + '</span><span class="chat-time">' + escHtml(m.time || '') + '</span>';
+    chatMessagesEl.appendChild(div);
+  }
+  if (window.ArcadeAvatar && window.ArcadeCoins) {
+    chatMessagesEl.querySelectorAll('.chat-name[data-chat-user]').forEach(function(el) {
+      var name = el.dataset.chatUser;
+      if (name && window.ArcadeCoins.getProfile) {
+        window.ArcadeCoins.getProfile(name).then(function(profile) {
+          if (profile) {
+            window.ArcadeAvatar.styleName(el, profile);
+            if (window.ArcadeAvatar.styleNameEffect) window.ArcadeAvatar.styleNameEffect(el, profile);
+            var _md = el.closest('.chat-msg');
+            if (_md && window.ArcadeAvatar.styleBubble) window.ArcadeAvatar.styleBubble(_md, profile);
+          }
+        });
+      }
+    });
+  }
+  requestAnimationFrame(function(){ chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; });
+}
+
+function resetChat() {
+  chatPrevCount = 0; chatUnread = 0; chatBadgeEl.style.display = 'none';
+  chatMessagesEl.innerHTML = ''; chatToggle.style.display = 'none';
+  chatPanel.classList.remove('open'); chatIsOpen = false;
+}
 
 // ======================== DECK ========================
 function makeDeck() {
@@ -326,7 +765,7 @@ function renderCard(card, faceUp) {
   } else {
     el.classList.add('face-up');
     el.classList.add(RED.has(card.suit) ? 'red' : 'black');
-    el.innerHTML = `<span class="rank-suit">${card.rank}${card.suit}</span><span class="big-suit">${card.suit}</span>`;
+    el.innerHTML = '<span class="rank-suit">' + card.rank + card.suit + '</span><span class="big-suit">' + card.suit + '</span>';
   }
   return el;
 }
@@ -334,7 +773,7 @@ function renderCard(card, faceUp) {
 function renderHand(containerId, cards, faceUp) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
-  cards.forEach(c => container.appendChild(renderCard(c, faceUp)));
+  if (cards && cards.length) cards.forEach(c => container.appendChild(renderCard(c, faceUp)));
 }
 
 function renderCommunity() {
@@ -458,7 +897,6 @@ function aiDecide(player, difficulty) {
 }
 
 function aiEasy(player, hand, toCall, potOdds) {
-  // Easy: plays most hands, rarely raises, folds weak hands with big bets
   if (toCall === 0) {
     if (hand.rank >= 1 && Math.random() < 0.3) return {action:'raise', amount:BIG_BLIND};
     return {action:'check'};
@@ -498,19 +936,17 @@ function aiHard(player, hand, toCall, potOdds) {
     if (toCall <= BIG_BLIND && Math.random() < 0.3) return {action:'call'};
     return {action:'fold'};
   }
-  // Post-flop
   if (toCall === 0) {
     if (hand.rank >= 4) return {action:'raise', amount:Math.floor(pot * 0.75)};
     if (hand.rank >= 2) return Math.random() < 0.6 ? {action:'raise', amount:Math.floor(pot * 0.5)} : {action:'check'};
     if (hand.rank >= 1) return Math.random() < 0.3 ? {action:'raise', amount:BIG_BLIND * 2} : {action:'check'};
-    // Bluff occasionally
     if (Math.random() < 0.15) return {action:'raise', amount:Math.floor(pot * 0.6)};
     return {action:'check'};
   }
   if (hand.rank >= 3) return {action:'raise', amount:Math.floor(pot * 0.7)};
   if (hand.rank >= 2) return Math.random() < 0.5 ? {action:'raise', amount:Math.floor(pot * 0.5)} : {action:'call'};
   if (hand.rank >= 1 && potOdds < 0.3) return {action:'call'};
-  if (hand.rank === 0 && toCall <= BIG_BLIND * 2 && Math.random() < 0.2) return {action:'call'}; // occasional hero call
+  if (hand.rank === 0 && toCall <= BIG_BLIND * 2 && Math.random() < 0.2) return {action:'call'};
   return {action:'fold'};
 }
 
@@ -530,11 +966,12 @@ function holeCardStrength(hand) {
 // ======================== GAME FLOW ========================
 function startGame(m) {
   mode = m;
+  onlineMode = false;
   menuEl.style.display = 'none';
   gameAreaEl.style.display = 'block';
 
   const modeLabels = {easy:'AI (Easy)',medium:'AI (Medium)',hard:'AI (Hard)',hotseat:'Hotseat'};
-  document.getElementById('modeLabel').textContent = modeLabels[mode];
+  document.getElementById('modeLabel').textContent = modeLabels[mode] || mode;
 
   // Load streak
   if (mode !== 'hotseat' && window.HallOfFame) {
@@ -545,6 +982,7 @@ function startGame(m) {
     streak = 0; bestStreak = 0;
   }
   updateStreak();
+  updateCoinInfo();
 
   players = [
     {name: mode === 'hotseat' ? 'Player 1' : 'You', chips:START_CHIPS, hand:[], bet:0, folded:false, isAI:false, isDealer:true},
@@ -557,10 +995,36 @@ function startGame(m) {
   dealNewHand();
 }
 
+function startOnlineGame(roomData, myRole) {
+  onlineMode = true;
+  menuEl.style.display = 'none';
+  gameAreaEl.style.display = 'block';
+  document.getElementById('online-panel').style.display = 'none';
+  document.getElementById('online-info').style.display = '';
+
+  document.getElementById('modeLabel').textContent = 'Online';
+
+  // Show wager info if applicable
+  var wagerInfo = document.getElementById('online-wager-info');
+  if (roomData.coinWager > 0) {
+    wagerInfo.textContent = 'Coin Wager: ' + roomData.coinWager + ' coins (winner gets ' + (roomData.coinWager * 2) + ')';
+    wagerInfo.style.display = '';
+  } else {
+    wagerInfo.style.display = 'none';
+  }
+
+  updateCoinInfo();
+}
+
 function backToMenu() {
   gameAreaEl.style.display = 'none';
   menuEl.style.display = 'block';
   handInProgress = false;
+  coinMatchActive = false;
+  coinWager = 0;
+  onlineMode = false;
+  document.getElementById('online-info').style.display = 'none';
+  document.getElementById('online-panel').style.display = 'none';
 }
 
 async function dealNewHand() {
@@ -629,7 +1093,6 @@ async function playRound() {
     // Check if both all-in
     const canAct = active.filter(p => p.chips > 0);
     if (canAct.length === 0) {
-      // Both all-in, reveal remaining cards
       while (communityCards.length < 5) communityCards.push(deck.pop());
       renderCommunity();
       stage = 4;
@@ -637,7 +1100,6 @@ async function playRound() {
       return;
     }
 
-    // Betting round
     // Post-flop: non-dealer acts first
     if (stage > 0) {
       const dealerIdx = players.findIndex(p => p.isDealer);
@@ -657,10 +1119,8 @@ async function playRound() {
       const action = await getAction(currentPlayer);
 
       if (action === 'done') {
-        // Check/call round complete
         consecutiveActions++;
       } else {
-        // A raise resets the count
         consecutiveActions = 1;
       }
 
@@ -710,7 +1170,6 @@ function promptHuman(pIdx) {
 }
 
 function showHotseatScreen(name) {
-  // Hide current player's cards during transition
   renderHand('playerCards', players[0].hand, false);
   renderHand('oppCards', players[1].hand, false);
 
@@ -738,7 +1197,6 @@ function showActions(pIdx) {
   document.getElementById('btnCheck').style.display = canCheck ? '' : 'none';
   document.getElementById('btnRaise').style.display = p.chips > toCall ? '' : 'none';
 
-  // Raise slider
   const minRaise = Math.max(BIG_BLIND, currentBet * 2 - p.bet);
   const maxRaise = p.chips;
   const slider = document.getElementById('raiseSlider');
@@ -826,7 +1284,6 @@ function endHand() {
   const active = players.filter(p => !p.folded);
 
   if (active.length === 1) {
-    // Other player folded
     const winner = active[0];
     winner.chips += pot;
     msgEl.textContent = winner.name + ' wins the pot (' + pot + ')!';
@@ -837,11 +1294,9 @@ function endHand() {
       if(window.SFX) window.SFX.fail();
     }
   } else {
-    // Showdown — evaluate hands
     const h0 = evaluateHand(players[0].hand, communityCards);
     const h1 = evaluateHand(players[1].hand, communityCards);
 
-    // Reveal remaining community cards
     while (communityCards.length < 5) communityCards.push(deck.pop());
     renderCommunity();
 
@@ -860,7 +1315,6 @@ function endHand() {
       msgEl.className = 'msg lose';
       if(window.SFX) window.SFX.fail();
     } else {
-      // Split pot
       const half = Math.floor(pot / 2);
       players[0].chips += half;
       players[1].chips += pot - half;
@@ -886,10 +1340,23 @@ function endHand() {
           bestStreak = s.best;
           window.HallOfFame.submit('poker', streak);
         }
+        // Coin match: award double wager
+        if (coinMatchActive && coinWager > 0) {
+          _arcadeEarnCoins(coinWager * 2, 'poker-win');
+          msgEl.textContent += ' +' + (coinWager * 2) + ' coins!';
+          coinMatchActive = false;
+          coinWager = 0;
+        }
       } else {
         if (window.HallOfFame) {
           window.HallOfFame.loseStreak('poker');
           streak = 0;
+        }
+        // Coin match: coins already spent, nothing to do
+        if (coinMatchActive) {
+          msgEl.textContent += ' You lost ' + coinWager + ' coins.';
+          coinMatchActive = false;
+          coinWager = 0;
         }
       }
       updateStreak();
@@ -912,6 +1379,7 @@ function endHand() {
 
   pot = 0;
   updateUI();
+  updateCoinInfo();
 }
 
 function nextHand() {
@@ -939,8 +1407,20 @@ function updateUI() {
   potEl.textContent = pot;
 
   // Cards
-  if (mode === 'hotseat') {
-    // In hotseat, show current player's cards, hide other's
+  if (onlineMode) {
+    // Online: show own hand, hide opponent's until showdown
+    var st = window._pokerOnlineState;
+    if (st) {
+      var showOpp = !handInProgress; // show at showdown
+      if (st.myRole === 'host') {
+        renderHand('playerCards', players[0].hand, true);
+        renderHand('oppCards', players[1].hand, showOpp);
+      } else {
+        renderHand('playerCards', players[0].hand, true);
+        renderHand('oppCards', players[1].hand, showOpp);
+      }
+    }
+  } else if (mode === 'hotseat') {
     const showP0 = currentPlayer === 0 && handInProgress;
     const showP1 = currentPlayer === 1 && handInProgress;
     renderHand('playerCards', players[0].hand, showP0 || !handInProgress);
@@ -958,7 +1438,772 @@ function updateUI() {
   document.getElementById('playerArea').classList.toggle('folded', players[0].folded);
   document.getElementById('opponentArea').classList.toggle('folded', players[1].folded);
 }
+
+// ======================== ONLINE GAME HELPERS ========================
+// These are called from the Firebase module
+window._pokerOnline = {
+  getMyUsername: getMyUsername,
+  generateRoomCode: generateRoomCode,
+  leaveOnlineRoom: leaveOnlineRoom,
+  startOnlineGame: startOnlineGame,
+  renderChat: renderChat,
+  resetChat: resetChat,
+  renderCard: renderCard,
+  renderHand: renderHand,
+  renderCommunity: function(cards) {
+    communityEl.innerHTML = '';
+    for (var i = 0; i < 5; i++) {
+      if (cards && i < cards.length) {
+        communityEl.appendChild(renderCard(cards[i], true));
+      } else {
+        var placeholder = document.createElement('div');
+        placeholder.className = 'card face-down';
+        placeholder.style.opacity = '0.3';
+        communityEl.appendChild(placeholder);
+      }
+    }
+  },
+  evaluateHand: evaluateHand,
+  compareHands: compareHands,
+  HAND_NAMES: HAND_NAMES,
+  _arcadeEarnCoins: _arcadeEarnCoins,
+  updateCoinInfo: updateCoinInfo,
+  showActions: function(canAct, toCall, myChips) {
+    if (!canAct) { actionsEl.style.display = 'none'; raiseControlsEl.style.display = 'none'; return; }
+    actionsEl.style.display = 'flex';
+    var canCheck = toCall === 0;
+    document.getElementById('btnFold').style.display = '';
+    document.getElementById('btnCall').style.display = canCheck ? 'none' : '';
+    document.getElementById('btnCall').textContent = 'Call ' + Math.min(toCall, myChips);
+    document.getElementById('btnCheck').style.display = canCheck ? '' : 'none';
+    document.getElementById('btnRaise').style.display = myChips > toCall ? '' : 'none';
+    var minRaise = Math.max(BIG_BLIND, toCall * 2);
+    var maxRaise = myChips;
+    var slider = document.getElementById('raiseSlider');
+    slider.min = Math.min(minRaise, maxRaise);
+    slider.max = maxRaise;
+    slider.value = Math.min(minRaise, maxRaise);
+    updateRaiseLabel();
+  },
+  hideActions: function() {
+    actionsEl.style.display = 'none';
+    raiseControlsEl.style.display = 'none';
+  },
+  setMsg: function(text, cls) {
+    msgEl.textContent = text;
+    msgEl.className = 'msg' + (cls ? ' ' + cls : '');
+  },
+  setPlayerInfo: function(name, chips, bet, handLabel, isActive, isFolded) {
+    document.getElementById('playerName').textContent = name;
+    document.getElementById('playerChips').textContent = 'Chips: ' + chips;
+    document.getElementById('playerBet').textContent = bet > 0 ? 'Bet: ' + bet : '';
+    document.getElementById('playerHandLabel').textContent = handLabel || '';
+    document.getElementById('playerArea').classList.toggle('active', isActive);
+    document.getElementById('playerArea').classList.toggle('folded', isFolded);
+  },
+  setOppInfo: function(name, chips, bet, handLabel, isActive, isFolded) {
+    document.getElementById('oppName').textContent = name;
+    document.getElementById('oppChips').textContent = 'Chips: ' + chips;
+    document.getElementById('oppBet').textContent = bet > 0 ? 'Bet: ' + bet : '';
+    document.getElementById('oppHandLabel').textContent = handLabel || '';
+    document.getElementById('opponentArea').classList.toggle('active', isActive);
+    document.getElementById('opponentArea').classList.toggle('folded', isFolded);
+  },
+  setPot: function(p) { potEl.textContent = p; },
+  showNextBtn: function(text, handler) {
+    nextHandBtnEl.textContent = text;
+    nextHandBtnEl.style.display = 'block';
+    nextHandBtnEl.onclick = handler;
+  },
+  hideNextBtn: function() { nextHandBtnEl.style.display = 'none'; },
+  BIG_BLIND: BIG_BLIND,
+  SMALL_BLIND: SMALL_BLIND,
+  START_CHIPS: START_CHIPS
+};
 </script>
+
+<!-- Online multiplayer Firebase module -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteDoc }
+    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+};
+
+var app = initializeApp(firebaseConfig, 'poker-online');
+var db = getFirestore(app);
+var pk = window._pokerOnline;
+
+var SUITS = ['\u2660','\u2665','\u2666','\u2663'];
+var RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+
+function makeShuffledDeck() {
+    var d = [];
+    for (var si = 0; si < SUITS.length; si++) {
+        for (var ri = 0; ri < RANKS.length; ri++) {
+            d.push({ suit: SUITS[si], rank: RANKS[ri] });
+        }
+    }
+    // Fisher-Yates shuffle
+    for (var i = d.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = d[i]; d[i] = d[j]; d[j] = tmp;
+    }
+    return d;
+}
+
+function startListening(roomId) {
+    if (window._pokerOnlineUnsubscribe) {
+        window._pokerOnlineUnsubscribe();
+    }
+
+    var roomRef = doc(db, 'poker_rooms', roomId);
+    window._pokerOnlineUnsubscribe = onSnapshot(roomRef, function(snapshot) {
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var st = window._pokerOnlineState;
+        if (!st || st.roomId !== roomId) return;
+
+        // Render chat
+        pk.renderChat(data.chat || []);
+
+        // Game is now playing
+        if (data.status === 'playing' && !st.playing) {
+            st.playing = true;
+            pk.startOnlineGame(data, st.myRole);
+            var gameRoomCode = document.getElementById('game-room-code');
+            gameRoomCode.textContent = roomId;
+            var gamePlayerInfo = document.getElementById('game-player-info');
+            var myName = pk.getMyUsername();
+            var oppName = st.myRole === 'host' ? data.guestPlayer : data.hostPlayer;
+            gamePlayerInfo.innerHTML = 'You (<span class="lobby-avatar" data-player="' + myName + '"></span><span class="lobby-name" data-player-name="' + myName + '">' + myName + '</span>) vs <span class="lobby-avatar" data-player="' + oppName + '"></span><span class="lobby-name" data-player-name="' + oppName + '">' + oppName + '</span>';
+            // Render avatars
+            if (window.ArcadeAvatar && window.ArcadeCoins) {
+                gamePlayerInfo.querySelectorAll('.lobby-avatar').forEach(function(el) {
+                    var name = el.dataset.player;
+                    if (name && window.ArcadeCoins.getProfile) {
+                        window.ArcadeCoins.getProfile(name).then(function(profile) {
+                            if (profile) {
+                                window.ArcadeAvatar.renderMini(el, profile);
+                                var nameEl = el.parentElement.querySelector('.lobby-name[data-player-name="' + name + '"]');
+                                if (nameEl) window.ArcadeAvatar.styleName(nameEl, profile);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        if (data.status === 'playing' || data.status === 'done') {
+            renderOnlineState(data, st);
+        }
+    });
+}
+
+function renderOnlineState(data, st) {
+    var myName = pk.getMyUsername();
+    var isHost = st.myRole === 'host';
+    var myKey = isHost ? data.hostPlayer : data.guestPlayer;
+    var oppKey = isHost ? data.guestPlayer : data.hostPlayer;
+    var myChips = isHost ? data.chips.hostPlayer : data.chips.guestPlayer;
+    var oppChips = isHost ? data.chips.guestPlayer : data.chips.hostPlayer;
+    var myBet = isHost ? data.bets.hostPlayer : data.bets.guestPlayer;
+    var oppBet = isHost ? data.bets.guestPlayer : data.bets.hostPlayer;
+
+    // Get hands
+    var myHand = data.hands ? (isHost ? data.hands.hostPlayer : data.hands.guestPlayer) : [];
+    var oppHand = data.hands ? (isHost ? data.hands.guestPlayer : data.hands.hostPlayer) : [];
+
+    // Community cards
+    var cc = data.communityCards || [];
+    pk.renderCommunity(cc);
+
+    // Pot
+    pk.setPot(data.pot || 0);
+
+    // Determine if it's showdown
+    var isShowdown = data.stage >= 4 || data.status === 'done';
+
+    // Render hands
+    pk.renderHand('playerCards', myHand || [], true);
+    pk.renderHand('oppCards', oppHand || [], isShowdown);
+
+    // Current player check
+    var isMyTurn = data.currentPlayer === myKey;
+    var handActive = data.status === 'playing' && data.stage < 4;
+
+    // Player info
+    var myHandLabel = '';
+    var oppHandLabel = '';
+    if (isShowdown && myHand && myHand.length && cc.length >= 3) {
+        var mEval = pk.evaluateHand(myHand, cc);
+        myHandLabel = mEval.name;
+    }
+    if (isShowdown && oppHand && oppHand.length && cc.length >= 3) {
+        var oEval = pk.evaluateHand(oppHand, cc);
+        oppHandLabel = oEval.name;
+    }
+
+    pk.setPlayerInfo(myName, myChips, myBet, myHandLabel, isMyTurn && handActive, false);
+    pk.setOppInfo(oppKey, oppChips, oppBet, oppHandLabel, !isMyTurn && handActive, false);
+
+    // Show actions if it's my turn
+    if (isMyTurn && handActive && !isShowdown) {
+        var toCall = (data.currentBet || 0) - myBet;
+        if (toCall < 0) toCall = 0;
+        pk.showActions(true, toCall, myChips);
+    } else {
+        pk.hideActions();
+    }
+
+    // Messages
+    if (data.lastAction) {
+        pk.setMsg(data.lastAction);
+    }
+
+    // Status messages
+    if (data.status === 'done') {
+        // Determine winner
+        if (data.winner) {
+            var iWon = data.winner === myKey;
+            if (data.winner === 'split') {
+                pk.setMsg('Split pot!', '');
+            } else {
+                pk.setMsg((iWon ? 'You' : data.winner) + ' won the match!' + (data.coinWager > 0 ? (iWon ? ' +' + (data.coinWager * 2) + ' coins!' : ' You lost ' + data.coinWager + ' coins.') : ''), iWon ? 'win' : 'lose');
+                // Award coins if I won
+                if (iWon && data.coinWager > 0 && !st.coinAwarded) {
+                    st.coinAwarded = true;
+                    pk._arcadeEarnCoins(data.coinWager * 2, 'poker-online-win');
+                }
+            }
+        }
+        pk.hideActions();
+        pk.showNextBtn('Back to Menu', function() {
+            pk.leaveOnlineRoom();
+        });
+    } else if (data.handResult) {
+        // Hand just ended, show result
+        var hrIWon = data.handResult.winner === myKey;
+        var hrMsg = data.handResult.message || '';
+        pk.setMsg(hrMsg, hrIWon ? 'win' : (data.handResult.winner === 'split' ? '' : 'lose'));
+
+        // Show next hand button only for host
+        if (isHost && data.handResult.showNext) {
+            pk.showNextBtn('Next Hand', function() {
+                pk.hideNextBtn();
+                onlineNextHand();
+            });
+        } else if (!isHost && data.handResult.showNext) {
+            pk.setMsg(hrMsg + ' (Waiting for host to deal...)', hrIWon ? 'win' : '');
+        }
+    }
+}
+
+// ======================== ONLINE ACTIONS ========================
+// The action buttons call these via window._resolveAction - we need to intercept
+// We override doAction and doRaise for online mode
+
+var origDoAction = window.doAction;
+var origDoRaise = window.doRaise;
+
+window.doAction = function(type) {
+    if (window._pokerOnlineState && window._pokerOnlineState.playing) {
+        onlineDoAction(type);
+    } else {
+        origDoAction(type);
+    }
+};
+
+window.doRaise = function() {
+    if (window._pokerOnlineState && window._pokerOnlineState.playing) {
+        var amount = parseInt(document.getElementById('raiseSlider').value);
+        onlineDoAction('raise', amount);
+        document.getElementById('raiseControls').style.display = 'none';
+    } else {
+        origDoRaise();
+    }
+};
+
+async function onlineDoAction(type, raiseAmount) {
+    var st = window._pokerOnlineState;
+    if (!st || !st.roomId) return;
+
+    try {
+        var roomRef = doc(db, 'poker_rooms', st.roomId);
+        var snapshot = await getDoc(roomRef);
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+
+        var myKey = pk.getMyUsername();
+        if (data.currentPlayer !== myKey) return;
+
+        var isHost = st.myRole === 'host';
+        var myBetKey = isHost ? 'hostPlayer' : 'guestPlayer';
+        var oppBetKey = isHost ? 'guestPlayer' : 'hostPlayer';
+        var myChipsKey = isHost ? 'hostPlayer' : 'guestPlayer';
+
+        var myBet = data.bets[myBetKey];
+        var myChips = data.chips[myChipsKey];
+        var cBet = data.currentBet || 0;
+
+        var newBets = Object.assign({}, data.bets);
+        var newChips = Object.assign({}, data.chips);
+        var newPot = data.pot;
+        var newCurrentBet = cBet;
+        var actionMsg = '';
+        var oppKey = isHost ? data.guestPlayer : data.hostPlayer;
+        var newCurrentPlayer = oppKey;
+        var folded = data.folded || {};
+
+        if (type === 'fold') {
+            folded[myKey] = true;
+            actionMsg = myKey + ' folds';
+            if (window.SFX) window.SFX.wrong();
+        } else if (type === 'check') {
+            actionMsg = myKey + ' checks';
+            if (window.SFX) window.SFX.click();
+        } else if (type === 'call') {
+            var toCall = Math.min(cBet - myBet, myChips);
+            newChips[myChipsKey] -= toCall;
+            newBets[myBetKey] += toCall;
+            newPot += toCall;
+            actionMsg = myKey + ' calls ' + toCall;
+            if (window.SFX) window.SFX.coin();
+        } else if (type === 'raise') {
+            var toCall = cBet - myBet;
+            var rAmt = Math.max(raiseAmount || pk.BIG_BLIND, pk.BIG_BLIND);
+            var totalBet = Math.min(toCall + rAmt, myChips);
+            newChips[myChipsKey] -= totalBet;
+            newBets[myBetKey] += totalBet;
+            newPot += totalBet;
+            newCurrentBet = newBets[myBetKey];
+            actionMsg = myKey + ' raises to ' + newCurrentBet;
+            if (window.SFX) window.SFX.coin();
+        }
+
+        // Determine if betting round is complete
+        var actCount = (data.actionsThisRound || 0) + 1;
+        var roundComplete = false;
+
+        // Check if fold happened
+        if (type === 'fold') {
+            // Hand over - award pot to opponent
+            var winnerKey = oppKey;
+            newChips[isHost ? oppBetKey : myBetKey] = data.chips[oppBetKey]; // Keep opp chips
+            // Actually: give pot to winner
+            var wChipKey = isHost ? oppBetKey : (isHost ? myChipsKey : oppBetKey);
+            // Simpler: find which chipKey belongs to oppKey
+            var winnerChipKey = oppBetKey;
+            newChips[winnerChipKey] += newPot;
+
+            // Check if match is over
+            var matchOver = newChips.hostPlayer <= 0 || newChips.guestPlayer <= 0;
+            var updateData = {
+                bets: newBets, chips: newChips, pot: 0,
+                currentBet: 0, currentPlayer: '',
+                folded: folded, lastAction: actionMsg, actionsThisRound: 0,
+                handResult: {
+                    winner: oppKey,
+                    message: oppKey + ' wins the pot (' + newPot + ')!',
+                    showNext: !matchOver
+                }
+            };
+            if (matchOver) {
+                var matchWinner = newChips.hostPlayer > 0 ? data.hostPlayer : data.guestPlayer;
+                updateData.status = 'done';
+                updateData.winner = matchWinner;
+                updateData.handResult.message += ' ' + matchWinner + ' wins the match!';
+            }
+            await updateDoc(roomRef, updateData);
+            return;
+        }
+
+        // Check if the opponent has already acted (or can't act) = round complete
+        // Simple approach: if both have equal bets and both have acted, round is done
+        if (type === 'raise') {
+            actCount = 1; // Reset on raise
+        }
+
+        // Check if round should end
+        // Round ends when: actCount >= 2 AND bets are equal (or one is all-in)
+        var oppFolded = folded[oppKey];
+        var bothBetsEqual = newBets[myBetKey] === newBets[oppBetKey] || newChips[myChipsKey] === 0 || newChips[oppBetKey] === 0;
+
+        if (actCount >= 2 && bothBetsEqual && type !== 'raise') {
+            roundComplete = true;
+        }
+
+        if (roundComplete) {
+            // Advance stage
+            var newStage = data.stage + 1;
+            var newDeck = data.deck.slice();
+            var newCC = (data.communityCards || []).slice();
+
+            // Reset bets
+            var resetBets = { hostPlayer: 0, guestPlayer: 0 };
+
+            if (newStage === 1) {
+                // Flop: deal 3
+                newCC.push(newDeck.pop(), newDeck.pop(), newDeck.pop());
+            } else if (newStage === 2 || newStage === 3) {
+                // Turn / River: deal 1
+                newCC.push(newDeck.pop());
+            }
+
+            if (newStage >= 4) {
+                // Showdown
+                while (newCC.length < 5) newCC.push(newDeck.pop());
+
+                var hostHand = data.hands.hostPlayer;
+                var guestHand = data.hands.guestPlayer;
+                var h0 = pk.evaluateHand(hostHand, newCC);
+                var h1 = pk.evaluateHand(guestHand, newCC);
+                var cmp = pk.compareHands(h0, h1);
+
+                var winnerName = '';
+                var resultMsg = '';
+                if (cmp > 0) {
+                    newChips.hostPlayer += newPot;
+                    winnerName = data.hostPlayer;
+                    resultMsg = data.hostPlayer + ' wins with ' + h0.name + '! (+' + newPot + ')';
+                } else if (cmp < 0) {
+                    newChips.guestPlayer += newPot;
+                    winnerName = data.guestPlayer;
+                    resultMsg = data.guestPlayer + ' wins with ' + h1.name + '! (+' + newPot + ')';
+                } else {
+                    var half = Math.floor(newPot / 2);
+                    newChips.hostPlayer += half;
+                    newChips.guestPlayer += newPot - half;
+                    winnerName = 'split';
+                    resultMsg = 'Split pot! Both have ' + h0.name;
+                }
+
+                var matchOver = newChips.hostPlayer <= 0 || newChips.guestPlayer <= 0;
+                var updateObj = {
+                    deck: newDeck, communityCards: newCC,
+                    bets: resetBets, chips: newChips, pot: 0,
+                    currentBet: 0, stage: 4, currentPlayer: '',
+                    lastAction: resultMsg, actionsThisRound: 0,
+                    handResult: {
+                        winner: winnerName,
+                        message: resultMsg,
+                        showNext: !matchOver
+                    }
+                };
+                if (matchOver) {
+                    var mw = newChips.hostPlayer > 0 ? data.hostPlayer : data.guestPlayer;
+                    updateObj.status = 'done';
+                    updateObj.winner = mw;
+                    updateObj.handResult.message += ' ' + mw + ' wins the match!';
+                }
+                await updateDoc(roomRef, updateObj);
+                return;
+            }
+
+            // Determine who goes first post-flop (non-dealer)
+            var dealerKey = data.dealer;
+            var firstPlayer = dealerKey === data.hostPlayer ? data.guestPlayer : data.hostPlayer;
+
+            await updateDoc(roomRef, {
+                deck: newDeck, communityCards: newCC,
+                bets: resetBets, pot: newPot, currentBet: 0,
+                stage: newStage, currentPlayer: firstPlayer,
+                lastAction: actionMsg, actionsThisRound: 0
+            });
+            return;
+        }
+
+        // Normal action - just update and pass turn
+        await updateDoc(roomRef, {
+            bets: newBets, chips: newChips, pot: newPot,
+            currentBet: newCurrentBet, currentPlayer: newCurrentPlayer,
+            lastAction: actionMsg, actionsThisRound: actCount,
+            folded: folded
+        });
+
+    } catch (err) {
+        console.error('Online action error:', err);
+    }
+}
+
+async function onlineNextHand() {
+    var st = window._pokerOnlineState;
+    if (!st || !st.roomId) return;
+
+    try {
+        var roomRef = doc(db, 'poker_rooms', st.roomId);
+        var snapshot = await getDoc(roomRef);
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+
+        var newDeck = makeShuffledDeck();
+        var hostHand = [newDeck.pop(), newDeck.pop()];
+        var guestHand = [newDeck.pop(), newDeck.pop()];
+
+        // Swap dealer
+        var newDealer = data.dealer === data.hostPlayer ? data.guestPlayer : data.hostPlayer;
+
+        // Post blinds
+        var sbKey = newDealer === data.hostPlayer ? 'hostPlayer' : 'guestPlayer';
+        var bbKey = newDealer === data.hostPlayer ? 'guestPlayer' : 'hostPlayer';
+
+        var newChips = Object.assign({}, data.chips);
+        var newBets = { hostPlayer: 0, guestPlayer: 0 };
+
+        var sbAmt = Math.min(pk.SMALL_BLIND, newChips[sbKey]);
+        var bbAmt = Math.min(pk.BIG_BLIND, newChips[bbKey]);
+
+        newChips[sbKey] -= sbAmt;
+        newBets[sbKey] = sbAmt;
+        newChips[bbKey] -= bbAmt;
+        newBets[bbKey] = bbAmt;
+
+        var newPot = sbAmt + bbAmt;
+
+        // Dealer acts first preflop in heads-up
+        var firstPlayer = newDealer === data.hostPlayer ? data.hostPlayer : data.guestPlayer;
+
+        await updateDoc(roomRef, {
+            deck: newDeck,
+            communityCards: [],
+            hands: { hostPlayer: hostHand, guestPlayer: guestHand },
+            chips: newChips,
+            bets: newBets,
+            pot: newPot,
+            currentBet: pk.BIG_BLIND,
+            currentPlayer: firstPlayer,
+            dealer: newDealer,
+            stage: 0,
+            lastAction: 'New hand dealt',
+            actionsThisRound: 0,
+            handResult: null,
+            folded: {},
+            status: 'playing',
+            winner: ''
+        });
+    } catch (err) {
+        console.error('Next hand error:', err);
+    }
+}
+
+// ======================== CREATE / JOIN ========================
+window._pokerOnlineCreateGame = async function() {
+    var username = pk.getMyUsername();
+    var roomCode = pk.generateRoomCode();
+
+    var createArea = document.getElementById('online-create-area');
+    createArea.style.display = '';
+    document.getElementById('room-code-display').textContent = roomCode;
+    var waitingMsg = document.getElementById('waiting-msg');
+    waitingMsg.textContent = 'Creating room...';
+    waitingMsg.style.display = '';
+    waitingMsg.style.color = '';
+    document.getElementById('online-leave-btn').style.display = '';
+
+    var wagerAmount = parseInt(document.getElementById('online-wager-amount').value) || 0;
+
+    // Check balance if wagering
+    if (wagerAmount > 0 && window.ArcadeCoins && window.ArcadeCoins.getBalance) {
+        var bal = await window.ArcadeCoins.getBalance();
+        if (bal < wagerAmount) {
+            waitingMsg.textContent = 'Not enough coins! You have ' + bal + '.';
+            waitingMsg.style.color = '#ff4757';
+            return;
+        }
+    }
+
+    try {
+        var roomRef = doc(db, 'poker_rooms', roomCode);
+        var existing = await getDoc(roomRef);
+        if (existing.exists() && existing.data().status !== 'done') {
+            window._pokerOnlineCreateGame();
+            return;
+        }
+
+        var newDeck = makeShuffledDeck();
+        var hostHand = [newDeck.pop(), newDeck.pop()];
+        var guestHand = [newDeck.pop(), newDeck.pop()];
+
+        await setDoc(roomRef, {
+            hostPlayer: username,
+            guestPlayer: '',
+            status: 'waiting',
+            deck: newDeck,
+            communityCards: [],
+            hands: { hostPlayer: hostHand, guestPlayer: guestHand },
+            chips: { hostPlayer: pk.START_CHIPS, guestPlayer: pk.START_CHIPS },
+            bets: { hostPlayer: 0, guestPlayer: 0 },
+            pot: 0,
+            currentBet: 0,
+            currentPlayer: username,
+            dealer: username,
+            stage: 0,
+            lastAction: '',
+            actionsThisRound: 0,
+            folded: {},
+            handResult: null,
+            chat: [],
+            coinWager: wagerAmount,
+            winner: ''
+        });
+
+        window._pokerOnlineState = {
+            roomId: roomCode,
+            myRole: 'host',
+            playing: false,
+            coinWager: wagerAmount,
+            coinAwarded: false
+        };
+
+        waitingMsg.textContent = 'Waiting for opponent to join...' + (wagerAmount > 0 ? ' (Wager: ' + wagerAmount + ' coins)' : '');
+        startListening(roomCode);
+    } catch (err) {
+        console.error('Create game error:', err);
+        waitingMsg.textContent = 'Error: ' + err.message;
+        waitingMsg.style.color = '#ff4757';
+    }
+};
+
+window._pokerOnlineJoinGame = async function(code) {
+    var joinError = document.getElementById('join-error');
+    joinError.style.display = 'none';
+
+    if (!code || code.length !== 4) {
+        joinError.textContent = 'Enter a 4-character room code';
+        joinError.style.display = '';
+        return;
+    }
+
+    try {
+        var roomRef = doc(db, 'poker_rooms', code);
+        var snapshot = await getDoc(roomRef);
+
+        if (!snapshot.exists()) {
+            joinError.textContent = 'Room not found';
+            joinError.style.display = '';
+            return;
+        }
+
+        var data = snapshot.data();
+        if (data.status !== 'waiting') {
+            joinError.textContent = 'Room is full or game already ended';
+            joinError.style.display = '';
+            return;
+        }
+
+        var username = pk.getMyUsername();
+        var wagerAmount = data.coinWager || 0;
+
+        // Check balance if wagering
+        if (wagerAmount > 0 && window.ArcadeCoins && window.ArcadeCoins.getBalance) {
+            var bal = await window.ArcadeCoins.getBalance();
+            if (bal < wagerAmount) {
+                joinError.textContent = 'Not enough coins! Wager is ' + wagerAmount + ' coins and you have ' + bal + '.';
+                joinError.style.display = '';
+                return;
+            }
+        }
+
+        // Spend coins for both players when guest joins
+        if (wagerAmount > 0 && window.ArcadeCoins) {
+            var spent = await window.ArcadeCoins.spend(wagerAmount);
+            if (!spent) {
+                joinError.textContent = 'Failed to spend coins. Try again.';
+                joinError.style.display = '';
+                return;
+            }
+        }
+
+        // Set up initial hand with blinds
+        var existingDeck = data.deck.slice();
+        var hostHand = data.hands.hostPlayer;
+        var guestHand = data.hands.guestPlayer;
+
+        // Post blinds: dealer (host) = SB, guest = BB
+        var sbAmt = pk.SMALL_BLIND;
+        var bbAmt = pk.BIG_BLIND;
+
+        await updateDoc(roomRef, {
+            guestPlayer: username,
+            status: 'playing',
+            chips: { hostPlayer: pk.START_CHIPS - sbAmt, guestPlayer: pk.START_CHIPS - bbAmt },
+            bets: { hostPlayer: sbAmt, guestPlayer: bbAmt },
+            pot: sbAmt + bbAmt,
+            currentBet: pk.BIG_BLIND,
+            currentPlayer: data.hostPlayer, // Dealer acts first preflop in heads-up
+            dealer: data.hostPlayer
+        });
+
+        // Host spends coins too (triggered via a field update the host reads)
+        // Actually we handle coin spending for the host here too
+        if (wagerAmount > 0 && window._pokerOnlineState && window._pokerOnlineState.myRole === 'host') {
+            // Host will see it via snapshot
+        }
+
+        window._pokerOnlineState = {
+            roomId: code,
+            myRole: 'guest',
+            playing: true,
+            coinWager: wagerAmount,
+            coinAwarded: false
+        };
+
+        document.getElementById('online-panel').style.display = 'none';
+        startListening(code);
+
+    } catch (err) {
+        console.error('Join game error:', err);
+        joinError.textContent = 'Error: ' + err.message;
+        joinError.style.display = '';
+    }
+};
+
+// ===== Chat Send =====
+window._pokerChatSend = async function(text) {
+    var st = window._pokerOnlineState;
+    if (!st || !st.roomId || !text) return;
+    try {
+        var roomRef = doc(db, 'poker_rooms', st.roomId);
+        var snapshot = await getDoc(roomRef);
+        if (!snapshot.exists()) return;
+        var data = snapshot.data();
+        var chat = (data.chat || []).slice();
+        var username = pk.getMyUsername();
+        var now = new Date();
+        chat.push({ name: username, text: text, time: ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2) });
+        if (chat.length > 50) chat = chat.slice(chat.length - 50);
+        await updateDoc(roomRef, { chat: chat });
+    } catch(e) { console.error('Chat error:', e); }
+};
+
+// Handle host coin spending when game starts
+// The host's snapshot handler will detect status changing to 'playing'
+// We use a flag to ensure coins are spent only once
+var _hostCoinsSpent = false;
+var origStartListening = startListening;
+// We add coin spending logic inside the snapshot handler already set up
+// Let's patch the startOnlineGame function to handle host coins
+var origStartOnline = pk.startOnlineGame;
+pk.startOnlineGame = function(roomData, myRole) {
+    origStartOnline(roomData, myRole);
+    // If host and there's a wager, spend coins
+    if (myRole === 'host' && roomData.coinWager > 0 && !_hostCoinsSpent) {
+        _hostCoinsSpent = true;
+        if (window.ArcadeCoins && window.ArcadeCoins.spend) {
+            window.ArcadeCoins.spend(roomData.coinWager);
+        }
+    }
+};
+
+</script>
+
 <script src="ban.js"></script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=4"></script>
