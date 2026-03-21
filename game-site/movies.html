@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movies</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { margin: 0; background: #0a0a0f; color: #e0e4f0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+    .movies-container { max-width: 960px; margin: 0 auto; padding: 20px; }
+    .movies-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .movies-header h1 { font-size: 1.6rem; margin: 0; }
+    .back-btn { text-decoration: none; color: #aaa; font-size: 1.4rem; padding: 4px 8px; border-radius: 8px; transition: background .15s; }
+    .back-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .movie-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; overflow: hidden; margin-bottom: 24px; }
+    .movie-title { padding: 16px 20px; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .movie-player { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+    .movie-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <div class="movies-container">
+    <div class="movies-header">
+      <a class="back-btn" href="index.html">&#8592;</a>
+      <h1>&#127916; Movies</h1>
+    </div>
+
+    <div class="movie-card">
+      <div class="movie-title">Movie 1</div>
+      <div class="movie-player">
+        <iframe src="https://drive.google.com/file/d/1PHbwDSv_nzy9KVoRn9561Le-6-C2uUQa/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script src="sound.js?v=2"></script>
+  <script src="fame.js?v=4"></script>
+  <script type="module" src="firebase-lb.js?v=4"></script>
+  <script src="coins.js"></script>
+  <script src="avatar.js"></script>
+  <script src="admin.js"></script>
+  <script src="auth.js"></script>
+  <script src="theme.js?v=4"></script>
+</body>
+</html>
