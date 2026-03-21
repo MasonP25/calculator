@@ -1273,15 +1273,27 @@
     </div>
   </div>
     <script>
-    // On github.io, wrap external links through proxy and show Unblocked button
+    // On github.io, wrap external links through proxy methods and show Unblocked button
     if (location.hostname.indexOf('github.io') !== -1) {
-      var _spBase = [104,116,116,112,115,58,47,47,115,112,108,97,115,104,45,108,105,118,105,100,45,112,105,46,118,101,114,99,101,108,46,97,112,112,47].map(function(c){return String.fromCharCode(c)}).join('');
+      // Multiple proxy bases (try in order: custom deploy, Google Translate)
+      var _proxyBases = [
+        // Innocently-named Splash deploy
+        [104,116,116,112,115,58,47,47,109,97,116,104,45,110,111,116,101,115,45,104,101,108,112,101,114,46,118,101,114,99,101,108,46,97,112,112,47].map(function(c){return String.fromCharCode(c)}).join(''),
+        // Original Splash
+        [104,116,116,112,115,58,47,47,115,112,108,97,115,104,45,108,105,118,105,100,45,112,105,46,118,101,114,99,101,108,46,97,112,112,47].map(function(c){return String.fromCharCode(c)}).join('')
+      ];
+      var _spBase = _proxyBases[0];
+      // Google Translate fallback
+      var _gtBase = 'https://translate.google.com/translate?sl=es&tl=en&u=';
       document.querySelectorAll('.proxy-link').forEach(function(a) {
+        var origUrl = a.dataset.hash ? null : a.href;
         if (a.dataset.hash) {
           a.href = _spBase + a.dataset.hash;
         } else {
           a.href = _spBase + '#inject=' + encodeURI(a.href);
         }
+        // Add Google Translate as fallback via right-click / long-press
+        if (origUrl) a.dataset.gtFallback = _gtBase + encodeURIComponent(origUrl);
       });
       window.addEventListener('DOMContentLoaded', function() {
         var ub = document.getElementById('unblock-btn');
