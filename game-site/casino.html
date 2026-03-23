@@ -523,12 +523,17 @@
     <button onclick="document.getElementById('slots-bet').value=250">250</button>
     <button onclick="setBetAll('slots-bet')">All In</button>
   </div>
+  <div class="slots-mode-toggle" style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:0.8rem;">
+    <button class="scratch-tier active" id="slots-mode-auto" onclick="setSlotsMode('auto')">Auto Stop</button>
+    <button class="scratch-tier" id="slots-mode-manual" onclick="setSlotsMode('manual')">Manual Stop</button>
+  </div>
   <div class="slots-machine">
     <div class="slots-reels">
-      <div class="slots-reel" id="slot-0"><span class="slots-sym">🍒</span></div>
-      <div class="slots-reel" id="slot-1"><span class="slots-sym">🍋</span></div>
-      <div class="slots-reel" id="slot-2"><span class="slots-sym">🍊</span></div>
+      <div class="slots-reel" id="slot-0" onclick="manualStopReel(0)"><span class="slots-sym">🍒</span></div>
+      <div class="slots-reel" id="slot-1" onclick="manualStopReel(1)"><span class="slots-sym">🍋</span></div>
+      <div class="slots-reel" id="slot-2" onclick="manualStopReel(2)"><span class="slots-sym">🍊</span></div>
     </div>
+    <div class="slots-tap-hint" id="slots-tap-hint" style="display:none;color:#ffd700;font-size:0.7rem;margin-top:4px;">Tap each reel to stop it!</div>
     <div class="slots-payouts">
       <div class="payout-row"><span>🍒🍒🍒</span><span class="payout-mult">3x</span></div>
       <div class="payout-row"><span>🍋🍋🍋</span><span class="payout-mult">5x</span></div>
@@ -1005,6 +1010,12 @@
 
   // ─── SLOTS ───
   var slotsSpinning = false;
+  var slotsMode = 'auto'; // 'auto' or 'manual'
+  var slotsStopped = [false, false, false];
+  var slotsResults = [];
+  var slotsBet = 0;
+  var spinIntervals = [null, null, null];
+  var autoTimers = [null, null, null];
   var SLOT_SYMBOLS = [
     { sym: '🍒', weight: 30, mult: 3 },
     { sym: '🍋', weight: 25, mult: 5 },
@@ -1026,6 +1037,73 @@
     return SLOT_SYMBOLS[0];
   }
 
+  window.setSlotsMode = function(mode) {
+    slotsMode = mode;
+    document.getElementById('slots-mode-auto').classList.toggle('active', mode === 'auto');
+    document.getElementById('slots-mode-manual').classList.toggle('active', mode === 'manual');
+  };
+
+  function stopReelNow(idx) {
+    if (slotsStopped[idx]) return;
+    slotsStopped[idx] = true;
+    clearInterval(spinIntervals[idx]);
+    if (autoTimers[idx]) { clearTimeout(autoTimers[idx]); autoTimers[idx] = null; }
+    var reel = document.getElementById('slot-' + idx);
+    reel.classList.remove('spinning');
+    reel.querySelector('.slots-sym').textContent = slotsResults[idx].sym;
+    reel.style.cursor = 'default';
+    if (window.SFX) window.SFX.click();
+
+    // Check if all reels stopped
+    if (slotsStopped[0] && slotsStopped[1] && slotsStopped[2]) {
+      checkSlotsResult();
+    }
+  }
+
+  window.manualStopReel = function(idx) {
+    if (!slotsSpinning || slotsMode !== 'manual' || slotsStopped[idx]) return;
+    // Must stop in order: 0, then 1, then 2
+    if (idx === 1 && !slotsStopped[0]) return;
+    if (idx === 2 && !slotsStopped[1]) return;
+    stopReelNow(idx);
+  };
+
+  function checkSlotsResult() {
+    var resultEl = document.getElementById('slots-result');
+    var s0 = slotsResults[0].sym, s1 = slotsResults[1].sym, s2 = slotsResults[2].sym;
+
+    if (s0 === s1 && s1 === s2) {
+      var mult = slotsResults[0].mult;
+      var winAmount = slotsBet * mult;
+      _arcadeEarnCoins(winAmount, 'Slots Jackpot');
+      resultEl.className = 'result-msg win';
+      resultEl.textContent = s0 + s1 + s2 + ' JACKPOT! ' + mult + 'x — You won ' + winAmount + ' coins!';
+      for (var w = 0; w < 3; w++) document.getElementById('slot-' + w).classList.add('win');
+      if (window.SFX) window.SFX.win();
+      recordGame(slotsBet, winAmount);
+    } else if (s0 === s1 || s1 === s2 || s0 === s2) {
+      var winAmount2 = Math.floor(slotsBet * 1.5);
+      _arcadeEarnCoins(winAmount2, 'Slots 2-Match');
+      resultEl.className = 'result-msg neutral';
+      resultEl.textContent = 'Two match! 1.5x — You won ' + winAmount2 + ' coins!';
+      if (s0 === s1) { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-1').classList.add('win'); }
+      else if (s1 === s2) { document.getElementById('slot-1').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
+      else { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
+      if (window.SFX) window.SFX.coin();
+      recordGame(slotsBet, winAmount2);
+    } else {
+      resultEl.className = 'result-msg lose';
+      resultEl.textContent = 'No match. You lost ' + slotsBet + ' coins.';
+      if (window.SFX) window.SFX.fail();
+      recordGame(slotsBet, 0);
+    }
+
+    updateBalanceDisplay();
+    slotsSpinning = false;
+    document.getElementById('btn-slots').disabled = false;
+    document.getElementById('slots-tap-hint').style.display = 'none';
+  }
+
   window.playSlots = function() {
     if (slotsSpinning) return;
     var betInput = document.getElementById('slots-bet');
@@ -1034,84 +1112,46 @@
     if (bet > getBalance()) { document.getElementById('slots-result').textContent = 'Not enough coins!'; return; }
 
     slotsSpinning = true;
+    slotsBet = bet;
+    slotsStopped = [false, false, false];
+    slotsResults = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
     document.getElementById('btn-slots').disabled = true;
     document.getElementById('slots-result').textContent = '';
 
     window.ArcadeCoins.spend(bet);
     updateBalanceDisplay();
 
-    // Pick results
-    var results = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
-
-    // Start spinning animation
+    // Start spinning all reels
     for (var i = 0; i < 3; i++) {
-      document.getElementById('slot-' + i).classList.add('spinning');
-      document.getElementById('slot-' + i).classList.remove('win');
+      var reel = document.getElementById('slot-' + i);
+      reel.classList.add('spinning');
+      reel.classList.remove('win');
+      reel.style.cursor = slotsMode === 'manual' ? 'pointer' : 'default';
     }
 
-    // Cycle through random symbols during spin
-    var spinIntervals = [];
+    // Cycle through random symbols
     for (var ri = 0; ri < 3; ri++) {
       (function(reelIdx) {
-        var reel = document.getElementById('slot-' + reelIdx);
         spinIntervals[reelIdx] = setInterval(function() {
+          if (slotsStopped[reelIdx]) return;
           var randSym = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
-          reel.querySelector('.slots-sym').textContent = randSym.sym;
+          document.getElementById('slot-' + reelIdx).querySelector('.slots-sym').textContent = randSym.sym;
         }, 80);
       })(ri);
     }
 
-    // Stop reels one by one
-    function stopReel(idx) {
-      return new Promise(function(resolve) {
-        setTimeout(function() {
-          clearInterval(spinIntervals[idx]);
-          var reel = document.getElementById('slot-' + idx);
-          reel.classList.remove('spinning');
-          reel.querySelector('.slots-sym').textContent = results[idx].sym;
-          if (window.SFX) window.SFX.click();
-          resolve();
-        }, 800 + idx * 600);
-      });
+    if (slotsMode === 'auto') {
+      // Auto-stop reels one by one
+      autoTimers[0] = setTimeout(function() { stopReelNow(0); }, 800);
+      autoTimers[1] = setTimeout(function() { stopReelNow(1); }, 1400);
+      autoTimers[2] = setTimeout(function() { stopReelNow(2); }, 2000);
+    } else {
+      // Manual mode — show hint, auto-stop after 8 seconds as fallback
+      document.getElementById('slots-tap-hint').style.display = '';
+      autoTimers[0] = setTimeout(function() { stopReelNow(0); }, 8000);
+      autoTimers[1] = setTimeout(function() { stopReelNow(1); }, 8500);
+      autoTimers[2] = setTimeout(function() { stopReelNow(2); }, 9000);
     }
-
-    stopReel(0).then(function() { return stopReel(1); }).then(function() { return stopReel(2); }).then(function() {
-      // Check results
-      var resultEl = document.getElementById('slots-result');
-      var s0 = results[0].sym, s1 = results[1].sym, s2 = results[2].sym;
-
-      if (s0 === s1 && s1 === s2) {
-        // Jackpot — all 3 match
-        var mult = results[0].mult;
-        var winAmount = bet * mult;
-        _arcadeEarnCoins(winAmount, 'Slots Jackpot');
-        resultEl.className = 'result-msg win';
-        resultEl.textContent = s0 + s1 + s2 + ' JACKPOT! ' + mult + 'x — You won ' + winAmount + ' coins!';
-        for (var w = 0; w < 3; w++) document.getElementById('slot-' + w).classList.add('win');
-        if (window.SFX) window.SFX.win();
-        recordGame(bet, winAmount);
-      } else if (s0 === s1 || s1 === s2 || s0 === s2) {
-        // 2 match — 1.5x
-        var winAmount2 = Math.floor(bet * 1.5);
-        _arcadeEarnCoins(winAmount2, 'Slots 2-Match');
-        resultEl.className = 'result-msg neutral';
-        resultEl.textContent = 'Two match! 1.5x — You won ' + winAmount2 + ' coins!';
-        if (s0 === s1) { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-1').classList.add('win'); }
-        else if (s1 === s2) { document.getElementById('slot-1').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
-        else { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
-        if (window.SFX) window.SFX.coin();
-        recordGame(bet, winAmount2);
-      } else {
-        resultEl.className = 'result-msg lose';
-        resultEl.textContent = 'No match. You lost ' + bet + ' coins.';
-        if (window.SFX) window.SFX.fail();
-        recordGame(bet, 0);
-      }
-
-      updateBalanceDisplay();
-      slotsSpinning = false;
-      document.getElementById('btn-slots').disabled = false;
-    });
   };
 
   window.setBetAll = function(inputId) {
