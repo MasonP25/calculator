@@ -417,6 +417,36 @@
   .slots-spin-btn:hover { opacity: 0.9; transform: translateY(-2px); }
   .slots-spin-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
 
+  /* ─── PLINKO ─── */
+  .plinko-canvas {
+    border-radius: 12px;
+    background: #0a0a14;
+    border: 2px solid #3a3a5a;
+    display: block;
+    margin: 0.8rem auto;
+  }
+  .plinko-risk-toggle {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+  }
+  .plinko-drop-btn {
+    margin-top: 0.8rem;
+    padding: 0.7rem 2.5rem;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid #2ed573;
+    background: linear-gradient(135deg, #2ed573, #26ae60);
+    color: #fff;
+    transition: all 0.2s;
+  }
+  .plinko-drop-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+  .plinko-drop-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+
   /* Stats */
   .casino-stats {
     margin-top: 1.5rem;
@@ -451,6 +481,7 @@
   <button class="casino-tab active" data-game="coinflip">&#129689; Coin Flip</button>
   <button class="casino-tab" data-game="wheel">&#127905; Spin Wheel</button>
   <button class="casino-tab" data-game="slots">&#127920; Slots</button>
+  <button class="casino-tab" data-game="plinko">&#9898; Plinko</button>
   <button class="casino-tab" data-game="scratch">&#127915; Scratch Cards</button>
 </div>
 
@@ -546,6 +577,32 @@
   </div>
   <div class="result-msg" id="slots-result"></div>
   <button class="slots-spin-btn" id="btn-slots" onclick="playSlots()">PULL LEVER</button>
+</div>
+
+<!-- ═══ PLINKO ═══ -->
+<div class="game-area" id="game-plinko">
+  <h2>&#9898; Plinko</h2>
+  <p style="color:#888;font-size:0.8rem;margin-bottom:0.8rem">Drop the ball and watch it bounce to a multiplier!</p>
+  <div class="bet-row">
+    <label>Bet:</label>
+    <input type="number" class="bet-input" id="plinko-bet" min="10" value="10">
+  </div>
+  <div class="bet-quick">
+    <button onclick="document.getElementById('plinko-bet').value=10">10</button>
+    <button onclick="document.getElementById('plinko-bet').value=25">25</button>
+    <button onclick="document.getElementById('plinko-bet').value=50">50</button>
+    <button onclick="document.getElementById('plinko-bet').value=100">100</button>
+    <button onclick="document.getElementById('plinko-bet').value=250">250</button>
+    <button onclick="setBetAll('plinko-bet')">All In</button>
+  </div>
+  <div class="plinko-risk-toggle">
+    <button class="scratch-tier active" id="plinko-risk-low" onclick="setPlinkoRisk('low')">Low Risk</button>
+    <button class="scratch-tier" id="plinko-risk-med" onclick="setPlinkoRisk('med')">Medium</button>
+    <button class="scratch-tier" id="plinko-risk-high" onclick="setPlinkoRisk('high')">High Risk</button>
+  </div>
+  <canvas class="plinko-canvas" id="plinko-canvas" width="380" height="400"></canvas>
+  <div class="result-msg" id="plinko-result"></div>
+  <button class="plinko-drop-btn" id="btn-plinko" onclick="playPlinko()">DROP BALL</button>
 </div>
 
 <!-- ═══ SCRATCH CARDS ═══ -->
@@ -1036,6 +1093,184 @@
     }
     return SLOT_SYMBOLS[0];
   }
+
+  // ─── PLINKO ───
+  var plinkoDropping = false;
+  var plinkoRisk = 'low';
+  var PLINKO_ROWS = 12;
+  var PLINKO_MULTS = {
+    low:  [1.5, 1.2, 1, 0.5, 0.3, 0, 0.3, 0.5, 1, 1.2, 1.5, 2, 3],
+    med:  [3, 1.5, 1, 0.5, 0.2, 0, 0.2, 0.5, 1, 1.5, 3, 5, 8],
+    high: [10, 5, 2, 0.5, 0, 0, 0, 0.5, 2, 5, 10, 25, 50]
+  };
+  var PLINKO_COLORS = {
+    low:  ['#2ed573','#7bed9f','#a4de6c','#ffd700','#ffa502','#ff4757','#ffa502','#ffd700','#a4de6c','#7bed9f','#2ed573','#1e90ff','#ff00ff'],
+    med:  ['#ff00ff','#1e90ff','#2ed573','#ffd700','#ffa502','#ff4757','#ffa502','#ffd700','#2ed573','#1e90ff','#ff00ff','#ffd700','#ff00ff'],
+    high: ['#ff00ff','#ffd700','#1e90ff','#ffa502','#ff4757','#ff4757','#ff4757','#ffa502','#1e90ff','#ffd700','#ff00ff','#ff00ff','#ff00ff']
+  };
+
+  window.setPlinkoRisk = function(risk) {
+    plinkoRisk = risk;
+    document.getElementById('plinko-risk-low').classList.toggle('active', risk === 'low');
+    document.getElementById('plinko-risk-med').classList.toggle('active', risk === 'med');
+    document.getElementById('plinko-risk-high').classList.toggle('active', risk === 'high');
+    drawPlinkoBoard();
+  };
+
+  function drawPlinkoBoard(ballX, ballY, landedSlot) {
+    var canvas = document.getElementById('plinko-canvas');
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var pegR = 4;
+    var topPad = 30;
+    var botPad = 40;
+    var rowH = (H - topPad - botPad) / PLINKO_ROWS;
+    var mults = PLINKO_MULTS[plinkoRisk];
+    var colors = PLINKO_COLORS[plinkoRisk];
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw pegs
+    for (var row = 0; row < PLINKO_ROWS; row++) {
+      var pegsInRow = row + 3;
+      var rowWidth = (pegsInRow - 1) * 28;
+      var startX = (W - rowWidth) / 2;
+      var y = topPad + row * rowH;
+      for (var p = 0; p < pegsInRow; p++) {
+        var x = startX + p * 28;
+        ctx.beginPath();
+        ctx.arc(x, y, pegR, 0, Math.PI * 2);
+        ctx.fillStyle = '#4a4a6a';
+        ctx.fill();
+      }
+    }
+
+    // Draw slots at bottom
+    var slotCount = mults.length;
+    var slotW = W / slotCount;
+    for (var s = 0; s < slotCount; s++) {
+      var sx = s * slotW;
+      ctx.fillStyle = (landedSlot === s) ? colors[s] : 'rgba(255,255,255,0.05)';
+      ctx.fillRect(sx + 1, H - botPad + 5, slotW - 2, botPad - 8);
+      ctx.strokeStyle = '#2a2a4a';
+      ctx.strokeRect(sx + 1, H - botPad + 5, slotW - 2, botPad - 8);
+      ctx.fillStyle = (landedSlot === s) ? '#fff' : colors[s];
+      ctx.font = 'bold 10px "Segoe UI"';
+      ctx.textAlign = 'center';
+      ctx.fillText(mults[s] + 'x', sx + slotW / 2, H - 12);
+    }
+
+    // Draw ball
+    if (ballX !== undefined && ballY !== undefined) {
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd700';
+      ctx.fill();
+      ctx.strokeStyle = '#ffaa00';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+  }
+
+  window.playPlinko = function() {
+    if (plinkoDropping) return;
+    var betInput = document.getElementById('plinko-bet');
+    var bet = parseInt(betInput.value) || 0;
+    if (bet < 10) { document.getElementById('plinko-result').textContent = 'Min bet is 10 coins'; return; }
+    if (bet > getBalance()) { document.getElementById('plinko-result').textContent = 'Not enough coins!'; return; }
+
+    plinkoDropping = true;
+    document.getElementById('btn-plinko').disabled = true;
+    document.getElementById('plinko-result').textContent = '';
+
+    window.ArcadeCoins.spend(bet);
+    updateBalanceDisplay();
+
+    var canvas = document.getElementById('plinko-canvas');
+    var W = canvas.width, H = canvas.height;
+    var topPad = 30;
+    var botPad = 40;
+    var rowH = (H - topPad - botPad) / PLINKO_ROWS;
+    var mults = PLINKO_MULTS[plinkoRisk];
+
+    // Simulate ball path
+    var ballX = W / 2 + (Math.random() - 0.5) * 20;
+    var path = [{x: ballX, y: 5}];
+
+    // At each row, ball goes left or right
+    var x = ballX;
+    for (var row = 0; row < PLINKO_ROWS; row++) {
+      var drift = (Math.random() < 0.5 ? -1 : 1) * 14;
+      x += drift;
+      // Keep in bounds
+      var pegsInRow = row + 3;
+      var rowWidth = (pegsInRow - 1) * 28;
+      var minX = (W - rowWidth) / 2 - 14;
+      var maxX = (W + rowWidth) / 2 + 14;
+      if (x < minX) x = minX;
+      if (x > maxX) x = maxX;
+      var y = topPad + row * rowH;
+      path.push({x: x, y: y});
+    }
+
+    // Determine which slot it lands in
+    var slotW = W / mults.length;
+    var slotIdx = Math.floor(x / slotW);
+    slotIdx = Math.max(0, Math.min(mults.length - 1, slotIdx));
+    path.push({x: slotIdx * slotW + slotW / 2, y: H - botPad + 20});
+
+    // Animate
+    var step = 0;
+    var totalSteps = path.length;
+    var framesBetween = 8;
+    var frame = 0;
+
+    function animate() {
+      if (step >= totalSteps - 1) {
+        // Done — show result
+        drawPlinkoBoard(path[totalSteps - 1].x, path[totalSteps - 1].y, slotIdx);
+        var mult = mults[slotIdx];
+        var resultEl = document.getElementById('plinko-result');
+        var winAmount = Math.floor(bet * mult);
+        if (winAmount > 0) {
+          _arcadeEarnCoins(winAmount, 'Plinko ' + mult + 'x');
+          resultEl.className = 'result-msg ' + (mult >= 2 ? 'win' : 'neutral');
+          resultEl.textContent = mult + 'x! You won ' + winAmount + ' coins!';
+          if (mult >= 5 && window.SFX) window.SFX.win();
+          else if (window.SFX) window.SFX.coin();
+        } else {
+          resultEl.className = 'result-msg lose';
+          resultEl.textContent = '0x! You lost ' + bet + ' coins.';
+          if (window.SFX) window.SFX.fail();
+        }
+        recordGame(bet, winAmount);
+        updateBalanceDisplay();
+        plinkoDropping = false;
+        document.getElementById('btn-plinko').disabled = false;
+        return;
+      }
+
+      var from = path[step];
+      var to = path[step + 1];
+      var t = frame / framesBetween;
+      var cx = from.x + (to.x - from.x) * t;
+      var cy = from.y + (to.y - from.y) * t;
+      drawPlinkoBoard(cx, cy);
+
+      frame++;
+      if (frame >= framesBetween) {
+        frame = 0;
+        step++;
+      }
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+  };
+
+  // Init plinko board
+  setTimeout(function() { drawPlinkoBoard(); }, 150);
 
   window.setSlotsMode = function(mode) {
     slotsMode = mode;
