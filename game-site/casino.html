@@ -595,11 +595,6 @@
     <button onclick="document.getElementById('plinko-bet').value=250">250</button>
     <button onclick="setBetAll('plinko-bet')">All In</button>
   </div>
-  <div class="plinko-risk-toggle">
-    <button class="scratch-tier active" id="plinko-risk-low" onclick="setPlinkoRisk('low')">Low Risk</button>
-    <button class="scratch-tier" id="plinko-risk-med" onclick="setPlinkoRisk('med')">Medium</button>
-    <button class="scratch-tier" id="plinko-risk-high" onclick="setPlinkoRisk('high')">High Risk</button>
-  </div>
   <canvas class="plinko-canvas" id="plinko-canvas" width="380" height="400"></canvas>
   <div class="result-msg" id="plinko-result"></div>
   <button class="plinko-drop-btn" id="btn-plinko" onclick="playPlinko()">DROP BALL</button>
@@ -1096,26 +1091,9 @@
 
   // ─── PLINKO ───
   var plinkoDropping = false;
-  var plinkoRisk = 'low';
   var PLINKO_ROWS = 12;
-  var PLINKO_MULTS = {
-    low:  [1.5, 1.2, 1, 0.5, 0.3, 0, 0.3, 0.5, 1, 1.2, 1.5, 2, 3],
-    med:  [3, 1.5, 1, 0.5, 0.2, 0, 0.2, 0.5, 1, 1.5, 3, 5, 8],
-    high: [10, 5, 2, 0.5, 0, 0, 0, 0.5, 2, 5, 10, 25, 50]
-  };
-  var PLINKO_COLORS = {
-    low:  ['#2ed573','#7bed9f','#a4de6c','#ffd700','#ffa502','#ff4757','#ffa502','#ffd700','#a4de6c','#7bed9f','#2ed573','#1e90ff','#ff00ff'],
-    med:  ['#ff00ff','#1e90ff','#2ed573','#ffd700','#ffa502','#ff4757','#ffa502','#ffd700','#2ed573','#1e90ff','#ff00ff','#ffd700','#ff00ff'],
-    high: ['#ff00ff','#ffd700','#1e90ff','#ffa502','#ff4757','#ff4757','#ff4757','#ffa502','#1e90ff','#ffd700','#ff00ff','#ff00ff','#ff00ff']
-  };
-
-  window.setPlinkoRisk = function(risk) {
-    plinkoRisk = risk;
-    document.getElementById('plinko-risk-low').classList.toggle('active', risk === 'low');
-    document.getElementById('plinko-risk-med').classList.toggle('active', risk === 'med');
-    document.getElementById('plinko-risk-high').classList.toggle('active', risk === 'high');
-    drawPlinkoBoard();
-  };
+  var PLINKO_MULTS = [10, 5, 3, 2, 1, 0, 0, 0, 1, 2, 3, 5, 10];
+  var PLINKO_COLORS = ['#ff00ff','#ffd700','#1e90ff','#2ed573','#7bed9f','#ff4757','#ff4757','#ff4757','#7bed9f','#2ed573','#1e90ff','#ffd700','#ff00ff'];
 
   function drawPlinkoBoard(ballX, ballY, landedSlot) {
     var canvas = document.getElementById('plinko-canvas');
@@ -1125,8 +1103,8 @@
     var topPad = 30;
     var botPad = 40;
     var rowH = (H - topPad - botPad) / PLINKO_ROWS;
-    var mults = PLINKO_MULTS[plinkoRisk];
-    var colors = PLINKO_COLORS[plinkoRisk];
+    var mults = PLINKO_MULTS;
+    var colors = PLINKO_COLORS;
 
     ctx.clearRect(0, 0, W, H);
 
@@ -1192,7 +1170,7 @@
     var topPad = 30;
     var botPad = 40;
     var rowH = (H - topPad - botPad) / PLINKO_ROWS;
-    var mults = PLINKO_MULTS[plinkoRisk];
+    var mults = PLINKO_MULTS;
 
     // Simulate ball path
     var ballX = W / 2 + (Math.random() - 0.5) * 20;
