@@ -797,7 +797,7 @@
       _statsSaveTimer = setTimeout(function() {
         _statsSaveTimer = null;
         if (_statsDirty) _saveStatsNow();
-      }, 10000);
+      }, 60000);
     }
     // Award XP
     if (window.ArcadeLevels) window.ArcadeLevels.addXP(2, 'casino');
