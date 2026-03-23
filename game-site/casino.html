@@ -766,6 +766,26 @@
     { mult: 10,   label: '10x',  color: '#ff00ff', prob: 0.01 }
   ];
 
+  // ─── Confetti ───
+  function spawnConfetti() {
+    var count = 60;
+    var container = document.body;
+    for (var i = 0; i < count; i++) {
+      var c = document.createElement('div');
+      var colors = ['#ffd700','#ff4757','#2ed573','#00d4ff','#ff00ff','#ffa502','#7b2ff7'];
+      c.style.cssText = 'position:fixed;width:' + (6 + Math.random()*6) + 'px;height:' + (6 + Math.random()*6) + 'px;background:' + colors[Math.floor(Math.random()*colors.length)] + ';left:' + (Math.random()*100) + 'vw;top:-10px;border-radius:' + (Math.random()>0.5?'50%':'2px') + ';z-index:99999;pointer-events:none;opacity:1;';
+      container.appendChild(c);
+      var dur = 1000 + Math.random() * 1500;
+      var drift = (Math.random() - 0.5) * 200;
+      var spin = Math.random() * 720;
+      c.animate([
+        {transform:'translateY(0) translateX(0) rotate(0deg)',opacity:1},
+        {transform:'translateY(' + (window.innerHeight + 20) + 'px) translateX(' + drift + 'px) rotate(' + spin + 'deg)',opacity:0}
+      ], {duration:dur, easing:'cubic-bezier(.25,.46,.45,.94)'});
+      (function(el,d){ setTimeout(function(){ el.remove(); }, d); })(c, dur);
+    }
+  }
+
   // ─── Helpers ───
   function getBalance() {
     return window.ArcadeCoins ? window.ArcadeCoins.getBalance() : 0;
@@ -790,6 +810,7 @@
     stats.totalBet += betAmount;
     stats.totalWon += winAmount;
     if (winAmount > stats.biggestWin) stats.biggestWin = winAmount;
+    if (winAmount > 0) spawnConfetti();
     updateStats();
     // Debounced save — only writes every 10 seconds
     _statsDirty = true;
