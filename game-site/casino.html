@@ -1114,7 +1114,35 @@
     slotsSpinning = true;
     slotsBet = bet;
     slotsStopped = [false, false, false];
-    slotsResults = [pickSlotSymbol(), pickSlotSymbol(), pickSlotSymbol()];
+    // Determine outcome first, then pick symbols
+    var roll = Math.random() * 100;
+    if (roll < 25) {
+      // 25% — 3 cherries
+      slotsResults = [SLOT_SYMBOLS[0], SLOT_SYMBOLS[0], SLOT_SYMBOLS[0]];
+    } else if (roll < 40) {
+      // 15% — 3 lemons
+      slotsResults = [SLOT_SYMBOLS[1], SLOT_SYMBOLS[1], SLOT_SYMBOLS[1]];
+    } else if (roll < 50) {
+      // 10% — 3 oranges
+      slotsResults = [SLOT_SYMBOLS[2], SLOT_SYMBOLS[2], SLOT_SYMBOLS[2]];
+    } else if (roll < 55) {
+      // 5% — 3 diamonds
+      slotsResults = [SLOT_SYMBOLS[3], SLOT_SYMBOLS[3], SLOT_SYMBOLS[3]];
+    } else if (roll < 57) {
+      // 2% — 3 stars
+      slotsResults = [SLOT_SYMBOLS[4], SLOT_SYMBOLS[4], SLOT_SYMBOLS[4]];
+    } else if (roll < 58) {
+      // 1% — 3 crowns
+      slotsResults = [SLOT_SYMBOLS[5], SLOT_SYMBOLS[5], SLOT_SYMBOLS[5]];
+    } else {
+      // 42% — no jackpot, pick random (ensure no 3-match)
+      var a, b, c, attempts = 0;
+      do {
+        a = pickSlotSymbol(); b = pickSlotSymbol(); c = pickSlotSymbol();
+        attempts++;
+      } while (a.sym === b.sym && b.sym === c.sym && attempts < 20);
+      slotsResults = [a, b, c];
+    }
     document.getElementById('btn-slots').disabled = true;
     document.getElementById('slots-result').textContent = '';
 
