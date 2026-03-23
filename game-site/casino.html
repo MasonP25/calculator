@@ -447,6 +447,67 @@
   .plinko-drop-btn:hover { opacity: 0.9; transform: translateY(-2px); }
   .plinko-drop-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
 
+  /* ─── NUMBER GUESS ─── */
+  .numguess-display {
+    background: #0a0a14;
+    border: 2px solid #3a3a5a;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin: 0.8rem auto;
+    max-width: 300px;
+  }
+  .numguess-number {
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-align: center;
+    color: #ffd700;
+    font-family: 'Segoe UI', monospace;
+  }
+  .numguess-input {
+    width: 100px;
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    border-radius: 10px;
+    color: #00d4ff;
+    font-family: inherit;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.5rem;
+    outline: none;
+  }
+  .numguess-input:focus { border-color: #00d4ff; }
+  .numguess-btn {
+    margin-top: 0.8rem;
+    padding: 0.7rem 2.5rem;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid #00d4ff;
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: #0f0f1a;
+    transition: all 0.2s;
+  }
+  .numguess-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+  .numguess-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .numguess-payouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 0.8rem;
+    font-size: 0.7rem;
+  }
+  .numguess-payouts span {
+    background: rgba(255,255,255,0.04);
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #888;
+  }
+  .numguess-payouts .np-mult { color: #ffd700; font-weight: 700; }
+
   /* Stats */
   .casino-stats {
     margin-top: 1.5rem;
@@ -482,6 +543,7 @@
   <button class="casino-tab" data-game="wheel">&#127905; Spin Wheel</button>
   <button class="casino-tab" data-game="slots">&#127920; Slots</button>
   <button class="casino-tab" data-game="plinko">&#9898; Plinko</button>
+  <button class="casino-tab" data-game="numguess">&#127922; Number Guess</button>
   <button class="casino-tab" data-game="scratch">&#127915; Scratch Cards</button>
 </div>
 
@@ -598,6 +660,39 @@
   <canvas class="plinko-canvas" id="plinko-canvas" width="380" height="400"></canvas>
   <div class="result-msg" id="plinko-result"></div>
   <button class="plinko-drop-btn" id="btn-plinko" onclick="playPlinko()">DROP BALL</button>
+</div>
+
+<!-- ═══ NUMBER GUESS ═══ -->
+<div class="game-area" id="game-numguess">
+  <h2>&#127922; Number Guess</h2>
+  <p style="color:#888;font-size:0.8rem;margin-bottom:0.8rem">Guess a number 1–100. The closer you are, the more you win!</p>
+  <div class="bet-row">
+    <label>Bet:</label>
+    <input type="number" class="bet-input" id="numguess-bet" min="10" value="10">
+  </div>
+  <div class="bet-quick">
+    <button onclick="document.getElementById('numguess-bet').value=10">10</button>
+    <button onclick="document.getElementById('numguess-bet').value=25">25</button>
+    <button onclick="document.getElementById('numguess-bet').value=50">50</button>
+    <button onclick="document.getElementById('numguess-bet').value=100">100</button>
+    <button onclick="document.getElementById('numguess-bet').value=250">250</button>
+    <button onclick="setBetAll('numguess-bet')">All In</button>
+  </div>
+  <div class="numguess-display">
+    <p style="color:#888;font-size:0.85rem;margin-bottom:0.5rem;">Your guess (1–100):</p>
+    <input type="number" class="numguess-input" id="numguess-input" min="1" max="100" value="50">
+    <div class="numguess-number" id="numguess-reveal" style="margin-top:0.8rem;">?</div>
+  </div>
+  <div class="numguess-payouts">
+    <span>Exact <span class="np-mult">5x</span></span>
+    <span>1 off <span class="np-mult">4x</span></span>
+    <span>2–5 off <span class="np-mult">3x</span></span>
+    <span>6–20 off <span class="np-mult">2x</span></span>
+    <span>21–30 off <span class="np-mult">1x</span></span>
+    <span>31+ off <span class="np-mult">0x</span></span>
+  </div>
+  <div class="result-msg" id="numguess-result"></div>
+  <button class="numguess-btn" id="btn-numguess" onclick="playNumGuess()">GUESS!</button>
 </div>
 
 <!-- ═══ SCRATCH CARDS ═══ -->
@@ -1088,6 +1183,68 @@
     }
     return SLOT_SYMBOLS[0];
   }
+
+  // ─── NUMBER GUESS ───
+  window.playNumGuess = function() {
+    var betInput = document.getElementById('numguess-bet');
+    var bet = parseInt(betInput.value) || 0;
+    if (bet < 10) { document.getElementById('numguess-result').textContent = 'Min bet is 10 coins'; return; }
+    if (bet > getBalance()) { document.getElementById('numguess-result').textContent = 'Not enough coins!'; return; }
+
+    var guess = parseInt(document.getElementById('numguess-input').value);
+    if (!guess || guess < 1 || guess > 100) { document.getElementById('numguess-result').textContent = 'Pick a number 1–100'; return; }
+
+    document.getElementById('btn-numguess').disabled = true;
+    window.ArcadeCoins.spend(bet);
+    updateBalanceDisplay();
+
+    var answer = Math.floor(Math.random() * 100) + 1;
+    var diff = Math.abs(guess - answer);
+
+    var mult = 0;
+    if (diff === 0) mult = 5;
+    else if (diff === 1) mult = 4;
+    else if (diff <= 5) mult = 3;
+    else if (diff <= 20) mult = 2;
+    else if (diff <= 30) mult = 1;
+    else mult = 0;
+
+    // Animate reveal
+    var revealEl = document.getElementById('numguess-reveal');
+    var count = 0;
+    var interval = setInterval(function() {
+      revealEl.textContent = Math.floor(Math.random() * 100) + 1;
+      revealEl.style.color = '#888';
+      count++;
+      if (count >= 15) {
+        clearInterval(interval);
+        revealEl.textContent = answer;
+        revealEl.style.color = mult >= 3 ? '#2ed573' : mult >= 1 ? '#ffd700' : '#ff4757';
+
+        var resultEl = document.getElementById('numguess-result');
+        var winAmount = Math.floor(bet * mult);
+
+        if (mult === 5) {
+          resultEl.className = 'result-msg win';
+          resultEl.textContent = 'EXACT! ' + mult + 'x — You won ' + winAmount + ' coins!';
+          if (window.SFX) window.SFX.win();
+        } else if (mult > 0) {
+          resultEl.className = 'result-msg ' + (mult >= 3 ? 'win' : 'neutral');
+          resultEl.textContent = diff + ' off! ' + mult + 'x — You won ' + winAmount + ' coins!';
+          if (window.SFX) window.SFX.coin();
+        } else {
+          resultEl.className = 'result-msg lose';
+          resultEl.textContent = diff + ' off! You lost ' + bet + ' coins.';
+          if (window.SFX) window.SFX.fail();
+        }
+
+        if (winAmount > 0) _arcadeEarnCoins(winAmount, 'Number Guess ' + mult + 'x');
+        recordGame(bet, winAmount);
+        updateBalanceDisplay();
+        document.getElementById('btn-numguess').disabled = false;
+      }
+    }, 60);
+  };
 
   // ─── PLINKO ───
   var plinkoDropping = false;
