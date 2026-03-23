@@ -1116,26 +1116,26 @@
     slotsStopped = [false, false, false];
     // Determine outcome first, then pick symbols
     var roll = Math.random() * 10000;
-    if (roll < 1124) {
-      // 11.24% — 3 cherries
+    if (roll < 1486) {
+      // 14.86% — 3 cherries
       slotsResults = [SLOT_SYMBOLS[0], SLOT_SYMBOLS[0], SLOT_SYMBOLS[0]];
-    } else if (roll < 1798) {
-      // 6.74% — 3 lemons
+    } else if (roll < 2378) {
+      // 8.92% — 3 lemons
       slotsResults = [SLOT_SYMBOLS[1], SLOT_SYMBOLS[1], SLOT_SYMBOLS[1]];
-    } else if (roll < 2248) {
-      // 4.50% — 3 oranges
+    } else if (roll < 2973) {
+      // 5.95% — 3 oranges
       slotsResults = [SLOT_SYMBOLS[2], SLOT_SYMBOLS[2], SLOT_SYMBOLS[2]];
-    } else if (roll < 2473) {
-      // 2.25% — 3 diamonds
+    } else if (roll < 3270) {
+      // 2.97% — 3 diamonds
       slotsResults = [SLOT_SYMBOLS[3], SLOT_SYMBOLS[3], SLOT_SYMBOLS[3]];
-    } else if (roll < 2496) {
-      // 0.23% — 3 stars
+    } else if (roll < 3300) {
+      // 0.30% — 3 stars
       slotsResults = [SLOT_SYMBOLS[4], SLOT_SYMBOLS[4], SLOT_SYMBOLS[4]];
-    } else if (roll < 2500) {
-      // 0.04% — 3 crowns
+    } else if (roll < 3306) {
+      // 0.06% — 3 crowns
       slotsResults = [SLOT_SYMBOLS[5], SLOT_SYMBOLS[5], SLOT_SYMBOLS[5]];
     } else {
-      // 75% — no jackpot, pick random (ensure no 3-match)
+      // 66.94% — no jackpot, pick random (ensure no 3-match)
       var a, b, c, attempts = 0;
       do {
         a = pickSlotSymbol(); b = pickSlotSymbol(); c = pickSlotSymbol();
