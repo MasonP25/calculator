@@ -541,7 +541,7 @@
       <div class="payout-row"><span>💎💎💎</span><span class="payout-mult">15x</span></div>
       <div class="payout-row"><span>⭐⭐⭐</span><span class="payout-mult">25x</span></div>
       <div class="payout-row"><span>👑👑👑</span><span class="payout-mult">50x</span></div>
-      <div class="payout-row"><span>Any 2 match</span><span class="payout-mult">1.5x</span></div>
+      <div class="payout-row"><span>Any 2 match</span><span class="payout-mult">1.2x</span></div>
     </div>
   </div>
   <div class="result-msg" id="slots-result"></div>
@@ -1082,10 +1082,10 @@
       if (window.SFX) window.SFX.win();
       recordGame(slotsBet, winAmount);
     } else if (s0 === s1 || s1 === s2 || s0 === s2) {
-      var winAmount2 = Math.floor(slotsBet * 1.5);
+      var winAmount2 = Math.floor(slotsBet * 1.2);
       _arcadeEarnCoins(winAmount2, 'Slots 2-Match');
       resultEl.className = 'result-msg neutral';
-      resultEl.textContent = 'Two match! 1.5x — You won ' + winAmount2 + ' coins!';
+      resultEl.textContent = 'Two match! 1.2x — You won ' + winAmount2 + ' coins!';
       if (s0 === s1) { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-1').classList.add('win'); }
       else if (s1 === s2) { document.getElementById('slot-1').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
       else { document.getElementById('slot-0').classList.add('win'); document.getElementById('slot-2').classList.add('win'); }
