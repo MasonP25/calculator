@@ -18,6 +18,7 @@
     .movie-thumb { position: relative; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .15s, border-color .2s; }
     .movie-thumb:hover { transform: translateY(-3px); border-color: rgba(139,122,255,.4); }
     .movie-poster-emoji { width: 100%; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; font-size: 4rem; background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%); }
+    .movie-poster-img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
     .movie-info { padding: 10px 12px; }
     .movie-info h3 { margin: 0 0 4px; font-size: 0.9rem; font-weight: 600; }
     .movie-info p { margin: 0; font-size: 0.72rem; color: #888; }
@@ -603,6 +604,7 @@
         title: "The Lorax",
         desc: "2012",
         emoji: "\uD83C\uDF33",
+        poster: "https://media.themoviedb.org/t/p/w300_and_h450_face/tePFnZFw5JvjwjQjaKkqDPNMLPU.jpg",
         src: "https://drive.google.com/file/d/1g6ZVlbeJ05SY5jleCqn_PMUMzevqPX6Y/preview"
       },
       {
@@ -764,8 +766,11 @@
       var card = document.createElement("div");
       card.className = "movie-thumb";
       var emoji = item.emoji || "\uD83C\uDFAC";
+      var posterHtml = item.poster
+        ? '<img class="movie-poster-img" src="' + item.poster + '" alt="' + item.title + '">'
+        : '<div class="movie-poster-emoji">' + emoji + '</div>';
       card.innerHTML =
-        '<div class="movie-poster-emoji">' + emoji + '</div>' +
+        posterHtml +
         '<div class="movie-play-icon"></div>' +
         '<div class="movie-info"><h3>' + item.title + '</h3>' +
         (item.desc ? '<p>' + item.desc + '</p>' : '') +
