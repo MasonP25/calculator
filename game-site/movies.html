@@ -47,6 +47,13 @@
     .comic-nav button:hover { border-color: rgba(139,122,255,.5); background: rgba(139,122,255,.1); }
     .comic-nav button:disabled { opacity: .3; cursor: default; }
     .comic-page-num { color: #888; font-size: 0.85rem; min-width: 80px; text-align: center; }
+    .comic-page-picker { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; padding: 12px 0 8px; margin-top: 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
+    .comic-page-picker::-webkit-scrollbar { height: 6px; }
+    .comic-page-picker::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+    .comic-page-btn { min-width: 36px; height: 32px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); color: #aaa; font-size: 0.75rem; font-weight: 600; border-radius: 6px; cursor: pointer; flex-shrink: 0; font-family: inherit; transition: all .15s; }
+    .comic-page-btn:hover { border-color: rgba(139,122,255,.4); color: #fff; }
+    .comic-page-btn.active { background: rgba(139,122,255,.2); border-color: rgba(139,122,255,.6); color: #fff; }
+    .resume-badge { display: inline-block; background: rgba(139,122,255,.15); color: rgba(139,122,255,.8); font-size: 0.6rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -82,6 +89,7 @@
         <span class="comic-page-num" id="comic-page-num">1 / 203</span>
         <button id="comic-next" onclick="comicNext()">Next &#8594;</button>
       </div>
+      <div class="comic-page-picker" id="comic-page-picker"></div>
     </div>
   </div>
 
@@ -341,14 +349,23 @@
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closeCollection(); };
       collectionGrid.innerHTML = "";
-      movie.collection.forEach(function(item) {
+      var lastWatched = getLastProgress("col_" + makeKey(movie.title));
+      movie.collection.forEach(function(item, idx) {
         var card = buildCard(item, function() {
           if (item.link) {
             window.open(item.link, "_blank");
           } else if (item.src) {
+            saveProgress("col_" + makeKey(movie.title), idx);
             openPlayer(item.title, item.src);
           }
         });
+        if (lastWatched === idx) {
+          var badge = document.createElement("div");
+          badge.className = "collection-badge";
+          badge.textContent = "Continue";
+          badge.style.background = "rgba(46,213,115,.7)";
+          card.appendChild(badge);
+        }
         collectionGrid.appendChild(card);
       });
     }
@@ -361,6 +378,7 @@
     function openPlayer(title, src) {
       playerTitle.textContent = title;
       playerIframe.src = src;
+      saveProgress("last_watched", title);
       showView("player");
       playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to entertainment";
       mainBack.href = "#";
@@ -376,14 +394,37 @@
       }
     }
 
+    // ─── Progress saving (localStorage) ───
+    var PROGRESS_KEY = "ent_progress";
+    function getProgress() {
+      try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch(e) { return {}; }
+    }
+    function saveProgress(key, val) {
+      var p = getProgress();
+      p[key] = val;
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+    }
+    function getLastProgress(key) {
+      return getProgress()[key] || null;
+    }
+    function makeKey(title) {
+      return title.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    }
+
+    var currentComicTitle = "";
+    var comicPicker = document.getElementById("comic-page-picker");
+
     function openComic(movie) {
       currentComicPages = movie.comic;
-      currentComicPage = 0;
+      currentComicTitle = movie.title;
+      var saved = getLastProgress("comic_" + makeKey(movie.title));
+      currentComicPage = saved ? Math.min(saved, movie.comic.length - 1) : 0;
       showView("comic");
       comicTitle.textContent = movie.title;
       pageTitle.textContent = movie.emoji + " " + movie.title;
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closeComic(); };
+      buildPagePicker();
       updateComicPage();
     }
 
@@ -392,12 +433,34 @@
       comicImg.src = "";
     }
 
+    function buildPagePicker() {
+      comicPicker.innerHTML = "";
+      for (var i = 0; i < currentComicPages.length; i++) {
+        var btn = document.createElement("button");
+        btn.className = "comic-page-btn" + (i === currentComicPage ? " active" : "");
+        btn.textContent = i + 1;
+        btn.dataset.page = i;
+        btn.addEventListener("click", function() {
+          currentComicPage = parseInt(this.dataset.page);
+          updateComicPage();
+        });
+        comicPicker.appendChild(btn);
+      }
+    }
+
     function updateComicPage() {
       var id = currentComicPages[currentComicPage];
       comicImg.src = "https://lh3.googleusercontent.com/d/" + id;
       comicPageNum.textContent = (currentComicPage + 1) + " / " + currentComicPages.length;
       document.getElementById("comic-prev").disabled = currentComicPage === 0;
       document.getElementById("comic-next").disabled = currentComicPage === currentComicPages.length - 1;
+      // Update picker active state
+      var btns = comicPicker.querySelectorAll(".comic-page-btn");
+      btns.forEach(function(b) { b.classList.toggle("active", parseInt(b.dataset.page) === currentComicPage); });
+      // Scroll active button into view
+      if (btns[currentComicPage]) btns[currentComicPage].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      // Save progress
+      saveProgress("comic_" + makeKey(currentComicTitle), currentComicPage);
     }
 
     window.comicPrev = function() {
