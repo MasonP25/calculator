@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Movies</title>
+  <title>Entertainment</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body { margin: 0; background: #0a0a0f; color: #e0e4f0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
@@ -53,7 +53,7 @@
   <div class="movies-container">
     <div class="movies-header">
       <a class="back-btn" href="index.html" id="main-back">&#8592;</a>
-      <h1 id="page-title">&#127916; Movies</h1>
+      <h1 id="page-title">&#127916; Entertainment</h1>
     </div>
 
     <div id="browse-view">
@@ -61,7 +61,7 @@
     </div>
 
     <div id="collection-view">
-      <button class="player-back" id="collection-back">&#8592; Back to movies</button>
+      <button class="player-back" id="collection-back">&#8592; Back to entertainment</button>
       <div class="movies-grid" id="collection-grid"></div>
     </div>
 
@@ -292,7 +292,7 @@
       playerView.classList.toggle("active", view === "player");
       comicView.classList.toggle("active", view === "comic");
       if (view === "browse") {
-        pageTitle.textContent = "\uD83C\uDFAC Movies";
+        pageTitle.textContent = "\uD83C\uDFAC Entertainment";
         mainBack.href = "index.html";
         mainBack.onclick = null;
       }
@@ -362,7 +362,7 @@
       playerTitle.textContent = title;
       playerIframe.src = src;
       showView("player");
-      playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to movies";
+      playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to entertainment";
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closePlayer(); };
     }
