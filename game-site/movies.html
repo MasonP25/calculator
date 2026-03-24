@@ -54,10 +54,6 @@
     .comic-page-btn:hover { border-color: rgba(139,122,255,.4); color: #fff; }
     .comic-page-btn.active { background: rgba(139,122,255,.2); border-color: rgba(139,122,255,.6); color: #fff; }
     .resume-badge { display: inline-block; background: rgba(139,122,255,.15); color: rgba(139,122,255,.8); font-size: 0.6rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
-    .watch-badge { position: absolute; top: 8px; left: 8px; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #fff; }
-    .watch-badge.not-watched { background: rgba(255,71,87,.7); }
-    .watch-badge.watching { background: rgba(255,165,2,.7); }
-    .watch-badge.watched { background: rgba(46,213,115,.7); }
   </style>
 </head>
 <body>
@@ -339,20 +335,9 @@
           } else if (movie.link) {
             window.open(movie.link, "_blank");
           } else {
-            saveProgress("movie_s_" + makeKey(movie.title), "watching");
-            openPlayer(movie.title, movie.src, "movie", makeKey(movie.title));
+            openPlayer(movie.title, movie.src);
           }
         });
-        // Watch status for standalone movies
-        if (movie.src && !movie.collection && !movie.comic) {
-          var status = getLastProgress("movie_s_" + makeKey(movie.title));
-          if (status) {
-            var badge = document.createElement("div");
-            badge.className = "watch-badge " + (status === "watched" ? "watched" : "watching");
-            badge.textContent = status === "watched" ? "Watched" : "Watching";
-            card.appendChild(badge);
-          }
-        }
         grid.appendChild(card);
       });
     }
@@ -364,23 +349,23 @@
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closeCollection(); };
       collectionGrid.innerHTML = "";
-      var colKey = "col_" + makeKey(movie.title);
+      var lastWatched = getLastProgress("col_" + makeKey(movie.title));
       movie.collection.forEach(function(item, idx) {
         var card = buildCard(item, function() {
           if (item.link) {
             window.open(item.link, "_blank");
           } else if (item.src) {
-            saveProgress(colKey + "_last", idx);
-            saveProgress(colKey + "_s_" + idx, "watching");
-            openPlayer(item.title, item.src, colKey, idx);
+            saveProgress("col_" + makeKey(movie.title), idx);
+            openPlayer(item.title, item.src);
           }
         });
-        // Watch status badge
-        var status = getLastProgress(colKey + "_s_" + idx);
-        var badge = document.createElement("div");
-        badge.className = "watch-badge " + (status === "watched" ? "watched" : status === "watching" ? "watching" : "not-watched");
-        badge.textContent = status === "watched" ? "Watched" : status === "watching" ? "Watching" : "Not Watched";
-        card.appendChild(badge);
+        if (lastWatched === idx) {
+          var badge = document.createElement("div");
+          badge.className = "collection-badge";
+          badge.textContent = "Continue";
+          badge.style.background = "rgba(46,213,115,.7)";
+          card.appendChild(badge);
+        }
         collectionGrid.appendChild(card);
       });
     }
@@ -390,14 +375,9 @@
       showView("browse");
     }
 
-    var currentColKey = null;
-    var currentEpIdx = null;
-
-    function openPlayer(title, src, colKey, epIdx) {
+    function openPlayer(title, src) {
       playerTitle.textContent = title;
       playerIframe.src = src;
-      currentColKey = colKey || null;
-      currentEpIdx = epIdx != null ? epIdx : null;
       saveProgress("last_watched", title);
       showView("player");
       playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to entertainment";
@@ -406,14 +386,6 @@
     }
 
     function closePlayer() {
-      // Mark as watched when leaving
-      if (currentColKey != null && currentEpIdx != null) {
-        if (currentColKey === "movie") {
-          saveProgress("movie_s_" + currentEpIdx, "watched");
-        } else {
-          saveProgress(currentColKey + "_s_" + currentEpIdx, "watched");
-        }
-      }
       playerIframe.src = "";
       if (currentCollection) {
         openCollection(currentCollection);
