@@ -360,7 +360,7 @@
             openPlayer(item.title, item.src);
           }
         });
-        if (lastWatched === idx) {
+        if (lastWatched != null && parseInt(lastWatched) === idx) {
           var badge = document.createElement("div");
           badge.className = "collection-badge";
           badge.textContent = "Continue";
