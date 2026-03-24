@@ -37,6 +37,16 @@
     .player-title { font-size: 1.3rem; font-weight: 600; margin: 0 0 16px; }
     .player-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 12px; overflow: hidden; }
     .player-wrapper iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
+    /* Comic viewer */
+    #comic-view { display: none; }
+    #comic-view.active { display: block; }
+    .comic-img { width: 100%; max-width: 700px; margin: 0 auto; display: block; border-radius: 8px; background: #111; min-height: 300px; }
+    .comic-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; }
+    .comic-nav button { padding: 8px 20px; border-radius: 10px; border: 2px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); color: #e0e4f0; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .comic-nav button:hover { border-color: rgba(139,122,255,.5); background: rgba(139,122,255,.1); }
+    .comic-nav button:disabled { opacity: .3; cursor: default; }
+    .comic-page-num { color: #888; font-size: 0.85rem; min-width: 80px; text-align: center; }
   </style>
 </head>
 <body>
@@ -60,6 +70,17 @@
       <h2 class="player-title" id="player-title"></h2>
       <div class="player-wrapper">
         <iframe id="player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <div id="comic-view">
+      <button class="player-back" id="comic-back">&#8592; Back</button>
+      <h2 class="player-title" id="comic-title"></h2>
+      <img class="comic-img" id="comic-img" src="" alt="Page">
+      <div class="comic-nav">
+        <button id="comic-prev" onclick="comicPrev()">&#8592; Prev</button>
+        <span class="comic-page-num" id="comic-page-num">1 / 203</span>
+        <button id="comic-next" onclick="comicNext()">Next &#8594;</button>
       </div>
     </div>
   </div>
@@ -214,6 +235,34 @@
           { title: "S3 Episode 20", src: "https://drive.google.com/file/d/1g4zFn1_yNgYyu9qFXGNg7yG5hJeDKIVQ/preview" }
         ]
       },
+      {
+        title: "Pokémon Adventures",
+        desc: "203 pages — manga",
+        emoji: "\u26A1",
+        comic: [
+"12ddwS47J3hsy2LWN0yfwLEWajD3qWjdD","1e3McvqxkiYh472ZsAVEiiGtkwyvNPAQ6","1USwn96wOyV99ATm3ab4bV5WnzE4ciQZ-","1N794yqw9TnYN931CiSVQKkbMiR7lJZJs","1GfUxyEp4MXdpLq9QA4-fVrboqGc26qVJ","1YMJxMDZOFT90SMSYjZEQzcWgJ5NNUdFP","10iPayPQQbL6ke1bqxlpEm1rTVm_bZTCT","19E0W4V0iup1olT38d4n7vjXkxWTsa8VI","1qxWMwWMTCh1kgLBpo1ntx8DcH1rwUpSc","1im4kNReBQvftQFxaQMaIsT_lCLzhLWIP",
+"135xYu5ROFvT82fqcJX0F05IW4eF5fptk","1dVgNLXr9ZElD9GBqTMJe1qqpNI-gvo2J","1zNDlZlx-bAFvWDwM7WX0IIC-To_OP7E8","14FghJlmtl21OvGNaPpTCzAnbxCLVsFo1","1lY7JA38IG-25ogWbV4tG1kgECKLa6pGn","1h0-wE8VnFJRpekEjzLyL7jw7x2x-3ftO","1b_KnxlHUbyW8sbqv_srJJDNxpoqbZfcp","1b1PdDjOnDSf1AmYMmJ6oH3YzsfTX2Kfb","1hrC6RRzrCEXeFTqzQ49QJKorcloVrkep","1Xi1j-AE-cgILW6O6zi425BZhZkJRR5SY",
+"11LZEmjTyQO8UOMc5uALnE6mxRELOFylE","1b7_gtzf2RRbUDRHZGivmPuUmgTI_mU6h","1l66-mbwl9Ml6u9DyDI8J1b0-ToaJBlxj","19cOOh5ntBoAvISvV7d7zD5EFWXl-IJXT","1bIzFo3k191XmImoWSQog9tAbyTrWYaRx","1Lnc3fSaNUcOp3jSIzPREup0FbFqJbgio","1oqAdb1-BrZznjfBOXcOm3-x_jVFS7boZ","148ZoE6ZTUzVBMvSO0u8Woy5Y5I4EKtGR","1z5Bbc3kl637tD92a5_YYd_UhN09REQ48","14WemSpFeiWF_PDFcZYNPzQSujI2KmNt0",
+"1daBncAHWO6TrmMIqSP1i0DTv0OOz7ele","1eqhrZW8D6tII1JomoQJYfWruK0gjFLbQ","1_AweSb1gDVxz01NWqY68_qnDZC6rqX8n","1QFb4MWy8ojd-vRkpP64A3I4XVWpXf3KL","11GD8_KOKizGt5m1lEhDNAZMxPaXfg0jN","1rQvKOXtjYhJ9AEamN98IoaGvV1yAfbEm","13fV5yUQ9WsqXz3Yha9QZG7bc-lO93ZOK","1d9d99WDTIyvAXUN0WR58fWKM7vmE20oW","1UgzYJ884VHO6LdTAoraU1GARHRhSVsB_","1pLZgpK5Z36m_WZw80QA9DF0UjG1WFlEG",
+"1O2OHQLwoJNnRLriH6Gy533LlDOU71NZz","1ygDnZcoXaDSLnLMtwaeyLxB8wy1aoC4W","1bMluWv61OAqaAW3ha0wecCH3xkPWfHJH","1aV6iYu3qUKsKOjryxAriZQE63vQzNtDH","1IWXwQGwjEVfFmMcDsQ6ho-VBfmHG7jlr","17gce-x4mi2vKtik5GMHWfpgv_-hWrSNs","195xJ153wnZlr88j_d-m1Pr6bYRNPAWV8","1QxZZ-dHOyyNxnZ5hADvVE3IYBPw47_ig","1zY5bqudiL98xOtEf6qF28bonld0Sbis-","1Z-1X2OiGkWI8mepnZOv7dNKIF2EA4fUA",
+"1A2It5b2x7sgAszyqjfzPnff-LF2niJ67","1a1Ht8uUS-BJkbGicOgGp764NBrXjci9O","1t8aH_ZUT2XFNPYrw4WTGo9gjGjoAuCit","1kK0bUZl0Mny7sWjRevpYiD2TFgWZRabH","1Heq-pkdrc2fSL1ZjBon3UFrFy8vr1dPi","1G4IHhw0Ok8hAcEETlFnvwqLO9GRK3giL","1anLTwXaczVe5_vUA9g-qTclrm6rCFfE1","14AqeDh7X0Iv6_aFx3FtWPfFNEJJAJJZU","1-fDrBY_o46QLVBlyNd3xFsv_nKvexKrI","1HHjC2q8kcULV2N99frvE85o00_ziO3j8",
+"15KoMvajLzkkkWFjbHRJrnpZ5xYlmg2rR","1z9ZExmKCuiMprT7zsUVdcOYHP4HSAaIw","1atZjshxtLl7Sajhkwsc370UxklWlJhku","1BqgAFc41RrtO150N8QRVYoFWT0Jd6nUS","1TipvEPM0WymBBmqG-jS_4Ja4xhv19WNW","1_LaAfhZ9BPcv2OW8rlrQuvfCFpqnbcSr","1mLdgODK7jUxkbJhaUj72PTgmodD_tEoR","1XvAq-hrFD4ODNtZHcR2tgzC9EmAkEOt3","1PkZU8pMyFiGG7PO8jYk-npuGdJoJKfmX","1KIN5QzsIZ1Yso0KcH-g_vKzbiZZZbSPb",
+"1MXvZDZ0Z5sarwQDj-HHIeAVbDHZUXSEf","1hFOGfKzacBixxDNINF7AxOK_QjFwuOyP","1mzQ_dhr9ia00JmRSa9t_Q3TUvVGSFW1k","1iuD5zbC5hARn4SUdD0cq-CdD-tqNVJOW","1TDy8i6EGBITjPNfiNdTJ3X_KNcFrqbgt","1-J8643b41rEFnJTH4WyxuwW1U2sTnS6X","1ExvxAvaIDQezP_JNaTOoAjFNuDrOKXvB","14imjHqbEOmJKWTmm88I79vjoMhJa5pU9","1BOb_fCFRoPM6uYEqX61K6DKxavEy4ryI","13BS6w5ptji_n2oMJ0KlBQ1Y57MVNDnrg",
+"1XxFhCSGCv5w5_Tqk0R6FKGrey3qp0QFU","1A5mY5ywi2XIMhGPyj7DQ4luEls0qGVq-","13lGPZv28VUahgefNSBMxAN2Z_KBjUnoV","1mC_JskXOxKB7ZF6gZgK5CI6ublJ-9u4U","1Se2O9DbiwEro0Hwyv8jGnrtWwlxp5P9c","124GnFnB0VEzbK13ShkMjo9RYxNqPTyXW","1InexkTFYOuCv2xkEzTrgCuwgpybQzz1_","1Xq1lOCAE7AJ9ejOx8UV_bkdZJjyv4vrJ","1sGWy8uQdLDQzRwdPZ3_gAA9BhOExthkJ","1UCl0vze5m7mC_CA3M30h-R53rN32z4f1",
+"1nw2m4WyIOeBhlqbROfvBFyhp1YBss18o","180AbvemcKDLc2Lby53o3ZC1Qu9rXnsRk","1SDrPzb6zJgop8LWWW0M5eYv5hg0LvvdX","1QYzROudt-Mja-GKI6oCeiSPHExUaonkA","1bHoewk1SB5MVI8erKjlZp1UZwqPV5JVY","1IYEUTDIaG2AnD-vD7NBu9astY6HAevBh","1vt2zTjsaB6XCiA9L12rTZLNcEOLCkdxt","1tXpKyPrtpWl_b2-leKbwR7kVUYcqaU7p","1TMmPV0IZ11qPVcEHQ581SUcHigfKpW6J","1oSZ6JDryay_3Kh-HjItxcIXSTpiL2YsR",
+"1GwBgO64IAqZ2NpGCyQ3btnQnceHedoZh","1gJQqyb2WL6LzkKNTAUChdYfvtebhgi_X","1gh0Tibg8wdatDaS5c9okHwLM0C-IzXiZ","1SjDKGZsk7KmTIc0YqHThwH5x3rN_50E0","1bZxwa0BYmRQpAnApDSFxlMPKLlrBD_Al","1D_K9PIFsrw7LdxpEMFcL-EYi0r4v8JnU","1mHb76LhH0aN44RHZWfuC8OtLpvMSdKa6","1cNnfzxq6x33yDKHPwoHNllipe88tzKY8","12jLQrDlxWhEDQEXvKmRKw7q9sxKbQ5uz","1jk_LhpK2oSM0w8NjhqE8Wm8VfvKGvqOW",
+"1bKCzs78NqSNQ5ZvCD0ZCkOivdJJBjUyO","1EOi1gEF8tw_MG8uheGH27pU5lcQ4V88W","1KhUGEimFWohPV2WPDF4I42WLnwaic7pz","1CToEUbV0-6k8Bzm0nwFWGD3ixmsrFJPj","1DalWPp0oOrD2kdUweTvdYI8VBn-gafik","11jG546NnHBoFrv0bmXwW_A3Z6k_iI0wH","1uAEkO2wPDAtiMg5V2h7NuWYJ6mzMVRJp","1_CCedyyib4cVn7wSz1ZefPf-htjjeIyb","1Bx12bnnTi1igGMc5xAi_uCTJrKkl2PO9","1XOzw90paRDjVaeOxJ5nRM_P5ygiICyOk",
+"1IjJ_Mb4dVqLYATD7NYaxo2wxWt29KH6_","1uRoWD4UZXM6Jclg_43fACU6jgvhKiEva","1voYR-AtUVE_igAxPKaH27WCx4_0s7CEb","1XlXHpfOP6EOWWiXxyyXSKmWH_HZntEL6","1ZhGeSHMLkINDIiGKeI9pu7OaYw5FJgjB","1NOTLanS5vYpx1ydocTZFtFNuqkBJCQti","1hK-BuG4CFKeq32CyQ6hEiSbCNzzGhgt2","1u95EX6SrsyzxvzkT6-N43gBRsrDSi98H","1TqygtbTkwJtJN9W5SXSauuTmkJoZ7ovm","1ZZUhzPMpI04txoFmpPhyRMyaGtcp3uF2",
+"1PWzYoiFtW0Cc1kIHlwaZbjIqaNVfmBvl","19WuF6guY2MJ7osTmirpli-KfM5V_X_1R","1Td_YdLYEDnOSEEjtCRKxC3GcPw1S_qUA","1eV4_YmHCDzAaA0cgnOm_kDXA9et2-L7j","12Cl98hFr-gocFw4hSSbF55ZtnOISwsj8","1eVnGoIL27Fl3_6EUUVNp55MyejjtKg4d","1zki3psjet2oWn1RiMqy2ZzYsN1LOPhR9","1UlWN3wEZ4_OpjBUkBGIBPzz1PSZw4stL","1ba49QpEG9dIeJD2dDFJas68azWXxnpcE","1YVYDVZ4y-xpC4VItqWDGSI7ZMA6C7SFm",
+"1Ww2HVZdEZdUR84Rjcms5s9CGYId3lm-Q","1HLnzzH-Fx_mUqgyugIG7Il81QG22XSZ1","1XLfwMYowSNY4fzyFBLFPENQtMgpQRyKV","1NTxHmft6VJZbxsVyrYF__6Bf6D7aYvZE","1Uf-CnY7fqvLZjyi0a-5AyyqXuhr_atux","1JObvwpfX00euPllof6Ug-mejfFw-OxO8","1SsHiu_Sh2hQnhM3g9KfBLHc3Bi3_nYZE","1dsx-7tU5OZe2OEX3IbrzRVN4E3OrCVcP","1ddzmbLZRNLI_2IdzYKkwPUFdKCVFrHa7","1dYAkisosUUPeAx3iRpmrCjMa_X_-rvhv",
+"1mtcV7Ax0psUzHqfGzG2TmA-i6vjIbA6w","1CwGAo-djeKqiGwyFUm2mU-A3tA_jocs2","1ZLLlQNs2213Yo5jOYYwmN1MDFtFyTHwE","1VSAAsvTY4y0-fEjZ-_O8uTU5y5If6p64","1qPWDBdjadt9pzrJ2U2NlfUb2HCajGICu","10PDJ6N8sU3hhEju7ZtzFt71kc7E8uBWG","1WIW9narfmy0kPX-yw37LcCHIyOQXrZ9a","1onDQ_OWCe25y7xTE4KR-a5IwdHfay8Jo","1KCcqN0qWRVUgSIJTAUD-lGcd1fTcSBx3","1wGCIhzcaN5aYWdTXyat4EKJ0QrVKwUkj",
+"1usIKby2bPW4sq8f-fstRU1AN5uPeGn7g","16AmtJ9wEC_etPWIYN01jV01ASoG7d7pQ","1eA3APoxQll8ln-DNuWlxo16Wpi9Vo5h3","1BvF_GMo9KqWzqux11Gj77xctP7Ih42LP","1xukisCklTaC3AqEh5K-G3xjmdQmJdyKQ","1KQ8ncHXVNy67kw-NAcVgjukZsjR6vVVg","1xHEcXL1fKZ1lfVdq9qd6Gy4IHW2jcvFk","1eAHFESh0fQnxFiUixeknoOhmbRkV8yju","1WsxIruFREax52p9Y3tEEFNnKhkKyjxSS","1mDHoWxRAHYL_Tx6bgQP7CpcXAw9PS_3b",
+"18HDrDmQV6wmtWgz7F4W9FmrHfIATtaEE","1qEo6ODbh6h6eXERzmbsX3h1oYBuXmIXx","1Ez1qXpR-10W9DhL4wiPaFDRxb5EpEjs8","1RrwuWz5ACzsIfmoPCa_DnKrel6x2hTfQ","1MLC7v0KYZf3cNwigf3wOi1tSvccjHSXl","1XzAFVpvlkEijUYhftWFzXAik2693tZ6c","1okyqiLFXyf1cdWXXtr-whUPviriTSmdX","1K9bBB_h4xpZUUpK9h5rTrbehgth6-fP2","1de_jrh-pMhU3ppsIST9xkfosqdIaanDW","15WQe6mynpRxLMnpNv8DAsW2JlcX8Fi4N",
+"1-4nrPHVo19QtbyYRlT3iXqPpnJrCx8SH","1YjBTt_Mhyoss_4cuGb74GdRGlWpxTcEr","1oBzt7cKlwbnZpmgXM9TYFQgT0fhEABEf","1knejCNr5NDOTYUmgi2kzxVIqDxg4XEgf","1Y1Vr4jhSz76VC5_6eiwh32dlD2wAqpwY","1lSY7PGkCGbPMfGBDVTokZeakURzdNuq_","1uV67fJtrhZOJw6WvNNw_n1OnIloWkjVO","1E25see2RCqJwmncS_mcYR-1pn29b2_fc","17Iska3RkbTYP2qKmTn5f6eQVH05dMBim","1mnSq0uLLplLV_SHwThDsVJCuVvkVCNv_",
+"1DhucpiLkTdLmnJv2exiIhiY8TTm85Ol5","15p68DO66IHMGRafYMJPyNP34ETxmw9T4","1P0YsKYSmZeYB94LCIOT0LpuvKcAHHcUb","1d0vVc8zj5Wxhyp1YwXyGF8vzH0bEq7Rm","1jnR5bX3uFxSmTN8i5ACcTwUF76cZ3Vr0","1ktxZ9BSSfarOGg0nw96HSwZ4aPm7f0gk","1UTqTnlfvYjL7ZmX8NGNRAx6Sj9bk42p4","10Z4MiTYb-uxFZBGHrCkDW7JLG1ebGwLK","1QKV423KjUeRZGgbHch9hJyD01T-d89KK","1OA3cvDEQEKcneZeHtwIyp0qE8LCLPHyg",
+"1jwb5E1nMK--rGQQe5OGS3T0yDdaxWMFo","1qfcivKlQeHlaUUCPuxI5W-kqIlQLRttk","1WEtkAZPfISJIyaLw6ICv5tPMuKoq37Jb"
+        ]
+      },
     ];
 
     var currentCollection = null;
@@ -229,10 +278,19 @@
     var pageTitle = document.getElementById("page-title");
     var collectionBack = document.getElementById("collection-back");
 
+    var comicView = document.getElementById("comic-view");
+    var comicImg = document.getElementById("comic-img");
+    var comicTitle = document.getElementById("comic-title");
+    var comicPageNum = document.getElementById("comic-page-num");
+    var comicBack = document.getElementById("comic-back");
+    var currentComicPages = [];
+    var currentComicPage = 0;
+
     function showView(view) {
       browseView.classList.toggle("hidden", view !== "browse");
       collectionView.classList.toggle("active", view === "collection");
       playerView.classList.toggle("active", view === "player");
+      comicView.classList.toggle("active", view === "comic");
       if (view === "browse") {
         pageTitle.textContent = "\uD83C\uDFAC Movies";
         mainBack.href = "index.html";
@@ -250,7 +308,8 @@
         '<div class="movie-info"><h3>' + item.title + '</h3>' +
         (item.desc ? '<p>' + item.desc + '</p>' : '') +
         '</div>' +
-        (item.collection ? '<div class="collection-badge">' + item.collection.length + ' titles</div>' : '');
+        (item.collection ? '<div class="collection-badge">' + item.collection.length + ' titles</div>' : '') +
+        (item.comic ? '<div class="collection-badge">' + item.comic.length + ' pages</div>' : '');
       card.addEventListener("click", onClick);
       return card;
     }
@@ -261,6 +320,8 @@
         var card = buildCard(movie, function() {
           if (movie.collection) {
             openCollection(movie);
+          } else if (movie.comic) {
+            openComic(movie);
           } else if (movie.folder) {
             window.open(movie.folder, "_blank");
           } else if (movie.link) {
@@ -315,8 +376,40 @@
       }
     }
 
+    function openComic(movie) {
+      currentComicPages = movie.comic;
+      currentComicPage = 0;
+      showView("comic");
+      comicTitle.textContent = movie.title;
+      pageTitle.textContent = movie.emoji + " " + movie.title;
+      mainBack.href = "#";
+      mainBack.onclick = function(e) { e.preventDefault(); closeComic(); };
+      updateComicPage();
+    }
+
+    function closeComic() {
+      showView("browse");
+      comicImg.src = "";
+    }
+
+    function updateComicPage() {
+      var id = currentComicPages[currentComicPage];
+      comicImg.src = "https://lh3.googleusercontent.com/d/" + id;
+      comicPageNum.textContent = (currentComicPage + 1) + " / " + currentComicPages.length;
+      document.getElementById("comic-prev").disabled = currentComicPage === 0;
+      document.getElementById("comic-next").disabled = currentComicPage === currentComicPages.length - 1;
+    }
+
+    window.comicPrev = function() {
+      if (currentComicPage > 0) { currentComicPage--; updateComicPage(); }
+    };
+    window.comicNext = function() {
+      if (currentComicPage < currentComicPages.length - 1) { currentComicPage++; updateComicPage(); }
+    };
+
     playerBack.addEventListener("click", closePlayer);
     collectionBack.addEventListener("click", closeCollection);
+    comicBack.addEventListener("click", closeComic);
     renderGrid();
   </script>
 
