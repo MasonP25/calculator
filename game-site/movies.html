@@ -349,13 +349,14 @@
       mainBack.href = "#";
       mainBack.onclick = function(e) { e.preventDefault(); closeCollection(); };
       collectionGrid.innerHTML = "";
-      var lastWatched = getLastProgress("col_" + makeKey(movie.title));
+      var colKey = "col_" + makeKey(movie.title);
+      var lastWatched = getLastProgress(colKey + "_last");
       movie.collection.forEach(function(item, idx) {
         var card = buildCard(item, function() {
           if (item.link) {
             window.open(item.link, "_blank");
           } else if (item.src) {
-            saveProgress("col_" + makeKey(movie.title), idx);
+            saveProgress(colKey + "_last", idx);
             openPlayer(item.title, item.src);
           }
         });
@@ -363,7 +364,7 @@
           var badge = document.createElement("div");
           badge.className = "collection-badge";
           badge.textContent = "Continue";
-          badge.style.background = "rgba(46,213,115,.7)";
+          badge.style.background = "rgba(255,165,2,.8)";
           card.appendChild(badge);
         }
         collectionGrid.appendChild(card);
@@ -378,7 +379,6 @@
     function openPlayer(title, src) {
       playerTitle.textContent = title;
       playerIframe.src = src;
-      saveProgress("last_watched", title);
       showView("player");
       playerBack.textContent = currentCollection ? "\u2190 Back to " + currentCollection.title : "\u2190 Back to entertainment";
       mainBack.href = "#";
