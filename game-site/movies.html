@@ -64,6 +64,7 @@
     </div>
 
     <div id="browse-view">
+      <input type="text" id="ent-search" placeholder="Search movies, shows, manga..." style="width:100%;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e0e4f0;font-size:0.9rem;font-family:inherit;outline:none;margin-bottom:16px;box-sizing:border-box;" oninput="filterGrid()">
       <div class="movies-grid" id="movies-grid"></div>
     </div>
 
@@ -775,9 +776,15 @@
       return card;
     }
 
-    function renderGrid() {
+    function renderGrid(filter) {
       grid.innerHTML = "";
+      var q = (filter || "").toLowerCase();
       MOVIES.forEach(function(movie, i) {
+        var match = !q || movie.title.toLowerCase().includes(q) || (movie.desc && movie.desc.toLowerCase().includes(q));
+        if (!match && movie.collection) {
+          match = movie.collection.some(function(c) { return c.title.toLowerCase().includes(q); });
+        }
+        if (!match) return;
         var card = buildCard(movie, function() {
           if (movie.collection) {
             openCollection(movie);
@@ -794,6 +801,11 @@
         grid.appendChild(card);
       });
     }
+
+    window.filterGrid = function() {
+      var q = document.getElementById("ent-search").value;
+      renderGrid(q);
+    };
 
     function openCollection(movie) {
       currentCollection = movie;
