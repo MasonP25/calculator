@@ -405,7 +405,7 @@
       localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
     }
     function getLastProgress(key) {
-      return getProgress()[key] || null;
+      var v = getProgress()[key]; return v != null ? v : null;
     }
     function makeKey(title) {
       return title.toLowerCase().replace(/[^a-z0-9]/g, "_");
