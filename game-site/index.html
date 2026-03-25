@@ -3190,7 +3190,7 @@
 <script>
 // ─── 3D TILT HOVER ON GAME CARDS ───
 (function() {
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+  // Removed touch check — tilt works for everyone with a mouse now
 
   var activeCard = null;
 
