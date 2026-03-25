@@ -743,71 +743,44 @@
   </div>
 
   <div class="section-title" id="popularSection">&#128293; <span class="stxt">Popular</span></div>
-  <div class="games" id="popularGames">
-    <a class="card" href="basketrandom.html">
-      <div class="icon">&#127936;</div>
-      <h2>Basket Random</h2>
-      <p>Wacky basketball with random physics! Every round changes the court, players, and rules!</p>
-      <span class="badge mp">2P Local</span>
-    </a>
-    <a class="card" href="crazykarts.html">
-      <div class="icon">&#127949;</div>
-      <h2>Crazy Karts</h2>
-      <p>Race karts on wild tracks! Drift, boost, and battle your way to first place!</p>
-      <span class="badge solo">WASD / Arrows</span>
-    </a>
-    <a class="card" href="geodashlite.html">
-      <div class="icon">&#9632;</div>
-      <h2>Geometry Dash Lite</h2>
-      <p>The classic Geometry Dash experience! Jump and fly through levels with epic music!</p>
-      <span class="badge solo">Click / Space</span>
-    </a>
-    <a class="card" href="gswitch3.html">
-      <div class="icon">&#128260;</div>
-      <h2>G-Switch 3</h2>
-      <p>Flip gravity to run on walls and ceilings! Race through obstacle courses solo or with friends!</p>
-      <span class="badge solo">Click / Space</span>
-    </a>
-    <a class="card" href="uno.html">
-      <div class="icon">&#127183;</div>
-      <h2>UNO</h2>
-      <p>The classic card game, now online! Play with 2-12 friends with full rules!</p>
-      <span class="badge mp">Online 2-12 Players</span>
-      <span class="badge online">Online</span>
-    </a>
-    <a class="card" href="wavelength.html">
-      <div class="icon">&#127752;</div>
-      <h2>Wavelength</h2>
-      <p>Online party game! Give clues on a spectrum and guess the target!</p>
-      <span class="badge mp">Online 2+ Players</span>
-      <span class="badge online">Online</span>
-    </a>
-    <a class="card" href="imposter.html">
-      <div class="icon">&#128373;</div>
-      <h2>Imposter</h2>
-      <p>Social deduction! Everyone gets a word except the Imposter. Vote to find them!</p>
-      <span class="badge mp">Online 3+ Players</span>
-      <span class="badge online">Online</span>
-    </a>
-    <a class="card" href="subway.html">
-      <div class="icon">&#128646;</div>
-      <h2>Subway Surfers</h2>
-      <p>Dash through the subway! Dodge trains, collect coins, and surf endlessly!</p>
-      <span class="badge solo">Arrows / Swipe</span>
-    </a>
-    <a class="card" href="minecraft.html">
-      <div class="icon">&#9935;</div>
-      <h2>Minecraft</h2>
-      <p>Build, mine, and survive in the classic sandbox game! Eaglercraft 1.8 in your browser!</p>
-      <span class="badge solo">WASD / Mouse</span>
-    </a>
-    <a class="card" href="fireboywater.html">
-      <div class="icon">&#128293;</div>
-      <h2>Fireboy & Watergirl</h2>
-      <p>Team up in the Forest Temple! Fireboy uses arrows, Watergirl uses WASD. Solve puzzles together!</p>
-      <span class="badge mp">2P Local</span>
-    </a>
-  </div>
+  <div class="games" id="popularGames"></div>
+  <script>
+  (function() {
+    // Seeded random based on date (same picks all day)
+    var d = new Date(); var seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+    function seededRand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+
+    // Priority games appear ~3x more often in the pool
+    var priority = ['basketrandom.html','uno.html','subway.html','imposter.html','wavelength.html'];
+
+    // Collect all game cards from the page (they load below)
+    setTimeout(function() {
+      var allCards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
+      var pool = [];
+      allCards.forEach(function(c) {
+        var href = c.getAttribute('href');
+        if (!href) return;
+        pool.push(c);
+        // Add priority games extra times
+        if (priority.indexOf(href) !== -1) { pool.push(c); pool.push(c); }
+      });
+      // Shuffle with seeded random
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(seededRand() * (i + 1));
+        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+      }
+      // Pick 10 unique cards
+      var picked = []; var seen = {};
+      for (var k = 0; k < pool.length && picked.length < 10; k++) {
+        var h = pool[k].getAttribute('href');
+        if (!seen[h]) { seen[h] = true; picked.push(pool[k]); }
+      }
+      // Clone into popular section
+      var container = document.getElementById('popularGames');
+      picked.forEach(function(c) { container.appendChild(c.cloneNode(true)); });
+    }, 300);
+  })();
+  </script>
 
   <div class="section-title" id="favSection" style="display:none">&#11088; <span class="stxt">Favorites</span></div>
   <div class="games" id="favGames" style="display:none"></div>
