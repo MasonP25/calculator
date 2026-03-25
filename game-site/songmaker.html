@@ -6,15 +6,51 @@
 <title>Song Maker — Arcade</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f0f1a; overflow: hidden; height: 100vh; }
-  a.back { position: fixed; top: 12px; left: 16px; color: #888; text-decoration: none; font-size: 0.85rem; z-index: 100; transition: color 0.2s; font-family: 'Segoe UI', sans-serif; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a; color: #e0e0e0;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 1rem;
+  }
+  h1 {
+    font-size: 1.8rem; margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  .game-container {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #231F20;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  .game-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  a.back {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 10001;
+    color: #aaa;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
   a.back:hover { color: #e0e0e0; }
-  .game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-  .game-container iframe { width: 100%; height: 100%; border: none; }
 </style>
 </head>
 <body>
 <a class="back" href="index.html">&#8592; Back</a>
+<h1>&#127925; Song Maker</h1>
 <div class="game-container">
   <iframe src="https://musiclab.chromeexperiments.com/Song-Maker" allow="autoplay; microphone" allowfullscreen></iframe>
 </div>
