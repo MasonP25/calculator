@@ -334,7 +334,7 @@
       .mode-select button,.diff-btn,.round-btn,.mode-btn,
       .game-card,.stat-box,.online-panel,.online-info,.online-score,
       .score-display,.selector-btn,.lobby-container,.screen {
-        background:${t.bg2}cc!important; border-color:${t.border}!important; color:${t.text}!important;
+        background:${t.bg2}66!important; border-color:${t.border}!important; color:${t.text}!important; backdrop-filter:blur(0.5px)!important;
       }
       .card:hover,.game-card:hover { border-color:${t.accent}!important; box-shadow:0 12px 35px ${t.glow}!important; }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
