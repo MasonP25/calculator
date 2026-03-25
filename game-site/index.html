@@ -3050,6 +3050,7 @@
   <a href="#" onclick="var g=document.getElementById('unblock-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
   <p style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
   <input id="unblock-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;">
+  <button onclick="document.getElementById('unblock-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
   <p id="unblock-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
 </div>
 <script>
