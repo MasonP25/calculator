@@ -3195,8 +3195,11 @@
       if (!card._tiltBound) {
         card._tiltBound = true;
         card.addEventListener('mouseleave', function() {
-          this.style.transform = '';
-          if (activeCard === this) activeCard = null;
+          var c = this;
+          c.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          c.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)';
+          setTimeout(function() { c.style.transition = ''; c.style.transform = ''; }, 400);
+          if (activeCard === c) activeCard = null;
         });
       }
     });
