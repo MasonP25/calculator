@@ -1148,6 +1148,13 @@
     deltamath: { name: 'DeltaMath', icon: '\u{1F4C8}', title: 'DeltaMath', favicon: 'https://www.deltamath.com/favicon.ico' },
     khan: { name: 'Khan Academy', icon: '\u{1F7E2}', title: 'Khan Academy | Free Online Courses', favicon: 'https://cdn.kastatic.org/images/favicon.ico' },
     wikipedia: { name: 'Wikipedia', icon: '\u{1F4D6}', title: 'Wikipedia, the free encyclopedia', favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
+    managebac: { name: 'ManageBac', icon: '\u{1F310}', title: 'ManageBac', favicon: 'https://www.managebac.com/favicon.ico' },
+    gmail: { name: 'Gmail', icon: '\u{2709}\u{FE0F}', title: 'Inbox - Gmail', favicon: 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico' },
+    mathia: { name: 'Mathia', icon: '\u{1F4B9}', title: 'Mathia', favicon: 'https://mathia.carnegielearning.com/favicon.ico' },
+    drive: { name: 'Google Drive', icon: '\u{1F4C1}', title: 'My Drive - Google Drive', favicon: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png' },
+    schoology: { name: 'Schoology', icon: '\u{1F4DA}', title: 'Home | Schoology', favicon: 'https://app.schoology.com/sites/all/themes/flavor/favicon.ico' },
+    edpuzzle: { name: 'Edpuzzle', icon: '\u{1F3AC}', title: 'Edpuzzle', favicon: 'https://edpuzzle.imgix.net/favicons/favicon-32.png' },
+    zoom: { name: 'Zoom', icon: '\u{1F4F9}', title: 'Zoom Meeting', favicon: 'https://st1.zoom.us/zoom.ico' },
   };
 
   var KEY = 'arcadeCloak';
