@@ -112,11 +112,11 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
       <div class="drop-icon">&#128228;</div>
       <div>Drag & drop a video here, or click to browse</div>
       <div class="file-name" id="file-name"></div>
-      <input type="file" id="file-input" accept="video/*" style="display:none;">
+      <input type="file" id="file-input" accept="video/*,image/*,audio/*" style="display:none;">
     </div>
     <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
     <div class="progress-text" id="progress-text"></div>
-    <p style="color:#555;font-size:0.65rem;margin-top:6px;">Max file size: 50MB. Supported: MP4, WebM, MOV</p>
+    <p style="color:#555;font-size:0.65rem;margin-top:6px;">Max 100MB. Videos, images, and audio supported.</p>
     <div class="modal-err" id="up-err"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
@@ -130,7 +130,7 @@ var UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbx-sIHwORvsnOq5NsZNGs7
 var currentVideoId = null;
 var videosCache = [];
 var selectedFile = null;
-var MAX_SIZE = 50 * 1024 * 1024;
+var MAX_SIZE = 100 * 1024 * 1024;
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
@@ -171,12 +171,12 @@ fileInput.addEventListener('change', function() {
 
 function handleFile(f) {
   document.getElementById('up-err').textContent = '';
-  if (!f.type.startsWith('video/')) {
-    document.getElementById('up-err').textContent = 'Please select a video file';
+  if (!f.type.startsWith('video/') && !f.type.startsWith('image/') && !f.type.startsWith('audio/')) {
+    document.getElementById('up-err').textContent = 'Please select a video, image, or audio file';
     return;
   }
   if (f.size > MAX_SIZE) {
-    document.getElementById('up-err').textContent = 'File too large (max 50MB)';
+    document.getElementById('up-err').textContent = 'File too large (max 100MB)';
     return;
   }
   selectedFile = f;
@@ -253,10 +253,12 @@ async function submitVideo() {
     document.getElementById('progress-text').textContent = 'Saving...';
 
     // Save metadata to Firestore
+    var fileType = selectedFile.type.startsWith('image/') ? 'image' : selectedFile.type.startsWith('audio/') ? 'audio' : 'video';
     await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
       title: title,
       description: desc,
       driveId: result.id,
+      fileType: fileType,
       uploader: user,
       date: new Date().toISOString(),
       likes: [],
@@ -313,7 +315,16 @@ function openVideo(id) {
   currentVideoId = id;
   document.getElementById('feed-view').classList.add('hidden');
   document.getElementById('player-view').classList.add('active');
-  document.getElementById('vid-iframe').src = 'https://drive.google.com/file/d/' + v.driveId + '/preview';
+  var wrapper = document.querySelector('.player-wrapper');
+  var driveUrl = 'https://drive.google.com/file/d/' + v.driveId;
+  if (v.fileType === 'image') {
+    wrapper.innerHTML = '<img src="' + driveUrl + '/preview" style="width:100%;border-radius:12px;">';
+    wrapper.style.paddingTop = '0';
+  } else {
+    wrapper.innerHTML = '<iframe id="vid-iframe" src="" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:none;"></iframe>';
+    wrapper.style.paddingTop = '56.25%';
+    document.getElementById('vid-iframe').src = driveUrl + '/preview';
+  }
   document.getElementById('vid-title').textContent = v.title;
   document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
   document.getElementById('vid-desc').textContent = v.description || 'No description';
@@ -330,7 +341,9 @@ function openVideo(id) {
 function closePlayer() {
   document.getElementById('player-view').classList.remove('active');
   document.getElementById('feed-view').classList.remove('hidden');
-  document.getElementById('vid-iframe').src = '';
+  var wrapper = document.querySelector('.player-wrapper');
+  wrapper.innerHTML = '<iframe id="vid-iframe" src="" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:none;"></iframe>';
+  wrapper.style.paddingTop = '56.25%';
   currentVideoId = null;
 }
 
