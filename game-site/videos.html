@@ -13,36 +13,29 @@ a.back:hover { color:#e0e0e0; }
 h1 { text-align:center; font-size:1.8rem; margin-bottom:0.3rem; }
 h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .subtitle { text-align:center; color:#666; font-size:0.8rem; margin-bottom:1.2rem; }
-
-/* Upload button */
 .upload-btn { display:none; margin:0 auto 1.2rem; padding:0.5rem 1.5rem; border-radius:10px; border:2px solid #ff4757; background:linear-gradient(135deg,#ff4757,#ff6b81); color:#fff; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; }
 .upload-btn:hover { opacity:0.9; }
-
-/* Video grid */
 .vid-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
 .vid-card { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.2s,border-color 0.2s; }
 .vid-card:hover { transform:translateY(-3px); border-color:#ff4757; }
 .vid-thumb { width:100%; aspect-ratio:16/9; background:#111; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#333; }
+.vid-thumb video { width:100%; height:100%; object-fit:cover; }
 .vid-info { padding:10px 12px; }
 .vid-info h3 { font-size:0.9rem; margin-bottom:4px; }
 .vid-info .vid-meta { font-size:0.7rem; color:#666; display:flex; gap:8px; }
-
-/* Player view */
 #player-view { display:none; }
 #player-view.active { display:block; }
 #feed-view.hidden { display:none; }
 .player-back { display:inline-flex; align-items:center; gap:6px; color:#aaa; font-size:0.85rem; cursor:pointer; padding:6px 10px; border-radius:8px; border:none; background:none; font-family:inherit; margin-bottom:12px; }
 .player-back:hover { background:rgba(255,255,255,.08); color:#fff; }
-.player-wrapper { width:100%; padding-top:56.25%; position:relative; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px; }
-.player-wrapper iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+.player-wrapper { width:100%; position:relative; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.player-wrapper video { width:100%; max-height:70vh; display:block; }
 .player-title { font-size:1.3rem; font-weight:600; margin-bottom:4px; }
 .player-meta { font-size:0.75rem; color:#666; margin-bottom:12px; }
 .like-btn { padding:6px 16px; border-radius:8px; border:2px solid #ff4757; background:none; color:#ff4757; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; margin-bottom:16px; }
 .like-btn.liked { background:#ff4757; color:#fff; }
 .like-btn:hover { opacity:0.85; }
 .player-desc { color:#aaa; font-size:0.85rem; margin-bottom:20px; padding:12px; background:#1a1a2e; border-radius:10px; }
-
-/* Comments */
 .comments-section h3 { font-size:0.95rem; margin-bottom:10px; }
 .comment-form { display:flex; gap:8px; margin-bottom:16px; }
 .comment-form input { flex:1; background:#1a1a2e; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
@@ -53,11 +46,9 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .comment .c-text { color:#ccc; font-size:0.82rem; margin-top:2px; }
 .comment .c-date { color:#555; font-size:0.65rem; margin-top:2px; }
 .no-comments { color:#555; font-size:0.8rem; font-style:italic; }
-
-/* Upload modal */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; align-items:center; justify-content:center; }
 .modal-overlay.show { display:flex; }
-.modal { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:16px; padding:1.5rem; width:400px; max-width:90vw; }
+.modal { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:16px; padding:1.5rem; width:440px; max-width:90vw; }
 .modal h2 { font-size:1.1rem; color:#ff4757; margin-bottom:1rem; }
 .modal label { display:block; color:#888; font-size:0.75rem; margin-bottom:4px; margin-top:10px; }
 .modal input,.modal textarea { width:100%; background:#0f0f1a; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
@@ -67,8 +58,16 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .modal .modal-btns button { padding:8px 20px; border-radius:8px; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; border:none; }
 .modal .btn-cancel { background:#2a2a4a; color:#aaa; }
 .modal .btn-submit { background:#ff4757; color:#fff; }
+.modal .btn-submit:disabled { opacity:0.5; cursor:default; }
 .modal .modal-err { color:#ff4757; font-size:0.75rem; margin-top:8px; min-height:1em; }
 .empty-msg { text-align:center; color:#555; padding:3rem 1rem; font-size:0.9rem; }
+.drop-zone { border:2px dashed #3a3a5a; border-radius:12px; padding:2rem; text-align:center; color:#666; font-size:0.85rem; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-top:10px; }
+.drop-zone:hover,.drop-zone.dragover { border-color:#ff4757; background:rgba(255,71,87,0.05); }
+.drop-zone .drop-icon { font-size:2rem; margin-bottom:8px; }
+.drop-zone .file-name { color:#ff6b81; font-weight:600; margin-top:6px; }
+.progress-bar { width:100%; height:6px; background:#2a2a4a; border-radius:3px; margin-top:10px; overflow:hidden; display:none; }
+.progress-bar .fill { height:100%; background:linear-gradient(90deg,#ff4757,#ff6b81); border-radius:3px; transition:width 0.3s; width:0%; }
+.progress-text { font-size:0.7rem; color:#888; margin-top:4px; text-align:center; }
 </style>
 </head>
 <body>
@@ -84,9 +83,9 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
   </div>
 
   <div id="player-view">
-    <button class="player-back" id="player-back" onclick="closePlayer()">&#8592; Back to feed</button>
+    <button class="player-back" onclick="closePlayer()">&#8592; Back to feed</button>
     <div class="player-wrapper">
-      <iframe id="vid-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      <video id="vid-player" controls></video>
     </div>
     <h2 class="player-title" id="vid-title"></h2>
     <div class="player-meta" id="vid-meta"></div>
@@ -103,7 +102,6 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
   </div>
 </div>
 
-<!-- Upload Modal -->
 <div class="modal-overlay" id="upload-modal">
   <div class="modal">
     <h2>&#127909; Upload Video</h2>
@@ -111,13 +109,19 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
     <input id="up-title" placeholder="My awesome video" maxlength="100">
     <label>Description (optional)</label>
     <textarea id="up-desc" placeholder="What's this video about?"></textarea>
-    <label>Video Link</label>
-    <input id="up-link" placeholder="YouTube or Google Drive link">
-    <p style="color:#555;font-size:0.65rem;margin-top:4px;">Paste a YouTube link or Google Drive link (shared as "Anyone with the link")</p>
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">&#128228;</div>
+      <div>Drag & drop a video here, or click to browse</div>
+      <div class="file-name" id="file-name"></div>
+      <input type="file" id="file-input" accept="video/*" style="display:none;">
+    </div>
+    <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
+    <div class="progress-text" id="progress-text"></div>
+    <p style="color:#555;font-size:0.65rem;margin-top:6px;">Max file size: 50MB. Supported: MP4, WebM, MOV</p>
     <div class="modal-err" id="up-err"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
-      <button class="btn-submit" onclick="submitVideo()">Upload</button>
+      <button class="btn-submit" id="submit-btn" onclick="submitVideo()">Upload</button>
     </div>
   </div>
 </div>
@@ -125,29 +129,11 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 <script>
 var currentVideoId = null;
 var videosCache = [];
+var selectedFile = null;
+var MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
-}
-
-function parseVideoLink(url) {
-  // YouTube: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
-  var yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-  if (yt) return { type: 'youtube', id: yt[1] };
-  // Google Drive: drive.google.com/file/d/ID
-  var gd = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (gd) return { type: 'drive', id: gd[1] };
-  return null;
-}
-
-function getEmbedUrl(type, id) {
-  if (type === 'youtube') return 'https://www.youtube.com/embed/' + id;
-  return 'https://drive.google.com/file/d/' + id + '/preview';
-}
-
-function getThumbnail(type, id) {
-  if (type === 'youtube') return 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg';
-  return null;
 }
 
 function timeAgo(ts) {
@@ -161,12 +147,54 @@ function timeAgo(ts) {
   return d.toLocaleDateString();
 }
 
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// Drop zone
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', function() { fileInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  var f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', function() {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+function handleFile(f) {
+  document.getElementById('up-err').textContent = '';
+  if (!f.type.startsWith('video/')) {
+    document.getElementById('up-err').textContent = 'Please select a video file';
+    return;
+  }
+  if (f.size > MAX_SIZE) {
+    document.getElementById('up-err').textContent = 'File too large (max 50MB)';
+    return;
+  }
+  selectedFile = f;
+  document.getElementById('file-name').textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)';
+}
+
 function showUploadModal() {
   document.getElementById('upload-modal').classList.add('show');
   document.getElementById('up-title').value = '';
   document.getElementById('up-desc').value = '';
-  document.getElementById('up-link').value = '';
   document.getElementById('up-err').textContent = '';
+  document.getElementById('file-name').textContent = '';
+  document.getElementById('progress-bar').style.display = 'none';
+  document.getElementById('progress-text').textContent = '';
+  document.getElementById('submit-btn').disabled = false;
+  selectedFile = null;
+  fileInput.value = '';
 }
 
 function hideUploadModal() {
@@ -175,32 +203,54 @@ function hideUploadModal() {
 
 async function submitVideo() {
   var fdb = window._arcadeDB;
-  if (!fdb) { document.getElementById('up-err').textContent = 'Firebase not loaded'; return; }
+  if (!fdb || !fdb.storage) { document.getElementById('up-err').textContent = 'Firebase not loaded yet, try again'; return; }
   var user = getUser();
   if (!user) { document.getElementById('up-err').textContent = 'Sign in first'; return; }
   var title = document.getElementById('up-title').value.trim();
   var desc = document.getElementById('up-desc').value.trim();
-  var link = document.getElementById('up-link').value.trim();
   if (!title) { document.getElementById('up-err').textContent = 'Title required'; return; }
-  var parsed = parseVideoLink(link);
-  if (!parsed) { document.getElementById('up-err').textContent = 'Paste a YouTube or Google Drive link'; return; }
+  if (!selectedFile) { document.getElementById('up-err').textContent = 'Select a video file'; return; }
 
-  try {
-    await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
-      title: title,
-      description: desc,
-      videoType: parsed.type,
-      videoId: parsed.id,
-      uploader: user,
-      date: new Date().toISOString(),
-      likes: [],
-      comments: []
-    });
-    hideUploadModal();
-    loadVideos();
-  } catch(e) {
-    document.getElementById('up-err').textContent = 'Error: ' + e.message;
-  }
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('up-err').textContent = '';
+  document.getElementById('progress-bar').style.display = '';
+
+  var fileName = Date.now() + '_' + selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  var fileRef = fdb.storageRef(fdb.storage, 'videos/' + fileName);
+  var uploadTask = fdb.uploadBytesResumable(fileRef, selectedFile);
+
+  uploadTask.on('state_changed',
+    function(snapshot) {
+      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = 'Uploading... ' + pct + '%';
+    },
+    function(error) {
+      document.getElementById('up-err').textContent = 'Upload failed: ' + error.message;
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('progress-bar').style.display = 'none';
+    },
+    async function() {
+      document.getElementById('progress-text').textContent = 'Processing...';
+      try {
+        var url = await fdb.getDownloadURL(uploadTask.snapshot.ref);
+        await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
+          title: title,
+          description: desc,
+          videoUrl: url,
+          uploader: user,
+          date: new Date().toISOString(),
+          likes: [],
+          comments: []
+        });
+        hideUploadModal();
+        loadVideos();
+      } catch(e) {
+        document.getElementById('up-err').textContent = 'Error saving: ' + e.message;
+        document.getElementById('submit-btn').disabled = false;
+      }
+    }
+  );
 }
 
 async function loadVideos() {
@@ -223,12 +273,8 @@ function renderFeed(vids) {
   vids.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
-    var thumb = getThumbnail(v.videoType || 'drive', v.videoId || v.driveId);
-    var thumbHtml = thumb
-      ? '<img class="vid-thumb" src="' + thumb + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">'
-      : '<div class="vid-thumb">&#9654;</div>';
     card.innerHTML =
-      thumbHtml +
+      '<div class="vid-thumb"><video src="' + escHtml(v.videoUrl) + '#t=1" preload="metadata" muted></video></div>' +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
       '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
@@ -244,9 +290,10 @@ function openVideo(id) {
   currentVideoId = id;
   document.getElementById('feed-view').classList.add('hidden');
   document.getElementById('player-view').classList.add('active');
-  document.getElementById('vid-iframe').src = getEmbedUrl(v.videoType || 'drive', v.videoId || v.driveId);
+  document.getElementById('vid-player').src = v.videoUrl;
+  document.getElementById('vid-player').play();
   document.getElementById('vid-title').textContent = v.title;
-  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' • ' + timeAgo(v.date) + ' • ' + (v.likes ? v.likes.length : 0) + ' likes';
+  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
   document.getElementById('vid-desc').textContent = v.description || 'No description';
   var user = getUser();
   var liked = v.likes && v.likes.indexOf(user) !== -1;
@@ -261,7 +308,8 @@ function openVideo(id) {
 function closePlayer() {
   document.getElementById('player-view').classList.remove('active');
   document.getElementById('feed-view').classList.remove('hidden');
-  document.getElementById('vid-iframe').src = '';
+  document.getElementById('vid-player').pause();
+  document.getElementById('vid-player').src = '';
   currentVideoId = null;
 }
 
@@ -317,13 +365,6 @@ function renderComments(comments) {
   });
 }
 
-function escHtml(s) {
-  var d = document.createElement('div');
-  d.textContent = s || '';
-  return d.innerHTML;
-}
-
-// Show upload button when signed in
 function checkAuth() {
   var user = getUser();
   document.getElementById('upload-btn').style.display = user ? 'block' : 'none';
