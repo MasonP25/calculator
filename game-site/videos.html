@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Videoish — Arcade</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',Tahoma,sans-serif; background:#0f0f1a; color:#e0e0e0; min-height:100vh; }
+a.back { position:fixed; top:12px; left:16px; color:#888; text-decoration:none; font-size:0.85rem; z-index:100; }
+a.back:hover { color:#e0e0e0; }
+.container { max-width:900px; margin:0 auto; padding:1rem; }
+h1 { text-align:center; font-size:1.8rem; margin-bottom:0.3rem; }
+h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { text-align:center; color:#666; font-size:0.8rem; margin-bottom:1.2rem; }
+
+/* Upload button */
+.upload-btn { display:none; margin:0 auto 1.2rem; padding:0.5rem 1.5rem; border-radius:10px; border:2px solid #ff4757; background:linear-gradient(135deg,#ff4757,#ff6b81); color:#fff; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; }
+.upload-btn:hover { opacity:0.9; }
+
+/* Video grid */
+.vid-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+.vid-card { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.2s,border-color 0.2s; }
+.vid-card:hover { transform:translateY(-3px); border-color:#ff4757; }
+.vid-thumb { width:100%; aspect-ratio:16/9; background:#111; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#333; }
+.vid-info { padding:10px 12px; }
+.vid-info h3 { font-size:0.9rem; margin-bottom:4px; }
+.vid-info .vid-meta { font-size:0.7rem; color:#666; display:flex; gap:8px; }
+
+/* Player view */
+#player-view { display:none; }
+#player-view.active { display:block; }
+#feed-view.hidden { display:none; }
+.player-back { display:inline-flex; align-items:center; gap:6px; color:#aaa; font-size:0.85rem; cursor:pointer; padding:6px 10px; border-radius:8px; border:none; background:none; font-family:inherit; margin-bottom:12px; }
+.player-back:hover { background:rgba(255,255,255,.08); color:#fff; }
+.player-wrapper { width:100%; padding-top:56.25%; position:relative; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.player-wrapper iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+.player-title { font-size:1.3rem; font-weight:600; margin-bottom:4px; }
+.player-meta { font-size:0.75rem; color:#666; margin-bottom:12px; }
+.like-btn { padding:6px 16px; border-radius:8px; border:2px solid #ff4757; background:none; color:#ff4757; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; margin-bottom:16px; }
+.like-btn.liked { background:#ff4757; color:#fff; }
+.like-btn:hover { opacity:0.85; }
+.player-desc { color:#aaa; font-size:0.85rem; margin-bottom:20px; padding:12px; background:#1a1a2e; border-radius:10px; }
+
+/* Comments */
+.comments-section h3 { font-size:0.95rem; margin-bottom:10px; }
+.comment-form { display:flex; gap:8px; margin-bottom:16px; }
+.comment-form input { flex:1; background:#1a1a2e; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
+.comment-form input:focus { border-color:#ff4757; }
+.comment-form button { padding:8px 16px; border-radius:8px; border:none; background:#ff4757; color:#fff; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; }
+.comment { padding:8px 12px; background:#1a1a2e; border-radius:8px; margin-bottom:6px; }
+.comment .c-name { color:#ff6b81; font-weight:600; font-size:0.8rem; }
+.comment .c-text { color:#ccc; font-size:0.82rem; margin-top:2px; }
+.comment .c-date { color:#555; font-size:0.65rem; margin-top:2px; }
+.no-comments { color:#555; font-size:0.8rem; font-style:italic; }
+
+/* Upload modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:16px; padding:1.5rem; width:400px; max-width:90vw; }
+.modal h2 { font-size:1.1rem; color:#ff4757; margin-bottom:1rem; }
+.modal label { display:block; color:#888; font-size:0.75rem; margin-bottom:4px; margin-top:10px; }
+.modal input,.modal textarea { width:100%; background:#0f0f1a; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
+.modal input:focus,.modal textarea:focus { border-color:#ff4757; }
+.modal textarea { resize:none; height:60px; }
+.modal .modal-btns { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
+.modal .modal-btns button { padding:8px 20px; border-radius:8px; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; border:none; }
+.modal .btn-cancel { background:#2a2a4a; color:#aaa; }
+.modal .btn-submit { background:#ff4757; color:#fff; }
+.modal .modal-err { color:#ff4757; font-size:0.75rem; margin-top:8px; min-height:1em; }
+.empty-msg { text-align:center; color:#555; padding:3rem 1rem; font-size:0.9rem; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8592; Back</a>
+<div class="container">
+  <h1>&#127909; <span>Videoish</span></h1>
+  <p class="subtitle">Share & watch videos with the arcade community</p>
+  <button class="upload-btn" id="upload-btn" onclick="showUploadModal()">+ Upload Video</button>
+
+  <div id="feed-view">
+    <div class="vid-grid" id="vid-grid"></div>
+    <div class="empty-msg" id="empty-msg" style="display:none;">No videos yet. Be the first to upload!</div>
+  </div>
+
+  <div id="player-view">
+    <button class="player-back" id="player-back" onclick="closePlayer()">&#8592; Back to feed</button>
+    <div class="player-wrapper">
+      <iframe id="vid-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+    <h2 class="player-title" id="vid-title"></h2>
+    <div class="player-meta" id="vid-meta"></div>
+    <button class="like-btn" id="like-btn" onclick="toggleLike()">&#10084; Like</button>
+    <div class="player-desc" id="vid-desc"></div>
+    <div class="comments-section">
+      <h3>Comments</h3>
+      <div class="comment-form" id="comment-form" style="display:none;">
+        <input id="comment-input" placeholder="Add a comment..." maxlength="300">
+        <button onclick="postComment()">Post</button>
+      </div>
+      <div id="comments-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <h2>&#127909; Upload Video</h2>
+    <label>Title</label>
+    <input id="up-title" placeholder="My awesome video" maxlength="100">
+    <label>Description (optional)</label>
+    <textarea id="up-desc" placeholder="What's this video about?"></textarea>
+    <label>Google Drive Link</label>
+    <input id="up-link" placeholder="https://drive.google.com/file/d/.../view">
+    <p style="color:#555;font-size:0.65rem;margin-top:4px;">Make sure the video is shared as "Anyone with the link can view"</p>
+    <div class="modal-err" id="up-err"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitVideo()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentVideoId = null;
+var videosCache = [];
+
+function getUser() {
+  return localStorage.getItem('arcade_currentUser') || '';
+}
+
+function extractDriveId(url) {
+  var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  var d = ts.toDate ? ts.toDate() : new Date(ts);
+  var s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  if (s < 604800) return Math.floor(s/86400) + 'd ago';
+  return d.toLocaleDateString();
+}
+
+function showUploadModal() {
+  document.getElementById('upload-modal').classList.add('show');
+  document.getElementById('up-title').value = '';
+  document.getElementById('up-desc').value = '';
+  document.getElementById('up-link').value = '';
+  document.getElementById('up-err').textContent = '';
+}
+
+function hideUploadModal() {
+  document.getElementById('upload-modal').classList.remove('show');
+}
+
+async function submitVideo() {
+  var fdb = window._arcadeDB;
+  if (!fdb) { document.getElementById('up-err').textContent = 'Firebase not loaded'; return; }
+  var user = getUser();
+  if (!user) { document.getElementById('up-err').textContent = 'Sign in first'; return; }
+  var title = document.getElementById('up-title').value.trim();
+  var desc = document.getElementById('up-desc').value.trim();
+  var link = document.getElementById('up-link').value.trim();
+  if (!title) { document.getElementById('up-err').textContent = 'Title required'; return; }
+  var driveId = extractDriveId(link);
+  if (!driveId) { document.getElementById('up-err').textContent = 'Invalid Google Drive link'; return; }
+
+  try {
+    await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
+      title: title,
+      description: desc,
+      driveId: driveId,
+      uploader: user,
+      date: new Date().toISOString(),
+      likes: [],
+      comments: []
+    });
+    hideUploadModal();
+    loadVideos();
+  } catch(e) {
+    document.getElementById('up-err').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadVideos() {
+  var fdb = window._arcadeDB;
+  if (!fdb) { setTimeout(loadVideos, 500); return; }
+  try {
+    var snap = await fdb.getDocs(fdb.collection(fdb.db, 'videos'));
+    var vids = [];
+    snap.forEach(function(d) { vids.push({ id: d.id, ...d.data() }); });
+    vids.sort(function(a,b) { return (b.date || '').localeCompare(a.date || ''); });
+    videosCache = vids;
+    renderFeed(vids);
+  } catch(e) { console.error('Load videos error:', e); }
+}
+
+function renderFeed(vids) {
+  var grid = document.getElementById('vid-grid');
+  grid.innerHTML = '';
+  document.getElementById('empty-msg').style.display = vids.length ? 'none' : '';
+  vids.forEach(function(v) {
+    var card = document.createElement('div');
+    card.className = 'vid-card';
+    card.innerHTML =
+      '<div class="vid-thumb">&#9654;</div>' +
+      '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
+      '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
+      '<span>' + timeAgo(v.date) + '</span>' +
+      '<span>&#10084; ' + (v.likes ? v.likes.length : 0) + '</span></div></div>';
+    card.onclick = function() { openVideo(v.id); };
+    grid.appendChild(card);
+  });
+}
+
+function openVideo(id) {
+  var v = videosCache.find(function(x) { return x.id === id; });
+  if (!v) return;
+  currentVideoId = id;
+  document.getElementById('feed-view').classList.add('hidden');
+  document.getElementById('player-view').classList.add('active');
+  document.getElementById('vid-iframe').src = 'https://drive.google.com/file/d/' + v.driveId + '/preview';
+  document.getElementById('vid-title').textContent = v.title;
+  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' • ' + timeAgo(v.date) + ' • ' + (v.likes ? v.likes.length : 0) + ' likes';
+  document.getElementById('vid-desc').textContent = v.description || 'No description';
+  var user = getUser();
+  var liked = v.likes && v.likes.indexOf(user) !== -1;
+  var likeBtn = document.getElementById('like-btn');
+  likeBtn.className = 'like-btn' + (liked ? ' liked' : '');
+  likeBtn.innerHTML = '&#10084; ' + (liked ? 'Liked' : 'Like') + ' (' + (v.likes ? v.likes.length : 0) + ')';
+  document.getElementById('comment-form').style.display = user ? 'flex' : 'none';
+  document.getElementById('comment-input').value = '';
+  renderComments(v.comments || []);
+}
+
+function closePlayer() {
+  document.getElementById('player-view').classList.remove('active');
+  document.getElementById('feed-view').classList.remove('hidden');
+  document.getElementById('vid-iframe').src = '';
+  currentVideoId = null;
+}
+
+async function toggleLike() {
+  var fdb = window._arcadeDB;
+  var user = getUser();
+  if (!user || !fdb || !currentVideoId) return;
+  var v = videosCache.find(function(x) { return x.id === currentVideoId; });
+  if (!v) return;
+  var ref = fdb.doc(fdb.db, 'videos', currentVideoId);
+  var liked = v.likes && v.likes.indexOf(user) !== -1;
+  try {
+    if (liked) {
+      await fdb.updateDoc(ref, { likes: fdb.arrayRemove(user) });
+      v.likes = v.likes.filter(function(u) { return u !== user; });
+    } else {
+      await fdb.updateDoc(ref, { likes: fdb.arrayUnion(user) });
+      if (!v.likes) v.likes = [];
+      v.likes.push(user);
+    }
+    openVideo(currentVideoId);
+  } catch(e) { console.error('Like error:', e); }
+}
+
+async function postComment() {
+  var fdb = window._arcadeDB;
+  var user = getUser();
+  if (!user || !fdb || !currentVideoId) return;
+  var text = document.getElementById('comment-input').value.trim();
+  if (!text) return;
+  var v = videosCache.find(function(x) { return x.id === currentVideoId; });
+  if (!v) return;
+  var comment = { name: user, text: text, date: new Date().toISOString() };
+  try {
+    var ref = fdb.doc(fdb.db, 'videos', currentVideoId);
+    await fdb.updateDoc(ref, { comments: fdb.arrayUnion(comment) });
+    if (!v.comments) v.comments = [];
+    v.comments.push(comment);
+    document.getElementById('comment-input').value = '';
+    renderComments(v.comments);
+  } catch(e) { console.error('Comment error:', e); }
+}
+
+function renderComments(comments) {
+  var list = document.getElementById('comments-list');
+  list.innerHTML = '';
+  if (!comments.length) { list.innerHTML = '<div class="no-comments">No comments yet</div>'; return; }
+  comments.slice().reverse().forEach(function(c) {
+    var el = document.createElement('div');
+    el.className = 'comment';
+    el.innerHTML = '<div class="c-name">' + escHtml(c.name) + '</div><div class="c-text">' + escHtml(c.text) + '</div><div class="c-date">' + timeAgo(c.date) + '</div>';
+    list.appendChild(el);
+  });
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// Show upload button when signed in
+function checkAuth() {
+  var user = getUser();
+  document.getElementById('upload-btn').style.display = user ? 'block' : 'none';
+}
+
+window.addEventListener('arcade-auth-change', checkAuth);
+window.addEventListener('load', function() {
+  setTimeout(function() { checkAuth(); loadVideos(); }, 600);
+});
+</script>
+
+<script src="ban.js"></script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=4"></script>
+<script type="module" src="firebase-lb.js?v=4"></script>
+<script src="coins.js?v=3"></script>
+<script src="avatar.js?v=5"></script>
+<script src="badges.js?v=2"></script>
+<script src="friends.js?v=2"></script>
+<script src="notifications.js?v=3"></script>
+<script src="levels.js?v=4"></script>
+<script src="gifting.js?v=2"></script>
+<script src="trading.js?v=2"></script>
+<script src="challenges.js?v=2"></script>
+<script src="activity.js?v=2"></script>
+<script src="ratings.js?v=2"></script>
+<script src="admin.js"></script>
+<script src="auth.js?v=3"></script>
+<script src="theme.js?v=22"></script>
+<script src="easter.js"></script>
+</body>
+</html>

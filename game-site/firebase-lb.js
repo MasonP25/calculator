@@ -1,6 +1,6 @@
 // ─── FIREBASE GLOBAL LEADERBOARD + AUTH ───
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc }
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc, updateDoc, orderBy, limit, deleteDoc, arrayUnion, arrayRemove, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Expose Firestore utilities for other scripts (easter.js, etc.)
-window._arcadeDB = { db, doc, getDoc, setDoc };
+window._arcadeDB = { db, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, where, orderBy, limit, addDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp };
 
 // ─── Password hashing (SHA-256) ───
 async function hashPassword(pw) {
