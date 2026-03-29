@@ -19,7 +19,6 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .vid-card { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.2s,border-color 0.2s; }
 .vid-card:hover { transform:translateY(-3px); border-color:#ff4757; }
 .vid-thumb { width:100%; aspect-ratio:16/9; background:#111; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#333; }
-.vid-thumb video { width:100%; height:100%; object-fit:cover; }
 .vid-info { padding:10px 12px; }
 .vid-info h3 { font-size:0.9rem; margin-bottom:4px; }
 .vid-info .vid-meta { font-size:0.7rem; color:#666; display:flex; gap:8px; }
@@ -28,8 +27,8 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 #feed-view.hidden { display:none; }
 .player-back { display:inline-flex; align-items:center; gap:6px; color:#aaa; font-size:0.85rem; cursor:pointer; padding:6px 10px; border-radius:8px; border:none; background:none; font-family:inherit; margin-bottom:12px; }
 .player-back:hover { background:rgba(255,255,255,.08); color:#fff; }
-.player-wrapper { width:100%; position:relative; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px; }
-.player-wrapper video { width:100%; max-height:70vh; display:block; }
+.player-wrapper { width:100%; padding-top:56.25%; position:relative; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.player-wrapper iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
 .player-title { font-size:1.3rem; font-weight:600; margin-bottom:4px; }
 .player-meta { font-size:0.75rem; color:#666; margin-bottom:12px; }
 .like-btn { padding:6px 16px; border-radius:8px; border:2px solid #ff4757; background:none; color:#ff4757; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; margin-bottom:16px; }
@@ -66,7 +65,7 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .drop-zone .drop-icon { font-size:2rem; margin-bottom:8px; }
 .drop-zone .file-name { color:#ff6b81; font-weight:600; margin-top:6px; }
 .progress-bar { width:100%; height:6px; background:#2a2a4a; border-radius:3px; margin-top:10px; overflow:hidden; display:none; }
-.progress-bar .fill { height:100%; background:linear-gradient(90deg,#ff4757,#ff6b81); border-radius:3px; transition:width 0.3s; width:0%; }
+.progress-bar .fill { height:100%; background:linear-gradient(90deg,#ff4757,#ff6b81); border-radius:3px; width:0%; }
 .progress-text { font-size:0.7rem; color:#888; margin-top:4px; text-align:center; }
 </style>
 </head>
@@ -85,7 +84,7 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
   <div id="player-view">
     <button class="player-back" onclick="closePlayer()">&#8592; Back to feed</button>
     <div class="player-wrapper">
-      <video id="vid-player" controls></video>
+      <iframe id="vid-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
     <h2 class="player-title" id="vid-title"></h2>
     <div class="player-meta" id="vid-meta"></div>
@@ -127,10 +126,11 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 </div>
 
 <script>
+var UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbx-sIHwORvsnOq5NsZNGs7u9d3_25ztyEfTdc1vaSeupO-UAOpuMWFC2z0RnvsZyQW2qA/exec';
 var currentVideoId = null;
 var videosCache = [];
 var selectedFile = null;
-var MAX_SIZE = 50 * 1024 * 1024; // 50MB
+var MAX_SIZE = 50 * 1024 * 1024;
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
@@ -163,8 +163,7 @@ dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('d
 dropZone.addEventListener('drop', function(e) {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  var f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener('change', function() {
   if (fileInput.files[0]) handleFile(fileInput.files[0]);
@@ -191,6 +190,7 @@ function showUploadModal() {
   document.getElementById('up-err').textContent = '';
   document.getElementById('file-name').textContent = '';
   document.getElementById('progress-bar').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '0%';
   document.getElementById('progress-text').textContent = '';
   document.getElementById('submit-btn').disabled = false;
   selectedFile = null;
@@ -203,7 +203,7 @@ function hideUploadModal() {
 
 async function submitVideo() {
   var fdb = window._arcadeDB;
-  if (!fdb || !fdb.storage) { document.getElementById('up-err').textContent = 'Firebase not loaded yet, try again'; return; }
+  if (!fdb) { document.getElementById('up-err').textContent = 'Firebase not loaded yet'; return; }
   var user = getUser();
   if (!user) { document.getElementById('up-err').textContent = 'Sign in first'; return; }
   var title = document.getElementById('up-title').value.trim();
@@ -214,43 +214,66 @@ async function submitVideo() {
   document.getElementById('submit-btn').disabled = true;
   document.getElementById('up-err').textContent = '';
   document.getElementById('progress-bar').style.display = '';
+  document.getElementById('progress-text').textContent = 'Reading file...';
+  document.getElementById('progress-fill').style.width = '10%';
 
-  var fileName = Date.now() + '_' + selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  var fileRef = fdb.storageRef(fdb.storage, 'videos/' + fileName);
-  var uploadTask = fdb.uploadBytesResumable(fileRef, selectedFile);
+  try {
+    // Read file as base64
+    var base64 = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() {
+        var result = reader.result.split(',')[1]; // strip data:video/...;base64,
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(selectedFile);
+    });
 
-  uploadTask.on('state_changed',
-    function(snapshot) {
-      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-      document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('progress-text').textContent = 'Uploading... ' + pct + '%';
-    },
-    function(error) {
-      document.getElementById('up-err').textContent = 'Upload failed: ' + error.message;
-      document.getElementById('submit-btn').disabled = false;
-      document.getElementById('progress-bar').style.display = 'none';
-    },
-    async function() {
-      document.getElementById('progress-text').textContent = 'Processing...';
-      try {
-        var url = await fdb.getDownloadURL(uploadTask.snapshot.ref);
-        await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
-          title: title,
-          description: desc,
-          videoUrl: url,
-          uploader: user,
-          date: new Date().toISOString(),
-          likes: [],
-          comments: []
-        });
-        hideUploadModal();
-        loadVideos();
-      } catch(e) {
-        document.getElementById('up-err').textContent = 'Error saving: ' + e.message;
-        document.getElementById('submit-btn').disabled = false;
-      }
-    }
-  );
+    document.getElementById('progress-text').textContent = 'Uploading to server...';
+    document.getElementById('progress-fill').style.width = '30%';
+
+    // Upload to Google Apps Script
+    var formData = new URLSearchParams();
+    formData.append('data', base64);
+    formData.append('name', selectedFile.name);
+    formData.append('type', selectedFile.type);
+
+    var resp = await fetch(UPLOAD_URL, {
+      method: 'POST',
+      body: formData
+    });
+
+    document.getElementById('progress-fill').style.width = '80%';
+    document.getElementById('progress-text').textContent = 'Processing...';
+
+    var result = await resp.json();
+    if (!result.id) throw new Error('Upload failed');
+
+    document.getElementById('progress-fill').style.width = '95%';
+    document.getElementById('progress-text').textContent = 'Saving...';
+
+    // Save metadata to Firestore
+    await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
+      title: title,
+      description: desc,
+      driveId: result.id,
+      uploader: user,
+      date: new Date().toISOString(),
+      likes: [],
+      comments: []
+    });
+
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-text').textContent = 'Done!';
+    setTimeout(function() {
+      hideUploadModal();
+      loadVideos();
+    }, 500);
+  } catch(e) {
+    document.getElementById('up-err').textContent = 'Upload failed: ' + e.message;
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('progress-bar').style.display = 'none';
+  }
 }
 
 async function loadVideos() {
@@ -274,7 +297,7 @@ function renderFeed(vids) {
     var card = document.createElement('div');
     card.className = 'vid-card';
     card.innerHTML =
-      '<div class="vid-thumb"><video src="' + escHtml(v.videoUrl) + '#t=1" preload="metadata" muted></video></div>' +
+      '<div class="vid-thumb">&#9654;</div>' +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
       '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
@@ -290,8 +313,7 @@ function openVideo(id) {
   currentVideoId = id;
   document.getElementById('feed-view').classList.add('hidden');
   document.getElementById('player-view').classList.add('active');
-  document.getElementById('vid-player').src = v.videoUrl;
-  document.getElementById('vid-player').play();
+  document.getElementById('vid-iframe').src = 'https://drive.google.com/file/d/' + v.driveId + '/preview';
   document.getElementById('vid-title').textContent = v.title;
   document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
   document.getElementById('vid-desc').textContent = v.description || 'No description';
@@ -308,8 +330,7 @@ function openVideo(id) {
 function closePlayer() {
   document.getElementById('player-view').classList.remove('active');
   document.getElementById('feed-view').classList.remove('hidden');
-  document.getElementById('vid-player').pause();
-  document.getElementById('vid-player').src = '';
+  document.getElementById('vid-iframe').src = '';
   currentVideoId = null;
 }
 
