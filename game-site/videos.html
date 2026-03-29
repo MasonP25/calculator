@@ -111,9 +111,9 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
     <input id="up-title" placeholder="My awesome video" maxlength="100">
     <label>Description (optional)</label>
     <textarea id="up-desc" placeholder="What's this video about?"></textarea>
-    <label>Google Drive Link</label>
-    <input id="up-link" placeholder="https://drive.google.com/file/d/.../view">
-    <p style="color:#555;font-size:0.65rem;margin-top:4px;">Make sure the video is shared as "Anyone with the link can view"</p>
+    <label>Video Link</label>
+    <input id="up-link" placeholder="YouTube or Google Drive link">
+    <p style="color:#555;font-size:0.65rem;margin-top:4px;">Paste a YouTube link or Google Drive link (shared as "Anyone with the link")</p>
     <div class="modal-err" id="up-err"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
@@ -130,9 +130,24 @@ function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
 }
 
-function extractDriveId(url) {
-  var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  return m ? m[1] : null;
+function parseVideoLink(url) {
+  // YouTube: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID
+  var yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return { type: 'youtube', id: yt[1] };
+  // Google Drive: drive.google.com/file/d/ID
+  var gd = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (gd) return { type: 'drive', id: gd[1] };
+  return null;
+}
+
+function getEmbedUrl(type, id) {
+  if (type === 'youtube') return 'https://www.youtube.com/embed/' + id;
+  return 'https://drive.google.com/file/d/' + id + '/preview';
+}
+
+function getThumbnail(type, id) {
+  if (type === 'youtube') return 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg';
+  return null;
 }
 
 function timeAgo(ts) {
@@ -167,14 +182,15 @@ async function submitVideo() {
   var desc = document.getElementById('up-desc').value.trim();
   var link = document.getElementById('up-link').value.trim();
   if (!title) { document.getElementById('up-err').textContent = 'Title required'; return; }
-  var driveId = extractDriveId(link);
-  if (!driveId) { document.getElementById('up-err').textContent = 'Invalid Google Drive link'; return; }
+  var parsed = parseVideoLink(link);
+  if (!parsed) { document.getElementById('up-err').textContent = 'Paste a YouTube or Google Drive link'; return; }
 
   try {
     await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
       title: title,
       description: desc,
-      driveId: driveId,
+      videoType: parsed.type,
+      videoId: parsed.id,
       uploader: user,
       date: new Date().toISOString(),
       likes: [],
@@ -207,8 +223,12 @@ function renderFeed(vids) {
   vids.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
+    var thumb = getThumbnail(v.videoType || 'drive', v.videoId || v.driveId);
+    var thumbHtml = thumb
+      ? '<img class="vid-thumb" src="' + thumb + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">'
+      : '<div class="vid-thumb">&#9654;</div>';
     card.innerHTML =
-      '<div class="vid-thumb">&#9654;</div>' +
+      thumbHtml +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
       '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
@@ -224,7 +244,7 @@ function openVideo(id) {
   currentVideoId = id;
   document.getElementById('feed-view').classList.add('hidden');
   document.getElementById('player-view').classList.add('active');
-  document.getElementById('vid-iframe').src = 'https://drive.google.com/file/d/' + v.driveId + '/preview';
+  document.getElementById('vid-iframe').src = getEmbedUrl(v.videoType || 'drive', v.videoId || v.driveId);
   document.getElementById('vid-title').textContent = v.title;
   document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' • ' + timeAgo(v.date) + ' • ' + (v.likes ? v.likes.length : 0) + ' likes';
   document.getElementById('vid-desc').textContent = v.description || 'No description';
