@@ -233,14 +233,18 @@ async function submitVideo() {
     document.getElementById('progress-fill').style.width = '30%';
 
     // Upload to Google Apps Script
-    var formData = new URLSearchParams();
-    formData.append('data', base64);
-    formData.append('name', selectedFile.name);
-    formData.append('type', selectedFile.type);
+    document.getElementById('progress-fill').style.width = '40%';
+    document.getElementById('progress-text').textContent = 'Uploading to server...';
 
     var resp = await fetch(UPLOAD_URL, {
       method: 'POST',
-      body: formData
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        data: base64,
+        name: selectedFile.name,
+        type: selectedFile.type
+      }),
+      redirect: 'follow'
     });
 
     document.getElementById('progress-fill').style.width = '80%';
