@@ -131,6 +131,9 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
     <input id="up-title" placeholder="My awesome video" maxlength="100">
     <label>Description (optional)</label>
     <textarea id="up-desc" placeholder="What's this video about?"></textarea>
+    <label>YouTube Link (optional — paste instead of uploading a file)</label>
+    <input id="up-yt" placeholder="https://youtube.com/watch?v=..." style="margin-bottom:8px;">
+    <div style="text-align:center;color:#555;font-size:0.7rem;margin-bottom:8px;">— OR —</div>
     <div class="drop-zone" id="drop-zone">
       <div class="drop-icon">&#128228;</div>
       <div>Drag & drop a video here, or click to browse</div>
@@ -286,6 +289,7 @@ function showUploadModal() {
   document.getElementById('upload-modal').classList.add('show');
   document.getElementById('up-title').value = '';
   document.getElementById('up-desc').value = '';
+  document.getElementById('up-yt').value = '';
   document.getElementById('up-err').textContent = '';
   document.getElementById('file-name').textContent = '';
   document.getElementById('progress-bar').style.display = 'none';
@@ -309,8 +313,17 @@ async function submitVideo() {
   if (!user) { document.getElementById('up-err').textContent = 'Sign in first'; return; }
   var title = document.getElementById('up-title').value.trim();
   var desc = document.getElementById('up-desc').value.trim();
+  var ytUrl = document.getElementById('up-yt').value.trim();
   if (!title) { document.getElementById('up-err').textContent = 'Title required'; return; }
-  if (!selectedFile) { document.getElementById('up-err').textContent = 'Select a video file'; return; }
+
+  // YouTube link flow
+  if (ytUrl) {
+    var ytMatch = ytUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    if (!ytMatch) { document.getElementById('up-err').textContent = 'Invalid YouTube link'; return; }
+    return submitYouTube(ytMatch[1], title, desc, user, fdb);
+  }
+
+  if (!selectedFile) { document.getElementById('up-err').textContent = 'Select a file or paste a YouTube link'; return; }
 
   document.getElementById('submit-btn').disabled = true;
   document.getElementById('up-err').textContent = '';
@@ -606,6 +619,94 @@ function checkAuth() {
 }
 
 window.addEventListener('arcade-auth-change', checkAuth);
+// YouTube conversion via loader.to
+var YT_API = 'https://loader.to/ajax/download.php';
+var YT_PROGRESS = 'https://p.savenow.to/api/progress';
+
+async function submitYouTube(videoId, title, desc, user, fdb) {
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('up-err').textContent = '';
+  document.getElementById('progress-bar').style.display = '';
+  document.getElementById('progress-fill').style.width = '10%';
+  document.getElementById('progress-text').textContent = 'Converting YouTube video...';
+
+  try {
+    // Step 1: Start conversion
+    var resp = await fetch(YT_API + '?format=720&url=https://www.youtube.com/watch?v=' + videoId);
+    var data = await resp.json();
+    if (!data.success || !data.id) throw new Error('Conversion failed');
+
+    document.getElementById('progress-fill').style.width = '20%';
+    document.getElementById('progress-text').textContent = 'Processing video...';
+
+    // Step 2: Poll for completion
+    var downloadUrl = null;
+    for (var i = 0; i < 60; i++) {
+      await new Promise(function(r) { setTimeout(r, 3000); });
+      var prog = await fetch(YT_PROGRESS + '?id=' + data.id);
+      var progData = await prog.json();
+      var pct = Math.min(90, 20 + (progData.progress / 1000) * 70);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      if (progData.progress >= 1000 && progData.download_url) {
+        downloadUrl = progData.download_url;
+        break;
+      }
+      document.getElementById('progress-text').textContent = 'Processing... ' + Math.round(progData.progress / 10) + '%';
+    }
+
+    if (!downloadUrl) throw new Error('Conversion timed out');
+
+    document.getElementById('progress-fill').style.width = '90%';
+    document.getElementById('progress-text').textContent = 'Saving to drive...';
+
+    // Step 3: Send download URL to Apps Script to fetch and save
+    var saveResp = await fetch(UPLOAD_URL + '?ytdl=' + encodeURIComponent(downloadUrl) + '&name=' + encodeURIComponent(title + '.mp4'));
+    // no-cors won't let us read, so poll
+    await fetch(UPLOAD_URL + '?ytdl=' + encodeURIComponent(downloadUrl) + '&name=' + encodeURIComponent(title + '.mp4'), { mode: 'no-cors' });
+
+    document.getElementById('progress-text').textContent = 'Waiting for server...';
+
+    // Poll for the file
+    var result = null;
+    for (var j = 0; j < 40; j++) {
+      await new Promise(function(r) { setTimeout(r, 3000); });
+      try {
+        var checkResp = await fetch(UPLOAD_URL + '?check=' + encodeURIComponent(title + '.mp4'));
+        var checkData = await checkResp.json();
+        if (checkData.id) { result = checkData; break; }
+      } catch(e) {}
+    }
+
+    if (!result || !result.id) throw new Error('Save timed out — video may be too large');
+
+    document.getElementById('progress-fill').style.width = '95%';
+    document.getElementById('progress-text').textContent = 'Saving...';
+
+    // Save metadata
+    var thumbData = 'https://img.youtube.com/vi/' + videoId + '/mqdefault.jpg';
+    await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
+      title: title,
+      description: desc,
+      driveId: result.id,
+      fileType: 'video',
+      thumbnail: thumbData,
+      uploader: user,
+      date: new Date().toISOString(),
+      views: 0,
+      likes: [],
+      comments: []
+    });
+
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-text').textContent = 'Done!';
+    setTimeout(function() { hideUploadModal(); loadVideos(); }, 500);
+  } catch(e) {
+    document.getElementById('up-err').textContent = 'YouTube error: ' + e.message;
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('progress-bar').style.display = 'none';
+  }
+}
+
 window.addEventListener('load', function() {
   setTimeout(function() { checkAuth(); loadVideos(); }, 600);
 });
