@@ -118,7 +118,11 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
     <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
     <div class="progress-text" id="progress-text"></div>
     <label>Custom Thumbnail (optional)</label>
-    <input type="file" id="thumb-input" accept="image/*" style="font-size:0.75rem;color:#888;margin-bottom:4px;">
+    <div class="drop-zone" id="thumb-drop" style="padding:1rem;font-size:0.75rem;">
+      <div>Drag & drop an image, or click to browse</div>
+      <div class="file-name" id="thumb-name"></div>
+      <input type="file" id="thumb-input" accept="image/*" style="display:none;">
+    </div>
     <p style="color:#555;font-size:0.65rem;margin-top:2px;">Leave empty to auto-generate from video/image. Max 100MB for main file.</p>
     <div class="modal-err" id="up-err"></div>
     <div class="modal-btns">
@@ -221,6 +225,25 @@ fileInput.addEventListener('change', function() {
   if (fileInput.files[0]) handleFile(fileInput.files[0]);
 });
 
+// Thumbnail drop zone
+var thumbDrop = document.getElementById('thumb-drop');
+var thumbInput = document.getElementById('thumb-input');
+thumbDrop.addEventListener('click', function() { thumbInput.click(); });
+thumbDrop.addEventListener('dragover', function(e) { e.preventDefault(); thumbDrop.classList.add('dragover'); });
+thumbDrop.addEventListener('dragleave', function() { thumbDrop.classList.remove('dragover'); });
+thumbDrop.addEventListener('drop', function(e) {
+  e.preventDefault();
+  thumbDrop.classList.remove('dragover');
+  var f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) {
+    thumbInput.files = e.dataTransfer.files;
+    document.getElementById('thumb-name').textContent = f.name;
+  }
+});
+thumbInput.addEventListener('change', function() {
+  if (thumbInput.files[0]) document.getElementById('thumb-name').textContent = thumbInput.files[0].name;
+});
+
 function handleFile(f) {
   document.getElementById('up-err').textContent = '';
   if (!f.type.startsWith('video/') && !f.type.startsWith('image/') && !f.type.startsWith('audio/')) {
@@ -248,6 +271,7 @@ function showUploadModal() {
   selectedFile = null;
   fileInput.value = '';
   document.getElementById('thumb-input').value = '';
+  document.getElementById('thumb-name').textContent = '';
 }
 
 function hideUploadModal() {
@@ -347,6 +371,7 @@ async function submitVideo() {
       thumbnail: thumbData,
       uploader: user,
       date: new Date().toISOString(),
+      views: 0,
       likes: [],
       comments: []
     });
@@ -392,6 +417,7 @@ function renderFeed(vids) {
       thumbHtml +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
       '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
+      '<span>' + (v.views || 0) + ' views</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
       '<span>&#10084; ' + (v.likes ? v.likes.length : 0) + '</span></div></div>';
     card.onclick = function() { openVideo(v.id); };
@@ -416,7 +442,14 @@ function openVideo(id) {
     document.getElementById('vid-iframe').src = driveUrl + '/preview';
   }
   document.getElementById('vid-title').textContent = v.title;
-  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
+  // Increment views
+  var fdb = window._arcadeDB;
+  if (fdb) {
+    var views = (v.views || 0) + 1;
+    v.views = views;
+    fdb.updateDoc(fdb.doc(fdb.db, 'videos', id), { views: views }).catch(function(){});
+  }
+  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.views || 0) + ' views \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
   document.getElementById('vid-desc').textContent = v.description || 'No description';
   var user = getUser();
   var liked = v.likes && v.likes.indexOf(user) !== -1;
