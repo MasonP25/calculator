@@ -22,6 +22,8 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .vid-info { padding:10px 12px; }
 .vid-info h3 { font-size:0.9rem; margin-bottom:4px; }
 .vid-info .vid-meta { font-size:0.7rem; color:#666; display:flex; gap:8px; }
+.vid-uploader { cursor:pointer; transition:color 0.15s; }
+.vid-uploader:hover { color:#ff6b81; }
 #player-view { display:none; }
 #player-view.active { display:block; }
 #feed-view.hidden { display:none; }
@@ -80,10 +82,19 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
   <button class="upload-btn" id="upload-btn" onclick="showUploadModal()">+ Upload Video</button>
 
   <div id="feed-view">
-    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;" id="feed-filters">
+    <div style="position:relative;margin-bottom:10px;">
+      <input type="text" id="vid-search" placeholder="Search videos, photos..." oninput="applyFilters()" style="width:100%;padding:9px 14px;padding-right:36px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e0e0e0;font-size:0.85rem;font-family:inherit;outline:none;box-sizing:border-box;">
+      <button onclick="document.getElementById('vid-search').value='';applyFilters();this.style.display='none';" id="vid-search-clear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:1rem;cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:6px;flex-wrap:wrap;" id="feed-filters">
       <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All</button>
       <button class="filter-tab" data-filter="video" onclick="setFilter('video')">&#127909; Videos</button>
       <button class="filter-tab" data-filter="image" onclick="setFilter('image')">&#128247; Photos</button>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="filter-tab active" data-sort="newest" onclick="setSort('newest')">Newest</button>
+      <button class="filter-tab" data-sort="views" onclick="setSort('views')">Most Viewed</button>
+      <button class="filter-tab" data-sort="likes" onclick="setSort('likes')">Most Liked</button>
     </div>
     <div class="vid-grid" id="vid-grid"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">No videos yet. Be the first to upload!</div>
@@ -147,6 +158,7 @@ var videosCache = [];
 var selectedFile = null;
 var MAX_SIZE = 100 * 1024 * 1024;
 var currentFilter = 'all';
+var currentSort = 'newest';
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
@@ -407,29 +419,46 @@ async function loadVideos() {
     snap.forEach(function(d) { vids.push({ id: d.id, ...d.data() }); });
     vids.sort(function(a,b) { return (b.date || '').localeCompare(a.date || ''); });
     videosCache = vids;
-    renderFeed(vids);
+    applyFilters();
   } catch(e) { console.error('Load videos error:', e); }
 }
 
 window.setFilter = function(f) {
   currentFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(function(b) {
+  document.querySelectorAll('[data-filter]').forEach(function(b) {
     b.classList.toggle('active', b.dataset.filter === f);
   });
-  renderFeed(videosCache);
+  applyFilters();
+};
+
+window.setSort = function(s) {
+  currentSort = s;
+  document.querySelectorAll('[data-sort]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.sort === s);
+  });
+  applyFilters();
+};
+
+window.applyFilters = function() {
+  var q = (document.getElementById('vid-search').value || '').toLowerCase();
+  document.getElementById('vid-search-clear').style.display = q ? '' : 'none';
+  var filtered = videosCache.filter(function(v) {
+    if (currentFilter === 'video' && v.fileType === 'image') return false;
+    if (currentFilter === 'image' && v.fileType !== 'image') return false;
+    if (q && v.title.toLowerCase().indexOf(q) === -1 && (v.uploader || '').toLowerCase().indexOf(q) === -1 && (v.description || '').toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  if (currentSort === 'views') filtered.sort(function(a,b) { return (b.views||0) - (a.views||0); });
+  else if (currentSort === 'likes') filtered.sort(function(a,b) { return (b.likes?b.likes.length:0) - (a.likes?a.likes.length:0); });
+  else filtered.sort(function(a,b) { return (b.date||'').localeCompare(a.date||''); });
+  renderFeed(filtered);
 };
 
 function renderFeed(vids) {
   var grid = document.getElementById('vid-grid');
   grid.innerHTML = '';
-  var filtered = vids.filter(function(v) {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'video') return !v.fileType || v.fileType === 'video' || v.fileType === 'audio';
-    if (currentFilter === 'image') return v.fileType === 'image';
-    return true;
-  });
-  document.getElementById('empty-msg').style.display = filtered.length ? 'none' : '';
-  filtered.forEach(function(v) {
+  document.getElementById('empty-msg').style.display = vids.length ? 'none' : '';
+  vids.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
     var thumbSrc = v.thumbnail || (v.driveId ? 'https://lh3.googleusercontent.com/d/' + v.driveId + '=s320' : '');
@@ -439,10 +468,14 @@ function renderFeed(vids) {
     card.innerHTML =
       thumbHtml +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
-      '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
+      '<div class="vid-meta"><span class="vid-uploader" data-user="' + escHtml(v.uploader || '') + '">' + escHtml(v.uploader || 'Anonymous') + '</span>' +
       '<span>' + (v.views || 0) + ' views</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
       '<span>&#10084; ' + (v.likes ? v.likes.length : 0) + '</span></div></div>';
+    card.querySelector('.vid-uploader').onclick = function(e) {
+      e.stopPropagation();
+      if (v.uploader) window.location.href = 'profile.html?user=' + encodeURIComponent(v.uploader);
+    };
     card.onclick = function() { openVideo(v.id); };
     grid.appendChild(card);
   });
@@ -472,7 +505,11 @@ function openVideo(id) {
     v.views = views;
     fdb.updateDoc(fdb.doc(fdb.db, 'videos', id), { views: views }).catch(function(){});
   }
-  document.getElementById('vid-meta').textContent = 'Uploaded by ' + (v.uploader || 'Anonymous') + ' \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.views || 0) + ' views \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
+  var metaEl = document.getElementById('vid-meta');
+  metaEl.innerHTML = 'Uploaded by <span class="vid-uploader" style="color:#ff6b81;cursor:pointer;">' + escHtml(v.uploader || 'Anonymous') + '</span> \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.views || 0) + ' views \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
+  metaEl.querySelector('.vid-uploader').onclick = function() {
+    if (v.uploader) window.location.href = 'profile.html?user=' + encodeURIComponent(v.uploader);
+  };
   document.getElementById('vid-desc').textContent = v.description || 'No description';
   var user = getUser();
   var liked = v.likes && v.likes.indexOf(user) !== -1;
