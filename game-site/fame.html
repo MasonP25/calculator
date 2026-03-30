@@ -486,7 +486,10 @@ function setScope(scope) {
       nameText.dataset.username = entry.name;
       nameText.textContent = entry.name;
       if (entry.name && entry.name !== 'Guest') {
+        nameText.style.cursor = 'pointer';
         nameText.onclick = function() { window.location.href = 'profile.html?user=' + encodeURIComponent(entry.name); };
+        nameText.onmouseover = function() { this.style.textDecoration = 'underline'; };
+        nameText.onmouseout = function() { this.style.textDecoration = 'none'; };
       }
       nameCell.appendChild(miniAvatar);
       nameCell.appendChild(nameText);
@@ -542,8 +545,8 @@ function setScope(scope) {
     nameSpan.textContent = game.name;
     nameSpan.href = game.id + '.html';
     nameSpan.style.cssText = 'text-decoration:none;color:inherit;cursor:pointer;';
-    nameSpan.onmouseover = function() { this.style.color = '#7b2ff7'; };
-    nameSpan.onmouseout = function() { this.style.color = ''; };
+    nameSpan.onmouseover = function() { this.style.color = '#7b2ff7'; this.style.textDecoration = 'underline'; };
+    nameSpan.onmouseout = function() { this.style.color = ''; this.style.textDecoration = 'none'; };
     var unitSpan = document.createElement('span');
     unitSpan.className = 'score-type';
     unitSpan.textContent = game.unit;

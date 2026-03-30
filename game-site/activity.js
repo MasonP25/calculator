@@ -131,6 +131,8 @@
     '.activity-feed .af-item:hover{background:#1f1f38}' +
     '.activity-feed .af-icon{font-size:1rem;flex-shrink:0}' +
     '.activity-feed .af-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.activity-feed .af-text a{color:#7b2ff7;text-decoration:none;font-weight:600}' +
+    '.activity-feed .af-text a:hover{text-decoration:underline}' +
     '.activity-feed .af-time{font-size:0.65rem;color:#666;white-space:nowrap;flex-shrink:0}' +
     '.activity-feed .af-empty{text-align:center;color:#555;font-size:0.85rem;padding:1rem}';
   document.head.appendChild(css);
@@ -258,7 +260,7 @@
           div.className = 'af-item';
           var uname = item.username || '';
           var linkedText = uname && uname !== 'Guest'
-            ? text.replace(uname, '<a href="profile.html?user=' + encodeURIComponent(uname) + '" style="color:#7b2ff7;text-decoration:none;font-weight:600;cursor:pointer;">' + uname + '</a>')
+            ? text.replace(uname, '<a href="profile.html?user=' + encodeURIComponent(uname) + '">' + uname + '</a>')
             : text;
           div.innerHTML =
             '<span class="af-icon">' + cfg.icon + '</span>' +
