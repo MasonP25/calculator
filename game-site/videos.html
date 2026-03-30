@@ -232,25 +232,57 @@ async function submitVideo() {
     document.getElementById('progress-text').textContent = 'Uploading to server...';
     document.getElementById('progress-fill').style.width = '30%';
 
-    // Upload to Google Apps Script
+    // Upload to Google Apps Script via hidden form + iframe
     document.getElementById('progress-fill').style.width = '40%';
     document.getElementById('progress-text').textContent = 'Uploading to server...';
 
-    var resp = await fetch(UPLOAD_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        data: base64,
-        name: selectedFile.name,
-        type: selectedFile.type
-      }),
-      redirect: 'follow'
+    var result = await new Promise(function(resolve, reject) {
+      var frameName = 'upframe_' + Date.now();
+      var iframe = document.createElement('iframe');
+      iframe.name = frameName;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = UPLOAD_URL;
+      form.target = frameName;
+      form.style.display = 'none';
+
+      function addInput(n, v) {
+        var inp = document.createElement('textarea');
+        inp.name = n;
+        inp.value = v;
+        form.appendChild(inp);
+      }
+      addInput('data', base64);
+      addInput('name', selectedFile.name);
+      addInput('type', selectedFile.type);
+      document.body.appendChild(form);
+
+      var done = false;
+      var attempts = 0;
+      var check = setInterval(function() {
+        attempts++;
+        try {
+          var text = iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.innerText;
+          if (text && text.indexOf('"id"') !== -1) {
+            clearInterval(check);
+            done = true;
+            var json = JSON.parse(text);
+            iframe.remove(); form.remove();
+            resolve(json);
+          }
+        } catch(e) {}
+        if (attempts > 120) { clearInterval(check); if (!done) { iframe.remove(); form.remove(); reject(new Error('Upload timed out')); } }
+      }, 1000);
+
+      form.submit();
     });
 
     document.getElementById('progress-fill').style.width = '80%';
     document.getElementById('progress-text').textContent = 'Processing...';
 
-    var result = await resp.json();
     if (!result.id) throw new Error('Upload failed');
 
     document.getElementById('progress-fill').style.width = '95%';
