@@ -11,19 +11,19 @@ a.back { position:fixed; top:12px; left:16px; color:#888; text-decoration:none; 
 a.back:hover { color:#e0e0e0; }
 .container { max-width:900px; margin:0 auto; padding:1rem; }
 h1 { text-align:center; font-size:1.8rem; margin-bottom:0.3rem; }
-h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-accent,#7b2ff7)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .subtitle { text-align:center; color:#666; font-size:0.8rem; margin-bottom:1.2rem; }
-.upload-btn { display:none; margin:0 auto 1.2rem; padding:0.5rem 1.5rem; border-radius:10px; border:2px solid #ff4757; background:linear-gradient(135deg,#ff4757,#ff6b81); color:#fff; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; }
+.upload-btn { display:none; margin:0 auto 1.2rem; padding:0.5rem 1.5rem; border-radius:10px; border:2px solid var(--t-accent,#7b2ff7); background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-accent,#7b2ff7)); color:#fff; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; }
 .upload-btn:hover { opacity:0.9; }
 .vid-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
 .vid-card { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.2s,border-color 0.2s; }
-.vid-card:hover { transform:translateY(-3px); border-color:#ff4757; }
+.vid-card:hover { transform:translateY(-3px); border-color:var(--t-accent,#7b2ff7); }
 .vid-thumb { width:100%; aspect-ratio:16/9; background:#111; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#333; }
 .vid-info { padding:10px 12px; }
 .vid-info h3 { font-size:0.9rem; margin-bottom:4px; }
 .vid-info .vid-meta { font-size:0.7rem; color:#666; display:flex; gap:8px; }
 .vid-uploader { cursor:pointer; transition:color 0.15s; }
-.vid-uploader:hover { color:#ff6b81; }
+.vid-uploader:hover { color:var(--t-accent,#7b2ff7); }
 #player-view { display:none; }
 #player-view.active { display:block; }
 #feed-view.hidden { display:none; }
@@ -33,49 +33,50 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .player-wrapper iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
 .player-title { font-size:1.3rem; font-weight:600; margin-bottom:4px; }
 .player-meta { font-size:0.75rem; color:#666; margin-bottom:12px; }
-.like-btn { padding:6px 16px; border-radius:8px; border:2px solid #ff4757; background:none; color:#ff4757; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; margin-bottom:16px; }
-.like-btn.liked { background:#ff4757; color:#fff; }
+.like-btn { padding:6px 16px; border-radius:8px; border:2px solid var(--t-accent,#7b2ff7); background:none; color:var(--t-accent,#7b2ff7); font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; margin-bottom:16px; }
+.like-btn.liked { background:var(--t-accent,#7b2ff7); color:#fff; }
 .like-btn:hover { opacity:0.85; }
 .player-desc { color:#aaa; font-size:0.85rem; margin-bottom:20px; padding:12px; background:#1a1a2e; border-radius:10px; }
 .comments-section h3 { font-size:0.95rem; margin-bottom:10px; }
 .comment-form { display:flex; gap:8px; margin-bottom:16px; }
 .comment-form input { flex:1; background:#1a1a2e; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
-.comment-form input:focus { border-color:#ff4757; }
-.comment-form button { padding:8px 16px; border-radius:8px; border:none; background:#ff4757; color:#fff; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; }
+.comment-form input:focus { border-color:var(--t-accent,#7b2ff7); }
+.comment-form button { padding:8px 16px; border-radius:8px; border:none; background:var(--t-accent,#7b2ff7); color:#fff; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; }
 .comment { padding:8px 12px; background:#1a1a2e; border-radius:8px; margin-bottom:6px; }
-.comment .c-name { color:#ff6b81; font-weight:600; font-size:0.8rem; }
+.comment .c-name { color:var(--t-accent,#7b2ff7); font-weight:600; font-size:0.8rem; }
 .comment .c-text { color:#ccc; font-size:0.82rem; margin-top:2px; }
 .comment .c-date { color:#555; font-size:0.65rem; margin-top:2px; }
 .no-comments { color:#555; font-size:0.8rem; font-style:italic; }
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000; align-items:center; justify-content:center; }
 .modal-overlay.show { display:flex; }
 .modal { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:16px; padding:1.5rem; width:440px; max-width:90vw; }
-.modal h2 { font-size:1.1rem; color:#ff4757; margin-bottom:1rem; }
+.modal h2 { font-size:1.1rem; color:var(--t-accent,#7b2ff7); margin-bottom:1rem; }
 .modal label { display:block; color:#888; font-size:0.75rem; margin-bottom:4px; margin-top:10px; }
 .modal input,.modal textarea { width:100%; background:#0f0f1a; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.85rem; padding:8px 12px; outline:none; }
-.modal input:focus,.modal textarea:focus { border-color:#ff4757; }
+.modal input:focus,.modal textarea:focus { border-color:var(--t-accent,#7b2ff7); }
 .modal textarea { resize:none; height:60px; }
 .modal .modal-btns { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
 .modal .modal-btns button { padding:8px 20px; border-radius:8px; font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; border:none; }
 .modal .btn-cancel { background:#2a2a4a; color:#aaa; }
-.modal .btn-submit { background:#ff4757; color:#fff; }
+.modal .btn-submit { background:var(--t-accent,#7b2ff7); color:#fff; }
 .modal .btn-submit:disabled { opacity:0.5; cursor:default; }
-.modal .modal-err { color:#ff4757; font-size:0.75rem; margin-top:8px; min-height:1em; }
+.modal .modal-err { color:var(--t-accent,#7b2ff7); font-size:0.75rem; margin-top:8px; min-height:1em; }
 .empty-msg { text-align:center; color:#555; padding:3rem 1rem; font-size:0.9rem; }
 .drop-zone { border:2px dashed #3a3a5a; border-radius:12px; padding:2rem; text-align:center; color:#666; font-size:0.85rem; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-top:10px; }
-.drop-zone:hover,.drop-zone.dragover { border-color:#ff4757; background:rgba(255,71,87,0.05); }
+.drop-zone:hover,.drop-zone.dragover { border-color:var(--t-accent,#7b2ff7); background:rgba(123,47,247,0.05); }
 .drop-zone .drop-icon { font-size:2rem; margin-bottom:8px; }
-.drop-zone .file-name { color:#ff6b81; font-weight:600; margin-top:6px; }
+.drop-zone .file-name { color:var(--t-accent,#7b2ff7); font-weight:600; margin-top:6px; }
 .filter-tab { padding:5px 14px; border-radius:8px; border:1px solid #2a2a4a; background:#1a1a2e; color:#888; font-family:inherit; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
-.filter-tab:hover { border-color:#ff4757; color:#ff4757; }
-.filter-tab.active { background:#ff4757; border-color:#ff4757; color:#fff; }
+.filter-tab:hover { border-color:var(--t-accent,#7b2ff7); color:var(--t-accent,#7b2ff7); }
+.filter-tab.active { background:var(--t-accent,#7b2ff7); border-color:var(--t-accent,#7b2ff7); color:#fff; }
 .progress-bar { width:100%; height:6px; background:#2a2a4a; border-radius:3px; margin-top:10px; overflow:hidden; display:none; }
-.progress-bar .fill { height:100%; background:linear-gradient(90deg,#ff4757,#ff6b81); border-radius:3px; width:0%; }
+.progress-bar .fill { height:100%; background:linear-gradient(90deg,var(--t-accent,#7b2ff7),var(--t-accent,#7b2ff7)); border-radius:3px; width:0%; }
 .progress-text { font-size:0.7rem; color:#888; margin-top:4px; text-align:center; }
 </style>
 </head>
 <body>
 <a class="back" href="index.html">&#8592; Back</a>
+<a href="movies.html" style="position:fixed;top:12px;right:16px;color:#888;text-decoration:none;font-size:0.82rem;z-index:100;transition:color 0.2s;">&#127871; Movies/Shows</a>
 <div class="container">
   <h1>&#127909; <span>YouTubeish</span></h1>
   <p class="subtitle">Share & watch videos with the arcade community</p>
@@ -506,7 +507,7 @@ function openVideo(id) {
     fdb.updateDoc(fdb.doc(fdb.db, 'videos', id), { views: views }).catch(function(){});
   }
   var metaEl = document.getElementById('vid-meta');
-  metaEl.innerHTML = 'Uploaded by <span class="vid-uploader" style="color:#ff6b81;cursor:pointer;">' + escHtml(v.uploader || 'Anonymous') + '</span> \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.views || 0) + ' views \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
+  metaEl.innerHTML = 'Uploaded by <span class="vid-uploader" style="color:var(--t-accent,#7b2ff7);cursor:pointer;">' + escHtml(v.uploader || 'Anonymous') + '</span> \u2022 ' + timeAgo(v.date) + ' \u2022 ' + (v.views || 0) + ' views \u2022 ' + (v.likes ? v.likes.length : 0) + ' likes';
   metaEl.querySelector('.vid-uploader').onclick = function() {
     if (v.uploader) window.location.href = 'profile.html?user=' + encodeURIComponent(v.uploader);
   };
