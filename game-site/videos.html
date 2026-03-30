@@ -384,8 +384,9 @@ function renderFeed(vids) {
   vids.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
-    var thumbHtml = v.thumbnail
-      ? '<img class="vid-thumb" src="' + v.thumbnail + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">'
+    var thumbSrc = v.thumbnail || (v.driveId ? 'https://lh3.googleusercontent.com/d/' + v.driveId + '=s320' : '');
+    var thumbHtml = thumbSrc
+      ? '<img class="vid-thumb" src="' + thumbSrc + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;" onerror="this.outerHTML=\'<div class=vid-thumb>&#9654;</div>\'">'
       : '<div class="vid-thumb">&#9654;</div>';
     card.innerHTML =
       thumbHtml +
