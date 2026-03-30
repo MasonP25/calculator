@@ -206,6 +206,7 @@ var selectedFile = null;
 var MAX_SIZE = 100 * 1024 * 1024;
 var currentFilter = 'all';
 var currentSort = 'newest';
+var viewedIds = {};
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
@@ -583,9 +584,10 @@ function openVideo(id) {
     document.getElementById('vid-iframe').src = driveUrl + '/preview';
   }
   document.getElementById('vid-title').textContent = v.title;
-  // Increment views
+  // Increment views (once per session per video)
   var fdb = window._arcadeDB;
-  if (fdb) {
+  if (fdb && !viewedIds[id]) {
+    viewedIds[id] = true;
     var views = (v.views || 0) + 1;
     v.views = views;
     fdb.updateDoc(fdb.doc(fdb.db, 'videos', id), { views: views }).catch(function(){});
