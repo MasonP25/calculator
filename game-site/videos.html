@@ -69,6 +69,7 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
 .filter-tab { padding:5px 14px; border-radius:8px; border:1px solid #2a2a4a; background:#1a1a2e; color:#888; font-family:inherit; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
 .filter-tab:hover { border-color:var(--t-accent,#7b2ff7); color:var(--t-accent,#7b2ff7); }
 .filter-tab.active { background:var(--t-accent,#7b2ff7); border-color:var(--t-accent,#7b2ff7); color:#fff; }
+.up-step h2 { font-size:1rem; margin-bottom:0.8rem; }
 .progress-bar { width:100%; height:6px; background:#2a2a4a; border-radius:3px; margin-top:10px; overflow:hidden; display:none; }
 .progress-bar .fill { height:100%; background:linear-gradient(90deg,var(--t-accent,#7b2ff7),var(--t-accent,#7b2ff7)); border-radius:3px; width:0%; }
 .progress-text { font-size:0.7rem; color:#888; margin-top:4px; text-align:center; }
@@ -126,33 +127,73 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
 
 <div class="modal-overlay" id="upload-modal">
   <div class="modal">
-    <h2>&#127909; Upload Video</h2>
-    <label>Title</label>
-    <input id="up-title" placeholder="My awesome video" maxlength="100">
-    <label>Description (optional)</label>
-    <textarea id="up-desc" placeholder="What's this video about?"></textarea>
-    <label>YouTube Link (optional — paste instead of uploading a file)</label>
-    <input id="up-yt" placeholder="https://youtube.com/watch?v=..." style="margin-bottom:8px;">
-    <div style="text-align:center;color:#555;font-size:0.7rem;margin-bottom:8px;">— OR —</div>
-    <div class="drop-zone" id="drop-zone">
-      <div class="drop-icon">&#128228;</div>
-      <div>Drag & drop a video here, or click to browse</div>
-      <div class="file-name" id="file-name"></div>
-      <input type="file" id="file-input" accept="video/*,image/*,audio/*" style="display:none;">
+    <!-- Step 1: Title & Description -->
+    <div class="up-step" id="up-step-1">
+      <h2>&#127909; Step 1: Details</h2>
+      <label>Title</label>
+      <input id="up-title" placeholder="My awesome video" maxlength="100">
+      <label>Description (optional)</label>
+      <textarea id="up-desc" placeholder="What's this video about?"></textarea>
+      <div class="modal-err" id="up-err-1"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
+        <button class="btn-submit" onclick="upStep(2)">Next &#8594;</button>
+      </div>
     </div>
-    <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
-    <div class="progress-text" id="progress-text"></div>
-    <label>Custom Thumbnail (optional)</label>
-    <div class="drop-zone" id="thumb-drop" style="padding:1rem;font-size:0.75rem;">
-      <div>Drag & drop an image, or click to browse</div>
-      <div class="file-name" id="thumb-name"></div>
-      <input type="file" id="thumb-input" accept="image/*" style="display:none;">
+
+    <!-- Step 2: File or YouTube -->
+    <div class="up-step" id="up-step-2" style="display:none;">
+      <h2>&#127909; Step 2: Content</h2>
+      <label>YouTube Link</label>
+      <input id="up-yt" placeholder="https://youtube.com/watch?v=..." style="margin-bottom:8px;">
+      <div style="text-align:center;color:#555;font-size:0.7rem;margin-bottom:8px;">— OR —</div>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon">&#128228;</div>
+        <div>Drag & drop a video, image, or audio</div>
+        <div class="file-name" id="file-name"></div>
+        <input type="file" id="file-input" accept="video/*,image/*,audio/*" style="display:none;">
+      </div>
+      <p style="color:#555;font-size:0.65rem;margin-top:6px;">Max 100MB for file uploads.</p>
+      <div class="modal-err" id="up-err-2"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="upStep(1)">&#8592; Back</button>
+        <button class="btn-submit" onclick="upStep(3)">Next &#8594;</button>
+      </div>
     </div>
-    <p style="color:#555;font-size:0.65rem;margin-top:2px;">Leave empty to auto-generate from video/image. Max 100MB for main file.</p>
-    <div class="modal-err" id="up-err"></div>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
-      <button class="btn-submit" id="submit-btn" onclick="submitVideo()">Upload</button>
+
+    <!-- Step 3: Thumbnail -->
+    <div class="up-step" id="up-step-3" style="display:none;">
+      <h2>&#127909; Step 3: Thumbnail</h2>
+      <div class="drop-zone" id="thumb-drop" style="padding:1.5rem;">
+        <div class="drop-icon">&#128247;</div>
+        <div>Drag & drop a thumbnail, or click to browse</div>
+        <div class="file-name" id="thumb-name"></div>
+        <input type="file" id="thumb-input" accept="image/*" style="display:none;">
+      </div>
+      <p style="color:#555;font-size:0.65rem;margin-top:6px;">Optional — auto-generated from your video/image if skipped.</p>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="upStep(2)">&#8592; Back</button>
+        <button class="btn-cancel" onclick="upStep(4)">Skip</button>
+        <button class="btn-submit" onclick="upStep(4)">Next &#8594;</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirm & Upload -->
+    <div class="up-step" id="up-step-4" style="display:none;">
+      <h2>&#127909; Ready to Upload</h2>
+      <div style="background:#0f0f1a;border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.8rem;">
+        <div><strong>Title:</strong> <span id="up-confirm-title"></span></div>
+        <div><strong>Content:</strong> <span id="up-confirm-content"></span></div>
+        <div><strong>Thumbnail:</strong> <span id="up-confirm-thumb"></span></div>
+      </div>
+      <p style="color:#888;font-size:0.7rem;margin-bottom:8px;">&#9888; Uploading could take a very long time for large files or YouTube conversions. Please be patient.</p>
+      <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text"></div>
+      <div class="modal-err" id="up-err"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="upStep(3)">&#8592; Back</button>
+        <button class="btn-submit" id="submit-btn" onclick="submitVideo()">Upload</button>
+      </div>
     </div>
   </div>
 </div>
@@ -290,7 +331,7 @@ function showUploadModal() {
   document.getElementById('up-title').value = '';
   document.getElementById('up-desc').value = '';
   document.getElementById('up-yt').value = '';
-  document.getElementById('up-err').textContent = '';
+  document.querySelectorAll('.modal-err').forEach(function(e) { e.textContent = ''; });
   document.getElementById('file-name').textContent = '';
   document.getElementById('progress-bar').style.display = 'none';
   document.getElementById('progress-fill').style.width = '0%';
@@ -300,6 +341,33 @@ function showUploadModal() {
   fileInput.value = '';
   document.getElementById('thumb-input').value = '';
   document.getElementById('thumb-name').textContent = '';
+  upStep(1);
+}
+
+function upStep(n) {
+  // Validate before advancing
+  if (n === 2) {
+    var title = document.getElementById('up-title').value.trim();
+    if (!title) { document.getElementById('up-err-1').textContent = 'Title is required'; return; }
+    document.getElementById('up-err-1').textContent = '';
+  }
+  if (n === 3) {
+    var yt = document.getElementById('up-yt').value.trim();
+    if (!yt && !selectedFile) { document.getElementById('up-err-2').textContent = 'Paste a YouTube link or select a file'; return; }
+    if (yt) {
+      var m = yt.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+      if (!m) { document.getElementById('up-err-2').textContent = 'Invalid YouTube link'; return; }
+    }
+    document.getElementById('up-err-2').textContent = '';
+  }
+  if (n === 4) {
+    document.getElementById('up-confirm-title').textContent = document.getElementById('up-title').value.trim();
+    var yt = document.getElementById('up-yt').value.trim();
+    document.getElementById('up-confirm-content').textContent = yt ? 'YouTube: ' + yt : selectedFile ? selectedFile.name + ' (' + (selectedFile.size/1024/1024).toFixed(1) + ' MB)' : 'None';
+    document.getElementById('up-confirm-thumb').textContent = document.getElementById('thumb-input').files[0] ? document.getElementById('thumb-input').files[0].name : 'Auto-generate';
+  }
+  document.querySelectorAll('.up-step').forEach(function(s) { s.style.display = 'none'; });
+  document.getElementById('up-step-' + n).style.display = '';
 }
 
 function hideUploadModal() {
