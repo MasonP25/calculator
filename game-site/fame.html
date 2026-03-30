@@ -287,8 +287,8 @@
 <div class="stats-bar" id="statsBar"></div>
 
 <div class="scope-toggle" id="scopeToggle">
-  <button class="scope-btn active" id="btnLocal" onclick="setScope('local')">Local</button>
-  <button class="scope-btn" id="btnGlobal" onclick="setScope('global')">Global</button>
+  <button class="scope-btn" id="btnLocal" onclick="setScope('local')">Local</button>
+  <button class="scope-btn active" id="btnGlobal" onclick="setScope('global')">Global</button>
 </div>
 
 <div class="search-bar">
@@ -301,7 +301,7 @@
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script>
-var currentScope = 'local';
+var currentScope = 'global';
 function setScope(scope) {
   currentScope = scope;
   document.getElementById('btnLocal').className = 'scope-btn' + (scope === 'local' ? ' active' : '');
@@ -537,9 +537,13 @@ function setScope(scope) {
     var emojiSpan = document.createElement('span');
     emojiSpan.className = 'game-emoji';
     emojiSpan.textContent = game.emoji;
-    var nameSpan = document.createElement('span');
+    var nameSpan = document.createElement('a');
     nameSpan.className = 'game-name';
     nameSpan.textContent = game.name;
+    nameSpan.href = game.id + '.html';
+    nameSpan.style.cssText = 'text-decoration:none;color:inherit;cursor:pointer;';
+    nameSpan.onmouseover = function() { this.style.color = '#7b2ff7'; };
+    nameSpan.onmouseout = function() { this.style.color = ''; };
     var unitSpan = document.createElement('span');
     unitSpan.className = 'score-type';
     unitSpan.textContent = game.unit;
