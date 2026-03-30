@@ -117,7 +117,9 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
     </div>
     <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
     <div class="progress-text" id="progress-text"></div>
-    <p style="color:#555;font-size:0.65rem;margin-top:6px;">Max 100MB. Videos, images, and audio supported.</p>
+    <label>Custom Thumbnail (optional)</label>
+    <input type="file" id="thumb-input" accept="image/*" style="font-size:0.75rem;color:#888;margin-bottom:4px;">
+    <p style="color:#555;font-size:0.65rem;margin-top:2px;">Leave empty to auto-generate from video/image. Max 100MB for main file.</p>
     <div class="modal-err" id="up-err"></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="hideUploadModal()">Cancel</button>
@@ -146,6 +148,55 @@ function timeAgo(ts) {
   if (s < 86400) return Math.floor(s/3600) + 'h ago';
   if (s < 604800) return Math.floor(s/86400) + 'd ago';
   return d.toLocaleDateString();
+}
+
+function fileToThumb(file) {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var maxW = 320;
+        var scale = Math.min(maxW / img.width, maxW / img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = function() { resolve(''); };
+      img.src = reader.result;
+    };
+    reader.onerror = function() { resolve(''); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function videoToThumb(file) {
+  return new Promise(function(resolve) {
+    var video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    var url = URL.createObjectURL(file);
+    video.src = url;
+    video.onloadeddata = function() {
+      video.currentTime = 1;
+    };
+    video.onseeked = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 320;
+      var scale = Math.min(maxW / video.videoWidth, maxW / video.videoHeight);
+      canvas.width = video.videoWidth * scale;
+      canvas.height = video.videoHeight * scale;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      var thumb = canvas.toDataURL('image/jpeg', 0.6);
+      URL.revokeObjectURL(url);
+      resolve(thumb);
+    };
+    video.onerror = function() { URL.revokeObjectURL(url); resolve(''); };
+    setTimeout(function() { resolve(''); }, 10000); // timeout fallback
+  });
 }
 
 function escHtml(s) {
@@ -196,6 +247,7 @@ function showUploadModal() {
   document.getElementById('submit-btn').disabled = false;
   selectedFile = null;
   fileInput.value = '';
+  document.getElementById('thumb-input').value = '';
 }
 
 function hideUploadModal() {
@@ -270,13 +322,29 @@ async function submitVideo() {
     document.getElementById('progress-fill').style.width = '95%';
     document.getElementById('progress-text').textContent = 'Saving...';
 
-    // Save metadata to Firestore
+    // Generate thumbnail
     var fileType = selectedFile.type.startsWith('image/') ? 'image' : selectedFile.type.startsWith('audio/') ? 'audio' : 'video';
+    var thumbData = '';
+    var thumbFile = document.getElementById('thumb-input').files[0];
+
+    if (thumbFile) {
+      // Custom thumbnail
+      thumbData = await fileToThumb(thumbFile);
+    } else if (fileType === 'image') {
+      // Use the image itself as thumbnail
+      thumbData = await fileToThumb(selectedFile);
+    } else if (fileType === 'video') {
+      // Extract first frame from video
+      thumbData = await videoToThumb(selectedFile);
+    }
+
+    // Save metadata to Firestore
     await fdb.addDoc(fdb.collection(fdb.db, 'videos'), {
       title: title,
       description: desc,
       driveId: result.id,
       fileType: fileType,
+      thumbnail: thumbData,
       uploader: user,
       date: new Date().toISOString(),
       likes: [],
@@ -316,8 +384,11 @@ function renderFeed(vids) {
   vids.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
+    var thumbHtml = v.thumbnail
+      ? '<img class="vid-thumb" src="' + v.thumbnail + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;">'
+      : '<div class="vid-thumb">&#9654;</div>';
     card.innerHTML =
-      '<div class="vid-thumb">&#9654;</div>' +
+      thumbHtml +
       '<div class="vid-info"><h3>' + escHtml(v.title) + '</h3>' +
       '<div class="vid-meta"><span>' + escHtml(v.uploader || 'Anonymous') + '</span>' +
       '<span>' + timeAgo(v.date) + '</span>' +
