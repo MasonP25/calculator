@@ -232,58 +232,39 @@ async function submitVideo() {
     document.getElementById('progress-text').textContent = 'Uploading to server...';
     document.getElementById('progress-fill').style.width = '30%';
 
-    // Upload to Google Apps Script via hidden form + iframe
-    document.getElementById('progress-fill').style.width = '40%';
+    // Upload to Google Apps Script
+    document.getElementById('progress-fill').style.width = '30%';
     document.getElementById('progress-text').textContent = 'Uploading to server...';
 
-    var result = await new Promise(function(resolve, reject) {
-      var frameName = 'upframe_' + Date.now();
-      var iframe = document.createElement('iframe');
-      iframe.name = frameName;
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
+    // Send as multipart form data via fetch with no-cors, then poll for the file
+    var formData = new FormData();
+    formData.append('data', base64);
+    formData.append('name', selectedFile.name);
+    formData.append('type', selectedFile.type);
 
-      var form = document.createElement('form');
-      form.method = 'POST';
-      form.action = UPLOAD_URL;
-      form.target = frameName;
-      form.style.display = 'none';
+    // Use no-cors to avoid redirect issues - we won't get the response
+    await fetch(UPLOAD_URL, { method: 'POST', body: formData, mode: 'no-cors' });
 
-      function addInput(n, v) {
-        var inp = document.createElement('textarea');
-        inp.name = n;
-        inp.value = v;
-        form.appendChild(inp);
-      }
-      addInput('data', base64);
-      addInput('name', selectedFile.name);
-      addInput('type', selectedFile.type);
-      document.body.appendChild(form);
+    document.getElementById('progress-fill').style.width = '70%';
+    document.getElementById('progress-text').textContent = 'Waiting for server...';
 
-      var done = false;
-      var attempts = 0;
-      var check = setInterval(function() {
-        attempts++;
-        try {
-          var text = iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.innerText;
-          if (text && text.indexOf('"id"') !== -1) {
-            clearInterval(check);
-            done = true;
-            var json = JSON.parse(text);
-            iframe.remove(); form.remove();
-            resolve(json);
-          }
-        } catch(e) {}
-        if (attempts > 120) { clearInterval(check); if (!done) { iframe.remove(); form.remove(); reject(new Error('Upload timed out')); } }
-      }, 1000);
+    // Poll the folder via doGet to find the new file
+    var fileName = selectedFile.name;
+    var result = null;
+    for (var attempt = 0; attempt < 30; attempt++) {
+      await new Promise(function(r) { setTimeout(r, 2000); });
+      try {
+        var checkResp = await fetch(UPLOAD_URL + '?check=' + encodeURIComponent(fileName));
+        var checkData = await checkResp.json();
+        if (checkData.id) { result = checkData; break; }
+      } catch(e) {}
+      document.getElementById('progress-fill').style.width = (70 + attempt) + '%';
+    }
 
-      form.submit();
-    });
-
-    document.getElementById('progress-fill').style.width = '80%';
+    document.getElementById('progress-fill').style.width = '90%';
     document.getElementById('progress-text').textContent = 'Processing...';
 
-    if (!result.id) throw new Error('Upload failed');
+    if (!result || !result.id) throw new Error('Upload timed out - file may still be processing');
 
     document.getElementById('progress-fill').style.width = '95%';
     document.getElementById('progress-text').textContent = 'Saving...';
