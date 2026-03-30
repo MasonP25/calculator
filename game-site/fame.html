@@ -690,7 +690,15 @@ function setScope(scope) {
     });
   };
 
-  render();
+  // Wait for Firebase to load before rendering global
+  function tryRender() {
+    if (currentScope === 'global' && !window._arcadeDB) {
+      setTimeout(tryRender, 300);
+      return;
+    }
+    render();
+  }
+  tryRender();
 })();
 </script>
 <script src="ban.js"></script>
