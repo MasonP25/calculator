@@ -256,9 +256,13 @@
           seen[key] = true;
           var div = document.createElement('div');
           div.className = 'af-item';
+          var uname = item.username || '';
+          var linkedText = uname && uname !== 'Guest'
+            ? text.replace(uname, '<a href="profile.html?user=' + encodeURIComponent(uname) + '" style="color:#7b2ff7;text-decoration:none;font-weight:600;cursor:pointer;">' + uname + '</a>')
+            : text;
           div.innerHTML =
             '<span class="af-icon">' + cfg.icon + '</span>' +
-            '<span class="af-text">' + text + '</span>' +
+            '<span class="af-text">' + linkedText + '</span>' +
             '<span class="af-time">' + _relativeTime(item.time) + '</span>';
           list.appendChild(div);
         });
