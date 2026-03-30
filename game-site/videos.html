@@ -64,6 +64,9 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 .drop-zone:hover,.drop-zone.dragover { border-color:#ff4757; background:rgba(255,71,87,0.05); }
 .drop-zone .drop-icon { font-size:2rem; margin-bottom:8px; }
 .drop-zone .file-name { color:#ff6b81; font-weight:600; margin-top:6px; }
+.filter-tab { padding:5px 14px; border-radius:8px; border:1px solid #2a2a4a; background:#1a1a2e; color:#888; font-family:inherit; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.filter-tab:hover { border-color:#ff4757; color:#ff4757; }
+.filter-tab.active { background:#ff4757; border-color:#ff4757; color:#fff; }
 .progress-bar { width:100%; height:6px; background:#2a2a4a; border-radius:3px; margin-top:10px; overflow:hidden; display:none; }
 .progress-bar .fill { height:100%; background:linear-gradient(90deg,#ff4757,#ff6b81); border-radius:3px; width:0%; }
 .progress-text { font-size:0.7rem; color:#888; margin-top:4px; text-align:center; }
@@ -77,6 +80,11 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
   <button class="upload-btn" id="upload-btn" onclick="showUploadModal()">+ Upload Video</button>
 
   <div id="feed-view">
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;" id="feed-filters">
+      <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-tab" data-filter="video" onclick="setFilter('video')">&#127909; Videos</button>
+      <button class="filter-tab" data-filter="image" onclick="setFilter('image')">&#128247; Photos</button>
+    </div>
     <div class="vid-grid" id="vid-grid"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">No videos yet. Be the first to upload!</div>
   </div>
@@ -138,6 +146,7 @@ var currentVideoId = null;
 var videosCache = [];
 var selectedFile = null;
 var MAX_SIZE = 100 * 1024 * 1024;
+var currentFilter = 'all';
 
 function getUser() {
   return localStorage.getItem('arcade_currentUser') || '';
@@ -402,11 +411,25 @@ async function loadVideos() {
   } catch(e) { console.error('Load videos error:', e); }
 }
 
+window.setFilter = function(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderFeed(videosCache);
+};
+
 function renderFeed(vids) {
   var grid = document.getElementById('vid-grid');
   grid.innerHTML = '';
-  document.getElementById('empty-msg').style.display = vids.length ? 'none' : '';
-  vids.forEach(function(v) {
+  var filtered = vids.filter(function(v) {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'video') return !v.fileType || v.fileType === 'video' || v.fileType === 'audio';
+    if (currentFilter === 'image') return v.fileType === 'image';
+    return true;
+  });
+  document.getElementById('empty-msg').style.display = filtered.length ? 'none' : '';
+  filtered.forEach(function(v) {
     var card = document.createElement('div');
     card.className = 'vid-card';
     var thumbSrc = v.thumbnail || (v.driveId ? 'https://lh3.googleusercontent.com/d/' + v.driveId + '=s320' : '');
