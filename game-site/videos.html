@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Videoish — Arcade</title>
+<title>YouTubeish — Arcade</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Segoe UI',Tahoma,sans-serif; background:#0f0f1a; color:#e0e0e0; min-height:100vh; }
@@ -72,7 +72,7 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
 <body>
 <a class="back" href="index.html">&#8592; Back</a>
 <div class="container">
-  <h1>&#127909; <span>Videoish</span></h1>
+  <h1>&#127909; <span>YouTubeish</span></h1>
   <p class="subtitle">Share & watch videos with the arcade community</p>
   <button class="upload-btn" id="upload-btn" onclick="showUploadModal()">+ Upload Video</button>
 
@@ -89,6 +89,7 @@ h1 span { background:linear-gradient(135deg,#ff4757,#ff6b81); -webkit-background
     <h2 class="player-title" id="vid-title"></h2>
     <div class="player-meta" id="vid-meta"></div>
     <button class="like-btn" id="like-btn" onclick="toggleLike()">&#10084; Like</button>
+    <button class="like-btn" id="delete-btn" onclick="deleteVideo()" style="display:none;border-color:#666;color:#666;">&#128465; Delete</button>
     <div class="player-desc" id="vid-desc"></div>
     <div class="comments-section">
       <h3>Comments</h3>
@@ -352,7 +353,22 @@ function openVideo(id) {
   likeBtn.innerHTML = '&#10084; ' + (liked ? 'Liked' : 'Like') + ' (' + (v.likes ? v.likes.length : 0) + ')';
   document.getElementById('comment-form').style.display = user ? 'flex' : 'none';
   document.getElementById('comment-input').value = '';
+  document.getElementById('delete-btn').style.display = (user && user === v.uploader) ? '' : 'none';
   renderComments(v.comments || []);
+}
+
+async function deleteVideo() {
+  var fdb = window._arcadeDB;
+  var user = getUser();
+  if (!fdb || !currentVideoId || !user) return;
+  var v = videosCache.find(function(x) { return x.id === currentVideoId; });
+  if (!v || v.uploader !== user) return;
+  if (!confirm('Delete this video? This cannot be undone.')) return;
+  try {
+    await fdb.deleteDoc(fdb.doc(fdb.db, 'videos', currentVideoId));
+    closePlayer();
+    loadVideos();
+  } catch(e) { console.error('Delete error:', e); }
 }
 
 function closePlayer() {
