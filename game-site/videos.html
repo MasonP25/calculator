@@ -191,7 +191,7 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
       <div class="progress-text" id="progress-text"></div>
       <div class="modal-err" id="up-err"></div>
       <div class="modal-btns">
-        <button class="btn-cancel" onclick="upStep(3)">&#8592; Back</button>
+        <button class="btn-cancel" id="step4-back" onclick="upStep(3)">&#8592; Back</button>
         <button class="btn-submit" id="submit-btn" onclick="submitVideo()">Upload</button>
       </div>
     </div>
@@ -394,6 +394,7 @@ async function submitVideo() {
   if (!selectedFile) { document.getElementById('up-err').textContent = 'Select a file or paste a YouTube link'; return; }
 
   document.getElementById('submit-btn').disabled = true;
+  document.getElementById('step4-back').style.display = 'none';
   document.getElementById('up-err').textContent = '';
   document.getElementById('progress-bar').style.display = '';
   document.getElementById('progress-text').textContent = 'Reading file...';
@@ -690,6 +691,7 @@ window.addEventListener('arcade-auth-change', checkAuth);
 // YouTube conversion — Apps Script handles everything server-side
 async function submitYouTube(videoId, title, desc, user, fdb) {
   document.getElementById('submit-btn').disabled = true;
+  document.getElementById('step4-back').style.display = 'none';
   document.getElementById('up-err').textContent = '';
   document.getElementById('progress-bar').style.display = '';
   document.getElementById('progress-fill').style.width = '20%';
