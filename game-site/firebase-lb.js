@@ -12,15 +12,11 @@ const firebaseConfig = {
   appId: "1:375406495739:web:fd28553263599864426d5e"
 };
 
-import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL }
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-// Expose Firestore + Storage utilities for other scripts
-window._arcadeDB = { db, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, where, orderBy, limit, addDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp, storage, storageRef, uploadBytesResumable, getDownloadURL };
+// Expose Firestore utilities for other scripts
+window._arcadeDB = { db, doc, getDoc, setDoc, updateDoc, getDocs, collection, query, where, orderBy, limit, addDoc, deleteDoc, arrayUnion, arrayRemove, serverTimestamp };
 
 // ─── Password hashing (SHA-256) ───
 async function hashPassword(pw) {
