@@ -102,6 +102,10 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
     </div>
     <div class="vid-grid" id="vid-grid"></div>
     <div class="empty-msg" id="empty-msg" style="display:none;">No videos yet. Be the first to upload!</div>
+    <div style="margin-top:2rem;padding:1rem;background:#1a1a2e;border-radius:10px;font-size:0.7rem;color:#555;text-align:center;line-height:1.6;">
+      <strong style="color:#888;">Community Guidelines</strong><br>
+      No inappropriate, hateful, or copyrighted content. Uploads that violate these rules will be removed. Use the Report button to flag content for review.
+    </div>
   </div>
 
   <div id="player-view">
@@ -113,6 +117,7 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
     <div class="player-meta" id="vid-meta"></div>
     <button class="like-btn" id="like-btn" onclick="toggleLike()">&#10084; Like</button>
     <button class="like-btn" id="delete-btn" onclick="deleteVideo()" style="display:none;border-color:#666;color:#666;">&#128465; Delete</button>
+    <button class="like-btn" id="report-btn" onclick="reportVideo()" style="border-color:#666;color:#666;">&#9873; Report</button>
     <div class="player-desc" id="vid-desc"></div>
     <div class="comments-section">
       <h3>Comments</h3>
@@ -605,6 +610,23 @@ function openVideo(id) {
   document.getElementById('comment-input').value = '';
   document.getElementById('delete-btn').style.display = (user && user === v.uploader) ? '' : 'none';
   renderComments(v.comments || []);
+}
+
+function reportVideo() {
+  if (!currentVideoId) return;
+  var reason = prompt('Why are you reporting this content?');
+  if (!reason) return;
+  var fdb = window._arcadeDB;
+  var user = getUser();
+  if (fdb && user) {
+    fdb.addDoc(fdb.collection(fdb.db, 'reports'), {
+      videoId: currentVideoId,
+      reporter: user.username,
+      reason: reason,
+      date: new Date().toISOString()
+    }).catch(function(){});
+  }
+  alert('Thank you. This content has been flagged for review.');
 }
 
 async function deleteVideo() {
