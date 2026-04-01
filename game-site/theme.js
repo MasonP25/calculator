@@ -1411,14 +1411,21 @@
     return Math.max(real + 8, padded);
   }
 
-  async function refresh() {
-    var count = await fetchCount();
-    var display = getPaddedCount(count);
+  var _lastReal = 0;
+
+  function updateDisplay() {
+    var display = getPaddedCount(_lastReal);
     var el = document.getElementById('online-count');
     if (!el) return;
     el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + display + ' online</span>';
   }
 
+  async function refresh() {
+    _lastReal = await fetchCount();
+    updateDisplay();
+  }
+
   setTimeout(refresh, 4000);
-  setInterval(refresh, 30000);
+  setInterval(refresh, 450000);
+  setInterval(updateDisplay, 30000);
 })();
