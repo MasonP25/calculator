@@ -1401,17 +1401,24 @@
     } catch(e) { return 0; }
   }
 
+  var _padBase = 12 + Math.floor(Math.random() * 24);
+  var _padDrift = 0;
+
+  function getPaddedCount(real) {
+    _padDrift += (Math.random() - 0.5) * 4;
+    _padDrift = Math.max(-6, Math.min(6, _padDrift));
+    var padded = real + _padBase + Math.round(_padDrift) + Math.floor(Math.random() * 5 - 2);
+    return Math.max(real + 8, padded);
+  }
+
   async function refresh() {
     var count = await fetchCount();
+    var display = getPaddedCount(count);
     var el = document.getElementById('online-count');
     if (!el) return;
-    if (count > 0) {
-      el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + count + ' online</span>';
-    } else {
-      el.innerHTML = '';
-    }
+    el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + display + ' online</span>';
   }
 
   setTimeout(refresh, 4000);
-  setInterval(refresh, 450000);
+  setInterval(refresh, 30000);
 })();
