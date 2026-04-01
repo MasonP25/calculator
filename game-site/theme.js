@@ -1407,11 +1407,10 @@
     var min = Math.floor(now / 60000);
     // Simple hash from minute
     var seed = (min * 2654435761) >>> 0;
-    var base = 15 + (seed % 20); // 15-34
-    // Slower wave using 5-minute chunks
-    var wave = Math.sin(min * 0.3) * 4;
+    var base = 5 + (seed % 6); // 5-10
+    var wave = Math.sin(min * 0.3) * 2;
     var padded = real + base + Math.round(wave);
-    return Math.max(real + 10, padded);
+    return Math.max(real + 4, padded);
   }
 
   var _lastReal = -1;
