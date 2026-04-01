@@ -114,6 +114,9 @@
     'padding:0.45rem;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit;margin-top:0.6rem;transition:border-color .2s,color .2s}' +
     '.auth-guest:hover{border-color:#555;color:#e0e0e0}' +
     '.auth-info{color:#555;font-size:0.7rem;text-align:center;margin-top:0.8rem}' +
+    '.guest-gate{position:absolute;inset:0;background:rgba(15,15,26,0.85);display:flex;align-items:center;justify-content:center;border-radius:inherit;z-index:10;cursor:pointer}' +
+    '.guest-gate-btn{background:linear-gradient(135deg,#7b2ff7,#5b1fd7);color:#fff;padding:0.5rem 1.2rem;border-radius:10px;font-size:0.85rem;font-weight:600;font-family:inherit;transition:opacity 0.2s}' +
+    '.guest-gate-btn:hover{opacity:0.85}' +
     '.ab-name-link{cursor:pointer;transition:text-decoration .2s}.ab-name-link:hover{text-decoration:underline}' +
     '.ab-req{background:#ff4757;color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:0.2rem;line-height:1.3}' +
     '.chat-name[data-chat-user]{cursor:pointer}.chat-name[data-chat-user]:hover{text-decoration:underline}';
@@ -220,24 +223,38 @@
     return !getCurrentUser() && localStorage.getItem('arcade_guest') === '1';
   }
 
+  function _guestOverlay(el) {
+    if (!el || el.querySelector('.guest-gate')) return;
+    el.style.position = 'relative';
+    var gate = document.createElement('div');
+    gate.className = 'guest-gate';
+    gate.innerHTML = '<span class="guest-gate-btn">Sign in to continue</span>';
+    gate.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); openModal(); });
+    el.appendChild(gate);
+  }
+
   function applyGuestRestrictions() {
     if (!isGuest()) return;
-    // Hide activity feed
+    // Overlay on activity feed
     var actFeed = document.getElementById('activity-feed-container');
-    if (actFeed) actFeed.style.display = 'none';
-    // Hide daily challenge
+    if (actFeed) _guestOverlay(actFeed);
+    // Overlay on daily challenge
     var dc = document.getElementById('daily-challenge-container');
-    if (dc) dc.style.display = 'none';
-    // Hide fame, shop, profile links
+    if (dc) _guestOverlay(dc);
+    // Overlay on fame, shop, profile links
     document.querySelectorAll('.fame-link').forEach(function(el) {
-      el.style.display = 'none';
+      el.addEventListener('click', function(e) { if (isGuest()) { e.preventDefault(); openModal(); } });
     });
-    // Hide chat panel
+    // Intercept chat panel clicks
     var chat = document.getElementById('chat-panel');
-    if (chat) chat.style.display = 'none';
-    // Hide chat toggle if exists
-    var chatToggle = document.getElementById('chat-toggle');
-    if (chatToggle) chatToggle.style.display = 'none';
+    if (chat) {
+      chat.addEventListener('click', function(e) {
+        if (isGuest()) { e.preventDefault(); e.stopPropagation(); openModal(); }
+      }, true);
+    }
+    // Hide easter egg counter for guests
+    var easter = document.getElementById('easter-counter');
+    if (easter) easter.style.display = 'none';
   }
 
   function openModal() {
