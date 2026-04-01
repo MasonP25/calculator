@@ -31,8 +31,6 @@ window.HallOfFame = {
     return localStorage.getItem('arcadePlayerName') || 'Guest';
   },
   submit: function(gameId, score) {
-    // Don't save scores for guests
-    if (window.ArcadeAuth && window.ArcadeAuth.isGuest && window.ArcadeAuth.isGuest()) return [];
     var key = 'hallOfFame_' + gameId;
     var list = JSON.parse(localStorage.getItem(key) || '[]');
     var name = this.getPlayerName();
