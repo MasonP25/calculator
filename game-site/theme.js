@@ -1359,13 +1359,13 @@
         var dx = a.x - b.x, dy = a.drawY - b.drawY;
         var dist = dx * dx + dy * dy;
         if (dist < CONNECT_DIST * CONNECT_DIST) {
-          var alpha = (1 - Math.sqrt(dist) / CONNECT_DIST) * Math.min(a.a, b.a) * 0.5;
+          var alpha = (1 - Math.sqrt(dist) / CONNECT_DIST) * Math.min(a.a, b.a) * 1.5;
           ctx.beginPath();
           ctx.moveTo(a.x, a.drawY);
           ctx.lineTo(b.x, b.drawY);
           ctx.strokeStyle = a.color;
           ctx.globalAlpha = alpha;
-          ctx.lineWidth = 0.5;
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
       }
