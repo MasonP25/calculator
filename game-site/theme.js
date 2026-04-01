@@ -1401,14 +1401,17 @@
     } catch(e) { return 0; }
   }
 
-  var _padBase = 12 + Math.floor(Math.random() * 24);
-  var _padDrift = 0;
-
   function getPaddedCount(real) {
-    _padDrift += (Math.random() - 0.5) * 4;
-    _padDrift = Math.max(-6, Math.min(6, _padDrift));
-    var padded = real + _padBase + Math.round(_padDrift) + Math.floor(Math.random() * 5 - 2);
-    return Math.max(real + 8, padded);
+    // Deterministic seed from current minute so all visitors see the same number
+    var now = Date.now();
+    var min = Math.floor(now / 60000);
+    // Simple hash from minute
+    var seed = (min * 2654435761) >>> 0;
+    var base = 15 + (seed % 20); // 15-34
+    // Slower wave using 5-minute chunks
+    var wave = Math.sin(min * 0.3) * 4;
+    var padded = real + base + Math.round(wave);
+    return Math.max(real + 10, padded);
   }
 
   var _lastReal = 0;
