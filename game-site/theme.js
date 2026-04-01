@@ -1334,24 +1334,47 @@
     }
   }
 
+  var CONNECT_DIST = mobile ? 80 : 120;
+
   function draw() {
     if (paused) { requestAnimationFrame(draw); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Update positions and compute draw Y
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
       p.x += p.vx;
       p.baseY += p.vy;
-      // Wrap around edges
       if (p.x < -10) p.x = canvas.width + 10;
       if (p.x > canvas.width + 10) p.x = -10;
       if (p.baseY < -10) p.baseY = canvas.height + 10;
       if (p.baseY > canvas.height + 10) p.baseY = -10;
-      // Parallax offset based on scroll
-      var drawY = p.baseY - scrollY * p.parallax;
-      // Wrap the parallax-shifted y so particles always stay on screen
-      drawY = ((drawY % canvas.height) + canvas.height) % canvas.height;
+      p.drawY = ((p.baseY - scrollY * p.parallax) % canvas.height + canvas.height) % canvas.height;
+    }
+    // Draw connections between nearby particles on same/adjacent layers
+    for (var i = 0; i < particles.length; i++) {
+      var a = particles[i];
+      for (var j = i + 1; j < particles.length; j++) {
+        var b = particles[j];
+        if (Math.abs(a.layer - b.layer) > 1) continue;
+        var dx = a.x - b.x, dy = a.drawY - b.drawY;
+        var dist = dx * dx + dy * dy;
+        if (dist < CONNECT_DIST * CONNECT_DIST) {
+          var alpha = (1 - Math.sqrt(dist) / CONNECT_DIST) * Math.min(a.a, b.a) * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.drawY);
+          ctx.lineTo(b.x, b.drawY);
+          ctx.strokeStyle = a.color;
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    // Draw particles
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
       ctx.beginPath();
-      ctx.arc(p.x, drawY, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.drawY, p.r, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.globalAlpha = p.a;
       ctx.fill();
