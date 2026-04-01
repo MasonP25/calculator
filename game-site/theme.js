@@ -1414,13 +1414,19 @@
     return Math.max(real + 10, padded);
   }
 
-  var _lastReal = 0;
+  var _lastReal = -1;
+  var _lastDisplay = 0;
 
   function updateDisplay() {
-    var display = getPaddedCount(_lastReal);
+    if (_lastReal < 0) return; // wait for first fetch
+    var target = getPaddedCount(_lastReal);
+    // Smooth: only move 1-2 toward target to avoid jumps
+    if (_lastDisplay === 0) { _lastDisplay = target; }
+    else if (target > _lastDisplay) { _lastDisplay += Math.min(2, target - _lastDisplay); }
+    else if (target < _lastDisplay) { _lastDisplay -= Math.min(2, _lastDisplay - target); }
     var el = document.getElementById('online-count');
     if (!el) return;
-    el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + display + ' online</span>';
+    el.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin:0 4px;box-shadow:0 0 6px #22c55e88;vertical-align:middle;position:relative;top:-1px"></span><span style="color:var(--t-dim,#555);vertical-align:middle;position:relative;top:-1px">' + _lastDisplay + ' online</span>';
   }
 
   async function refresh() {
@@ -1430,5 +1436,5 @@
 
   setTimeout(refresh, 4000);
   setInterval(refresh, 450000);
-  setInterval(updateDisplay, 30000);
+  setInterval(updateDisplay, 60000);
 })();
