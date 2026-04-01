@@ -1407,7 +1407,7 @@
     var min = Math.floor(now / 60000);
     // Simple hash from minute
     var seed = (min * 2654435761) >>> 0;
-    var hour = new Date().getHours();
+    var hour = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })).getHours();
     var night = (hour >= 23 || hour < 7); // 11pm-7am
     var base = night ? (2 + (seed % 3)) : (5 + (seed % 6)); // night: 2-4, day: 5-10
     var wave = Math.sin(min * 0.3) * (night ? 1 : 2);
