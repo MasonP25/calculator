@@ -3200,6 +3200,7 @@
       }
       if (!card._tiltBound) {
         card._tiltBound = true;
+        card.addEventListener('mouseenter', function(e) { handleMove(e); });
         card.addEventListener('mouseleave', function() {
           var c = this;
           c.style.transition = 'transform 0.5s cubic-bezier(0.2, 2, 0.5, 1)';
