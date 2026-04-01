@@ -238,32 +238,6 @@
       if (!container) return;
       await _fixActivityFeed();
       var items = await window.ArcadeActivity.getRecent(20);
-
-      // Fill with ambient activity if feed is sparse
-      if (items.length < 8) {
-        var _fakeNames = ['Alex','Jordan','Riley','Sam','Casey','Morgan','Taylor','Jamie','Avery','Quinn','Drew','Blake','Skyler','Dakota','Reese','Kai','Finley','Charlie','Rowan','Sage'];
-        var _fakeGames = ['tetris','snake','2048','flappy','slope','crossy','breakout','pacman','asteroids','pong','chess','checkers','sudoku','minesweeper','solitaire','typing','wordle','hangman','dino','stack'];
-        var _fakeGameNames = {tetris:'Tetris',snake:'Snake','2048':'2048',flappy:'Flappy Bird',slope:'Slope',crossy:'Crossy Road',breakout:'Breakout',pacman:'Pac-Man',asteroids:'Asteroids',pong:'Pong',chess:'Chess',checkers:'Checkers',sudoku:'Sudoku',minesweeper:'Minesweeper',solitaire:'Solitaire',typing:'Typing Test',wordle:'Wordle',hangman:'Hangman',dino:'Dino Run',stack:'Stack'};
-        var now = Date.now();
-        var min = Math.floor(now / 60000);
-        var seed = (min * 2654435761) >>> 0;
-        var needed = 8 - items.length;
-        for (var fi = 0; fi < needed; fi++) {
-          var s = ((seed + fi * 7919) * 2654435761) >>> 0;
-          var name = _fakeNames[s % _fakeNames.length];
-          var gameKey = _fakeGames[(s >>> 8) % _fakeGames.length];
-          var gameName = _fakeGameNames[gameKey] || gameKey;
-          var types = ['high_score','gotd_played','challenge_complete','casino_big_win','new_user'];
-          var t = types[(s >>> 16) % types.length];
-          var ago = (5 + (s % 55)) * 60000;
-          var fakeItem = { type: t, username: name, time: now - ago, data: {} };
-          if (t === 'high_score') { fakeItem.data = { gameId: gameKey, score: 100 + (s % 9900) }; }
-          else if (t === 'casino_big_win') { fakeItem.data = { amount: 50 + (s % 450) }; }
-          items.push(fakeItem);
-        }
-        items.sort(function(a,b) { return b.time - a.time; });
-      }
-
       container.innerHTML = '';
       var wrap = document.createElement('div');
       wrap.className = 'activity-feed';
