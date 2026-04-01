@@ -1435,7 +1435,7 @@
     updateDisplay();
   }
 
-  setTimeout(refresh, 4000);
+  setTimeout(refresh, 1000);
   setInterval(refresh, 450000);
   setInterval(updateDisplay, 60000);
 })();
