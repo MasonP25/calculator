@@ -68,6 +68,7 @@
     setCurrentUser(null);
     localStorage.removeItem('arcade_tour_done');
     localStorage.removeItem('arcade_savedPass');
+    localStorage.removeItem('arcade_guest');
     updateBadge();
     openModal();
   }
@@ -141,6 +142,7 @@
         '<input class="auth-inp" id="authP2" type="password" placeholder="Confirm Password" style="display:none">' +
         '<button class="auth-btn" type="submit" id="authGo">Sign In</button>' +
       '</form>' +
+      '<button class="auth-guest" id="authGuest">Continue as Guest</button>' +
       '<p class="auth-info">Synced across all your devices</p>' +
     '</div>';
   document.body.appendChild(overlay);
@@ -185,9 +187,11 @@
         result = await doSignIn(uEl.value, pEl.value);
       }
       if (result.ok) {
+        localStorage.removeItem('arcade_guest');
         closeModal();
         window.dispatchEvent(new Event('arcade-auth-change'));
         updateBadge();
+        location.reload(); // reload to restore all features
         if (window.SFX) window.SFX.correct();
       } else {
         errEl.textContent = result.msg;
@@ -203,6 +207,39 @@
   document.getElementById('authX').addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
 
+  // Guest mode
+  document.getElementById('authGuest').addEventListener('click', function() {
+    localStorage.setItem('arcade_guest', '1');
+    overlay.classList.remove('show');
+    updateBadge();
+    window.dispatchEvent(new Event('arcade-auth-change'));
+    applyGuestRestrictions();
+  });
+
+  function isGuest() {
+    return !getCurrentUser() && localStorage.getItem('arcade_guest') === '1';
+  }
+
+  function applyGuestRestrictions() {
+    if (!isGuest()) return;
+    // Hide activity feed
+    var actFeed = document.getElementById('activity-feed-container');
+    if (actFeed) actFeed.style.display = 'none';
+    // Hide daily challenge
+    var dc = document.getElementById('daily-challenge-container');
+    if (dc) dc.style.display = 'none';
+    // Hide fame, shop, profile links
+    document.querySelectorAll('.fame-link').forEach(function(el) {
+      el.style.display = 'none';
+    });
+    // Hide chat panel
+    var chat = document.getElementById('chat-panel');
+    if (chat) chat.style.display = 'none';
+    // Hide chat toggle if exists
+    var chatToggle = document.getElementById('chat-toggle');
+    if (chatToggle) chatToggle.style.display = 'none';
+  }
+
   function openModal() {
     errEl.textContent = '';
     tab = 'in';
@@ -214,14 +251,17 @@
     uEl.value = savedUser;
     pEl.value = savedPass;
     p2El.value = '';
-    // Hide X button when not signed in (mandatory)
-    document.getElementById('authX').style.display = getCurrentUser() ? '' : 'none';
+    // Hide X button when not signed in (mandatory) — show if guest
+    var canClose = getCurrentUser() || isGuest();
+    document.getElementById('authX').style.display = canClose ? '' : 'none';
+    // Hide guest button if already signed in
+    document.getElementById('authGuest').style.display = getCurrentUser() ? 'none' : '';
     overlay.classList.add('show');
     setTimeout(function() { uEl.focus(); }, 100);
   }
 
   function closeModal() {
-    if (!getCurrentUser()) return; // can't close if not signed in
+    if (!getCurrentUser() && !isGuest()) return; // can't close if not signed in or guest
     overlay.classList.remove('show');
   }
 
@@ -303,6 +343,10 @@
           window.dispatchEvent(new Event('arcade-auth-change'));
         });
       }
+    } else if (isGuest()) {
+      badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888;font-size:0.72rem" id="abSignInLink">Sign In</span>';
+      var signInLink = document.getElementById('abSignInLink');
+      if (signInLink) signInLink.addEventListener('click', function(e) { e.stopPropagation(); openModal(); });
     } else {
       badge.innerHTML = '<span class="ab-icon">&#128100;</span><span style="color:#888">Sign In</span>';
     }
@@ -312,13 +356,22 @@
   window.ArcadeAuth = {
     getCurrentUser: getCurrentUser,
     isLoggedIn: function() { return !!getCurrentUser(); },
+    isGuest: isGuest,
     openSignIn: openModal
   };
 
   updateBadge();
 
-  // Auto-open sign-in modal if not signed in (mandatory)
-  if (!getCurrentUser()) openModal();
+  // Auto-open sign-in modal if not signed in and not guest
+  if (!getCurrentUser() && !isGuest()) openModal();
+  // Apply guest restrictions if returning as guest
+  if (isGuest()) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyGuestRestrictions);
+    } else {
+      setTimeout(applyGuestRestrictions, 100);
+    }
+  }
 
   // Listen for Firebase auth state (auto-login if already signed in)
   window.addEventListener('firebase-auth-ready', function() {
