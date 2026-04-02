@@ -395,7 +395,7 @@ async function submitVideo() {
     return submitYouTube(ytMatch[1], title, desc, user, fdb);
   }
 
-  if (!selectedFile) { document.getElementById('up-err').textContent = 'Select a file or paste a YouTube link'; return; }
+  if (!selectedFile) { document.getElementById('up-err').textContent = 'Please select a file to upload'; return; }
 
   document.getElementById('submit-btn').disabled = true;
   document.getElementById('step4-back').style.display = 'none';
