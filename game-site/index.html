@@ -46,6 +46,8 @@
 }
 </script>
 <style>
+  @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  @keyframes gradientSpin { to { --grad-angle: 360deg; } }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -214,8 +216,6 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-  @keyframes gradientSpin { to { --grad-angle: 360deg; } }
   .search-bar input:focus { border-color: transparent; background: linear-gradient(var(--t-bg2,#1a1a2e), var(--t-bg2,#1a1a2e)) padding-box, conic-gradient(from var(--grad-angle), var(--t-accent,#7b2ff7), var(--t-accent2,#00d4ff), var(--t-accent,#7b2ff7)) border-box; animation: gradientSpin 3s linear infinite; }
   .search-bar input::placeholder { color: #555; }
   .search-bar .search-icon {
