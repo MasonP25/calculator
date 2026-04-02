@@ -741,6 +741,7 @@
   <div class="search-bar">
     <span class="search-icon">&#128269;</span>
     <input type="text" id="gameSearch" placeholder="Search games..." autocomplete="off">
+    <button id="searchClear" onclick="document.getElementById('gameSearch').value='';document.getElementById('gameSearch').dispatchEvent(new Event('input'));this.style.display='none';" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:1rem;cursor:pointer;padding:2px 6px;">&#10005;</button>
   </div>
   <div class="no-results" id="noResults">No games found</div>
 
@@ -1901,6 +1902,7 @@
   function applyFilters() {
     var q = searchInput.value.toLowerCase().trim();
     document.body.classList.toggle('searching', !!q);
+    document.getElementById('searchClear').style.display = q ? '' : 'none';
     var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
     var sections = document.querySelectorAll('.section-title:not(#favSection):not(#recentSection):not(#popularSection)');
     var grids = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames)');
