@@ -230,6 +230,8 @@
   .card.hidden-search { display: none; }
   .section-title.hidden-search { display: none; }
   .games.hidden-search { display: none; }
+  .searching .card p { display: none; }
+  .searching .card { padding: 0.9rem 1rem; }
   .no-results {
     color: #555;
     font-size: 0.95rem;
@@ -1898,6 +1900,7 @@
 
   function applyFilters() {
     var q = searchInput.value.toLowerCase().trim();
+    document.body.classList.toggle('searching', !!q);
     var cards = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames) .card');
     var sections = document.querySelectorAll('.section-title:not(#favSection):not(#recentSection):not(#popularSection)');
     var grids = document.querySelectorAll('.games:not(#favGames):not(#recentGames):not(#popularGames)');
@@ -3356,6 +3359,6 @@ if ('serviceWorker' in navigator) {
   }
 }
 </script>
-<script defer src="/_vercel/insights/script.js"></script>
+<script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
 </body>
 </html>
