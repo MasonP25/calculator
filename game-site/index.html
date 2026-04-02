@@ -3300,22 +3300,40 @@
     updateSpotlight();
 
     var isLast = step === STEPS.length - 1;
+    var isFirst = step === 0;
+    var backBtn = isFirst ? '' : '<button id="tour-back" style="background:none;border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#aaa);cursor:pointer;font-size:0.82rem;padding:6px 14px;border-radius:8px;font-family:inherit">Back</button>';
     box.innerHTML =
       '<div style="font-size:0.7rem;color:var(--t-dim,#888);margin-bottom:0.4rem">Step ' + (step + 1) + ' of ' + STEPS.length + '</div>' +
       '<h3 style="color:var(--t-text,#e0e0e0);margin:0 0 0.5rem;font-size:1.15rem">' + s.title + '</h3>' +
       '<p style="color:var(--t-dim,#aaa);font-size:0.85rem;line-height:1.5;margin:0 0 1.2rem">' + s.text + '</p>' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<button id="tour-skip" style="background:none;border:none;color:var(--t-dim,#888);cursor:pointer;font-size:0.85rem;padding:6px 12px">Skip</button>' +
-        '<button id="tour-next" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:10px;padding:8px 22px;cursor:pointer;font-size:0.9rem;font-weight:600">' + (isLast ? 'Get Started!' : 'Next') + '</button>' +
+        '<div style="display:flex;gap:8px">' + backBtn +
+        '<button id="tour-next" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:10px;padding:8px 22px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit">' + (isLast ? 'Get Started!' : 'Next') + '</button>' +
+        '</div>' +
       '</div>';
 
-    // Position box fixed at bottom-center of screen
-    box.style.top = '';
-    box.style.left = '50%';
-    box.style.bottom = '2rem';
-    box.style.transform = 'translateX(-50%)';
+    // Position box — top for last step (footer), bottom for everything else
+    if (isLast) {
+      box.style.bottom = '';
+      box.style.top = '2rem';
+      box.style.left = '50%';
+      box.style.transform = 'translateX(-50%)';
+    } else {
+      box.style.top = '';
+      box.style.left = '50%';
+      box.style.bottom = '2rem';
+      box.style.transform = 'translateX(-50%)';
+    }
 
     document.getElementById('tour-skip').onclick = finish;
+    if (!isFirst) {
+      document.getElementById('tour-back').onclick = function() {
+        if (window.SFX) window.SFX.click();
+        step--;
+        showStep();
+      };
+    }
     document.getElementById('tour-next').onclick = function() {
       if (window.SFX) window.SFX.click();
       if (isLast) { finish(); return; }
