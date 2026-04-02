@@ -1,3 +1,12 @@
+// ─── REDIRECT GITHUB PAGES TO VERCEL ───
+(function() {
+  if (location.hostname === 'masonp25.github.io') {
+    var newUrl = 'https://masons-arcade.vercel.app/' + location.pathname.replace('/calculator/game-site/', '').replace('/calculator/game-site', '') + location.search + location.hash;
+    document.documentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f0f1a;color:#e0e0e0;font-family:Segoe UI,sans-serif;flex-direction:column;gap:1rem"><h2 style="background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Redirecting to new domain...</h2><p style="color:#888;font-size:0.9rem">masons-arcade.vercel.app</p></div>';
+    setTimeout(function() { location.href = newUrl; }, 1500);
+  }
+})();
+
 // ─── FAVICON ───
 (function() {
   if (!document.querySelector('link[rel="icon"]')) {
