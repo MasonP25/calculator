@@ -2001,6 +2001,9 @@
       var orig = document.querySelector('.games:not(#favGames):not(#recentGames):not(#popularGames) .card[href="' + gid + '.html"]');
       if (!orig) return;
       var clone = orig.cloneNode(true);
+      clone.classList.add('revealed');
+      clone.style.opacity = '1';
+      clone.style.transform = '';
       var oldBtn = clone.querySelector('.fav-btn');
       if (oldBtn) oldBtn.remove();
       var btn = document.createElement('button');
@@ -2035,6 +2038,9 @@
       var orig = document.querySelector('.games:not(#favGames):not(#recentGames):not(#popularGames) .card[href="' + gid + '.html"]');
       if (!orig) return;
       var clone = orig.cloneNode(true);
+      clone.classList.add('revealed');
+      clone.style.opacity = '1';
+      clone.style.transform = '';
       var oldBtn = clone.querySelector('.fav-btn');
       if (oldBtn) oldBtn.remove();
       var isFav = favs.indexOf(gid) !== -1;
