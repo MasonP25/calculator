@@ -2055,6 +2055,13 @@
   injectFavButtons();
   refreshFavState();
 
+  // Re-render on back-forward navigation (bfcache)
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      refreshFavState();
+    }
+  });
+
   // Load favorites from Firebase when logged in
   window.addEventListener('load', function() {
     setTimeout(function() {
