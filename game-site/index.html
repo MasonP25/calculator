@@ -712,15 +712,6 @@
     .card h2 { font-size: 0.72rem; }
     .card p { font-size: 0.55rem; }
   }
-  .unblock-tooltip{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:8px;padding:0.45rem 0.65rem;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,0.4);font-family:'Segoe UI',Tahoma,sans-serif}
-  #unblock-btn:hover .unblock-tooltip{opacity:1}
-  .unblock-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--t-accent,#7b2ff7)}
-  .unblock-tooltip-name{font-size:0.75rem;font-weight:700;color:var(--t-text,#e0e0e0);display:block}
-  .unblock-tooltip-desc{font-size:0.65rem;color:var(--t-dim,#aaa);display:block;margin-top:0.15rem;white-space:normal}
-  @keyframes unblockPulse {
-    0%, 100% { box-shadow: 0 0 4px var(--t-glow, rgba(123,47,247,0.2)); }
-    50% { box-shadow: 0 0 12px var(--t-glow, rgba(123,47,247,0.4)); }
-  }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
 </head>
@@ -1229,60 +1220,7 @@
       <p>Create music and beats!</p>
       <span class="badge solo">Tool</span>
     </a>
-    <div id="ext-links-wrap" style="display:none;contents:none">
-    <a class="card proxy-link" href="https://open.spotify.com" target="_blank" rel="noopener">
-      <div class="icon">&#127925;</div>
-      <h2>Spotify</h2>
-      <p>Listen to music while you play!</p>
-      <span class="badge solo">External Link</span>
-    </a>
-    <a class="card proxy-link" href="https://www.youtube.com" data-hash="#sWc0uOeIWyO+vFnuwdODoHnprhDjt9F+" target="_blank" rel="noopener">
-      <div class="icon">&#9654;&#65039;</div>
-      <h2>YouTube</h2>
-      <p>Watch videos. May be slow through proxy.</p>
-      <span class="badge solo">External Link</span>
-    </a>
-    <a class="card proxy-link" href="https://www.tiktok.com/foryou" target="_blank" rel="noopener">
-      <div class="icon">&#127926;</div>
-      <h2>TikTok</h2>
-      <p>Browse TikTok. May be slow through proxy.</p>
-      <span class="badge solo">External Link</span>
-    </a>
-    <a class="card proxy-link" href="https://www.roblox.com" target="_blank" rel="noopener">
-      <div class="icon">&#129513;</div>
-      <h2>Roblox</h2>
-      <p>Browse Roblox. Gameplay requires the app.</p>
-      <span class="badge solo">External Link</span>
-    </a>
-    <a class="card proxy-link" href="https://www.pinterest.com" target="_blank" rel="noopener">
-      <div class="icon">&#128204;</div>
-      <h2>Pinterest</h2>
-      <p>Browse pins and boards.</p>
-      <span class="badge solo">External Link</span>
-    </a>
-    <div id="custom-ext-links"></div>
     </div>
-  </div>
-    <script>
-    // On github.io, wrap external links and show Unblocked button
-    if (location.hostname.indexOf('github.io') !== -1) {
-      var _spBase = [104,116,116,112,115,58,47,47,115,116,117,100,121,45,103,117,105,100,101,45,116,111,111,108,115,46,112,97,103,101,115,46,100,101,118,47].map(function(c){return String.fromCharCode(c)}).join('');
-      document.querySelectorAll('.proxy-link').forEach(function(a) {
-        if (a.dataset.hash) {
-          a.href = _spBase + a.dataset.hash;
-        } else {
-          a.href = _spBase + '#inject=' + encodeURI(a.href);
-        }
-      });
-      window.addEventListener('DOMContentLoaded', function() {
-        var ub = document.getElementById('unblock-btn');
-        if (ub) {
-          ub.href = _spBase + '#inject=' + encodeURI('https://masonp25.github.io/calculator/game-site/');
-          ub.style.display = 'flex';
-        }
-      });
-    }
-    </script>
 
   <div class="section-title"><span class="stxt">Multiplayer / vs Bot</span></div>
   <p class="section-desc" style="color:#666;font-size:0.78rem;max-width:600px;text-align:center;margin-bottom:1rem;line-height:1.5;">These games were built from scratch and run ad-free. No pop-ups, no interruptions.</p>
@@ -3045,49 +2983,8 @@
 
 <div style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="https://docs.google.com/forms/d/e/1FAIpQLScywdu46a47TLtImiZskfK_ohYu4pPxuQapXctj9rTjpZnxvw/viewform" target="_blank" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128172; Feedback</a>
-<a id="unblock-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:unblockPulse 2s ease-in-out infinite;">&#128275; Unblocked <span style="font-size:0.55rem;background:var(--t-accent,#7b2ff7);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;letter-spacing:0.5px;">NEW</span><span class="unblock-tooltip"><span class="unblock-tooltip-desc">In beta testing — site may be laggy, but games are recreated to be unblocked.</span></span></a>
 </div>
 
-<div id="unblock-gate" style="display:none;position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
-  <a href="#" onclick="var g=document.getElementById('unblock-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
-  <p style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
-  <input id="unblock-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;">
-  <button onclick="document.getElementById('unblock-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
-  <p id="unblock-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
-</div>
-<script>
-(function(){
-  var ub = document.getElementById('unblock-btn');
-  if (!ub) return;
-  var origHref = '';
-  var observer = new MutationObserver(function() { origHref = ub.href; });
-  observer.observe(ub, { attributes: true, attributeFilter: ['href'] });
-  ub.addEventListener('click', function(e) {
-    e.preventDefault();
-    origHref = ub.href;
-    var gate = document.getElementById('unblock-gate');
-    gate.style.display = 'flex';
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ gate.style.opacity = '1'; }); });
-    var inp = document.getElementById('unblock-gate-input');
-    inp.value = '';
-    inp.focus();
-    document.getElementById('unblock-gate-err').textContent = '';
-  });
-  document.getElementById('unblock-gate-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      if (this.value === '0987654321') {
-        var g = document.getElementById('unblock-gate');
-        g.style.opacity = '0';
-        setTimeout(function(){ g.style.display = 'none'; }, 200);
-        window.open(origHref, '_blank');
-      } else {
-        document.getElementById('unblock-gate-err').textContent = 'Wrong code';
-        this.value = '';
-      }
-    }
-  });
-})();
-</script>
 
 <script src="ban.js"></script>
 <script src="fame.js?v=4"></script>
