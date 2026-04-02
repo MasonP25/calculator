@@ -3313,17 +3313,15 @@
         '</div>' +
       '</div>';
 
-    // Position box — top for last step (footer), bottom for everything else
+    // Position box — slide to top for last step (footer), bottom for everything else
+    box.style.left = '50%';
+    box.style.transform = 'translateX(-50%)';
     if (isLast) {
       box.style.bottom = '';
       box.style.top = '2rem';
-      box.style.left = '50%';
-      box.style.transform = 'translateX(-50%)';
     } else {
       box.style.top = '';
-      box.style.left = '50%';
       box.style.bottom = '2rem';
-      box.style.transform = 'translateX(-50%)';
     }
 
     document.getElementById('tour-skip').onclick = finish;
@@ -3348,6 +3346,7 @@
     document.body.style.overflow = '';
     window.removeEventListener('scroll', onScroll, true);
     overlay.remove();
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   // Start tour based on auth state
