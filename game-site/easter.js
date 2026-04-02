@@ -1,12 +1,5 @@
-// ─── EASTER EGG HUNT (active March 14 – April 5, 2026) ───
+// ─── EASTER EGG HUNT (permanent) ───
 (function() {
-  var now = new Date();
-  var end = new Date(2026, 3, 6); // April 6
-  var start = new Date(2026, 2, 14); // March 14
-  if (now >= end || now < start) {
-    localStorage.removeItem('arcade_easter_found');
-    return;
-  }
 
   var TOTAL = 20;
   var REWARD = 5;
