@@ -123,10 +123,14 @@
     color: inherit;
     transform-style: preserve-3d;
   }
+  @keyframes glowShift {
+    0% { box-shadow: 0 0 12px var(--t-accent,#7b2ff7), 0 12px 35px rgba(123,47,247,0.3); border-color: var(--t-accent,#7b2ff7); }
+    50% { box-shadow: 0 0 12px var(--t-accent2,#00d4ff), 0 12px 35px rgba(0,212,255,0.3); border-color: var(--t-accent2,#00d4ff); }
+    100% { box-shadow: 0 0 12px var(--t-accent,#7b2ff7), 0 12px 35px rgba(123,47,247,0.3); border-color: var(--t-accent,#7b2ff7); }
+  }
   .card:hover {
     transform: translateY(-8px) scale(1.04);
-    border-color: transparent;
-    box-shadow: 0 12px 35px rgba(123, 47, 247, 0.3);
+    animation: glowShift 3s ease-in-out infinite;
   }
   .card .tilt-glow {
     position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;
@@ -137,13 +141,12 @@
   /* Scroll reveal */
   .card, .section-title { opacity: 0; transform: translateY(20px); }
   .card.revealed, .section-title.revealed { opacity: 1; transform: translateY(0); }
-  .card.revealed:hover { transform: translateY(-8px) scale(1.04); }
+  .card.revealed:hover { transform: translateY(-8px) scale(1.04); animation: glowShift 3s ease-in-out infinite; }
   .card { transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.2s, opacity 0.3s ease; }
   .section-title { transition: opacity 0.3s ease, transform 0.3s ease; }
-  .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; position:relative; z-index:2; }
-  .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; position:relative; z-index:2; }
-  .card p { color: #888; font-size: 0.75rem; line-height: 1.4; position:relative; z-index:2; }
-  .card .badge { position:relative; z-index:2; }
+  .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+  .card p { color: #888; font-size: 0.75rem; line-height: 1.4; }
   .badge {
     display: inline-block;
     font-size: 0.58rem;
@@ -3110,17 +3113,6 @@
     card.style.setProperty('--glow-y', (y / rect.height * 100).toFixed(1) + '%');
   }
 
-  var _gradAngle = 0;
-  var _activeGrads = [];
-  function _spinBorders() {
-    _gradAngle = (_gradAngle + 2) % 360;
-    for (var i = 0; i < _activeGrads.length; i++) {
-      _activeGrads[i].style.background = 'conic-gradient(from ' + _gradAngle + 'deg, var(--t-accent,#7b2ff7), var(--t-accent2,#00d4ff), var(--t-accent,#7b2ff7))';
-    }
-    requestAnimationFrame(_spinBorders);
-  }
-  requestAnimationFrame(_spinBorders);
-
   function addGlows() {
     document.querySelectorAll('.card').forEach(function(card) {
       if (!card.querySelector('.tilt-glow')) {
@@ -3128,30 +3120,11 @@
         glow.className = 'tilt-glow';
         card.appendChild(glow);
       }
-      if (!card.querySelector('.grad-border')) {
-        var gb = document.createElement('div');
-        gb.className = 'grad-border';
-        gb.style.cssText = 'position:absolute;inset:-3px;border-radius:19px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:0;';
-        card.appendChild(gb);
-        var inner = document.createElement('div');
-        inner.style.cssText = 'position:absolute;inset:3px;border-radius:16px;background:var(--t-bg2,#1a1a2e);';
-        gb.appendChild(inner);
-        card._gradEl = gb;
-      } else if (!card._gradEl) {
-        card._gradEl = card.querySelector('.grad-border');
-      }
       if (!card._tiltBound) {
         card._tiltBound = true;
-        card.addEventListener('mouseenter', function(e) {
-          handleMove(e);
-          this._gradEl.style.opacity = '1';
-          if (_activeGrads.indexOf(this._gradEl) === -1) _activeGrads.push(this._gradEl);
-        });
+        card.addEventListener('mouseenter', function(e) { handleMove(e); });
         card.addEventListener('mouseleave', function() {
           var c = this;
-          c._gradEl.style.opacity = '0';
-          var idx = _activeGrads.indexOf(c._gradEl);
-          if (idx !== -1) _activeGrads.splice(idx, 1);
           c.style.transition = 'transform 0.5s cubic-bezier(0.2, 2, 0.5, 1)';
           c.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) translateY(0) scale(1)';
           setTimeout(function() { c.style.transition = ''; c.style.transform = ''; }, 500);

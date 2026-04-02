@@ -345,7 +345,7 @@
       .score-display,.selector-btn,.lobby-container,.screen {
         background:${t.bg2}66!important; border-color:${t.border}!important; color:${t.text}!important; backdrop-filter:blur(0.5px)!important;
       }
-      .card:hover,.game-card:hover { border-color:transparent!important; box-shadow:0 12px 35px ${t.glow}!important; }
+      .card:hover,.game-card:hover { }
       .card p,.card .badge.solo,.game-card p { color:${t.dim}!important; }
 
       /* Random button text matches theme tint */
