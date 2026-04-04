@@ -1323,7 +1323,7 @@
   function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
   resize();
   var resizeTimer;
-  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 200); });
+  window.addEventListener('resize', function() { clearTimeout(resizeTimer); resizeTimer = setTimeout(function() { resize(); init(); }, 200); });
 
   window.addEventListener('scroll', function() { scrollY = window.pageYOffset || 0; }, { passive: true });
 

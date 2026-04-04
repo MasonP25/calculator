@@ -678,7 +678,13 @@
   }
   #chat-send:hover { background: #6a1fe0; transform: scale(1.08); }
 
-  #mobile-menu-btn { display: none; }
+  #mobile-menu-btn { display: none !important; }
+  #mobile-menu-dropdown { display: none !important; }
+  @media (max-width: 600px) {
+    #mobile-menu-btn { display: flex !important; }
+    #mobile-menu-dropdown { display: none !important; }
+    #mobile-menu-dropdown.open { display: flex !important; }
+  }
   /* ── Mobile Responsive ── */
   @media (max-width: 600px) {
     body { padding: 0.8rem 0.4rem; padding-top: 5rem; }
