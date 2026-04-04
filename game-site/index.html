@@ -3148,7 +3148,12 @@
       }
       if (!card._tiltBound) {
         card._tiltBound = true;
-        card.addEventListener('mouseenter', function(e) { handleMove(e); });
+        card.addEventListener('mouseenter', function(e) {
+          this.style.transition = 'transform 0.25s ease';
+          handleMove(e);
+          var c = this;
+          setTimeout(function() { c.style.transition = ''; }, 250);
+        });
         card.addEventListener('mouseleave', function() {
           var c = this;
           c.style.transition = 'transform 0.5s cubic-bezier(0.2, 2, 0.5, 1)';
