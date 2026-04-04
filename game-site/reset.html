@@ -129,9 +129,13 @@ async function init() {
   if (!token) { showInvalid(); return; }
   try {
     var snap = await getDoc(doc(db, 'passwordResets', token));
+    console.log('Token exists:', snap.exists());
     if (!snap.exists()) { showInvalid(); return; }
     var data = snap.data();
-    if (data.used || data.expiresAt < Date.now()) { showInvalid(); return; }
+    console.log('Token data:', JSON.stringify(data));
+    var expires = Number(data.expiresAt) || 0;
+    console.log('Expires:', expires, 'Now:', Date.now(), 'Used:', data.used);
+    if (data.used || expires < Date.now()) { showInvalid(); return; }
     _username = data.username;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('resetForm').style.display = '';
