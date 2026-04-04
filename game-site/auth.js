@@ -73,6 +73,45 @@ window._arcadeResetURL = 'https://script.google.com/macros/s/AKfycbzpThePcVWfOHV
     openModal();
   }
 
+  // ─── Email prompt for existing users ───
+  function checkEmailPrompt() {
+    var user = getCurrentUser();
+    if (!user || !window._arcadeDB) return;
+    if (localStorage.getItem('arcade_email_prompted')) return;
+    setTimeout(function() {
+      var fdb = window._arcadeDB;
+      if (!fdb) return;
+      fdb.getDoc(fdb.doc(fdb.db, 'users', user.toLowerCase())).then(function(snap) {
+        if (!snap.exists()) return;
+        var data = snap.data();
+        if (data.email) return; // already has email
+        localStorage.setItem('arcade_email_prompted', '1');
+        // Show prompt
+        var prompt = document.createElement('div');
+        prompt.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-accent,#7b2ff7);border-radius:12px;padding:1rem 1.2rem;max-width:340px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.5);font-family:"Segoe UI",Tahoma,sans-serif;';
+        prompt.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><span style="font-weight:600;font-size:0.85rem;color:var(--t-text,#e0e0e0)">Add Recovery Email</span><button id="emailPromptX" style="background:none;border:none;color:var(--t-dim,#888);font-size:1.2rem;cursor:pointer">&times;</button></div>' +
+          '<p style="color:var(--t-dim,#888);font-size:0.72rem;margin-bottom:0.6rem">Add an email to recover your account if you forget your password.</p>' +
+          '<input id="emailPromptInp" type="email" placeholder="your@email.com" style="width:100%;background:var(--t-bg1,#0f0f1a);border:1px solid var(--t-border,#2a2a4a);color:var(--t-text,#e0e0e0);padding:0.4rem 0.6rem;border-radius:8px;font-size:0.82rem;font-family:inherit;outline:none;margin-bottom:0.5rem">' +
+          '<div style="display:flex;gap:6px"><button id="emailPromptSave" style="flex:1;background:var(--t-accent,#7b2ff7);color:#fff;border:none;padding:0.4rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit">Save</button><button id="emailPromptSkip" style="flex:1;background:var(--t-bg3,#2a2a4a);color:var(--t-dim,#888);border:none;padding:0.4rem;border-radius:8px;font-size:0.78rem;cursor:pointer;font-family:inherit">Skip</button></div>' +
+          '<div id="emailPromptErr" style="color:#ff4757;font-size:0.7rem;text-align:center;margin-top:0.4rem;min-height:1em"></div>';
+        document.body.appendChild(prompt);
+        document.getElementById('emailPromptX').onclick = function() { prompt.remove(); };
+        document.getElementById('emailPromptSkip').onclick = function() { prompt.remove(); };
+        document.getElementById('emailPromptSave').onclick = function() {
+          var email = document.getElementById('emailPromptInp').value.trim();
+          var err = document.getElementById('emailPromptErr');
+          if (!email || !email.includes('@')) { err.textContent = 'Enter a valid email'; return; }
+          fdb.updateDoc(fdb.doc(fdb.db, 'users', user.toLowerCase()), { email: email.toLowerCase() }).then(function() {
+            prompt.innerHTML = '<p style="color:#22c55e;font-size:0.82rem;text-align:center;padding:0.5rem">Email saved! You can now use password recovery.</p>';
+            setTimeout(function() { prompt.remove(); }, 2000);
+          }).catch(function() {
+            err.textContent = 'Failed to save. Try again.';
+          });
+        };
+      });
+    }, 3000);
+  }
+
   // ─── Inject styles ───
   var css = document.createElement('style');
   css.textContent =
@@ -241,6 +280,8 @@ window._arcadeResetURL = 'https://script.google.com/macros/s/AKfycbzpThePcVWfOHV
         window.dispatchEvent(new Event('arcade-auth-change'));
         updateBadge();
         if (window.SFX) window.SFX.correct();
+        // Check if user has email, prompt if not
+        if (tab === 'in') checkEmailPrompt();
       } else {
         errEl.textContent = result.msg;
       }
