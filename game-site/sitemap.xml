@@ -811,6 +811,11 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://masons-arcade.vercel.app/faq.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://masons-arcade.vercel.app/videos.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

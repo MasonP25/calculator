@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ — Mason's Arcade</title>
+    <meta name="description" content="Frequently asked questions about Mason's Arcade — free online gaming platform with 130+ browser games.">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0f0f1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            min-height: 100vh;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #00d4ff;
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 20px 0 0 20px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #7b2ff7; }
+        .back-link svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+
+        .faq-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .faq-header h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .faq-header p {
+            color: #a0a0b8;
+            font-size: 1.05rem;
+        }
+
+        .faq-item {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .faq-item:hover { border-color: #7b2ff7; }
+
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-align: left;
+            padding: 18px 50px 18px 20px;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .faq-question:hover { color: #00d4ff; }
+
+        .faq-question::after {
+            content: '+';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #7b2ff7;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.open .faq-question::after {
+            content: '\2212';
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-answer-inner {
+            padding: 0 20px 18px;
+            color: #a0a0b8;
+            font-size: 0.97rem;
+            line-height: 1.65;
+        }
+
+        .faq-answer-inner a {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+        .faq-answer-inner a:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .faq-header h1 { font-size: 1.8rem; }
+            .faq-question { font-size: 0.97rem; padding: 15px 44px 15px 16px; }
+            .faq-answer-inner { font-size: 0.92rem; padding: 0 16px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">
+    <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    Back to Arcade
+</a>
+
+<div class="faq-container">
+    <div class="faq-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Everything you need to know about Mason's Arcade</p>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">What is Mason's Arcade?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Mason's Arcade is a free online gaming platform with 130+ browser games you can play instantly — no downloads or installations needed. Just pick a game and start playing right in your browser.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">Do I need an account?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                You can play most games without an account, but creating a free account lets you save your high scores to global leaderboards, earn coins, customize your avatar, and chat with other players in multiplayer games.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">How do coins work?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                You earn coins by playing games, spinning the daily wheel, and completing challenges. Spend them in the Shop on avatar items like hats, hairstyles, shirts, and nametags. Coins have no real-money value — they're just for fun and customization.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">What is the Hall of Fame?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                The <a href="fame.html">Hall of Fame</a> is our global leaderboard system that tracks the best scores across all games. Compete with other players and see if you can claim the top spot.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">How do I customize my avatar?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Visit the <a href="shop.html">Shop</a> to browse and buy hats, hairstyles, shirts, face accessories, and nametag styles using your earned coins. Equip items to show off your look across the site and in multiplayer games.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">Is the chat moderated?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Yes. Multiplayer game chats use a profanity filter and are subject to community guidelines. Violations such as harassment, spam, or inappropriate language may result in a temporary or permanent ban.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">How do daily challenges work?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                A new challenge appears every day — it could be reaching a target score, playing a specific game, or completing a task. Finish the challenge to earn bonus coins and XP. Check the main page daily so you don't miss out.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">What are the egg hunts?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Hidden eggs are scattered across different pages of the site. Find them all to earn coin rewards. Keep your eyes peeled — they can be anywhere, and new hunts may appear during special events.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">Can I play on mobile?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Yes! Most games are designed to work on mobile browsers. Just visit <a href="https://masons-arcade.vercel.app">masons-arcade.vercel.app</a> on your phone or tablet and start playing. Some games with keyboard controls may work best on desktop.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">How do I report a bug or give feedback?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Use the Feedback button on the main page, or email us directly at <a href="mailto:masons.arcade1@gmail.com">masons.arcade1@gmail.com</a>. Bug reports, game suggestions, and general feedback are all welcome.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">Is my data safe?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                Passwords are hashed before being stored — we never save them in plain text. We collect only what's needed to run the site. See our <a href="privacy.html">Privacy Policy</a> for full details on how your data is handled.
+            </div>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">What browsers work best?</button>
+        <div class="faq-answer">
+            <div class="faq-answer-inner">
+                We recommend Chrome, Edge, or any Chromium-based browser for the best experience. Firefox and Safari will work for most games, but some features may perform better on Chromium browsers.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.parentElement;
+            const wasOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+        });
+    });
+</script>
+<script src="theme.js?v=30"></script>
+<script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
+</body>
+</html>

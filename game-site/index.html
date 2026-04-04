@@ -1737,7 +1737,7 @@
 
 <footer style="margin-top:3rem;padding:1.5rem 1rem;text-align:center;font-size:0.68rem;color:var(--t-dim,#666);font-family:'Segoe UI',Tahoma,sans-serif;line-height:1.8;border-top:1px solid var(--t-border,#2a2a4a)">
   Made by Mason Page &middot; Built with HTML/JS/Firebase &middot; 2026 &middot; All rights reserved
-  <br><a href="privacy.html" style="color:var(--t-dim,#666);text-decoration:none;">Privacy Policy</a> &middot; <a href="terms.html" style="color:var(--t-dim,#666);text-decoration:none;">Terms of Service</a> &middot; <a href="about.html" style="color:var(--t-dim,#666);text-decoration:none;">About</a>
+  <br><a href="privacy.html" style="color:var(--t-dim,#666);text-decoration:none;">Privacy Policy</a> &middot; <a href="terms.html" style="color:var(--t-dim,#666);text-decoration:none;">Terms of Service</a> &middot; <a href="about.html" style="color:var(--t-dim,#666);text-decoration:none;">About</a> &middot; <a href="faq.html" style="color:var(--t-dim,#666);text-decoration:none;">FAQ</a>
 </footer>
 
 <script>
@@ -2720,10 +2720,18 @@
     }
   });
 
+  /* ── profanity filter ── */
+  var _profanityList = ['fuck','shit','bitch','ass','dick','cock','pussy','nigger','nigga','faggot','retard','whore','slut','cunt','bastard','damn','piss','stfu','wtf','kys','kill yourself','rape'];
+  var _profanityRegex = new RegExp('\\b(' + _profanityList.map(function(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')\\b', 'gi');
+  function filterProfanity(text) {
+    return text.replace(_profanityRegex, function(m) { return m[0] + '*'.repeat(m.length - 1); });
+  }
+
   /* ── send ── */
   function send() {
     var text = input.value.trim();
     if (!text) return;
+    text = filterProfanity(text);
     var me = getUser();
     var now = Date.now();
     var time = hhmm(now);
