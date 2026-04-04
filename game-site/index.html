@@ -3378,17 +3378,78 @@ if ('serviceWorker' in navigator) {
     var easterEl = document.getElementById('easter-counter');
     var eggText = easterEl ? easterEl.textContent.trim() : '';
 
+    var eggCount = '';
+    if (eggText) {
+      var m = eggText.match(/\d+\s*\/\s*\d+/);
+      eggCount = m ? m[0] : eggText.replace(/[^\d\/]/g,'');
+    }
+
     dd.innerHTML =
       '<div class="mm-row" onclick="window.location.href=\'profile.html?user=' + encodeURIComponent(user) + '\'"><span class="mm-icon">&#128100;</span><span class="mm-label">' + user + '</span><span class="mm-val">' + lvl + '</span></div>' +
       '<div class="mm-row"><span class="mm-icon">&#129689;</span><span class="mm-label">Coins</span><span class="mm-val">' + coins + '</span></div>' +
       (xpText ? '<div class="mm-row"><span class="mm-icon">&#11088;</span><span class="mm-label">XP</span><span class="mm-val">' + xpText + '</span></div>' : '') +
-      '<div class="mm-row" onclick="if(window.ArcadeNotifications)ArcadeNotifications.togglePanel()"><span class="mm-icon">&#128276;</span><span class="mm-label">Notifications</span>' + (notifs > 0 ? '<span class="mm-val" style="color:#ff4757">' + notifs + '</span>' : '') + '</div>' +
-      (eggText ? '<div class="mm-row"><span class="mm-icon">&#129370;</span><span class="mm-label">Eggs</span><span class="mm-val">' + eggText + '</span></div>' : '') +
+      '<div class="mm-row" id="mm-notif-row"><span class="mm-icon">&#128276;</span><span class="mm-label">Notifications</span>' + (notifs > 0 ? '<span class="mm-val" style="color:#ff4757">' + notifs + '</span>' : '') + '</div>' +
+      (eggCount ? '<div class="mm-row"><span class="mm-icon">&#129370;</span><span class="mm-label">Eggs</span><span class="mm-val">' + eggCount + '</span></div>' : '') +
       '<div class="mm-divider"></div>' +
-      '<div class="mm-row" onclick="document.querySelector(\'.theme-picker-btn\').click()"><span class="mm-icon">&#9783;</span><span class="mm-label">Theme</span></div>' +
+      '<div class="mm-row" id="mm-theme-row"><span class="mm-icon">&#9783;</span><span class="mm-label">Theme</span><span class="mm-arrow" style="font-size:0.6rem;color:var(--t-dim,#888)">&#9654;</span></div>' +
       '<div class="mm-row" onclick="document.getElementById(\'daily-spin-btn\').click()"><span class="mm-icon">&#127905;</span><span class="mm-label">Daily Spin</span></div>' +
       '<div class="mm-divider"></div>' +
-      '<div class="mm-row" onclick="if(window.ArcadeAuth)ArcadeAuth.openSignIn();else{localStorage.removeItem(\'arcade_currentUser\');location.reload();}"><span class="mm-icon">&#128682;</span><span class="mm-label" style="color:var(--t-dim,#888)">Sign Out</span></div>';
+      '<div class="mm-row" id="mm-signout-row"><span class="mm-icon">&#128682;</span><span class="mm-label" style="color:var(--t-dim,#888)">Sign Out</span></div>';
+
+    // Notifications — toggle panel inline
+    var notifRow = document.getElementById('mm-notif-row');
+    if (notifRow) {
+      notifRow.onclick = function(e) {
+        e.stopPropagation();
+        if (window.ArcadeNotifications) {
+          ArcadeNotifications.togglePanel();
+          // Reposition notif panel under dropdown on mobile
+          setTimeout(function() {
+            var np = document.querySelector('.notif-panel');
+            if (np) {
+              np.style.position = 'fixed';
+              np.style.top = '46px';
+              np.style.right = '16px';
+              np.style.width = '280px';
+              np.style.maxWidth = 'calc(100vw - 32px)';
+              np.style.zIndex = '9999';
+            }
+          }, 50);
+        }
+      };
+    }
+
+    // Theme — open theme panel without closing dropdown
+    var themeRow = document.getElementById('mm-theme-row');
+    if (themeRow) {
+      themeRow.onclick = function(e) {
+        e.stopPropagation();
+        var tp = document.querySelector('.theme-panel');
+        if (tp) {
+          var showing = tp.style.display === 'flex';
+          tp.style.display = showing ? 'none' : 'flex';
+          tp.style.position = 'fixed';
+          tp.style.top = '46px';
+          tp.style.right = '16px';
+          tp.style.left = 'auto';
+          tp.style.width = '200px';
+          tp.style.maxHeight = '50vh';
+          tp.style.zIndex = '9999';
+        }
+      };
+    }
+
+    // Sign out
+    var signoutRow = document.getElementById('mm-signout-row');
+    if (signoutRow) {
+      signoutRow.onclick = function() {
+        localStorage.removeItem('arcade_currentUser');
+        localStorage.removeItem('arcadePlayerName');
+        localStorage.removeItem('arcade_savedPass');
+        if (window.FirebaseAuth) window.FirebaseAuth.signOut();
+        location.reload();
+      };
+    }
   }
 
   // Build on load and when auth/coins change
