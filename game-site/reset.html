@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Password — Mason's Arcade</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  .reset-box {
+    background: #1a1a2e;
+    border: 2px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 360px;
+    max-width: 95vw;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 1.2rem;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .inp {
+    display: block;
+    width: 100%;
+    background: #0f0f1a;
+    border: 2px solid #2a2a4a;
+    color: #e0e0e0;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    margin-bottom: 0.7rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .inp:focus { border-color: #7b2ff7; }
+  .inp::placeholder { color: #555; }
+  .btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, #7b2ff7, #5b1fd7);
+    color: #fff;
+    border: none;
+    padding: 0.65rem;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .err { color: #ff4757; font-size: 0.78rem; text-align: center; margin-bottom: 0.7rem; min-height: 1.1rem; }
+  .success { color: #22c55e; font-size: 0.85rem; text-align: center; line-height: 1.5; }
+  .info { color: #888; font-size: 0.75rem; text-align: center; margin-top: 0.8rem; }
+  a { color: #7b2ff7; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .username-display { color: #00d4ff; font-weight: 600; font-size: 1rem; text-align: center; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+<div class="reset-box">
+  <h2>Reset Password</h2>
+
+  <!-- Loading state -->
+  <div id="loading"><p class="info">Validating reset link...</p></div>
+
+  <!-- Invalid/expired token -->
+  <div id="invalid" style="display:none">
+    <p class="err" style="font-size:0.85rem;">This reset link is invalid or has expired.</p>
+    <p class="info"><a href="index.html">Back to Arcade</a></p>
+  </div>
+
+  <!-- Reset form -->
+  <div id="resetForm" style="display:none">
+    <div class="username-display" id="resetUser"></div>
+    <div class="err" id="resetErr"></div>
+    <input class="inp" id="newPass" type="password" placeholder="New Password">
+    <input class="inp" id="confirmPass" type="password" placeholder="Confirm New Password">
+    <button class="btn" id="resetBtn" onclick="doReset()">Reset Password</button>
+  </div>
+
+  <!-- Success -->
+  <div id="resetSuccess" style="display:none">
+    <p class="success">Your password has been reset successfully!</p>
+    <p class="info" style="margin-top:1rem"><a href="index.html">Sign in to Arcade</a></p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+  authDomain: "calculator-81d08.firebaseapp.com",
+  projectId: "calculator-81d08",
+  storageBucket: "calculator-81d08.firebasestorage.app",
+  messagingSenderId: "375406495739",
+  appId: "1:375406495739:web:fd28553263599864426d5e"
+});
+const db = getFirestore(app);
+
+async function hashPassword(pw) {
+  var data = new TextEncoder().encode(pw + '_arcade_firebase_salt');
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+var params = new URLSearchParams(window.location.search);
+var token = params.get('token');
+var _username = '';
+
+async function init() {
+  if (!token) { showInvalid(); return; }
+  try {
+    var snap = await getDoc(doc(db, 'passwordResets', token));
+    if (!snap.exists()) { showInvalid(); return; }
+    var data = snap.data();
+    if (data.used || data.expiresAt < Date.now()) { showInvalid(); return; }
+    _username = data.username;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('resetForm').style.display = '';
+    document.getElementById('resetUser').textContent = data.displayName || _username;
+  } catch(e) {
+    showInvalid();
+  }
+}
+
+function showInvalid() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('invalid').style.display = '';
+}
+
+window.doReset = async function() {
+  var pw = document.getElementById('newPass').value;
+  var pw2 = document.getElementById('confirmPass').value;
+  var errEl = document.getElementById('resetErr');
+  var btn = document.getElementById('resetBtn');
+
+  if (!pw || pw.length < 3) { errEl.textContent = 'Password must be at least 3 characters'; return; }
+  if (pw !== pw2) { errEl.textContent = 'Passwords do not match'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Resetting...';
+  errEl.textContent = '';
+
+  try {
+    var hash = await hashPassword(pw);
+    await updateDoc(doc(db, 'users', _username), { hash: hash, password: pw });
+    await updateDoc(doc(db, 'passwordResets', token), { used: true });
+    document.getElementById('resetForm').style.display = 'none';
+    document.getElementById('resetSuccess').style.display = '';
+  } catch(e) {
+    errEl.textContent = 'Reset failed. Try again.';
+    btn.disabled = false;
+    btn.textContent = 'Reset Password';
+  }
+};
+
+init();
+</script>
+</body>
+</html>

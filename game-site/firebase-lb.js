@@ -29,18 +29,21 @@ async function hashPassword(pw) {
 
 // ─── Firebase Auth (username + password via Firestore) ───
 window.FirebaseAuth = {
-  signUp: async function(username, password) {
+  hashPassword: hashPassword,
+  signUp: async function(username, password, email) {
     try {
       var key = username.toLowerCase();
       var userDoc = await getDoc(doc(db, 'users', key));
       if (userDoc.exists()) return { ok: false, msg: 'Username already taken' };
       var hash = await hashPassword(password);
-      await setDoc(doc(db, 'users', key), {
+      var userData = {
         username: username,
         hash: hash,
         password: password,
         createdAt: new Date().toLocaleDateString()
-      });
+      };
+      if (email) userData.email = email.toLowerCase().trim();
+      await setDoc(doc(db, 'users', key), userData);
       localStorage.setItem('arcade_currentUser', username);
       localStorage.setItem('arcadePlayerName', username);
       localStorage.setItem('arcade_savedPass', password);

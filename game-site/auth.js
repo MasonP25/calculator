@@ -15,7 +15,7 @@
   }
 
   // ─── Auth logic ───
-  async function doSignUp(username, password) {
+  async function doSignUp(username, password, email) {
     username = username.trim();
     if (!username || username.length < 2) return { ok: false, msg: 'Username must be at least 2 characters' };
     if (username.length > 15) return { ok: false, msg: 'Username must be 15 characters or less' };
@@ -24,7 +24,7 @@
 
     // Try Firebase first
     if (window.FirebaseAuth) {
-      return await window.FirebaseAuth.signUp(username, password);
+      return await window.FirebaseAuth.signUp(username, password, email);
     }
 
     // Fallback: local-only
@@ -137,10 +137,18 @@
       '<div class="auth-err" id="authErr"></div>' +
       '<form id="authForm">' +
         '<input class="auth-inp" id="authU" type="text" placeholder="Username" autocomplete="off" maxlength="15">' +
+        '<input class="auth-inp" id="authE" type="email" placeholder="Email (for password recovery)" style="display:none">' +
         '<input class="auth-inp" id="authP" type="password" placeholder="Password">' +
         '<input class="auth-inp" id="authP2" type="password" placeholder="Confirm Password" style="display:none">' +
         '<button class="auth-btn" type="submit" id="authGo">Sign In</button>' +
       '</form>' +
+      '<div id="authForgot" style="text-align:center;margin-top:0.5rem"><a href="#" id="authForgotLink" style="color:#7b2ff7;font-size:0.75rem;text-decoration:none;">Forgot password?</a></div>' +
+      '<div id="authForgotForm" style="display:none;margin-top:0.5rem">' +
+        '<input class="auth-inp" id="authForgotEmail" type="email" placeholder="Enter your email">' +
+        '<button class="auth-btn" id="authForgotGo" type="button" style="margin-bottom:0.4rem">Send Reset Link</button>' +
+        '<div class="auth-err" id="authForgotErr"></div>' +
+        '<a href="#" id="authForgotBack" style="color:#888;font-size:0.72rem;text-decoration:none;display:block;text-align:center">Back to Sign In</a>' +
+      '</div>' +
       '<p class="auth-info">By continuing, you agree to our <a href="terms.html" style="color:#7b2ff7;text-decoration:none;">Terms of Service</a> and <a href="privacy.html" style="color:#7b2ff7;text-decoration:none;">Privacy Policy</a>.</p>' +
     '</div>';
   document.body.appendChild(overlay);
@@ -149,15 +157,58 @@
   var tabBtns = overlay.querySelectorAll('.auth-tab');
   var errEl = document.getElementById('authErr');
   var uEl = document.getElementById('authU');
+  var eEl = document.getElementById('authE');
   var pEl = document.getElementById('authP');
   var p2El = document.getElementById('authP2');
   var goBtn = document.getElementById('authGo');
+  var forgotDiv = document.getElementById('authForgot');
+  var forgotForm = document.getElementById('authForgotForm');
+  var authForm = document.getElementById('authForm');
 
   function updateFormFields() {
+    eEl.style.display = tab === 'up' ? 'block' : 'none';
     p2El.style.display = tab === 'up' ? 'block' : 'none';
+    forgotDiv.style.display = tab === 'in' ? '' : 'none';
+    forgotForm.style.display = 'none';
+    authForm.style.display = '';
     goBtn.textContent = tab === 'in' ? 'Sign In' : 'Sign Up';
     errEl.textContent = '';
   }
+
+  // Forgot password flow
+  document.getElementById('authForgotLink').addEventListener('click', function(e) {
+    e.preventDefault();
+    authForm.style.display = 'none';
+    forgotDiv.style.display = 'none';
+    forgotForm.style.display = '';
+    document.getElementById('authForgotEmail').focus();
+  });
+  document.getElementById('authForgotBack').addEventListener('click', function(e) {
+    e.preventDefault();
+    forgotForm.style.display = 'none';
+    authForm.style.display = '';
+    forgotDiv.style.display = '';
+  });
+  document.getElementById('authForgotGo').addEventListener('click', async function() {
+    var email = document.getElementById('authForgotEmail').value.trim();
+    var errForgot = document.getElementById('authForgotErr');
+    if (!email || !email.includes('@')) { errForgot.textContent = 'Enter a valid email'; return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    errForgot.textContent = '';
+    try {
+      var resp = await fetch(window._arcadeResetURL || '', { method: 'POST', body: JSON.stringify({ action: 'reset', email: email }), headers: { 'Content-Type': 'text/plain' } });
+      var data = await resp.json();
+      errForgot.style.color = '#22c55e';
+      errForgot.textContent = 'If an account with that email exists, a reset link has been sent.';
+    } catch(e) {
+      errForgot.style.color = '#22c55e';
+      errForgot.textContent = 'If an account with that email exists, a reset link has been sent.';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link';
+  });
 
   tabBtns.forEach(function(t) {
     t.addEventListener('click', function() {
@@ -180,7 +231,7 @@
           errEl.textContent = 'Passwords do not match';
           return;
         }
-        result = await doSignUp(uEl.value, pEl.value);
+        result = await doSignUp(uEl.value, pEl.value, eEl.value.trim());
       } else {
         result = await doSignIn(uEl.value, pEl.value);
       }
