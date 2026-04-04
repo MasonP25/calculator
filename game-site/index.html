@@ -729,7 +729,7 @@
       flex-direction: column; gap: 6px; padding: 10px;
       background: var(--t-bg2,#1a1a2e); border: 2px solid var(--t-border,#2a2a4a);
       border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      min-width: 180px; font-family: 'Segoe UI', Tahoma, sans-serif;
+      width: 190px; max-width: 190px; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden;
     }
     .mm-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 0.78rem; color: var(--t-text,#e0e0e0); cursor: pointer; transition: background 0.15s; text-decoration: none; }
     .mm-row:hover { background: var(--t-bg3,#2a2a4a); }
@@ -737,7 +737,7 @@
     .mm-row .mm-label { flex: 1; }
     .mm-row .mm-val { color: var(--t-dim,#888); font-size: 0.72rem; }
     .mm-divider { border-top: 1px solid var(--t-border,#2a2a4a); margin: 2px 0; }
-    .mm-sub { display:none; flex-direction:column; gap:4px; padding:6px 8px; max-height:35vh; overflow-y:auto; }
+    .mm-sub { display:none; flex-direction:column; gap:4px; padding:6px 8px; max-height:35vh; overflow-y:auto; overflow-x:hidden; width:100%; }
     .mm-sub.open { display:flex; }
     .mm-row .mm-toggle { font-size:0.55rem; color:var(--t-dim,#888); transition:transform 0.2s; }
     .mm-row .mm-toggle.open { transform:rotate(90deg); }
@@ -3481,16 +3481,23 @@ if ('serviceWorker' in navigator) {
       };
     }
     // Theme option clicks
+    var _mmSkipClose = false;
     dd.querySelectorAll('.mm-theme-opt').forEach(function(opt, idx) {
       opt.onclick = function(e) {
         e.stopPropagation();
+        e.preventDefault();
+        _mmSkipClose = true;
         var tpanel = document.querySelector('.theme-panel');
         if (tpanel) {
+          tpanel.style.display = 'none';
           var options = tpanel.querySelectorAll('.theme-option, [data-theme]');
           if (options[idx]) options[idx].click();
+          tpanel.style.display = 'none';
         }
+        setTimeout(function() { _mmSkipClose = false; }, 100);
       };
     });
+    window._mmSkipClose = function() { return _mmSkipClose; };
 
     // Sign out
     var signoutRow = document.getElementById('mm-signout-row');
@@ -3514,6 +3521,7 @@ if ('serviceWorker' in navigator) {
 
   // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
+    if (window._mmSkipClose && window._mmSkipClose()) return;
     var btn = document.getElementById('mobile-menu-btn');
     var dd = document.getElementById('mobile-menu-dropdown');
     if (btn && dd && !btn.contains(e.target) && !dd.contains(e.target)) {
