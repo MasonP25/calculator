@@ -2721,17 +2721,29 @@
   });
 
   /* ── profanity filter ── */
-  var _profanityList = ['fuck','shit','bitch','ass','dick','cock','pussy','nigger','nigga','faggot','retard','whore','slut','cunt','bastard','damn','piss','stfu','wtf','kys','kill yourself','rape'];
-  var _profanityRegex = new RegExp('\\b(' + _profanityList.map(function(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')\\b', 'gi');
-  function filterProfanity(text) {
-    return text.replace(_profanityRegex, function(m) { return m[0] + '*'.repeat(m.length - 1); });
+  var _profanityList = ['fuck','fucker','fucking','fucked','fck','fuk','phuck','shit','shitty','shitting','bitch','bitches','bitching','ass','asshole','asswipe','dick','dickhead','cock','pussy','nigger','nigga','niga','faggot','fag','fags','retard','retarded','whore','slut','slutty','cunt','bastard','damn','dammit','piss','pissed','stfu','wtf','kys','kill yourself','kill urself','rape','raping','rapist','sybau','hoe','thot','skank','wanker','twat','bollocks','motherfucker','mf','milf','dilf','porn','penis','vagina','boobs','tits','titties','cum','jizz','orgasm','horny','sexy','nude','naked','nudes','anal','blowjob','handjob','deepthroat','69','succ','suck my','lick my','eat my','die','go die','neck yourself','hang yourself','shoot yourself'];
+  var _profanityRegex = new RegExp('(?:^|\\b|\\s)(' + _profanityList.map(function(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?:\\b|\\s|$)', 'gi');
+  function hasProfanity(text) {
+    return _profanityRegex.test(text);
   }
 
   /* ── send ── */
   function send() {
     var text = input.value.trim();
     if (!text) return;
-    text = filterProfanity(text);
+    _profanityRegex.lastIndex = 0;
+    if (hasProfanity(text)) {
+      var errDiv = document.getElementById('chat-profanity-err');
+      if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'chat-profanity-err';
+        errDiv.style.cssText = 'padding:4px 10px;font-size:0.65rem;color:#ff4757;text-align:center;';
+        input.parentElement.before(errDiv);
+      }
+      errDiv.textContent = 'Message blocked — inappropriate language is not allowed.';
+      setTimeout(function() { errDiv.textContent = ''; }, 3000);
+      return;
+    }
     var me = getUser();
     var now = Date.now();
     var time = hhmm(now);
