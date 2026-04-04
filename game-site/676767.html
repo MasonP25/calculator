@@ -60,31 +60,6 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div id="ent-gate" style="position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
-    <a href="index.html" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
-    <p style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
-    <input id="ent-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;" autofocus>
-    <button onclick="document.getElementById('ent-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
-    <p id="ent-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
-  </div>
-  <script>
-  (function(){
-    var gate = document.getElementById("ent-gate");
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ gate.style.opacity = "1"; }); });
-    var inp = document.getElementById("ent-gate-input");
-    inp.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (inp.value === "0987654321") {
-          gate.style.opacity = "0";
-          setTimeout(function(){ gate.style.display = "none"; }, 200);
-        } else {
-          document.getElementById("ent-gate-err").textContent = "Wrong code";
-          inp.value = "";
-        }
-      }
-    });
-  })();
-  </script>
   <div class="movies-container">
     <div class="movies-header">
       <a class="back-btn" href="index.html" id="main-back">&#8592;</a>
