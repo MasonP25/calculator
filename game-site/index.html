@@ -705,6 +705,29 @@
     #chat-panel.collapsed { width: 130px; }
     #feedback-btn { padding: 4px 8px; font-size: 0.68rem; }
   }
+  /* Mobile fullscreen button */
+  #mobile-fs-btn { display:none; }
+  @media (max-width: 600px) {
+    /* Shrink top-left buttons */
+    #feedback-btn { display:none !important; }
+    .theme-picker-btn { width:32px !important; height:32px !important; font-size:0.9rem !important; top:10px !important; left:10px !important; }
+    #daily-spin-btn { width:32px !important; height:32px !important; font-size:0.9rem !important; top:10px !important; left:48px !important; }
+    #sfx-mute-btn { width:32px !important; height:32px !important; font-size:0.9rem !important; }
+    #easter-counter { top:10px !important; right:10px !important; font-size:0.65rem !important; padding:3px 8px !important; }
+    /* Shrink auth badge */
+    .auth-badge { top:8px !important; right:8px !important; font-size:0.65rem !important; padding:0.15rem 0.5rem !important; border-radius:14px !important; }
+    .auth-badge .ab-name { max-width:55px !important; font-size:0.6rem !important; }
+    .auth-badge .ab-coins { font-size:0.58rem !important; }
+    .auth-badge .ab-out { font-size:0.55rem !important; }
+    .auth-badge .ab-level { font-size:0.55rem !important; }
+    .auth-badge .ab-bell { font-size:0.75rem !important; }
+    .ab-xp { display:none !important; }
+    /* Chat bottom center */
+    #chat-panel { left:50% !important; right:auto !important; transform:translateX(-50%); }
+    #chat-panel.collapsed { width:140px; }
+    /* Fullscreen button */
+    #mobile-fs-btn { display:flex; position:fixed; bottom:46px; right:10px; z-index:9996; width:36px; height:36px; border-radius:50%; border:1px solid var(--t-border,#2a2a4a); background:var(--t-bg2,#1a1a2e); color:var(--t-dim,#888); font-size:1rem; cursor:pointer; align-items:center; justify-content:center; }
+  }
   /* Small phones */
   @media (max-width: 380px) {
     h1 { font-size: 1.4rem; }
@@ -3318,6 +3341,7 @@ if ('serviceWorker' in navigator) {
   }
 }
 </script>
+<button id="mobile-fs-btn" onclick="if(document.fullscreenElement){document.exitFullscreen();}else{document.documentElement.requestFullscreen();}" title="Fullscreen">&#x26F6;</button>
 <script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
 </body>
 </html>
