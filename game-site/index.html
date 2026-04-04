@@ -3378,8 +3378,9 @@ if ('serviceWorker' in navigator) {
 <script>
 // ─── MOBILE MENU ───
 (function() {
-  if (window.innerWidth > 600) return;
+  var _mmBuilt = false;
   function buildMenu() {
+    if (window.innerWidth > 600) return;
     var user = localStorage.getItem('arcade_currentUser') || 'Guest';
     var nameEl = document.getElementById('mm-username');
     if (nameEl) nameEl.textContent = user;
@@ -3534,6 +3535,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('coins-updated', buildMenu);
   window.addEventListener('level-updated', buildMenu);
   window.addEventListener('notifications-updated', buildMenu);
+  window.addEventListener('resize', function() { setTimeout(buildMenu, 300); });
 
   // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
