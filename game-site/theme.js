@@ -26,7 +26,7 @@
 (function() {
   var s = document.createElement('style');
   s.textContent = '@media(max-width:600px){' +
-    'canvas{max-width:95vw!important;height:auto!important;}' +
+    'canvas:not(#bg-particles){max-width:95vw!important;height:auto!important;}' +
     '.game-container,.game-board,.board,.grid,.puzzle,.tetris-board{max-width:95vw!important;overflow:hidden!important;}' +
     'body{overflow-x:hidden!important;}' +
     'h1{font-size:1.4rem!important;}' +
