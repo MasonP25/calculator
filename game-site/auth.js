@@ -141,7 +141,7 @@
         '<input class="auth-inp" id="authP2" type="password" placeholder="Confirm Password" style="display:none">' +
         '<button class="auth-btn" type="submit" id="authGo">Sign In</button>' +
       '</form>' +
-      '<p class="auth-info">Synced across all your devices</p>' +
+      '<p class="auth-info">By continuing, you agree to our <a href="terms.html" style="color:#7b2ff7;text-decoration:none;">Terms of Service</a> and <a href="privacy.html" style="color:#7b2ff7;text-decoration:none;">Privacy Policy</a>.</p>' +
     '</div>';
   document.body.appendChild(overlay);
 
