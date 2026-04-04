@@ -1312,6 +1312,14 @@
 
   window.addEventListener('scroll', function() { scrollY = window.pageYOffset || 0; }, { passive: true });
 
+  var mouseX = -1000, mouseY = -1000;
+  var MOUSE_RADIUS = mobile ? 80 : 150;
+  var MOUSE_FORCE = mobile ? 1.5 : 2.5;
+  if (!mobile) {
+    document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
+    document.addEventListener('mouseleave', function() { mouseX = -1000; mouseY = -1000; });
+  }
+
   function readColors() {
     var s = getComputedStyle(document.documentElement);
     accentColor = s.getPropertyValue('--t-accent').trim() || '#7b2ff7';
@@ -1348,7 +1356,7 @@
   function draw() {
     if (paused) { requestAnimationFrame(draw); return; }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Update positions and compute draw Y
+    // Update positions, apply mouse repel, compute draw Y
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
       p.x += p.vx;
@@ -1358,6 +1366,14 @@
       if (p.baseY < -10) p.baseY = canvas.height + 10;
       if (p.baseY > canvas.height + 10) p.baseY = -10;
       p.drawY = ((p.baseY - scrollY * p.parallax) % canvas.height + canvas.height) % canvas.height;
+      // Mouse repel
+      var mdx = p.x - mouseX, mdy = p.drawY - mouseY;
+      var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (mDist < MOUSE_RADIUS && mDist > 0) {
+        var force = (1 - mDist / MOUSE_RADIUS) * MOUSE_FORCE * (0.5 + p.layer * 0.2);
+        p.x += (mdx / mDist) * force;
+        p.drawY += (mdy / mDist) * force;
+      }
     }
     // Draw connections between nearby particles on same/adjacent layers
     for (var i = 0; i < particles.length; i++) {
@@ -1379,13 +1395,18 @@
         }
       }
     }
-    // Draw particles
+    // Draw particles (glow boost near mouse)
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
+      var mdx2 = p.x - mouseX, mdy2 = p.drawY - mouseY;
+      var mDist2 = Math.sqrt(mdx2 * mdx2 + mdy2 * mdy2);
+      var boost = mDist2 < MOUSE_RADIUS ? (1 - mDist2 / MOUSE_RADIUS) : 0;
+      var drawR = p.r + boost * 3;
+      var drawA = Math.min(p.a + boost * 0.4, 1);
       ctx.beginPath();
-      ctx.arc(p.x, p.drawY, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.drawY, drawR, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.a;
+      ctx.globalAlpha = drawA;
       ctx.fill();
     }
     ctx.globalAlpha = 1;
