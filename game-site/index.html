@@ -833,8 +833,8 @@
   })();
   </script>
 
-  <div class="section-title" id="favSection" style="display:none">&#11088; <span class="stxt">Favorites</span></div>
-  <div class="games" id="favGames" style="display:none"></div>
+  <div class="section-title" id="favSection" style="max-height:0;overflow:hidden;opacity:0;margin:0;transition:max-height 0.4s ease,opacity 0.4s ease,margin 0.4s ease;">&#11088; <span class="stxt">Favorites</span></div>
+  <div class="games" id="favGames" style="max-height:0;overflow:hidden;opacity:0;transition:max-height 0.4s ease,opacity 0.4s ease;"></div>
 
   <div class="section-title" id="recentSection" style="display:none">&#128338; <span class="stxt">Recently Played</span></div>
   <div class="games" id="recentGames" style="display:none"></div>
@@ -1929,7 +1929,8 @@
     var popS = document.getElementById('popularSection');
     var popG = document.getElementById('popularGames');
     if (q || activeFilter !== 'all') {
-      favS.style.display = 'none'; favG.style.display = 'none';
+      favS.style.maxHeight = '0'; favS.style.opacity = '0'; favS.style.margin = '0';
+      favG.style.maxHeight = '0'; favG.style.opacity = '0';
       recS.style.display = 'none'; recG.style.display = 'none';
       popS.style.display = 'none'; popG.style.display = 'none';
     } else {
@@ -2030,13 +2031,14 @@
   function renderFavorites() {
     var favs = getFavorites();
     if (favs.length === 0) {
-      favSection.style.display = 'none';
-      favGames.style.display = 'none';
-      favGames.innerHTML = '';
+      favSection.style.maxHeight = '0';
+      favSection.style.opacity = '0';
+      favSection.style.margin = '0';
+      favGames.style.maxHeight = '0';
+      favGames.style.opacity = '0';
+      setTimeout(function() { favGames.innerHTML = ''; }, 400);
       return;
     }
-    favSection.style.display = '';
-    favGames.style.display = '';
     favGames.innerHTML = '';
     favs.forEach(function(gid) {
       var orig = document.querySelector('.games:not(#favGames):not(#recentGames):not(#popularGames) .card[href="' + gid + '.html"]');
@@ -2054,6 +2056,13 @@
       btn.title = 'Remove from favorites';
       clone.appendChild(btn);
       favGames.appendChild(clone);
+    });
+    requestAnimationFrame(function() {
+      favSection.style.maxHeight = '60px';
+      favSection.style.opacity = '1';
+      favSection.style.margin = '';
+      favGames.style.maxHeight = '500px';
+      favGames.style.opacity = '1';
     });
   }
 
