@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Memory - Mason's Arcade</title>
+<meta name="description" content="Play Color Memory for free on Mason's Arcade. Memorize colors and recreate them from memory! No downloads, just click and play!">
+<meta property="og:title" content="Color Memory - Mason's Arcade">
+<meta property="og:description" content="Play Color Memory for free on Mason's Arcade. Memorize colors and recreate them from memory!">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://masons-arcade.vercel.app/favicon.svg">
+<meta property="og:url" content="https://masons-arcade.vercel.app/colormemory.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Color Memory - Mason's Arcade">
+<meta name="twitter:description" content="Play Color Memory for free on Mason's Arcade. Memorize colors and recreate them from memory!">
+<meta name="twitter:image" content="https://masons-arcade.vercel.app/favicon.svg">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    padding-bottom: 80px;
+  }
+
+  a.back {
+    position: fixed;
+    top: 16px;
+    left: 18px;
+    color: #00d4ff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    z-index: 10001;
+    transition: opacity .2s;
+  }
+  a.back:hover { opacity: .7; }
+
+  .title {
+    margin-top: 48px;
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: .95rem;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    color: #fff;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .btn:active { transform: translateY(0); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #7b2ff7, #5a1fd0);
+  }
+  .btn-secondary {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+  }
+  .btn-lock {
+    background: linear-gradient(135deg, #00c853, #009624);
+    font-size: 1.1rem;
+    padding: 14px 40px;
+    min-width: 180px;
+  }
+
+  .difficulty-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: .9rem;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color .2s;
+  }
+  .difficulty-toggle:hover { border-color: #7b2ff7; }
+  .difficulty-toggle .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    transition: background .2s;
+  }
+  .difficulty-toggle .dot.normal { background: #00c853; }
+  .difficulty-toggle .dot.hard { background: #ff5252; }
+
+  .game-area {
+    margin-top: 24px;
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 400px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  .progress-pip {
+    width: 40px; height: 6px;
+    border-radius: 3px;
+    background: #2a2a4a;
+    transition: background .4s;
+  }
+  .progress-pip.done { background: #7b2ff7; }
+  .progress-pip.active { background: #00d4ff; animation: pipPulse 1s infinite; }
+
+  @keyframes pipPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+
+  /* Phase: memorize */
+  .memorize-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn .5s ease;
+  }
+
+  .phase-label {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #00d4ff;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 200px; height: 200px;
+    margin-bottom: 16px;
+  }
+  .timer-ring svg {
+    transform: rotate(-90deg);
+    width: 200px; height: 200px;
+  }
+  .timer-ring .track {
+    fill: none;
+    stroke: #2a2a4a;
+    stroke-width: 6;
+  }
+  .timer-ring .fill {
+    fill: none;
+    stroke: #00d4ff;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .1s linear;
+  }
+  .timer-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #00d4ff;
+  }
+
+  .color-swatch {
+    width: 260px;
+    height: 260px;
+    border-radius: 20px;
+    border: 3px solid #2a2a4a;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6);
+    transition: background-color .5s ease, transform .3s ease, opacity .3s ease;
+  }
+
+  .round-label {
+    margin-top: 12px;
+    font-size: 1.1rem;
+    color: #888;
+  }
+
+  /* Phase: guess */
+  .guess-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    animation: fadeIn .5s ease;
+  }
+
+  .picker-area {
+    width: 100%;
+    max-width: 400px;
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 8px;
+  }
+
+  .preview-swatch {
+    width: 100%;
+    height: 120px;
+    border-radius: 12px;
+    border: 2px solid #2a2a4a;
+    margin-bottom: 20px;
+    transition: background-color .1s;
+  }
+
+  .slider-group {
+    margin-bottom: 16px;
+  }
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: .85rem;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+  .slider-group label span.val {
+    color: #00d4ff;
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    border-radius: 7px;
+    outline: none;
+    cursor: pointer;
+    border: 1px solid #2a2a4a;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #7b2ff7;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    cursor: pointer;
+    margin-top: -1px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #7b2ff7;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    cursor: pointer;
+  }
+
+  #hueSlider {
+    background: linear-gradient(to right,
+      hsl(0,100%,50%), hsl(30,100%,50%), hsl(60,100%,50%), hsl(90,100%,50%),
+      hsl(120,100%,50%), hsl(150,100%,50%), hsl(180,100%,50%), hsl(210,100%,50%),
+      hsl(240,100%,50%), hsl(270,100%,50%), hsl(300,100%,50%), hsl(330,100%,50%),
+      hsl(360,100%,50%)
+    );
+  }
+
+  #satSlider {
+    background: linear-gradient(to right, hsl(0,0%,50%), hsl(0,100%,50%));
+  }
+
+  #litSlider {
+    background: linear-gradient(to right, #000, hsl(0,100%,50%), #fff);
+  }
+
+  .lock-btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  /* Phase: result per round */
+  .result-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn .5s ease;
+  }
+
+  .comparison {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 12px 0;
+  }
+  .compare-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .compare-swatch {
+    width: 110px;
+    height: 110px;
+    border-radius: 14px;
+    border: 2px solid #2a2a4a;
+  }
+  .compare-label {
+    font-size: .8rem;
+    color: #888;
+  }
+
+  .score-badge {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 8px 0 4px;
+  }
+  .score-badge.perfect { color: #00c853; }
+  .score-badge.great { color: #00d4ff; }
+  .score-badge.good { color: #7b2ff7; }
+  .score-badge.ok { color: #ffab00; }
+  .score-badge.bad { color: #ff5252; }
+
+  .score-sub {
+    color: #888;
+    font-size: .9rem;
+    margin-bottom: 12px;
+  }
+
+  /* Phase: final results */
+  .final-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn .5s ease;
+    width: 100%;
+  }
+
+  .final-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #7b2ff7, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .final-score {
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 8px 0;
+  }
+  .final-score .out-of {
+    font-size: 1.2rem;
+    color: #888;
+    font-weight: 400;
+  }
+
+  .all-comparisons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin: 16px 0 24px;
+    width: 100%;
+  }
+
+  .mini-compare {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 140px;
+  }
+  .mini-compare .swatches {
+    display: flex;
+    gap: 6px;
+  }
+  .mini-swatch {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    border: 1px solid #2a2a4a;
+  }
+  .mini-label {
+    font-size: .7rem;
+    color: #666;
+  }
+  .mini-score {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    z-index: 99999;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+  }
+
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* Start screen */
+  .start-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn .5s ease;
+    gap: 8px;
+  }
+  .start-icon {
+    font-size: 4rem;
+    margin-bottom: 8px;
+  }
+  .start-desc {
+    color: #aaa;
+    font-size: .95rem;
+    text-align: center;
+    max-width: 400px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .title { font-size: 1.8rem; margin-top: 56px; }
+    .color-swatch { width: 200px; height: 200px; }
+    .compare-swatch { width: 80px; height: 80px; }
+    .picker-area { padding: 16px; }
+    .preview-swatch { height: 90px; }
+    .mini-compare { min-width: 120px; padding: 8px; }
+    .mini-swatch { width: 40px; height: 40px; }
+    .final-score { font-size: 2.4rem; }
+    .timer-ring { width: 150px; height: 150px; }
+    .timer-ring svg { width: 150px; height: 150px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="index.html">&#8592; Back</a>
+
+<h1 class="title">Color Memory</h1>
+<p class="subtitle">Memorize colors and recreate them from memory!</p>
+
+<div class="controls">
+  <button class="btn btn-primary" id="newGameBtn">New Game</button>
+  <div class="difficulty-toggle" id="diffToggle">
+    <div class="dot normal" id="diffDot"></div>
+    <span id="diffLabel">Normal</span>
+  </div>
+</div>
+
+<div class="game-area" id="gameArea">
+  <!-- Content injected by JS -->
+</div>
+
+<script>
+(function() {
+  const gameArea = document.getElementById('gameArea');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const diffToggle = document.getElementById('diffToggle');
+  const diffDot = document.getElementById('diffDot');
+  const diffLabel = document.getElementById('diffLabel');
+
+  let isHard = false;
+  let colors = [];       // array of {h, s, l}
+  let guesses = [];      // array of {h, s, l}
+  let scores = [];       // array of numbers 0-10
+  let currentRound = 0;
+  let totalRounds = 5;
+  let phase = 'start';   // start | memorize | guess | result | final
+  let timerInterval = null;
+
+  // Difficulty toggle
+  diffToggle.addEventListener('click', () => {
+    isHard = !isHard;
+    diffDot.className = 'dot ' + (isHard ? 'hard' : 'normal');
+    diffLabel.textContent = isHard ? 'Hard' : 'Normal';
+  });
+
+  newGameBtn.addEventListener('click', startGame);
+
+  function getMemTime() {
+    return isHard ? 3 : 5;
+  }
+
+  // Generate random vibrant-ish colors
+  function generateColors() {
+    const cols = [];
+    for (let i = 0; i < totalRounds; i++) {
+      cols.push({
+        h: Math.floor(Math.random() * 360),
+        s: Math.floor(Math.random() * 50) + 40,  // 40-89% saturation
+        l: Math.floor(Math.random() * 45) + 25    // 25-69% lightness
+      });
+    }
+    return cols;
+  }
+
+  function hsl(c) {
+    return `hsl(${c.h}, ${c.s}%, ${c.l}%)`;
+  }
+
+  // Scoring: HSL distance. Hue is circular 0-360, S and L are 0-100.
+  // Normalize hue to 0-100 scale so all channels comparable, but weight hue x1.5
+  function colorDistance(a, b) {
+    // Hue difference (circular)
+    let dh = Math.abs(a.h - b.h);
+    if (dh > 180) dh = 360 - dh;
+    // Normalize hue diff to 0-100 range: max hue diff is 180 -> 100
+    const nhue = (dh / 180) * 100;
+    const ds = Math.abs(a.s - b.s);    // 0-100
+    const dl = Math.abs(a.l - b.l);    // 0-100
+
+    // Weighted Euclidean distance, hue weighted 1.5x
+    const dist = Math.sqrt((nhue * 1.5) ** 2 + ds ** 2 + dl ** 2);
+    // Max possible: sqrt((100*1.5)^2 + 100^2 + 100^2) = sqrt(22500+10000+10000) = sqrt(42500) ~ 206.2
+    const maxDist = Math.sqrt(42500);
+    return dist / maxDist; // 0-1
+  }
+
+  function distToScore(dist) {
+    // 0 distance = 10 pts, 1 distance = 0 pts
+    const raw = (1 - dist) * 10;
+    return Math.round(raw * 10) / 10; // 1 decimal
+  }
+
+  function scoreClass(s) {
+    if (s >= 9.5) return 'perfect';
+    if (s >= 8) return 'great';
+    if (s >= 6) return 'good';
+    if (s >= 4) return 'ok';
+    return 'bad';
+  }
+
+  // --- RENDER: Start ---
+  function showStart() {
+    phase = 'start';
+    gameArea.innerHTML = `
+      <div class="start-container">
+        <div class="start-icon">🎨</div>
+        <div class="start-desc">
+          You'll see <strong>5 random colors</strong> one at a time. Try to memorize each one, then recreate it using the HSL color picker!<br><br>
+          Scored 0-10 per color based on accuracy. Can you get a perfect 50?
+        </div>
+        <button class="btn btn-primary" onclick="document.getElementById('newGameBtn').click()">Start Game</button>
+      </div>
+    `;
+  }
+
+  // --- GAME START ---
+  function startGame() {
+    colors = generateColors();
+    guesses = [];
+    scores = [];
+    currentRound = 0;
+    if (timerInterval) clearInterval(timerInterval);
+    showMemorize();
+  }
+
+  // --- RENDER: Progress pips ---
+  function renderProgress() {
+    let html = '<div class="progress-bar">';
+    for (let i = 0; i < totalRounds; i++) {
+      let cls = 'progress-pip';
+      if (i < currentRound) cls += ' done';
+      else if (i === currentRound) cls += ' active';
+      html += `<div class="${cls}"></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // --- RENDER: Memorize phase ---
+  function showMemorize() {
+    phase = 'memorize';
+    const c = colors[currentRound];
+    const memTime = getMemTime();
+    let timeLeft = memTime;
+    const circumference = 2 * Math.PI * 88;
+
+    gameArea.innerHTML = `
+      ${renderProgress()}
+      <div class="memorize-container">
+        <div class="phase-label">Memorize this color!</div>
+        <div class="round-label">Round ${currentRound + 1} of ${totalRounds}</div>
+        <div style="height:12px"></div>
+        <div class="timer-ring">
+          <svg viewBox="0 0 200 200">
+            <circle class="track" cx="100" cy="100" r="88"></circle>
+            <circle class="fill" id="timerFill" cx="100" cy="100" r="88"
+              stroke-dasharray="${circumference}"
+              stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="timer-text" id="timerText">${timeLeft}</div>
+        </div>
+        <div class="color-swatch" id="memSwatch" style="background-color: ${hsl(c)}"></div>
+        <div class="round-label" style="margin-top:8px; font-size:.85rem; color:#666;">
+          ${isHard ? '⚡ Hard Mode' : '🕐 Normal Mode'} &mdash; ${memTime}s
+        </div>
+      </div>
+    `;
+
+    const timerFill = document.getElementById('timerFill');
+    const timerText = document.getElementById('timerText');
+    const startTime = Date.now();
+
+    timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, memTime - elapsed);
+      timerText.textContent = Math.ceil(remaining);
+
+      const fraction = elapsed / memTime;
+      timerFill.style.strokeDashoffset = circumference * fraction;
+
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        showGuess();
+      }
+    }, 50);
+  }
+
+  // --- RENDER: Guess phase ---
+  function showGuess() {
+    phase = 'guess';
+    // Default starting guess at center of ranges
+    let gh = 180, gs = 50, gl = 50;
+
+    gameArea.innerHTML = `
+      ${renderProgress()}
+      <div class="guess-container">
+        <div class="phase-label">Recreate Color ${currentRound + 1}!</div>
+        <div class="round-label">Use the sliders to match the color you just saw</div>
+        <div class="picker-area">
+          <div class="preview-swatch" id="previewSwatch" style="background-color: hsl(${gh}, ${gs}%, ${gl}%)"></div>
+          <div class="slider-group">
+            <label>Hue <span class="val" id="hueVal">${gh}°</span></label>
+            <input type="range" id="hueSlider" min="0" max="360" value="${gh}">
+          </div>
+          <div class="slider-group">
+            <label>Saturation <span class="val" id="satVal">${gs}%</span></label>
+            <input type="range" id="satSlider" min="0" max="100" value="${gs}">
+          </div>
+          <div class="slider-group">
+            <label>Lightness <span class="val" id="litVal">${gl}%</span></label>
+            <input type="range" id="litSlider" min="0" max="100" value="${gl}">
+          </div>
+          <div class="lock-btn-wrap">
+            <button class="btn btn-lock" id="lockBtn">Lock In</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const hueSlider = document.getElementById('hueSlider');
+    const satSlider = document.getElementById('satSlider');
+    const litSlider = document.getElementById('litSlider');
+    const hueVal = document.getElementById('hueVal');
+    const satVal = document.getElementById('satVal');
+    const litVal = document.getElementById('litVal');
+    const preview = document.getElementById('previewSwatch');
+    const lockBtn = document.getElementById('lockBtn');
+
+    function updateSliderBackgrounds() {
+      const h = parseInt(hueSlider.value);
+      const s = parseInt(satSlider.value);
+      const l = parseInt(litSlider.value);
+      // Update saturation slider gradient based on current hue and lightness
+      satSlider.style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+      // Update lightness slider gradient based on current hue and saturation
+      litSlider.style.background = `linear-gradient(to right, hsl(${h}, ${s}%, 0%), hsl(${h}, ${s}%, 50%), hsl(${h}, ${s}%, 100%))`;
+    }
+
+    function updatePreview() {
+      const h = parseInt(hueSlider.value);
+      const s = parseInt(satSlider.value);
+      const l = parseInt(litSlider.value);
+      preview.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+      hueVal.textContent = h + '°';
+      satVal.textContent = s + '%';
+      litVal.textContent = l + '%';
+      updateSliderBackgrounds();
+    }
+
+    hueSlider.addEventListener('input', updatePreview);
+    satSlider.addEventListener('input', updatePreview);
+    litSlider.addEventListener('input', updatePreview);
+    updateSliderBackgrounds();
+
+    lockBtn.addEventListener('click', () => {
+      const guess = {
+        h: parseInt(hueSlider.value),
+        s: parseInt(satSlider.value),
+        l: parseInt(litSlider.value)
+      };
+      guesses.push(guess);
+      const dist = colorDistance(colors[currentRound], guess);
+      const score = distToScore(dist);
+      scores.push(score);
+      showRoundResult(score);
+    });
+  }
+
+  // --- RENDER: Round result ---
+  function showRoundResult(score) {
+    phase = 'result';
+    const target = colors[currentRound];
+    const guess = guesses[currentRound];
+
+    gameArea.innerHTML = `
+      ${renderProgress()}
+      <div class="result-container">
+        <div class="phase-label">Round ${currentRound + 1} Result</div>
+        <div class="comparison">
+          <div class="compare-box">
+            <div class="compare-swatch" style="background-color: ${hsl(target)}; animation: scaleIn .4s ease"></div>
+            <div class="compare-label">Target</div>
+          </div>
+          <div style="font-size:1.5rem; color:#555;">vs</div>
+          <div class="compare-box">
+            <div class="compare-swatch" style="background-color: ${hsl(guess)}; animation: scaleIn .4s ease .1s both"></div>
+            <div class="compare-label">Your Guess</div>
+          </div>
+        </div>
+        <div class="score-badge ${scoreClass(score)}" style="animation: scaleIn .4s ease .2s both">${score.toFixed(1)} / 10</div>
+        <div class="score-sub">
+          Target: hsl(${target.h}, ${target.s}%, ${target.l}%) &nbsp;|&nbsp;
+          Guess: hsl(${guess.h}, ${guess.s}%, ${guess.l}%)
+        </div>
+        <button class="btn btn-secondary" id="nextBtn">${currentRound < totalRounds - 1 ? 'Next Color' : 'See Results'}</button>
+      </div>
+    `;
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentRound++;
+      if (currentRound < totalRounds) {
+        showMemorize();
+      } else {
+        showFinal();
+      }
+    });
+  }
+
+  // --- RENDER: Final results ---
+  function showFinal() {
+    phase = 'final';
+    const total = scores.reduce((a, b) => a + b, 0);
+    const totalRounded = Math.round(total * 10) / 10;
+
+    // Submit score
+    if (window.HallOfFame) {
+      window.HallOfFame.submit('colormemory', totalRounded);
+    }
+
+    let comparisonsHtml = '';
+    for (let i = 0; i < totalRounds; i++) {
+      const t = colors[i];
+      const g = guesses[i];
+      const s = scores[i];
+      comparisonsHtml += `
+        <div class="mini-compare">
+          <div style="font-size:.8rem; color:#aaa; font-weight:600;">Round ${i + 1}</div>
+          <div class="swatches">
+            <div>
+              <div class="mini-swatch" style="background-color: ${hsl(t)}"></div>
+              <div class="mini-label">Target</div>
+            </div>
+            <div>
+              <div class="mini-swatch" style="background-color: ${hsl(g)}"></div>
+              <div class="mini-label">Guess</div>
+            </div>
+          </div>
+          <div class="mini-score ${scoreClass(s)}">${s.toFixed(1)}/10</div>
+        </div>
+      `;
+    }
+
+    gameArea.innerHTML = `
+      <div class="final-container">
+        <div class="final-title">Game Complete!</div>
+        <div class="final-score ${scoreClass(totalRounded / 5)}" style="animation: scaleIn .5s ease">
+          ${totalRounded} <span class="out-of">/ 50</span>
+        </div>
+        <div class="score-sub" style="margin-top:-4px">
+          ${totalRounded >= 45 ? 'Incredible! Almost perfect! 🏆' :
+            totalRounded >= 40 ? 'Amazing color memory! 🌟' :
+            totalRounded >= 30 ? 'Great job! Keep practicing! 👏' :
+            totalRounded >= 20 ? 'Not bad! Room to improve. 💪' :
+            'Keep trying! You\'ll get better! 🎯'}
+        </div>
+        <div class="all-comparisons">${comparisonsHtml}</div>
+        <div class="controls">
+          <button class="btn btn-primary" onclick="document.getElementById('newGameBtn').click()">Play Again</button>
+        </div>
+      </div>
+    `;
+
+    // Confetti for 40+
+    if (totalRounded >= 40) {
+      launchConfetti();
+    }
+  }
+
+  // --- Confetti ---
+  function launchConfetti() {
+    const confettiColors = ['#7b2ff7', '#00d4ff', '#00c853', '#ffab00', '#ff5252', '#ff4081', '#e040fb'];
+    for (let i = 0; i < 80; i++) {
+      setTimeout(() => {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = (Math.random() * 100) + 'vw';
+        piece.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+        piece.style.width = (Math.random() * 8 + 6) + 'px';
+        piece.style.height = (Math.random() * 8 + 6) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        piece.style.animationDelay = '0s';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 4500);
+      }, i * 30);
+    }
+  }
+
+  // Show start screen on load
+  showStart();
+
+})();
+</script>
+
+<script src="ban.js"></script>
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=5"></script>
+<script type="module" src="firebase-lb.js?v=5"></script>
+<script src="coins.js?v=4"></script>
+<script src="avatar.js?v=6"></script>
+<script src="admin.js?v=2"></script>
+<script src="auth.js?v=5"></script>
+<script src="theme.js?v=30"></script>
+<script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
+</body>
+</html>
