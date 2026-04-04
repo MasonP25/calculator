@@ -7,6 +7,21 @@
   }
 })();
 
+// ─── MOBILE GAME PAGE LAYOUT ───
+(function() {
+  var page = (location.pathname.split('/').pop() || '').replace('.html', '');
+  var isIndex = page === 'index' || page === '';
+  if (!isIndex && window.innerWidth <= 600) {
+    var s = document.createElement('style');
+    s.textContent = '@media(max-width:600px){' +
+      '.auth-badge{display:none!important}' +
+      '#easter-counter{display:none!important}' +
+      '.rate-btn{position:fixed!important;bottom:16px!important;left:60px!important}' +
+    '}';
+    document.head.appendChild(s);
+  }
+})();
+
 // ─── FAVICON ───
 (function() {
   if (!document.querySelector('link[rel="icon"]')) {
