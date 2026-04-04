@@ -17,15 +17,59 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f0f1a; overflow: hidden; height: 100vh; }
-  a.back { position: fixed; top: 12px; left: 16px; color: #888; text-decoration: none; font-size: 0.85rem; z-index: 100; font-family: 'Segoe UI', sans-serif; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 60px 20px 20px;
+  }
+  h1 {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  .game-container {
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    border: 2px solid #2a2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1a1a2e;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+  .game-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  a.back {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 10001;
+    color: #aaa;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
   a.back:hover { color: #e0e0e0; }
-  iframe { width: 100%; height: 100vh; border: none; }
 </style>
 </head>
 <body>
 <a class="back" href="index.html">&#8592; Back</a>
-<iframe src="https://dialed.gg/" allow="fullscreen" allowfullscreen></iframe>
+<h1>Dialed</h1>
+<div class="game-container">
+  <iframe src="https://dialed.gg/" allow="fullscreen" allowfullscreen></iframe>
+</div>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=5"></script>
 <script type="module" src="firebase-lb.js?v=5"></script>
