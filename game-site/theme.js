@@ -1214,7 +1214,11 @@
     localStorage.setItem('_ck', id);
     console.log('Cloaked as ' + c.n);
   };
-  window.cloaks = function() { Object.keys(_c).forEach(function(k) { console.log(k + ' — ' + _c[k].n); }); };
+  window.cloaks = function() { Object.keys(_c).forEach(function(k) { console.log(k + ' — ' + _c[k].n); }); console.log('ab — Open in about:blank (hides from GoGuardian)'); };
+  window.ab = function() {
+    var w = window.open('about:blank', '_blank');
+    if (w) { w.document.write('<!DOCTYPE html><html><head><title>about:blank</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>'); w.document.close(); }
+  };
   // Auto-apply saved cloak
   var saved = localStorage.getItem('_ck');
   if (saved && _c[saved]) { _origTitle = document.title; setTimeout(function() { _origTitle = document.title; window.cloak(saved); }, 100); }
