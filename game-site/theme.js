@@ -1173,7 +1173,52 @@
   }
 })();
 
-// ─── TAB CLOAK (disabled for AdSense review) ───
+// ─── TAB CLOAK (console only) ───
+(function() {
+  var _c = {
+    default: { n: 'Default' },
+    gdocs: { n: 'Google Docs', t: 'Untitled document - Google Docs', f: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
+    gslides: { n: 'Google Slides', t: 'Untitled presentation - Google Slides', f: 'https://ssl.gstatic.com/docs/presentations/images/favicon5.ico' },
+    gsheets: { n: 'Google Sheets', t: 'Untitled spreadsheet - Google Sheets', f: 'https://www.gstatic.com/images/branding/product/2x/sheets_2020q4_48dp.png' },
+    classroom: { n: 'Google Classroom', t: 'Home', f: 'https://ssl.gstatic.com/classroom/favicon.png' },
+    canvas: { n: 'Canvas', t: 'Dashboard', f: 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico' },
+    ixl: { n: 'IXL', t: 'IXL | Dashboard', f: 'https://www.ixl.com/favicon.ico' },
+    deltamath: { n: 'DeltaMath', t: 'DeltaMath', f: 'https://www.deltamath.com/favicon.ico' },
+    khan: { n: 'Khan Academy', t: 'Khan Academy | Free Online Courses', f: 'https://cdn.kastatic.org/images/favicon.ico' },
+    wikipedia: { n: 'Wikipedia', t: 'Wikipedia, the free encyclopedia', f: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
+    managebac: { n: 'ManageBac', t: 'ManageBac', f: 'https://app.managebac.com/favicon.ico' },
+    gmail: { n: 'Gmail', t: 'Inbox - Gmail', f: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png' },
+    mathia: { n: 'Mathia', t: 'Mathia', f: 'https://www.carnegielearning.com/hubfs/Icons%20and%20Logos/Logos/favicon.ico' },
+    drive: { n: 'Google Drive', t: 'My Drive - Google Drive', f: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png' },
+    schoology: { n: 'Schoology', t: 'Home | Schoology', f: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334A853' width='100' height='100' rx='15'/><text x='50' y='68' font-size='55' fill='white' text-anchor='middle' font-family='Arial' font-weight='bold'>S</text></svg>" },
+    edpuzzle: { n: 'Edpuzzle', t: 'Edpuzzle', f: 'https://edpuzzle.imgix.net/favicons/favicon-32.png' },
+    zoom: { n: 'Zoom', t: 'Zoom Meeting', f: 'https://st1.zoom.us/zoom.ico' }
+  };
+  var _origTitle = document.title;
+  var _origFav = (document.querySelector('link[rel="icon"]') || {}).href || '';
+  function _setFav(href) {
+    var link = document.querySelector('link[rel="icon"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.href = href || _origFav;
+  }
+  window.cloak = function(id) {
+    if (!id || id === 'default' || id === 'off') {
+      document.title = _origTitle; _setFav(_origFav);
+      localStorage.removeItem('_ck');
+      console.log('Cloak removed');
+      return;
+    }
+    var c = _c[id];
+    if (!c) { console.log('Unknown cloak. Options: ' + Object.keys(_c).join(', ')); return; }
+    document.title = c.t; _setFav(c.f);
+    localStorage.setItem('_ck', id);
+    console.log('Cloaked as ' + c.n);
+  };
+  window.cloaks = function() { Object.keys(_c).forEach(function(k) { console.log(k + ' — ' + _c[k].n); }); };
+  // Auto-apply saved cloak
+  var saved = localStorage.getItem('_ck');
+  if (saved && _c[saved]) { _origTitle = document.title; setTimeout(function() { _origTitle = document.title; window.cloak(saved); }, 100); }
+})();
 
 // ─── FULLSCREEN BUTTON ───
 (function() {
