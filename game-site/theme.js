@@ -1313,8 +1313,8 @@
   window.addEventListener('scroll', function() { scrollY = window.pageYOffset || 0; }, { passive: true });
 
   var mouseX = -1000, mouseY = -1000;
-  var MOUSE_RADIUS = mobile ? 80 : 150;
-  var MOUSE_FORCE = mobile ? 1.5 : 2.5;
+  var MOUSE_RADIUS = mobile ? 80 : 180;
+  var MOUSE_FORCE = mobile ? 1.5 : 4;
   if (!mobile) {
     document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
     document.addEventListener('mouseleave', function() { mouseX = -1000; mouseY = -1000; });
