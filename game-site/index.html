@@ -3442,16 +3442,26 @@ if ('serviceWorker' in navigator) {
             if (np) {
               np.style.display = 'none';
               var items = np.querySelectorAll('.notif-item');
+              sub.innerHTML = '';
+              // Action buttons
+              var actions = document.createElement('div');
+              actions.style.cssText = 'display:flex;gap:6px;padding:2px 0 4px;';
+              actions.innerHTML = '<button onclick="event.stopPropagation();if(window.ArcadeNotifications)ArcadeNotifications.markAllRead();" style="flex:1;padding:3px;border-radius:6px;border:1px solid var(--t-border,#2a2a4a);background:none;color:var(--t-dim,#888);font-size:0.6rem;font-family:inherit;cursor:pointer;">Mark all read</button>' +
+                '<button onclick="event.stopPropagation();if(window.ArcadeNotifications)ArcadeNotifications.clearAll();" style="flex:1;padding:3px;border-radius:6px;border:1px solid var(--t-border,#2a2a4a);background:none;color:var(--t-dim,#888);font-size:0.6rem;font-family:inherit;cursor:pointer;">Clear all</button>';
+              sub.appendChild(actions);
               if (items.length === 0) {
-                sub.innerHTML = '<div style="font-size:0.7rem;color:var(--t-dim,#888);padding:4px;text-align:center;">No notifications</div>';
+                sub.innerHTML += '<div style="font-size:0.65rem;color:var(--t-dim,#888);padding:4px;text-align:center;">No notifications</div>';
               } else {
-                sub.innerHTML = '';
+                var list = document.createElement('div');
+                list.style.cssText = 'max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;';
                 items.forEach(function(item) {
                   var clone = item.cloneNode(true);
-                  clone.style.fontSize = '0.7rem';
-                  clone.style.padding = '4px 6px';
-                  sub.appendChild(clone);
+                  clone.style.fontSize = '0.65rem';
+                  clone.style.padding = '3px 5px';
+                  clone.style.borderRadius = '6px';
+                  list.appendChild(clone);
                 });
+                sub.appendChild(list);
               }
             }
           }, 200);
@@ -3478,7 +3488,6 @@ if ('serviceWorker' in navigator) {
         if (tpanel) {
           var options = tpanel.querySelectorAll('.theme-option, [data-theme]');
           if (options[idx]) options[idx].click();
-          setTimeout(buildMenu, 100);
         }
       };
     });
