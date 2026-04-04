@@ -22,6 +22,21 @@
   }
 })();
 
+// ─── MOBILE GAME FIT ───
+(function() {
+  var s = document.createElement('style');
+  s.textContent = '@media(max-width:600px){' +
+    'canvas{max-width:95vw!important;height:auto!important;}' +
+    '.game-container,.game-board,.board,.grid,.puzzle,.tetris-board{max-width:95vw!important;overflow:hidden!important;}' +
+    'body{overflow-x:hidden!important;}' +
+    'h1{font-size:1.4rem!important;}' +
+    'h2{font-size:1.1rem!important;}' +
+    '.controls,.game-controls,.btn-row{flex-wrap:wrap!important;}' +
+    '.controls button,.game-controls button{font-size:0.75rem!important;padding:6px 10px!important;}' +
+  '}';
+  document.head.appendChild(s);
+})();
+
 // ─── FAVICON ───
 (function() {
   if (!document.querySelector('link[rel="icon"]')) {
