@@ -246,8 +246,12 @@
         if (!myData) return { ok: false, msg: 'Error' };
 
         myData.friends = (myData.friends || []).filter(function(k) { return k !== theirKey; });
+        myData.friendRequestsSent = (myData.friendRequestsSent || []).filter(function(k) { return k !== theirKey; });
+        myData.friendRequestsReceived = (myData.friendRequestsReceived || []).filter(function(k) { return k !== theirKey; });
         if (theirData) {
           theirData.friends = (theirData.friends || []).filter(function(k) { return k !== myKey; });
+          theirData.friendRequestsSent = (theirData.friendRequestsSent || []).filter(function(k) { return k !== myKey; });
+          theirData.friendRequestsReceived = (theirData.friendRequestsReceived || []).filter(function(k) { return k !== myKey; });
         }
 
         var batch = _writeBatch(_db);
