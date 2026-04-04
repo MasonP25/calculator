@@ -9,8 +9,8 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: #0f0f1a;
-    color: #e0e0e0;
+    background: var(--t-bg1, #0f0f1a);
+    color: var(--t-text, #e0e0e0);
     min-height: 100vh;
     padding: 0 1rem 3rem;
   }
@@ -28,13 +28,13 @@
   .back-link {
     position: absolute;
     left: 0;
-    color: #00d4ff;
+    color: var(--t-accent2, #00d4ff);
     text-decoration: none;
     font-size: 1rem;
     font-weight: 600;
     transition: color 0.2s;
   }
-  .back-link:hover { color: #7b2ff7; }
+  .back-link:hover { color: var(--t-accent, #7b2ff7); }
   .top-bar h1 {
     font-size: 2.2rem;
     background: linear-gradient(135deg, #00d4ff, #7b2ff7);
@@ -49,14 +49,14 @@
     margin: 1.5rem auto 0;
   }
   .policy .updated {
-    color: #888;
+    color: var(--t-dim, #888);
     font-size: 0.9rem;
     margin-bottom: 2rem;
     text-align: center;
   }
   .policy section {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
+    background: var(--t-bg2, #1a1a2e);
+    border: 1px solid var(--t-border, #2a2a4a);
     border-radius: 12px;
     padding: 1.5rem 2rem;
     margin-bottom: 1.2rem;
@@ -64,27 +64,27 @@
   .policy h2 {
     font-size: 1.3rem;
     margin-bottom: 0.8rem;
-    color: #00d4ff;
+    color: var(--t-accent2, #00d4ff);
   }
   .policy p {
     line-height: 1.7;
     margin-bottom: 0.8rem;
-    color: #ccc;
+    color: var(--t-dim, #ccc);
   }
   .policy p:last-child { margin-bottom: 0; }
   .policy ul {
     margin: 0.5rem 0 0.8rem 1.5rem;
     line-height: 1.7;
-    color: #ccc;
+    color: var(--t-dim, #ccc);
   }
   .policy ul li { margin-bottom: 0.3rem; }
   .policy a {
-    color: #7b2ff7;
+    color: var(--t-accent, #7b2ff7);
     text-decoration: none;
     transition: color 0.2s;
   }
-  .policy a:hover { color: #00d4ff; }
-  .policy strong { color: #e0e0e0; }
+  .policy a:hover { color: var(--t-accent2, #00d4ff); }
+  .policy strong { color: var(--t-text, #e0e0e0); }
 
   @media (max-width: 600px) {
     .top-bar h1 { font-size: 1.6rem; }
