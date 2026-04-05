@@ -50,9 +50,9 @@
   @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
   @keyframes gradientSpin { to { --grad-angle: 360deg; } }
 
-  /* Glitch effect */
-  @keyframes glitch1 { 0%,92%,100% { clip-path:inset(0); transform:none; } 93% { clip-path:inset(20% 0 40% 0); transform:translateX(-4px); } 96% { clip-path:inset(60% 0 10% 0); transform:translateX(4px); } }
-  @keyframes glitch2 { 0%,92%,100% { clip-path:inset(0); transform:none; } 94% { clip-path:inset(40% 0 20% 0); transform:translateX(3px); } 97% { clip-path:inset(10% 0 60% 0); transform:translateX(-3px); } }
+  /* Glitch effect — every ~3s */
+  @keyframes glitch1 { 0%,80%,100% { clip-path:inset(0); transform:none; } 82% { clip-path:inset(20% 0 40% 0); transform:translateX(-4px); } 86% { clip-path:inset(60% 0 10% 0); transform:translateX(4px); } 90% { clip-path:inset(0); transform:none; } }
+  @keyframes glitch2 { 0%,80%,100% { clip-path:inset(0); transform:none; } 83% { clip-path:inset(40% 0 20% 0); transform:translateX(3px); } 87% { clip-path:inset(10% 0 60% 0); transform:translateX(-3px); } 91% { clip-path:inset(0); transform:none; } }
 
   /* Vignette */
   body::before {
@@ -61,7 +61,7 @@
     inset: 0;
     z-index: 99998;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%);
+    background: radial-gradient(ellipse at center, transparent 65%, rgba(0,0,0,0.2) 100%);
   }
 
   /* Custom scrollbar */
@@ -138,8 +138,8 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  h1::before { animation: glitch1 8s infinite; color: #00d4ff; }
-  h1::after { animation: glitch2 8s infinite; color: #ff6b9d; }
+  h1::before { animation: glitch1 3s infinite; color: #00d4ff; }
+  h1::after { animation: glitch2 3s infinite; color: #ff6b9d; }
   @keyframes titleShimmer {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -223,21 +223,6 @@
     background:radial-gradient(circle at var(--glow-x,50%) var(--glow-y,50%),var(--t-glow,rgba(123,47,247,0.05)) 0%,transparent 60%);
   }
   .card:hover .tilt-glow { opacity:1; }
-  /* Inner glow at bottom */
-  .card::after {
-    content:''; position:absolute; bottom:0; left:10%; right:10%; height:40%;
-    border-radius:0 0 16px 16px; pointer-events:none;
-    background:linear-gradient(to top, rgba(123,47,247,0.03), transparent);
-    opacity:0; transition:opacity 0.3s;
-  }
-  .card:hover::after { opacity:1; }
-  /* Click ripple */
-  @keyframes cardRipple { to { transform:scale(2.5); opacity:0; } }
-  .card-ripple {
-    position:absolute; border-radius:50%; background:rgba(123,47,247,0.2);
-    width:40px; height:40px; transform:scale(0); animation:cardRipple 0.5s ease-out forwards;
-    pointer-events:none; z-index:5;
-  }
   /* Page transition */
   #page-transition {
     position:fixed; inset:0; background:#0f0f1a; z-index:999999;
@@ -3875,21 +3860,6 @@ if ('serviceWorker' in navigator) {
   setTimeout(startPetWalk, 2000);
 })();
 
-// ─── CARD CLICK RIPPLE ───
-(function() {
-  document.addEventListener('click', function(e) {
-    var card = e.target.closest('.card');
-    if (!card) return;
-    var rect = card.getBoundingClientRect();
-    var ripple = document.createElement('div');
-    ripple.className = 'card-ripple';
-    ripple.style.left = (e.clientX - rect.left - 20) + 'px';
-    ripple.style.top = (e.clientY - rect.top - 20) + 'px';
-    card.appendChild(ripple);
-    setTimeout(function() { ripple.remove(); }, 500);
-  });
-})();
-
 // ─── PAGE TRANSITION ───
 (function() {
   var trans = document.getElementById('page-transition');
@@ -3913,17 +3883,15 @@ if ('serviceWorker' in navigator) {
   });
 })();
 
-// ─── MAGNETIC BUTTONS ───
+// ─── MAGNETIC BUTTONS + CARDS ───
 (function() {
-  if (window.innerWidth <= 600) return;
-  var items = document.querySelectorAll('.fame-link, .filter-btn, .random-btn');
-  items.forEach(function(el) {
+  if (window.innerWidth <= 1024) return;
+  // Stronger magnetic for buttons
+  document.querySelectorAll('.fame-link, .filter-btn, .random-btn').forEach(function(el) {
     el.addEventListener('mousemove', function(e) {
       var rect = el.getBoundingClientRect();
-      var cx = rect.left + rect.width / 2;
-      var cy = rect.top + rect.height / 2;
-      var dx = (e.clientX - cx) * 0.15;
-      var dy = (e.clientY - cy) * 0.15;
+      var dx = (e.clientX - rect.left - rect.width/2) * 0.15;
+      var dy = (e.clientY - rect.top - rect.height/2) * 0.15;
       el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
     });
     el.addEventListener('mouseleave', function() {
@@ -3932,22 +3900,46 @@ if ('serviceWorker' in navigator) {
       setTimeout(function() { el.style.transition = ''; }, 400);
     });
   });
+  // Subtle magnetic for cards
+  function initCardMagnetic() {
+    document.querySelectorAll('.card').forEach(function(card) {
+      if (card._magnetic) return;
+      card._magnetic = true;
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var dx = (e.clientX - rect.left - rect.width/2) * 0.03;
+        var dy = (e.clientY - rect.top - rect.height/2) * 0.03;
+        card.style.marginLeft = dx + 'px';
+        card.style.marginTop = dy + 'px';
+      });
+      card.addEventListener('mouseleave', function() {
+        card.style.transition = 'margin 0.3s ease';
+        card.style.marginLeft = '';
+        card.style.marginTop = '';
+        setTimeout(function() { card.style.transition = ''; }, 300);
+      });
+    });
+  }
+  initCardMagnetic();
+  var mo = new MutationObserver(function() { setTimeout(initCardMagnetic, 200); });
+  mo.observe(document.body, { childList: true, subtree: true });
 })();
 
-// ─── PARALLAX SECTION TITLES ───
+// ─── HOVER SPOTLIGHT ON CARDS (cursor light follow) ───
 (function() {
-  if (window.innerWidth <= 600) return;
-  var titles = document.querySelectorAll('.section-title');
-  window.addEventListener('scroll', function() {
-    var sy = window.scrollY;
-    titles.forEach(function(t) {
-      var rect = t.getBoundingClientRect();
-      if (rect.top > -100 && rect.top < window.innerHeight + 100) {
-        var offset = (rect.top - window.innerHeight * 0.5) * 0.04;
-        t.style.transform = 'translateY(' + offset + 'px)';
-      }
-    });
-  }, { passive: true });
+  if (window.innerWidth <= 1024) return;
+  document.addEventListener('mousemove', function(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var rect = card.getBoundingClientRect();
+    var x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    var y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    card.style.background = 'radial-gradient(circle at ' + x + '% ' + y + '%, rgba(123,47,247,0.08) 0%, rgba(20,20,40,0.5) 50%)';
+  });
+  document.addEventListener('mouseleave', function(e) {
+    var card = e.target.closest && e.target.closest('.card');
+    if (card) card.style.background = '';
+  }, true);
 })();
 
 // ─── BACK TO TOP BUTTON ───
