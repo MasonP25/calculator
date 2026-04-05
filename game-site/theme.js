@@ -1396,8 +1396,8 @@
   var MOUSE_FORCE = mobile ? 1.5 : 4;
   var _mouseDown = false;
   var _isIndex = (function() { var pg = (location.pathname.split('/').pop() || '').replace('.html',''); return pg === 'index' || pg === ''; })();
-  var ATTRACT_RADIUS = 350;
-  var ATTRACT_FORCE = 0.8;
+  var ATTRACT_RADIUS = 500;
+  var ATTRACT_FORCE = 2;
   if (!mobile) {
     document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
     document.addEventListener('mouseleave', function() { mouseX = -1000; mouseY = -1000; });
