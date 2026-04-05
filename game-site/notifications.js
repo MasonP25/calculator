@@ -105,7 +105,7 @@
     '.notif-toast-icon{font-size:1.6rem;line-height:1}' +
     '.notif-toast-text{display:flex;flex-direction:column;gap:0.1rem}' +
     '.notif-toast-title{color:#00d4ff;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em}' +
-    '.notif-toast-body{color:#e0e0e0;font-size:0.82rem}' +
+    '.notif-toast-body{color:#e0e0e0;font-size:0.82rem;white-space:normal;line-height:1.4}' +
     // Bell icon
     '.ab-bell{position:relative;cursor:pointer;font-size:1rem;margin-left:0.3rem;user-select:none}' +
     '.ab-bell:hover{opacity:0.8}' +
@@ -127,7 +127,7 @@
     '.notif-item-icon{font-size:1.3rem;flex-shrink:0;margin-top:0.1rem}' +
     '.notif-item-content{flex:1;min-width:0}' +
     '.notif-item-title{font-size:0.78rem;font-weight:600;color:#e0e0e0}' +
-    '.notif-item-body{font-size:0.7rem;color:#888;margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+    '.notif-item-body{font-size:0.7rem;color:#888;margin-top:0.1rem;white-space:normal;overflow:visible;line-height:1.4}' +
     '.notif-item-time{font-size:0.6rem;color:#555;margin-top:0.15rem}' +
     '.notif-empty{padding:2rem;text-align:center;color:#555;font-size:0.82rem}';
   document.head.appendChild(css);
