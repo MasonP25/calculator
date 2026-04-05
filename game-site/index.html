@@ -3118,7 +3118,6 @@
 <script src="activity.js?v=2"></script>
 <script src="ratings.js?v=2"></script>
 <script src="pets.js"></script>
-<script src="ambient.js"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
 <script src="theme.js?v=30"></script>
@@ -3404,6 +3403,106 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
+// ─── WALKING PIXEL PET ───
+(function() {
+  function startPetWalk() {
+    if (!window.ArcadePets) return;
+    var pet = ArcadePets.getPet();
+    if (!pet) return;
+    if (document.getElementById('walking-pet')) return;
+
+    // Pixel art frames for each pet (simple 2-frame walk cycle)
+    var sprites = {
+      cat:     { body: '🐱', walk: ['🐱','🐈'] },
+      dog:     { body: '🐶', walk: ['🐶','🐕'] },
+      dragon:  { body: '🐲', walk: ['🐲','🐉'] },
+      bunny:   { body: '🐰', walk: ['🐰','🐇'] },
+      penguin: { body: '🐧', walk: ['🐧','🐧'] }
+    };
+    var sp = sprites[pet.type] || sprites.cat;
+    var size = pet.stage === 'adult' ? 32 : pet.stage === 'teen' ? 26 : 20;
+
+    var el = document.createElement('div');
+    el.id = 'walking-pet';
+    el.style.cssText = 'position:fixed;bottom:8px;z-index:9990;font-size:' + size + 'px;line-height:1;cursor:pointer;transition:transform 0.1s;user-select:none;-webkit-user-select:none;pointer-events:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));';
+    el.title = pet.name + ' (' + pet.stage + ')';
+    el.textContent = sp.body;
+    document.body.appendChild(el);
+
+    var x = Math.random() * (window.innerWidth - 60) + 30;
+    var speed = 0.5 + Math.random() * 0.5;
+    var dir = Math.random() > 0.5 ? 1 : -1;
+    var frame = 0;
+    var idleTimer = 0;
+    var state = 'walk'; // walk, idle, sleep
+    var animId;
+
+    function update() {
+      if (state === 'walk') {
+        x += speed * dir;
+        // Bounce off edges
+        if (x < 10) { dir = 1; }
+        if (x > window.innerWidth - 40) { dir = -1; }
+        // Flip based on direction
+        el.style.transform = dir < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+        // Animate walk frames
+        frame++;
+        if (frame % 30 === 0) {
+          el.textContent = sp.walk[Math.floor(frame / 30) % 2];
+        }
+        // Randomly stop to idle
+        if (Math.random() < 0.002) {
+          state = 'idle';
+          idleTimer = 120 + Math.floor(Math.random() * 180); // 2-5 seconds
+          el.textContent = sp.body;
+        }
+      } else if (state === 'idle') {
+        idleTimer--;
+        // Slight bob while idle
+        if (idleTimer % 60 < 30) {
+          el.style.bottom = '8px';
+        } else {
+          el.style.bottom = '10px';
+        }
+        if (idleTimer <= 0) {
+          state = 'walk';
+          el.style.bottom = '8px';
+          // Maybe change direction
+          if (Math.random() > 0.5) dir *= -1;
+        }
+      }
+      el.style.left = x + 'px';
+      animId = requestAnimationFrame(update);
+    }
+
+    // Click to make pet jump
+    el.addEventListener('click', function() {
+      el.style.transition = 'bottom 0.15s ease-out';
+      el.style.bottom = '28px';
+      setTimeout(function() {
+        el.style.transition = 'bottom 0.2s ease-in';
+        el.style.bottom = '8px';
+        setTimeout(function() { el.style.transition = 'transform 0.1s'; }, 200);
+      }, 150);
+    });
+
+    update();
+
+    // Cleanup on auth change
+    window.addEventListener('arcade-auth-change', function() {
+      cancelAnimationFrame(animId);
+      el.remove();
+      setTimeout(startPetWalk, 1000);
+    });
+  }
+
+  // Wait for pets to load
+  window.addEventListener('pet-updated', function() {
+    if (!document.getElementById('walking-pet')) startPetWalk();
+  });
+  setTimeout(startPetWalk, 2000);
+})();
+
 // ─── BACK TO TOP BUTTON ───
 (function() {
   var btn = document.getElementById('back-to-top');
