@@ -1402,7 +1402,12 @@
     document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
     document.addEventListener('mouseleave', function() { mouseX = -1000; mouseY = -1000; });
     if (_isIndex) {
-      document.addEventListener('mousedown', function(e) { if (e.button === 0) _mouseDown = true; });
+      document.addEventListener('mousedown', function(e) {
+        if (e.button === 0) {
+          _mouseDown = true;
+          if (!e.target.closest('a,button,input,textarea,select,.card,.auth-badge,.fame-link,.filter-btn,.search-bar,#chat-panel,.fav-btn')) e.preventDefault();
+        }
+      });
       document.addEventListener('mouseup', function() { _mouseDown = false; });
     }
   }
