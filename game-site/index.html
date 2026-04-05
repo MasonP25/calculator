@@ -3850,7 +3850,7 @@ if ('serviceWorker' in navigator) {
       if (user && !localStorage.getItem('_pet_gone_notif_' + Date.now().toString().slice(0,8))) {
         localStorage.setItem('_pet_gone_notif_' + Date.now().toString().slice(0,8), '1');
         var notif = ArcadeNotifications.create('pet', petName + ' wandered off!', 'Your pet is hungry and left. Feed it on your profile to bring it back.', '\uD83D\uDE3F', 'profile.html');
-        ArcadeNotifications.push(user, notif);
+        ArcadeNotifications.pushSelf(notif);
       }
     }
 
