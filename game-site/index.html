@@ -45,13 +45,13 @@
   }
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
   @keyframes gradientSpin { to { --grad-angle: 360deg; } }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-family: 'Outfit', 'Segoe UI', sans-serif;
     background: #0f0f1a;
     color: #e0e0e0;
     min-height: 100vh;
@@ -59,6 +59,18 @@
     flex-direction: column;
     align-items: center;
     padding: 2rem 1rem;
+  }
+  /* Noise grain overlay for depth */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
   }
   @keyframes arcadeShift {
     0% { filter: hue-rotate(0deg); }
@@ -71,27 +83,43 @@
     font-size: 3.3rem;
     letter-spacing: 8px;
     margin-bottom: 0.3rem;
-    background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+    background: linear-gradient(135deg, #00d4ff, #7b2ff7, #ff6b9d);
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: sectionShift 3s ease-in-out infinite;
+    animation: titleShimmer 6s ease-in-out infinite;
     isolation: isolate;
     contain: layout style paint;
+    filter: drop-shadow(0 0 30px rgba(123,47,247,0.15));
   }
-  .subtitle { color: #888; margin-bottom: 0.5rem; font-size: 1.1rem; }
-  .count { color: #555; font-size: 0.85rem; margin-bottom: 2rem; }
+  @keyframes titleShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .subtitle { color: #7a7a9a; margin-bottom: 0.5rem; font-size: 1.05rem; font-weight: 300; letter-spacing: 0.5px; }
+  .count { color: #4a4a6a; font-size: 0.82rem; margin-bottom: 2rem; font-weight: 400; }
   .section-title {
-    font-size: 1rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
     margin-bottom: 1rem;
-    margin-top: 1.5rem;
-    font-weight: 700;
+    margin-top: 2rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    width: 100%;
+    max-width: 1050px;
+  }
+  .section-title::before, .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--t-border, #2a2a4a), transparent);
   }
   @keyframes sectionShift {
     0%   { filter: hue-rotate(0deg); }
@@ -118,18 +146,20 @@
   }
   .card {
     position: relative;
-    background: rgba(26,26,46,0.45);
-    backdrop-filter: blur(0.5px);
-    border: 2px solid #2a2a4a;
+    background: rgba(20,20,40,0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 16px;
     padding: 1.3rem;
     width: 185px;
     text-align: center;
     cursor: pointer;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.2s;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s;
     text-decoration: none;
     color: inherit;
     transform-style: preserve-3d;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   }
   @keyframes glowShift {
     0% { box-shadow: 0 0 12px var(--t-accent,#7b2ff7), 0 12px 35px rgba(123,47,247,0.3); border-color: var(--t-accent,#7b2ff7); }
@@ -152,9 +182,9 @@
   .card.revealed:hover { transform: translateY(-8px) scale(1.04); animation: glowShift 3s ease-in-out infinite; }
   .card { transition: box-shadow 0.3s ease, border-color 0.2s, opacity 0.3s ease; }
   .section-title { transition: opacity 0.3s ease, transform 0.3s ease; }
-  .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
-  .card p { color: #888; font-size: 0.75rem; line-height: 1.4; }
+  .card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+  .card h2 { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .card p { color: #6a6a8a; font-size: 0.73rem; line-height: 1.4; font-weight: 300; }
   .badge {
     display: inline-block;
     font-size: 0.58rem;
@@ -189,21 +219,25 @@
   }
   .fame-link {
     display: inline-block;
-    margin-bottom: 1.5rem;
-    padding: 0.5rem 1.4rem;
-    background: linear-gradient(135deg, #1a1a2e, #1f1a3e);
-    border: 2px solid #7b2ff733;
+    margin-bottom: 0.6rem;
+    padding: 0.55rem 1.4rem;
+    background: rgba(20,20,40,0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
-    color: #e0e0e0;
+    color: #c0c0d8;
     text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.3s, color 0.2s;
+    letter-spacing: 0.3px;
   }
   .fame-link:hover {
     transform: translateY(-3px);
-    border-color: #7b2ff7;
-    box-shadow: 0 6px 20px rgba(123, 47, 247, 0.3);
+    border-color: var(--t-accent, #7b2ff7);
+    box-shadow: 0 6px 24px rgba(123, 47, 247, 0.25);
+    color: #fff;
   }
   .fame-link span { margin-right: 0.4rem; }
 
@@ -211,19 +245,22 @@
   .search-bar {
     margin-bottom: 1.5rem;
     position: relative;
-    width: 300px;
+    width: 340px;
   }
   .search-bar input {
     width: 100%;
-    background: #1a1a2e;
-    border: 2px solid #2a2a4a;
-    border-radius: 12px;
+    background: rgba(20,20,40,0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
     color: #e0e0e0;
-    font-family: inherit;
-    font-size: 0.95rem;
-    padding: 0.55rem 1rem 0.55rem 2.3rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    padding: 0.65rem 1rem 0.65rem 2.3rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    letter-spacing: 0.3px;
   }
   .search-bar input:focus { border-color: transparent; background: linear-gradient(var(--t-bg2,#1a1a2e), var(--t-bg2,#1a1a2e)) padding-box, conic-gradient(from var(--grad-angle), var(--t-accent,#7b2ff7), var(--t-accent2,#00d4ff), var(--t-accent,#7b2ff7)) border-box; animation: gradientSpin 3s linear infinite; }
   .search-bar input::placeholder { color: #555; }
@@ -258,21 +295,23 @@
     margin-bottom: 1.5rem;
   }
   .filter-btn {
-    background: #1a1a2e;
-    border: 1.5px solid #2a2a4a;
+    background: rgba(20,20,40,0.4);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 20px;
-    color: #888;
-    font-family: inherit;
-    font-size: 0.8rem;
+    color: #6a6a8a;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
     padding: 0.35rem 1rem;
     cursor: pointer;
-    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s;
   }
-  .filter-btn:hover { border-color: #7b2ff7; color: #e0e0e0; }
+  .filter-btn:hover { border-color: var(--t-accent,#7b2ff7); color: #e0e0e0; transform: translateY(-1px); }
   .filter-btn.active {
-    background: #7b2ff7;
-    border-color: #7b2ff7;
+    background: var(--t-accent,#7b2ff7);
+    border-color: var(--t-accent,#7b2ff7);
     color: #fff;
+    box-shadow: 0 2px 12px rgba(123,47,247,0.3);
   }
   /* Random game button */
   .random-btn {
@@ -1810,9 +1849,15 @@
     </a>
   </div>
 
-<footer style="margin-top:3rem;padding:1.5rem 1rem;text-align:center;font-size:0.68rem;color:var(--t-dim,#666);font-family:'Segoe UI',Tahoma,sans-serif;line-height:1.8;border-top:1px solid var(--t-border,#2a2a4a)">
-  Made by Mason Page &middot; Built with HTML/JS/Firebase &middot; 2026 &middot; All rights reserved
-  <br><a href="privacy.html" style="color:var(--t-dim,#666);text-decoration:none;">Privacy Policy</a> &middot; <a href="terms.html" style="color:var(--t-dim,#666);text-decoration:none;">Terms of Service</a> &middot; <a href="about.html" style="color:var(--t-dim,#666);text-decoration:none;">About</a> &middot; <a href="faq.html" style="color:var(--t-dim,#666);text-decoration:none;">FAQ</a> &middot; <a href="feedback.html" style="color:var(--t-dim,#666);text-decoration:none;">Feedback</a>
+<footer style="margin-top:4rem;padding:2rem 1rem 1.5rem;text-align:center;font-family:'Outfit',sans-serif;border-top:1px solid rgba(255,255,255,0.04);max-width:1050px;width:100%;">
+  <div style="font-size:0.7rem;color:var(--t-dim,#4a4a6a);letter-spacing:0.5px;margin-bottom:0.6rem;">Made by Mason Page &middot; 2026</div>
+  <div style="display:flex;justify-content:center;gap:1.2rem;flex-wrap:wrap;font-size:0.7rem;">
+    <a href="privacy.html" style="color:var(--t-dim,#5a5a7a);text-decoration:none;transition:color 0.2s;">Privacy</a>
+    <a href="terms.html" style="color:var(--t-dim,#5a5a7a);text-decoration:none;transition:color 0.2s;">Terms</a>
+    <a href="about.html" style="color:var(--t-dim,#5a5a7a);text-decoration:none;transition:color 0.2s;">About</a>
+    <a href="faq.html" style="color:var(--t-dim,#5a5a7a);text-decoration:none;transition:color 0.2s;">FAQ</a>
+    <a href="feedback.html" style="color:var(--t-dim,#5a5a7a);text-decoration:none;transition:color 0.2s;">Feedback</a>
+  </div>
 </footer>
 
 <script>
