@@ -3839,11 +3839,30 @@ if ('serviceWorker' in navigator) {
   // Expose for pet card
   window._petSprite = renderFrame;
 
+  function showPetGoneNotice() {
+    if (document.getElementById('pet-gone-notice')) return;
+    var notice = document.createElement('div');
+    notice.id = 'pet-gone-notice';
+    notice.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9990;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);border-radius:12px;padding:0.8rem 1.2rem;font-family:"Outfit","Segoe UI",sans-serif;font-size:0.8rem;color:var(--t-dim,#888);box-shadow:0 4px 20px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;animation:fadeSlideIn 0.5s ease both;';
+    var pet = ArcadePets.getPet();
+    var petName = pet ? pet.name : 'Your pet';
+    notice.innerHTML = '<span style="font-size:1.2rem">😿</span><span>' + petName + ' wandered off because it was hungry. <a href="profile.html" style="color:var(--t-accent,#7b2ff7);text-decoration:none;font-weight:600;">Feed it</a> to bring it back!</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--t-dim,#888);cursor:pointer;font-size:1rem;padding:0 4px;">&times;</button>';
+    document.body.appendChild(notice);
+    // Auto-dismiss after 8 seconds
+    setTimeout(function() { if (notice.parentElement) { notice.style.opacity = '0'; notice.style.transition = 'opacity 0.4s'; setTimeout(function() { notice.remove(); }, 400); } }, 8000);
+  }
+
   function startPetWalk() {
     if (!window.ArcadePets) return;
     var pet = ArcadePets.getPet();
     if (!pet) return;
     if (document.getElementById('walking-pet')) return;
+
+    // If happiness is 0, pet has wandered off
+    if (pet.happiness <= 0) {
+      showPetGoneNotice();
+      return;
+    }
 
     var idleImg = renderFrame(pet.type,'idle');
     var walkImg = renderFrame(pet.type,'walk');
@@ -3985,7 +4004,16 @@ if ('serviceWorker' in navigator) {
   }
 
   window.addEventListener('pet-updated', function() {
-    if (!document.getElementById('walking-pet')) startPetWalk();
+    var wp = document.getElementById('walking-pet');
+    var pet = window.ArcadePets ? ArcadePets.getPet() : null;
+    if (pet && pet.happiness <= 0 && wp) {
+      // Pet wandered off — fade out
+      wp.style.transition = 'opacity 1s';
+      wp.style.opacity = '0';
+      setTimeout(function() { wp.remove(); showPetGoneNotice(); }, 1000);
+    } else if (!wp) {
+      startPetWalk();
+    }
   });
   setTimeout(startPetWalk, 2000);
 })();
