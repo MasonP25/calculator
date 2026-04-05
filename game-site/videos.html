@@ -62,6 +62,18 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
 .modal .btn-submit:disabled { opacity:0.5; cursor:default; }
 .modal .modal-err { color:var(--t-accent,#7b2ff7); font-size:0.75rem; margin-top:8px; min-height:1em; }
 .empty-msg { text-align:center; color:#555; padding:3rem 1rem; font-size:0.9rem; }
+.dlg-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:20000; align-items:center; justify-content:center; }
+.dlg-overlay.show { display:flex; }
+.dlg-box { background:#1a1a2e; border:2px solid #2a2a4a; border-radius:14px; padding:1.3rem; width:340px; max-width:90vw; font-family:inherit; }
+.dlg-box h3 { font-size:1rem; color:var(--t-accent,#7b2ff7); margin-bottom:0.8rem; }
+.dlg-box p { color:#aaa; font-size:0.82rem; margin-bottom:0.8rem; line-height:1.5; }
+.dlg-box textarea { width:100%; background:#0f0f1a; border:1px solid #2a2a4a; border-radius:8px; color:#e0e0e0; font-family:inherit; font-size:0.82rem; padding:8px 10px; outline:none; resize:none; height:60px; margin-bottom:0.5rem; }
+.dlg-box textarea:focus { border-color:var(--t-accent,#7b2ff7); }
+.dlg-btns { display:flex; gap:8px; justify-content:flex-end; }
+.dlg-btns button { padding:7px 18px; border-radius:8px; font-family:inherit; font-size:0.82rem; font-weight:600; cursor:pointer; border:none; }
+.dlg-btn-cancel { background:#2a2a4a; color:#aaa; }
+.dlg-btn-ok { background:var(--t-accent,#7b2ff7); color:#fff; }
+.dlg-btn-danger { background:#ff4757; color:#fff; }
 .drop-zone { border:2px dashed #3a3a5a; border-radius:12px; padding:2rem; text-align:center; color:#666; font-size:0.85rem; cursor:pointer; transition:border-color 0.2s,background 0.2s; margin-top:10px; }
 .drop-zone:hover,.drop-zone.dragover { border-color:var(--t-accent,#7b2ff7); background:rgba(123,47,247,0.05); }
 .drop-zone .drop-icon { font-size:2rem; margin-bottom:8px; }
@@ -201,7 +213,35 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
   </div>
 </div>
 
+<div class="dlg-overlay" id="dlg-overlay">
+  <div class="dlg-box" id="dlg-box"></div>
+</div>
+
 <script>
+// Custom dialog system
+function showDialog(opts) {
+  var ov = document.getElementById('dlg-overlay');
+  var box = document.getElementById('dlg-box');
+  var html = '<h3>' + (opts.title || '') + '</h3>';
+  if (opts.message) html += '<p>' + opts.message + '</p>';
+  if (opts.input) html += '<textarea id="dlg-input" placeholder="' + (opts.placeholder || '') + '"></textarea>';
+  html += '<div class="dlg-btns">';
+  if (opts.cancel !== false) html += '<button class="dlg-btn-cancel" id="dlg-cancel">' + (opts.cancelText || 'Cancel') + '</button>';
+  html += '<button class="' + (opts.danger ? 'dlg-btn-danger' : 'dlg-btn-ok') + '" id="dlg-ok">' + (opts.okText || 'OK') + '</button>';
+  html += '</div>';
+  box.innerHTML = html;
+  ov.classList.add('show');
+  if (opts.input) { var inp = document.getElementById('dlg-input'); setTimeout(function() { inp.focus(); }, 100); }
+  return new Promise(function(resolve) {
+    document.getElementById('dlg-ok').onclick = function() {
+      ov.classList.remove('show');
+      resolve(opts.input ? document.getElementById('dlg-input').value.trim() : true);
+    };
+    var cancelBtn = document.getElementById('dlg-cancel');
+    if (cancelBtn) cancelBtn.onclick = function() { ov.classList.remove('show'); resolve(opts.input ? null : false); };
+  });
+}
+
 var UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzzW9Wmc_idgHBmX208jd0-OJHPM2rk5hR4LKPqsbhT50wnByU5-f-wjrJznlgFu5WA/exec';
 var currentVideoId = null;
 var videosCache = [];
@@ -608,9 +648,9 @@ function openVideo(id) {
   renderComments(v.comments || []);
 }
 
-function reportVideo() {
+async function reportVideo() {
   if (!currentVideoId) return;
-  var reason = prompt('Why are you reporting this content?');
+  var reason = await showDialog({ title: 'Report Content', message: 'Why are you reporting this content?', input: true, placeholder: 'Describe the issue...', okText: 'Report' });
   if (!reason) return;
   var fdb = window._arcadeDB;
   var user = getUser();
@@ -622,7 +662,7 @@ function reportVideo() {
       date: new Date().toISOString()
     }).catch(function(){});
   }
-  alert('Thank you. This content has been flagged for review.');
+  showDialog({ title: 'Reported', message: 'Thank you. This content has been flagged for review.', cancel: false, okText: 'OK' });
 }
 
 async function deleteVideo() {
@@ -631,7 +671,8 @@ async function deleteVideo() {
   if (!fdb || !currentVideoId || !user) return;
   var v = videosCache.find(function(x) { return x.id === currentVideoId; });
   if (!v || v.uploader !== user) return;
-  if (!confirm('Delete this video? This cannot be undone.')) return;
+  var ok = await showDialog({ title: 'Delete Video', message: 'Delete this video? This cannot be undone.', okText: 'Delete', danger: true });
+  if (!ok) return;
   try {
     await fdb.deleteDoc(fdb.doc(fdb.db, 'videos', currentVideoId));
     closePlayer();
