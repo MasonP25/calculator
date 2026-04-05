@@ -254,12 +254,22 @@
       var card = document.createElement('div');
       card.className = 'pet-card';
 
-      // Emoji
+      // Sprite image
       var emojiWrap = document.createElement('div');
-      var emojiEl = document.createElement('span');
+      var emojiEl;
+      if (window._petSprite) {
+        emojiEl = document.createElement('img');
+        emojiEl.src = window._petSprite(pet.type, 'idle');
+        emojiEl.style.cssText = 'image-rendering:pixelated;image-rendering:crisp-edges;';
+        var spriteSize = isAdult ? 96 : stage.name === 'Teen' ? 72 : 56;
+        emojiEl.style.width = spriteSize + 'px';
+        emojiEl.style.height = spriteSize + 'px';
+      } else {
+        emojiEl = document.createElement('span');
+        emojiEl.style.fontSize = stage.size;
+        emojiEl.textContent = pet.emoji + (isAdult ? ' \u2728' : '');
+      }
       emojiEl.className = 'pet-emoji' + (isSad ? ' sad' : '') + (isAdult ? ' sparkle' : '');
-      emojiEl.style.fontSize = stage.size;
-      emojiEl.textContent = pet.emoji + (isAdult ? ' \u2728' : '');
       emojiWrap.appendChild(emojiEl);
       card.appendChild(emojiWrap);
 
@@ -375,9 +385,17 @@
           var opt = document.createElement('div');
           opt.className = 'pet-adopt-opt';
 
-          var emoji = document.createElement('span');
-          emoji.className = 'ao-emoji';
-          emoji.textContent = info.emoji;
+          var emoji;
+          if (window._petSprite) {
+            emoji = document.createElement('img');
+            emoji.src = window._petSprite(type, 'idle');
+            emoji.style.cssText = 'image-rendering:pixelated;image-rendering:crisp-edges;width:48px;height:48px;';
+            emoji.className = 'ao-emoji';
+          } else {
+            emoji = document.createElement('span');
+            emoji.className = 'ao-emoji';
+            emoji.textContent = info.emoji;
+          }
           opt.appendChild(emoji);
 
           var name = document.createElement('span');

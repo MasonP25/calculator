@@ -3904,11 +3904,18 @@ if ('serviceWorker' in navigator) {
         if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
       }
 
-      // Gravity
-      if (y < FLOOR) {
+      // Gravity + bounce
+      if (y < FLOOR || vy !== 0) {
         vy += GRAVITY;
         y += vy;
-        if (y >= FLOOR) { y = FLOOR; vy = 0; }
+        if (y >= FLOOR) {
+          y = FLOOR;
+          if (Math.abs(vy) > 2) {
+            vy = -vy * 0.4; // bounce with dampening
+          } else {
+            vy = 0;
+          }
+        }
       }
 
       el.style.left = x + 'px';
