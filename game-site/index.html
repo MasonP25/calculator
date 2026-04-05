@@ -3596,43 +3596,84 @@ if ('serviceWorker' in navigator) {
     },
     dragon: {
       idle: function(ctx) {
-        var c='#40c060',d='#2a8a40',l='#80e080',b='#222';
+        var c='#3db85a',d='#2a8a3e',dk='#1e6e2e',l='#6ed88a',ll='#a0f0b0',b='#111',h='#c8a030',e='#ff3300',f='#ff6600';
         // horns
-        px(ctx,4,0,'#c0a030'); px(ctx,5,0,'#c0a030'); px(ctx,10,0,'#c0a030'); px(ctx,11,0,'#c0a030');
+        px(ctx,3,0,h); px(ctx,4,0,h); px(ctx,11,0,h); px(ctx,12,0,h);
+        px(ctx,4,1,h); px(ctx,11,1,h);
+        // head spikes
+        px(ctx,7,0,dk); px(ctx,8,0,dk);
         // head
-        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
-        rect(ctx,4,2,2,2,'#ff4400'); rect(ctx,9,2,2,2,'#ff4400'); // eyes
-        px(ctx,5,3,b); px(ctx,10,3,b);
-        px(ctx,6,4,b); px(ctx,9,4,b); // nostrils
-        px(ctx,7,5,'#ff6600'); px(ctx,8,5,'#ff6600'); // fire breath hint
+        rect(ctx,3,1,10,2,c); rect(ctx,2,2,12,3,c); rect(ctx,3,5,10,1,c);
+        // snout
+        rect(ctx,4,5,8,1,d);
+        // eyes
+        rect(ctx,4,2,2,2,'#fff'); rect(ctx,10,2,2,2,'#fff');
+        px(ctx,5,3,e); px(ctx,11,3,e);
+        px(ctx,4,2,b); px(ctx,10,2,b); // brow
+        // nostrils
+        px(ctx,6,5,b); px(ctx,9,5,b);
         // body
-        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
-        rect(ctx,5,7,5,4,l); // belly
-        // wings
-        rect(ctx,0,4,3,4,d); rect(ctx,12,4,3,4,d);
-        px(ctx,0,3,d); px(ctx,14,3,d);
-        // legs
-        rect(ctx,3,11,2,4,c); rect(ctx,10,11,2,4,c);
-        rect(ctx,3,14,2,1,d); rect(ctx,10,14,2,1,d);
-        // tail
-        rect(ctx,13,9,1,2,c); px(ctx,14,10,c); px(ctx,15,11,d);
+        rect(ctx,3,6,10,5,c); rect(ctx,2,7,12,3,c);
+        // belly scales
+        rect(ctx,5,7,6,4,l);
+        px(ctx,5,7,ll); px(ctx,7,7,ll); px(ctx,9,7,ll);
+        px(ctx,6,9,ll); px(ctx,8,9,ll); px(ctx,10,9,ll);
+        // back spikes
+        px(ctx,5,6,dk); px(ctx,7,6,dk); px(ctx,9,6,dk); px(ctx,11,6,dk);
+        // wings — folded
+        rect(ctx,0,4,3,5,d); rect(ctx,13,4,3,5,d);
+        px(ctx,0,3,dk); px(ctx,1,3,d); px(ctx,14,3,d); px(ctx,15,3,dk);
+        px(ctx,0,9,dk); px(ctx,15,9,dk);
+        // wing membrane detail
+        px(ctx,1,5,'#35a050'); px(ctx,1,7,'#35a050');
+        px(ctx,14,5,'#35a050'); px(ctx,14,7,'#35a050');
+        // legs — muscular
+        rect(ctx,3,11,3,3,c); rect(ctx,10,11,3,3,c);
+        rect(ctx,3,14,3,1,d); rect(ctx,10,14,3,1,d);
+        // claws
+        px(ctx,3,15,b); px(ctx,5,15,b); px(ctx,10,15,b); px(ctx,12,15,b);
+        // tail — curving
+        rect(ctx,13,9,1,2,c); rect(ctx,14,10,1,2,c); px(ctx,15,11,c); px(ctx,15,12,d);
+        // tail spike
+        px(ctx,15,13,dk);
+        // fire breath hint
+        px(ctx,6,6,f); px(ctx,5,5,f);
       },
       walk: function(ctx) {
-        var c='#40c060',d='#2a8a40',l='#80e080',b='#222';
-        px(ctx,4,0,'#c0a030'); px(ctx,5,0,'#c0a030'); px(ctx,10,0,'#c0a030'); px(ctx,11,0,'#c0a030');
-        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
-        rect(ctx,4,2,2,2,'#ff4400'); rect(ctx,9,2,2,2,'#ff4400');
-        px(ctx,5,3,b); px(ctx,10,3,b);
-        px(ctx,6,4,b); px(ctx,9,4,b);
-        px(ctx,7,5,'#ff6600'); px(ctx,8,5,'#ff6600');
-        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
-        rect(ctx,5,7,5,4,l);
-        // wings up
-        rect(ctx,0,2,3,4,d); rect(ctx,12,2,3,4,d);
-        px(ctx,0,1,d); px(ctx,14,1,d);
-        rect(ctx,2,11,2,4,c); rect(ctx,11,11,2,4,c);
-        rect(ctx,2,14,2,1,d); rect(ctx,11,14,2,1,d);
-        rect(ctx,13,9,1,2,c); px(ctx,14,10,c); px(ctx,15,10,d);
+        var c='#3db85a',d='#2a8a3e',dk='#1e6e2e',l='#6ed88a',ll='#a0f0b0',b='#111',h='#c8a030',e='#ff3300',f='#ff6600';
+        // horns
+        px(ctx,3,0,h); px(ctx,4,0,h); px(ctx,11,0,h); px(ctx,12,0,h);
+        px(ctx,4,1,h); px(ctx,11,1,h);
+        px(ctx,7,0,dk); px(ctx,8,0,dk);
+        // head
+        rect(ctx,3,1,10,2,c); rect(ctx,2,2,12,3,c); rect(ctx,3,5,10,1,c);
+        rect(ctx,4,5,8,1,d);
+        rect(ctx,4,2,2,2,'#fff'); rect(ctx,10,2,2,2,'#fff');
+        px(ctx,5,3,e); px(ctx,11,3,e);
+        px(ctx,4,2,b); px(ctx,10,2,b);
+        px(ctx,6,5,b); px(ctx,9,5,b);
+        // body
+        rect(ctx,3,6,10,5,c); rect(ctx,2,7,12,3,c);
+        rect(ctx,5,7,6,4,l);
+        px(ctx,5,7,ll); px(ctx,7,7,ll); px(ctx,9,7,ll);
+        px(ctx,6,9,ll); px(ctx,8,9,ll); px(ctx,10,9,ll);
+        px(ctx,5,6,dk); px(ctx,7,6,dk); px(ctx,9,6,dk); px(ctx,11,6,dk);
+        // wings — spread up
+        rect(ctx,0,2,3,4,d); rect(ctx,13,2,3,4,d);
+        px(ctx,0,1,dk); px(ctx,1,1,d); px(ctx,14,1,d); px(ctx,15,1,dk);
+        px(ctx,0,6,dk); px(ctx,15,6,dk);
+        // wing membrane
+        px(ctx,1,3,'#35a050'); px(ctx,1,5,'#35a050');
+        px(ctx,14,3,'#35a050'); px(ctx,14,5,'#35a050');
+        // walk legs — stride
+        rect(ctx,2,11,3,3,c); rect(ctx,11,11,3,3,c);
+        rect(ctx,2,14,3,1,d); rect(ctx,11,14,3,1,d);
+        px(ctx,2,15,b); px(ctx,4,15,b); px(ctx,11,15,b); px(ctx,13,15,b);
+        // tail — lifted
+        rect(ctx,13,8,1,2,c); rect(ctx,14,8,1,2,c); px(ctx,15,9,c); px(ctx,15,10,d);
+        px(ctx,15,11,dk);
+        // fire breath
+        px(ctx,5,5,f); px(ctx,4,4,f); px(ctx,3,4,'#ff4400');
       }
     },
     bunny: {
