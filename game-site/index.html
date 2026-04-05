@@ -3900,29 +3900,6 @@ if ('serviceWorker' in navigator) {
       setTimeout(function() { el.style.transition = ''; }, 400);
     });
   });
-  // Subtle magnetic for cards
-  function initCardMagnetic() {
-    document.querySelectorAll('.card').forEach(function(card) {
-      if (card._magnetic) return;
-      card._magnetic = true;
-      card.addEventListener('mousemove', function(e) {
-        var rect = card.getBoundingClientRect();
-        var dx = (e.clientX - rect.left - rect.width/2) * 0.03;
-        var dy = (e.clientY - rect.top - rect.height/2) * 0.03;
-        card.style.marginLeft = dx + 'px';
-        card.style.marginTop = dy + 'px';
-      });
-      card.addEventListener('mouseleave', function() {
-        card.style.transition = 'margin 0.3s ease';
-        card.style.marginLeft = '';
-        card.style.marginTop = '';
-        setTimeout(function() { card.style.transition = ''; }, 300);
-      });
-    });
-  }
-  initCardMagnetic();
-  var mo = new MutationObserver(function() { setTimeout(initCardMagnetic, 200); });
-  mo.observe(document.body, { childList: true, subtree: true });
 })();
 
 // ─── HOVER SPOTLIGHT ON CARDS (cursor light follow) ───
