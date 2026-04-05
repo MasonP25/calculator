@@ -756,8 +756,8 @@
     .card h2 { font-size: 0.72rem; }
     .card p { font-size: 0.55rem; }
   }
-  #back-to-top { display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9995; background:var(--t-bg2,#1a1a2e); border:2px solid var(--t-border,#2a2a4a); border-radius:20px; padding:5px 16px; color:var(--t-dim,#888); font-family:inherit; font-size:0.75rem; cursor:pointer; transition:border-color 0.2s,color 0.2s,opacity 0.3s; opacity:0; }
-  #back-to-top.show { display:block; opacity:1; }
+  #back-to-top { position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9995; background:var(--t-bg2,#1a1a2e); border:2px solid var(--t-border,#2a2a4a); border-radius:20px; padding:5px 16px; color:var(--t-dim,#888); font-family:inherit; font-size:0.75rem; cursor:pointer; transition:border-color 0.2s,color 0.2s,opacity 0.4s; opacity:0; pointer-events:none; }
+  #back-to-top.show { opacity:1; pointer-events:auto; }
   #back-to-top:hover { border-color:var(--t-accent,#7b2ff7); color:var(--t-text,#e0e0e0); }
   .subtitle .cursor { display:inline-block; width:2px; height:1em; background:var(--t-accent,#7b2ff7); margin-left:2px; vertical-align:text-bottom; animation:blink 0.7s infinite; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
