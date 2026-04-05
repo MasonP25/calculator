@@ -80,9 +80,10 @@
     var now = Date.now();
     var lastFed = pet.lastFed || now;
     var elapsed = now - lastFed;
-    var daysMissed = Math.floor(elapsed / MS_PER_DAY);
-    var h = pet.happiness - (daysMissed * HAPPINESS_DECAY_PER_DAY);
-    return Math.max(0, Math.min(MAX_HAPPINESS, h));
+    // Gradual decay — loses 20 happiness per 24 hours, continuously
+    var decayAmount = (elapsed / MS_PER_DAY) * HAPPINESS_DECAY_PER_DAY;
+    var h = pet.happiness - decayAmount;
+    return Math.max(0, Math.min(MAX_HAPPINESS, Math.round(h * 10) / 10));
   }
 
   function _happinessColor(h) {
