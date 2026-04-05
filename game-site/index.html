@@ -3475,15 +3475,10 @@ if ('serviceWorker' in navigator) {
       animId = requestAnimationFrame(update);
     }
 
-    // Click to make pet jump
+    // Click to go to pet section on profile
     el.addEventListener('click', function() {
-      el.style.transition = 'bottom 0.15s ease-out';
-      el.style.bottom = '28px';
-      setTimeout(function() {
-        el.style.transition = 'bottom 0.2s ease-in';
-        el.style.bottom = '8px';
-        setTimeout(function() { el.style.transition = 'transform 0.1s'; }, 200);
-      }, 150);
+      var user = localStorage.getItem('arcade_currentUser');
+      if (user) window.location.href = 'profile.html?user=' + encodeURIComponent(user) + '#petSection';
     });
 
     update();
