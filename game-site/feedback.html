@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback — Mason's Arcade</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--t-bg1, #0f0f1a);
+    color: var(--t-text, #e0e0e0);
+    min-height: 100vh;
+    padding: 0 1rem 3rem;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.2rem 0;
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .back-link {
+    position: absolute;
+    left: 0;
+    color: var(--t-accent2, #00d4ff);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--t-accent, #7b2ff7); }
+  .top-bar h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, var(--t-accent2, #00d4ff), var(--t-accent, #7b2ff7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Form card */
+  .feedback-card {
+    max-width: 600px;
+    margin: 1.5rem auto 0;
+    background: var(--t-bg2, #1a1a2e);
+    border: 1px solid var(--t-border, #2a2a4a);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+  .feedback-card p.intro {
+    color: var(--t-dim, #aaa);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  /* Form fields */
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--t-text, #e0e0e0);
+    margin-bottom: 0.35rem;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    background: var(--t-bg1, #0f0f1a);
+    border: 2px solid var(--t-border, #2a2a4a);
+    border-radius: 10px;
+    color: var(--t-text, #e0e0e0);
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--t-accent, #7b2ff7);
+  }
+  .form-group input:read-only {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .form-group select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    padding-right: 2.5rem;
+  }
+  .form-group select option {
+    background: #1a1a2e;
+    color: #e0e0e0;
+  }
+  .form-group textarea {
+    resize: vertical;
+    min-height: 130px;
+    max-height: 300px;
+    line-height: 1.5;
+  }
+
+  /* Character counter */
+  .char-count {
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--t-dim, #aaa);
+    margin-top: 0.3rem;
+    transition: color 0.2s;
+  }
+  .char-count.warn { color: #ff9800; }
+  .char-count.over { color: #f44336; font-weight: 600; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, var(--t-accent, #7b2ff7), var(--t-accent2, #00d4ff));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    margin-top: 0.5rem;
+  }
+  .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Error message */
+  .error-msg {
+    color: #f44336;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* Rate limit notice */
+  .rate-limit-msg {
+    color: #ff9800;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  /* Thank you overlay */
+  .thank-you-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 26, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .thank-you-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .thank-you-box {
+    background: var(--t-bg2, #1a1a2e);
+    border: 1px solid var(--t-border, #2a2a4a);
+    border-radius: 20px;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    transform: scale(0.8);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 400px;
+    width: 90%;
+  }
+  .thank-you-overlay.visible .thank-you-box {
+    transform: scale(1);
+  }
+  .thank-you-box .check-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--t-accent, #7b2ff7), var(--t-accent2, #00d4ff));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: popIn 0.5s ease 0.2s both;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .check-icon svg {
+    width: 32px;
+    height: 32px;
+    stroke: #fff;
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .thank-you-box h2 {
+    font-size: 1.5rem;
+    color: var(--t-text, #e0e0e0);
+    margin-bottom: 0.5rem;
+  }
+  .thank-you-box p {
+    color: var(--t-dim, #aaa);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+  .thank-you-box .close-btn {
+    background: var(--t-bg1, #0f0f1a);
+    border: 2px solid var(--t-border, #2a2a4a);
+    border-radius: 10px;
+    color: var(--t-text, #e0e0e0);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 2rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .thank-you-box .close-btn:hover {
+    border-color: var(--t-accent, #7b2ff7);
+    color: #fff;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .top-bar h1 { font-size: 1.6rem; }
+    .feedback-card { padding: 1.3rem; border-radius: 12px; }
+    .thank-you-box { padding: 2rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html" class="back-link">&#8592; Back</a>
+  <h1>Feedback</h1>
+</div>
+
+<div class="feedback-card">
+  <p class="intro">Help us improve Mason's Arcade! Report bugs, suggest new games, request features, or share your thoughts.</p>
+
+  <form id="feedbackForm" autocomplete="off">
+    <div class="form-group">
+      <label for="fbName">Name</label>
+      <input type="text" id="fbName" maxlength="30" placeholder="Guest" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="fbType">Type</label>
+      <select id="fbType">
+        <option value="Bug Report">Bug Report</option>
+        <option value="Game Suggestion">Game Suggestion</option>
+        <option value="Feature Request">Feature Request</option>
+        <option value="General Feedback" selected>General Feedback</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="fbMessage">Message</label>
+      <textarea id="fbMessage" maxlength="500" placeholder="Write your feedback here..."></textarea>
+      <div class="char-count" id="charCount">0 / 500</div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Submit Feedback</button>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="rate-limit-msg" id="rateLimitMsg"></div>
+  </form>
+</div>
+
+<!-- Thank you overlay -->
+<div class="thank-you-overlay" id="thankYouOverlay">
+  <div class="thank-you-box">
+    <div class="check-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h2>Thank You!</h2>
+    <p>Your feedback has been submitted successfully. We appreciate you helping make Mason's Arcade better!</p>
+    <button class="close-btn" id="thankYouClose">Close</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+  var MAX_CHARS = 500;
+  var LS_KEY = 'arcade_feedback_last';
+
+  var form = document.getElementById('feedbackForm');
+  var nameInput = document.getElementById('fbName');
+  var typeSelect = document.getElementById('fbType');
+  var messageArea = document.getElementById('fbMessage');
+  var charCount = document.getElementById('charCount');
+  var submitBtn = document.getElementById('submitBtn');
+  var errorMsg = document.getElementById('errorMsg');
+  var rateLimitMsg = document.getElementById('rateLimitMsg');
+  var overlay = document.getElementById('thankYouOverlay');
+  var closeBtn = document.getElementById('thankYouClose');
+
+  // Auto-fill name from logged-in user
+  function updateName() {
+    var user = localStorage.getItem('arcade_currentUser');
+    if (user) {
+      nameInput.value = user;
+    } else {
+      nameInput.value = '';
+      nameInput.placeholder = 'Guest (sign in to submit)';
+    }
+  }
+  updateName();
+  window.addEventListener('arcade-auth-change', updateName);
+
+  // Character counter
+  messageArea.addEventListener('input', function() {
+    var len = messageArea.value.length;
+    charCount.textContent = len + ' / ' + MAX_CHARS;
+    charCount.classList.remove('warn', 'over');
+    if (len > MAX_CHARS) {
+      charCount.classList.add('over');
+    } else if (len > MAX_CHARS * 0.85) {
+      charCount.classList.add('warn');
+    }
+  });
+
+  // Check rate limit
+  function checkRateLimit() {
+    var last = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
+    var now = Date.now();
+    var diff = now - last;
+    if (diff < RATE_LIMIT_MS) {
+      var remaining = Math.ceil((RATE_LIMIT_MS - diff) / 1000);
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      return { limited: true, text: 'Please wait ' + (mins > 0 ? mins + 'm ' : '') + secs + 's before submitting again.' };
+    }
+    return { limited: false };
+  }
+
+  // Update rate limit display
+  function updateRateLimitDisplay() {
+    var rl = checkRateLimit();
+    if (rl.limited) {
+      rateLimitMsg.textContent = rl.text;
+      rateLimitMsg.style.display = 'block';
+      submitBtn.disabled = true;
+    } else {
+      rateLimitMsg.style.display = 'none';
+      submitBtn.disabled = false;
+    }
+  }
+  updateRateLimitDisplay();
+  var rlInterval = setInterval(updateRateLimitDisplay, 1000);
+
+  // Show error
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+  function hideError() {
+    errorMsg.style.display = 'none';
+  }
+
+  // Wait for _arcadeDB
+  function waitForDB(cb, maxWait) {
+    if (window._arcadeDB) return cb(window._arcadeDB);
+    var waited = 0;
+    var interval = setInterval(function() {
+      waited += 100;
+      if (window._arcadeDB) {
+        clearInterval(interval);
+        cb(window._arcadeDB);
+      } else if (waited >= (maxWait || 8000)) {
+        clearInterval(interval);
+        cb(null);
+      }
+    }, 100);
+  }
+
+  // Submit
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    hideError();
+
+    var user = localStorage.getItem('arcade_currentUser');
+    if (!user) {
+      showError('You must be signed in to submit feedback.');
+      return;
+    }
+
+    var message = messageArea.value.trim();
+    if (!message) {
+      showError('Please enter a message.');
+      return;
+    }
+    if (message.length > MAX_CHARS) {
+      showError('Message exceeds ' + MAX_CHARS + ' characters.');
+      return;
+    }
+
+    var rl = checkRateLimit();
+    if (rl.limited) {
+      showError(rl.text);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    waitForDB(function(fdb) {
+      if (!fdb) {
+        showError('Could not connect to the server. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Feedback';
+        return;
+      }
+
+      var feedbackData = {
+        username: user,
+        type: typeSelect.value,
+        message: message,
+        date: new Date().toISOString(),
+        status: 'new'
+      };
+
+      fdb.addDoc(fdb.collection(fdb.db, 'feedback'), feedbackData).then(function() {
+        // Mark rate limit
+        localStorage.setItem(LS_KEY, String(Date.now()));
+
+        // Reset form
+        messageArea.value = '';
+        charCount.textContent = '0 / ' + MAX_CHARS;
+        charCount.classList.remove('warn', 'over');
+        submitBtn.textContent = 'Submit Feedback';
+
+        // Show thank you
+        overlay.classList.add('visible');
+        updateRateLimitDisplay();
+      }).catch(function(err) {
+        console.error('Feedback submit error:', err);
+        showError('Failed to submit feedback. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Feedback';
+      });
+    });
+  });
+
+  // Close thank you overlay
+  closeBtn.addEventListener('click', function() {
+    overlay.classList.remove('visible');
+  });
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) overlay.classList.remove('visible');
+  });
+})();
+</script>
+
+<script src="sound.js?v=2"></script>
+<script src="fame.js?v=5"></script>
+<script type="module" src="firebase-lb.js?v=5"></script>
+<script src="coins.js?v=4"></script>
+<script src="avatar.js?v=6"></script>
+<script src="admin.js?v=2"></script>
+<script src="auth.js?v=5"></script>
+<script src="theme.js?v=30"></script>
+<script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
+</body>
+</html>
