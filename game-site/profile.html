@@ -487,6 +487,10 @@
   <div class="section-header">Scores</div>
   <div class="scores-grid" id="scoresGrid"></div>
 
+  <!-- Pet -->
+  <div class="section-header">Pet</div>
+  <div id="petSection" style="margin-bottom:1.5rem;"></div>
+
   <!-- Friends -->
   <div class="section-header" id="friendsHeader">Friends</div>
   <div class="friends-wrap" id="friendsWrap"></div>
@@ -523,6 +527,8 @@
 <script src="challenges.js?v=2"></script>
 <script src="activity.js?v=2"></script>
 <script src="ratings.js?v=2"></script>
+<script src="pets.js"></script>
+<script src="ambient.js"></script>
 <script src="admin.js"></script>
 <script src="auth.js?v=3"></script>
 <script src="theme.js?v=30"></script>
@@ -1752,6 +1758,18 @@ window.openEditProfileModal = async function() {
 
 // Load the profile
 loadProfile();
+
+// Render pet section
+setTimeout(function() {
+  var petContainer = document.getElementById('petSection');
+  if (petContainer && window.ArcadePets) {
+    ArcadePets.renderPetCard(petContainer);
+    window.addEventListener('pet-updated', function() {
+      petContainer.innerHTML = '';
+      ArcadePets.renderPetCard(petContainer);
+    });
+  }
+}, 1000);
 </script>
 <script src="easter.js"></script>
 <script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
