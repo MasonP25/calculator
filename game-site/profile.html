@@ -1769,6 +1769,14 @@ setTimeout(function() {
     });
   }
 }, 1000);
+
+// Scroll to pet section if hash is #petSection
+if (window.location.hash === '#petSection') {
+  setTimeout(function() {
+    var ps = document.getElementById('petSection');
+    if (ps) ps.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 1500);
+}
 </script>
 <script src="easter.js"></script>
 <script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
