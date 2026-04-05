@@ -1394,9 +1394,17 @@
   var mouseX = -1000, mouseY = -1000;
   var MOUSE_RADIUS = mobile ? 80 : 180;
   var MOUSE_FORCE = mobile ? 1.5 : 4;
+  var _mouseDown = false;
+  var _isIndex = (function() { var pg = (location.pathname.split('/').pop() || '').replace('.html',''); return pg === 'index' || pg === ''; })();
+  var ATTRACT_RADIUS = 350;
+  var ATTRACT_FORCE = 0.8;
   if (!mobile) {
     document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; }, { passive: true });
     document.addEventListener('mouseleave', function() { mouseX = -1000; mouseY = -1000; });
+    if (_isIndex) {
+      document.addEventListener('mousedown', function(e) { if (e.button === 0) _mouseDown = true; });
+      document.addEventListener('mouseup', function() { _mouseDown = false; });
+    }
   }
 
   function readColors() {
@@ -1445,10 +1453,17 @@
       if (p.baseY < -10) p.baseY = canvas.height + 10;
       if (p.baseY > canvas.height + 10) p.baseY = -10;
       p.drawY = ((p.baseY - scrollY * p.parallax) % canvas.height + canvas.height) % canvas.height;
-      // Mouse repel
+      // Mouse interact
       var mdx = p.x - mouseX, mdy = p.drawY - mouseY;
       var mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-      if (mDist < MOUSE_RADIUS && mDist > 0) {
+      if (_mouseDown && _isIndex && mDist < ATTRACT_RADIUS && mDist > 5) {
+        // Attract toward cursor
+        var af = (1 - mDist / ATTRACT_RADIUS) * ATTRACT_FORCE * (0.3 + p.layer * 0.15);
+        p.x -= (mdx / mDist) * af;
+        p.baseY -= (mdy / mDist) * af;
+        p.drawY = ((p.baseY - scrollY * p.parallax) % canvas.height + canvas.height) % canvas.height;
+      } else if (mDist < MOUSE_RADIUS && mDist > 0) {
+        // Repel from cursor
         var force = (1 - mDist / MOUSE_RADIUS) * MOUSE_FORCE * (0.5 + p.layer * 0.2);
         p.x += (mdx / mDist) * force;
         p.drawY += (mdy / mDist) * force;
