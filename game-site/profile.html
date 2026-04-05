@@ -1772,10 +1772,15 @@ setTimeout(function() {
 
 // Scroll to pet section if hash is #petSection
 if (window.location.hash === '#petSection') {
-  setTimeout(function() {
+  function scrollToPet() {
     var ps = document.getElementById('petSection');
-    if (ps) ps.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 1500);
+    if (ps && ps.offsetHeight > 0) {
+      ps.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      setTimeout(scrollToPet, 500);
+    }
+  }
+  setTimeout(scrollToPet, 2000);
 }
 </script>
 <script src="easter.js"></script>
