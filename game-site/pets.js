@@ -29,7 +29,7 @@
     '@keyframes petBounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-18px) scale(1.1)}60%{transform:translateY(-6px) scale(1.03)}}' +
     '@keyframes petSad{0%,100%{transform:rotate(0deg)}20%{transform:rotate(-5deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(3deg)}}' +
     '@keyframes petSparkle{0%,100%{filter:drop-shadow(0 0 4px gold)}50%{filter:drop-shadow(0 0 12px gold)}}' +
-    '.pet-card{background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);border-radius:16px;padding:1.2rem;font-family:"Segoe UI",Tahoma,sans-serif;color:var(--t-text,#e0e0e0);text-align:center;width:100%;margin:0 auto}' +
+    '.pet-card{background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);border-radius:16px;padding:1.2rem;font-family:"Segoe UI",Tahoma,sans-serif;color:var(--t-text,#e0e0e0);text-align:center;max-width:900px;width:100%;margin:0 auto}' +
     '.pet-card:hover{border-color:var(--t-accent,#7b2ff7)}' +
     '.pet-emoji{display:inline-block;transition:transform .3s}' +
     '.pet-emoji.bounce{animation:petBounce .6s ease}' +
@@ -48,7 +48,7 @@
     '.pet-abandon{background:none;border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#888);font-size:0.68rem;padding:0.25rem 0.8rem;border-radius:8px;cursor:pointer;font-family:inherit;margin-top:0.6rem;transition:border-color .2s,color .2s}' +
     '.pet-abandon:hover{border-color:#ff4757;color:#ff4757}' +
 
-    '.pet-adopt{background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);border-radius:16px;padding:1.4rem;font-family:"Segoe UI",Tahoma,sans-serif;color:var(--t-text,#e0e0e0);text-align:center;width:100%;margin:0 auto}' +
+    '.pet-adopt{background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-border,#2a2a4a);border-radius:16px;padding:1.4rem;font-family:"Segoe UI",Tahoma,sans-serif;color:var(--t-text,#e0e0e0);text-align:center;max-width:900px;width:100%;margin:0 auto}' +
     '.pet-adopt h3{margin:0 0 0.3rem;font-size:1.1rem;background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}' +
     '.pet-adopt-sub{font-size:0.75rem;color:var(--t-dim,#888);margin-bottom:1rem}' +
     '.pet-adopt-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:0.6rem;margin-bottom:0.4rem}' +
