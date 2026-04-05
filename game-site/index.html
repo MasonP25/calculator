@@ -50,9 +50,9 @@
   @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
   @keyframes gradientSpin { to { --grad-angle: 360deg; } }
 
-  /* Glitch effect — every ~3s */
-  @keyframes glitch1 { 0%,80%,100% { clip-path:inset(0); transform:none; } 82% { clip-path:inset(20% 0 40% 0); transform:translateX(-4px); } 86% { clip-path:inset(60% 0 10% 0); transform:translateX(4px); } 90% { clip-path:inset(0); transform:none; } }
-  @keyframes glitch2 { 0%,80%,100% { clip-path:inset(0); transform:none; } 83% { clip-path:inset(40% 0 20% 0); transform:translateX(3px); } 87% { clip-path:inset(10% 0 60% 0); transform:translateX(-3px); } 91% { clip-path:inset(0); transform:none; } }
+  /* Glitch effect — every ~5s, slower shift */
+  @keyframes glitch1 { 0%,78%,100% { clip-path:inset(0); transform:none; } 80% { clip-path:inset(20% 0 40% 0); transform:translateX(-3px); } 85% { clip-path:inset(60% 0 10% 0); transform:translateX(3px); } 90% { clip-path:inset(30% 0 30% 0); transform:translateX(-2px); } 95% { clip-path:inset(0); transform:none; } }
+  @keyframes glitch2 { 0%,78%,100% { clip-path:inset(0); transform:none; } 81% { clip-path:inset(40% 0 20% 0); transform:translateX(2px); } 86% { clip-path:inset(10% 0 60% 0); transform:translateX(-2px); } 91% { clip-path:inset(50% 0 20% 0); transform:translateX(2px); } 96% { clip-path:inset(0); transform:none; } }
 
   /* Vignette */
   body::before {
