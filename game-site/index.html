@@ -756,6 +756,11 @@
     .card h2 { font-size: 0.72rem; }
     .card p { font-size: 0.55rem; }
   }
+  #back-to-top { display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9995; background:var(--t-bg2,#1a1a2e); border:2px solid var(--t-border,#2a2a4a); border-radius:20px; padding:5px 16px; color:var(--t-dim,#888); font-family:inherit; font-size:0.75rem; cursor:pointer; transition:border-color 0.2s,color 0.2s,opacity 0.3s; opacity:0; }
+  #back-to-top.show { display:block; opacity:1; }
+  #back-to-top:hover { border-color:var(--t-accent,#7b2ff7); color:var(--t-text,#e0e0e0); }
+  .subtitle .cursor { display:inline-block; width:2px; height:1em; background:var(--t-accent,#7b2ff7); margin-left:2px; vertical-align:text-bottom; animation:blink 0.7s infinite; }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
 </head>
@@ -764,8 +769,9 @@
     <span id="mm-username"></span> <span class="mm-arrow">&#9660;</span>
   </button>
   <div id="mobile-menu-dropdown"></div>
+  <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
   <h1>ARCADE</h1>
-  <p class="subtitle">Pick a game to play</p>
+  <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
   <p class="count">134 games</p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
@@ -3390,6 +3396,60 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
+// ─── BACK TO TOP BUTTON ───
+(function() {
+  var btn = document.getElementById('back-to-top');
+  if (!btn) return;
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 400) { btn.classList.add('show'); }
+    else { btn.classList.remove('show'); }
+  }, { passive: true });
+})();
+
+// ─── TYPING SUBTITLE ───
+(function() {
+  var el = document.getElementById('typed-subtitle');
+  if (!el) return;
+  var phrases = [
+    'Pick a game to play',
+    '130+ free browser games',
+    'No downloads needed',
+    'Compete on global leaderboards',
+    'Earn coins and customize your avatar',
+    'Play with friends online',
+    'New games added regularly',
+    'Challenge yourself daily',
+    'Built for gamers, by gamers'
+  ];
+  var idx = 0, charIdx = 0, deleting = false, pauseTimer = null;
+  var TYPING_SPEED = 50, DELETING_SPEED = 30, PAUSE_AFTER_TYPE = 2000, PAUSE_AFTER_DELETE = 400;
+
+  function tick() {
+    var phrase = phrases[idx];
+    if (!deleting) {
+      charIdx++;
+      el.innerHTML = phrase.substring(0, charIdx) + '<span class="cursor"></span>';
+      if (charIdx >= phrase.length) {
+        deleting = true;
+        pauseTimer = setTimeout(tick, PAUSE_AFTER_TYPE);
+        return;
+      }
+      pauseTimer = setTimeout(tick, TYPING_SPEED);
+    } else {
+      charIdx--;
+      el.innerHTML = phrase.substring(0, charIdx) + '<span class="cursor"></span>';
+      if (charIdx <= 0) {
+        deleting = false;
+        idx = (idx + 1) % phrases.length;
+        pauseTimer = setTimeout(tick, PAUSE_AFTER_DELETE);
+        return;
+      }
+      pauseTimer = setTimeout(tick, DELETING_SPEED);
+    }
+  }
+  setTimeout(tick, 500);
+})();
+
 // ─── MOBILE MENU ───
 (function() {
   var _mmBuilt = false;
