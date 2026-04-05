@@ -484,8 +484,10 @@ window._arcadeResetURL = 'https://script.google.com/macros/s/AKfycbzpThePcVWfOHV
     if (!window.ArcadeLevels) { updateBadge(); return; }
     var bar = document.getElementById('abXpBar');
     var label = document.getElementById('abXpLabel');
+    var lvlEl = document.querySelector('.ab-level');
     if (!bar || !label) { updateBadge(); return; }
     var prog = window.ArcadeLevels.getProgress();
+    if (lvlEl) lvlEl.textContent = 'Lv.' + prog.level;
     var target = Math.min(prog.percent, 100);
     var oldWidth = parseFloat(bar.style.width) || 0;
     label.textContent = prog.progressXP + ' / ' + prog.neededXP + ' XP';
