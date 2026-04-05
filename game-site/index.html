@@ -2064,6 +2064,7 @@
       favSection.style.maxHeight = '0';
       favSection.style.opacity = '0';
       favSection.style.margin = '0';
+      favGames.style.overflow = 'hidden';
       favGames.style.maxHeight = '0';
       favGames.style.opacity = '0';
       setTimeout(function() { favGames.innerHTML = ''; }, 400);
@@ -2093,6 +2094,7 @@
       favSection.style.margin = '';
       favGames.style.maxHeight = '500px';
       favGames.style.opacity = '1';
+      setTimeout(function() { favGames.style.overflow = 'visible'; }, 400);
     });
   }
 
