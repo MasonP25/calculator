@@ -1782,6 +1782,119 @@ if (window.location.hash === '#petSection') {
   }
   setTimeout(scrollToPet, 4000);
 }
+
+</script>
+<script>
+// ─── PROFILE TOUR ───
+(function() {
+  if (localStorage.getItem('arcade_profile_tour_done')) return;
+  // Only show on own profile
+  var params = new URLSearchParams(window.location.search);
+  var target = params.get('user');
+  var me = localStorage.getItem('arcade_currentUser');
+  if (target && me && target.toLowerCase() !== me.toLowerCase()) return;
+
+  var STEPS = [
+    { title: 'Welcome to Your Profile!', text: 'This is your personal hub where you can see all your stats, achievements, and customizations. Let\'s take a quick look around!', target: null },
+    { title: 'Your Avatar', text: 'This is your avatar — customize it in the Shop with hats, hair, shirts, and more. Your nametag style shows here too.', target: '#heroAvatar' },
+    { title: 'Bio & Status', text: 'Click "Edit Bio" to add a personal description that other players can see when they visit your profile.', target: '#heroActions' },
+    { title: 'Stats Overview', text: 'Your key stats at a glance — total games played, coins earned, achievements unlocked, and friends added.', target: '#statsRow' },
+    { title: 'Daily Login Streak', text: 'Visit every day to build your streak! Longer streaks earn bonus rewards. Don\'t miss a day or it resets.', target: '#streakSection' },
+    { title: 'Badges', text: 'Earn badges by reaching milestones — playing games, earning coins, making friends, and more. Collect them all!', target: '#badgesWrap' },
+    { title: 'High Scores', text: 'All your best scores across every game are listed here. Compete with others on the global leaderboards!', target: '#scoresGrid' },
+    { title: 'Your Pet', text: 'Adopt a pet, feed it with coins, and watch it grow! Your pet also walks around on the home page.', target: '#petSection' },
+    { title: 'Friends', text: 'See your friends list here. Add friends by searching their username, or click someone\'s name anywhere on the site.', target: '#friendsWrap' }
+  ];
+
+  var step = 0;
+  var overlay, box, spotlight;
+  var currentTarget = null;
+
+  function updateSpotlight(animate) {
+    var tr = animate ? 'top 0.4s ease, left 0.4s ease, width 0.4s ease, height 0.4s ease' : 'none';
+    if (!currentTarget) {
+      spotlight.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,20,0.85);z-index:100001;pointer-events:none;transition:' + tr + ';';
+      return;
+    }
+    var r = currentTarget.getBoundingClientRect();
+    var pad = 8;
+    spotlight.style.cssText = 'position:fixed;top:'+(r.top-pad)+'px;left:'+(r.left-pad)+'px;width:'+(r.width+pad*2)+'px;height:'+(r.height+pad*2)+'px;border-radius:12px;box-shadow:0 0 0 9999px rgba(10,10,20,0.85);z-index:100001;pointer-events:none;transition:' + tr + ';';
+  }
+
+  function start() {
+    overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;font-family:"Segoe UI",Tahoma,sans-serif;pointer-events:none;';
+    spotlight = document.createElement('div');
+    overlay.appendChild(spotlight);
+    box = document.createElement('div');
+    box.style.cssText = 'position:fixed;background:var(--t-bg2,#1a1a2e);border:2px solid var(--t-accent,#7b2ff7);border-radius:16px;padding:1.5rem;max-width:340px;width:90%;box-shadow:0 12px 50px rgba(0,0,0,0.7);z-index:100002;transition:all 0.3s ease;pointer-events:auto;';
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    window.addEventListener('scroll', function() { updateSpotlight(false); }, true);
+    showStep();
+  }
+
+  function showStep() {
+    var s = STEPS[step];
+    var targetEl = s.target ? document.querySelector(s.target) : null;
+    // Skip hidden elements
+    if (targetEl && (targetEl.offsetHeight === 0 || getComputedStyle(targetEl).display === 'none')) targetEl = null;
+    currentTarget = targetEl;
+
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(function() { updateSpotlight(true); }, 350);
+    }
+    updateSpotlight(true);
+
+    var isLast = step === STEPS.length - 1;
+    var isFirst = step === 0;
+    var backBtn = isFirst ? '' : '<button id="ptour-back" style="background:none;border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#aaa);cursor:pointer;font-size:0.82rem;padding:6px 14px;border-radius:8px;font-family:inherit">Back</button>';
+
+    box.innerHTML =
+      '<div style="font-size:0.7rem;color:var(--t-dim,#888);margin-bottom:0.4rem">Step ' + (step + 1) + ' of ' + STEPS.length + '</div>' +
+      '<h3 style="color:var(--t-text,#e0e0e0);margin:0 0 0.5rem;font-size:1.15rem">' + s.title + '</h3>' +
+      '<p style="color:var(--t-dim,#aaa);font-size:0.85rem;line-height:1.5;margin:0 0 1.2rem">' + s.text + '</p>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<button id="ptour-skip" style="background:none;border:none;color:var(--t-dim,#888);cursor:pointer;font-size:0.85rem;padding:6px 12px">Skip</button>' +
+        '<div style="display:flex;gap:8px">' + backBtn +
+        '<button id="ptour-next" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;border-radius:10px;padding:8px 22px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit">' + (isLast ? 'Got it!' : 'Next') + '</button>' +
+        '</div>' +
+      '</div>';
+
+    box.style.left = '50%';
+    box.style.transform = 'translateX(-50%)';
+    box.style.top = '';
+    box.style.bottom = '2rem';
+
+    document.getElementById('ptour-skip').onclick = finish;
+    if (!isFirst) {
+      document.getElementById('ptour-back').onclick = function() { step--; showStep(); };
+    }
+    document.getElementById('ptour-next').onclick = function() {
+      if (isLast) { finish(); return; }
+      step++;
+      showStep();
+    };
+  }
+
+  function finish() {
+    localStorage.setItem('arcade_profile_tour_done', '1');
+    overlay.remove();
+  }
+
+  // Start after profile loads
+  setTimeout(function() {
+    var content = document.getElementById('content');
+    if (content && content.style.display !== 'none') start();
+    else {
+      var check = setInterval(function() {
+        if (content && content.style.display !== 'none') { clearInterval(check); start(); }
+      }, 500);
+      setTimeout(function() { clearInterval(check); }, 10000);
+    }
+  }, 2000);
+})();
 </script>
 <script src="easter.js"></script>
 <script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
