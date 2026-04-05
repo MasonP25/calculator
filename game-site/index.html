@@ -3403,197 +3403,215 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
-// ─── WALKING PIXEL PET ───
+// ─── WALKING PIXEL PET (64x64, draggable, gravity) ───
 (function() {
-  // 32x32 pixel art sprites drawn on canvas
-  // Each sprite is an array of [x,y,color] for filled pixels (4px grid = 8x8 logical pixels)
-  var P = 4; // pixel size
-  var S = 32; // sprite size
+  var P = 4, S = 64, G = S / P; // 16x16 grid
+
+  function px(ctx,x,y,c) { ctx.fillStyle=c; ctx.fillRect(x*P,y*P,P,P); }
+  function rect(ctx,x,y,w,h,c) { for(var i=x;i<x+w;i++) for(var j=y;j<y+h;j++) px(ctx,i,j,c); }
 
   var SPRITES = {
     cat: {
       idle: function(ctx) {
-        var c = '#f0a040';
+        var c='#f0a040',d='#d08830',w='#fff',b='#222';
         // ears
-        px(ctx,2,0,c); px(ctx,3,0,c); px(ctx,5,0,c); px(ctx,6,0,c);
-        px(ctx,2,1,c); px(ctx,3,1,c); px(ctx,5,1,c); px(ctx,6,1,c);
+        rect(ctx,2,0,2,3,c); rect(ctx,11,0,2,3,c);
+        px(ctx,3,1,d); px(ctx,12,1,d);
         // head
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#fff'); px(ctx,5,2,'#fff'); // eyes white
-        px(ctx,2,3,'#222'); px(ctx,5,3,'#222'); // eyes pupil
-        px(ctx,3,3,'#ff6b8a'); px(ctx,4,3,'#ff6b8a'); // nose
+        rect(ctx,3,2,9,5,c); rect(ctx,2,3,11,3,c);
+        // eyes
+        rect(ctx,4,3,2,2,w); rect(ctx,9,3,2,2,w);
+        px(ctx,5,4,b); px(ctx,10,4,b);
+        // nose + mouth
+        px(ctx,7,5,'#ff6b8a'); px(ctx,6,6,b); px(ctx,8,6,b); px(ctx,7,6,b);
+        // whiskers
+        px(ctx,2,5,'#ccc'); px(ctx,1,5,'#ccc'); px(ctx,13,5,'#ccc'); px(ctx,14,5,'#ccc');
         // body
-        for(var i=1;i<7;i++) { px(ctx,i,4,c); px(ctx,i,5,c); px(ctx,i,6,c); }
+        rect(ctx,3,7,9,5,c); rect(ctx,2,8,11,3,c);
+        rect(ctx,5,8,5,4,d); // belly stripe
         // legs
-        px(ctx,1,7,c); px(ctx,2,7,c); px(ctx,5,7,c); px(ctx,6,7,c);
+        rect(ctx,3,12,2,4,c); rect(ctx,10,12,2,4,c);
+        // paws
+        rect(ctx,3,15,2,1,'#e8c080'); rect(ctx,10,15,2,1,'#e8c080');
         // tail
-        px(ctx,7,4,c); px(ctx,7,3,c);
+        rect(ctx,13,7,1,3,c); px(ctx,14,6,c); px(ctx,15,5,c); px(ctx,15,4,c);
       },
       walk: function(ctx) {
-        var c = '#f0a040';
-        px(ctx,2,0,c); px(ctx,3,0,c); px(ctx,5,0,c); px(ctx,6,0,c);
-        px(ctx,2,1,c); px(ctx,3,1,c); px(ctx,5,1,c); px(ctx,6,1,c);
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#fff'); px(ctx,5,2,'#fff');
-        px(ctx,2,3,'#222'); px(ctx,5,3,'#222');
-        px(ctx,3,3,'#ff6b8a'); px(ctx,4,3,'#ff6b8a');
-        for(var i=1;i<7;i++) { px(ctx,i,4,c); px(ctx,i,5,c); px(ctx,i,6,c); }
-        // walk legs offset
-        px(ctx,2,7,c); px(ctx,3,7,c); px(ctx,5,7,c); px(ctx,6,7,c);
-        px(ctx,7,5,c); px(ctx,7,4,c); // tail up
+        var c='#f0a040',d='#d08830',w='#fff',b='#222';
+        rect(ctx,2,0,2,3,c); rect(ctx,11,0,2,3,c);
+        px(ctx,3,1,d); px(ctx,12,1,d);
+        rect(ctx,3,2,9,5,c); rect(ctx,2,3,11,3,c);
+        rect(ctx,4,3,2,2,w); rect(ctx,9,3,2,2,w);
+        px(ctx,5,4,b); px(ctx,10,4,b);
+        px(ctx,7,5,'#ff6b8a'); px(ctx,6,6,b); px(ctx,8,6,b); px(ctx,7,6,b);
+        px(ctx,2,5,'#ccc'); px(ctx,1,5,'#ccc'); px(ctx,13,5,'#ccc'); px(ctx,14,5,'#ccc');
+        rect(ctx,3,7,9,5,c); rect(ctx,2,8,11,3,c);
+        rect(ctx,5,8,5,4,d);
+        // walk legs
+        rect(ctx,2,12,2,4,c); rect(ctx,11,12,2,4,c);
+        rect(ctx,2,15,2,1,'#e8c080'); rect(ctx,11,15,2,1,'#e8c080');
+        // tail up
+        rect(ctx,13,6,1,2,c); px(ctx,14,5,c); px(ctx,15,4,c); px(ctx,15,3,c);
       }
     },
     dog: {
       idle: function(ctx) {
-        var c = '#c08050';
-        // ears
-        px(ctx,1,0,c); px(ctx,6,0,c);
-        px(ctx,1,1,c); px(ctx,6,1,c);
+        var c='#c08050',d='#a06838',w='#fff',b='#222';
+        // floppy ears
+        rect(ctx,1,1,3,4,d); rect(ctx,11,1,3,4,d);
         // head
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#fff'); px(ctx,5,2,'#fff');
-        px(ctx,2,3,'#222'); px(ctx,5,3,'#222');
-        px(ctx,3,3,'#333'); // nose
+        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
+        rect(ctx,4,2,2,2,w); rect(ctx,9,2,2,2,w);
+        px(ctx,5,3,b); px(ctx,10,3,b);
+        rect(ctx,6,4,3,2,'#3a2a1a'); // snout
+        px(ctx,7,4,b); // nose
+        px(ctx,7,5,'#ff6688'); // tongue
         // body
-        for(var i=1;i<7;i++) { px(ctx,i,4,c); px(ctx,i,5,c); px(ctx,i,6,c); }
+        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
+        rect(ctx,5,7,5,4,'#d8a870'); // belly
         // legs
-        px(ctx,1,7,c); px(ctx,2,7,c); px(ctx,5,7,c); px(ctx,6,7,c);
+        rect(ctx,3,11,2,4,c); rect(ctx,10,11,2,4,c);
+        rect(ctx,3,14,2,1,d); rect(ctx,10,14,2,1,d);
         // tail
-        px(ctx,7,3,c); px(ctx,7,2,c);
+        rect(ctx,13,5,1,3,c); px(ctx,14,4,c); px(ctx,14,3,c);
       },
       walk: function(ctx) {
-        var c = '#c08050';
-        px(ctx,1,0,c); px(ctx,6,0,c);
-        px(ctx,1,1,c); px(ctx,6,1,c);
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#fff'); px(ctx,5,2,'#fff');
-        px(ctx,2,3,'#222'); px(ctx,5,3,'#222');
-        px(ctx,3,3,'#333');
-        for(var i=1;i<7;i++) { px(ctx,i,4,c); px(ctx,i,5,c); px(ctx,i,6,c); }
-        px(ctx,1,7,c); px(ctx,3,7,c); px(ctx,4,7,c); px(ctx,6,7,c);
-        px(ctx,7,4,c); px(ctx,7,3,c); // tail wagging up
+        var c='#c08050',d='#a06838',w='#fff',b='#222';
+        rect(ctx,1,1,3,4,d); rect(ctx,11,1,3,4,d);
+        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
+        rect(ctx,4,2,2,2,w); rect(ctx,9,2,2,2,w);
+        px(ctx,5,3,b); px(ctx,10,3,b);
+        rect(ctx,6,4,3,2,'#3a2a1a'); px(ctx,7,4,b); px(ctx,7,5,'#ff6688');
+        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
+        rect(ctx,5,7,5,4,'#d8a870');
+        rect(ctx,2,11,2,4,c); rect(ctx,11,11,2,4,c);
+        rect(ctx,2,14,2,1,d); rect(ctx,11,14,2,1,d);
+        px(ctx,14,4,c); px(ctx,14,3,c); px(ctx,15,3,c); // tail wagging
       }
     },
     dragon: {
       idle: function(ctx) {
-        var c = '#40c060';
+        var c='#40c060',d='#2a8a40',l='#80e080',b='#222';
         // horns
-        px(ctx,2,0,'#80e080'); px(ctx,5,0,'#80e080');
+        px(ctx,4,0,'#c0a030'); px(ctx,5,0,'#c0a030'); px(ctx,10,0,'#c0a030'); px(ctx,11,0,'#c0a030');
         // head
-        for(var i=1;i<7;i++) { px(ctx,i,1,c); px(ctx,i,2,c); }
-        px(ctx,2,1,'#ff4400'); px(ctx,5,1,'#ff4400'); // eyes
-        px(ctx,3,2,'#222'); px(ctx,4,2,'#222'); // nostrils
+        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
+        rect(ctx,4,2,2,2,'#ff4400'); rect(ctx,9,2,2,2,'#ff4400'); // eyes
+        px(ctx,5,3,b); px(ctx,10,3,b);
+        px(ctx,6,4,b); px(ctx,9,4,b); // nostrils
+        px(ctx,7,5,'#ff6600'); px(ctx,8,5,'#ff6600'); // fire breath hint
         // body
-        for(var i=1;i<7;i++) { px(ctx,i,3,c); px(ctx,i,4,c); px(ctx,i,5,c); }
-        // belly
-        px(ctx,3,4,'#80e080'); px(ctx,4,4,'#80e080'); px(ctx,3,5,'#80e080'); px(ctx,4,5,'#80e080');
+        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
+        rect(ctx,5,7,5,4,l); // belly
         // wings
-        px(ctx,0,3,'#60d080'); px(ctx,0,4,'#60d080'); px(ctx,7,3,'#60d080'); px(ctx,7,4,'#60d080');
+        rect(ctx,0,4,3,4,d); rect(ctx,12,4,3,4,d);
+        px(ctx,0,3,d); px(ctx,14,3,d);
         // legs
-        px(ctx,1,6,c); px(ctx,2,6,c); px(ctx,5,6,c); px(ctx,6,6,c);
-        px(ctx,1,7,c); px(ctx,2,7,c); px(ctx,5,7,c); px(ctx,6,7,c);
+        rect(ctx,3,11,2,4,c); rect(ctx,10,11,2,4,c);
+        rect(ctx,3,14,2,1,d); rect(ctx,10,14,2,1,d);
         // tail
-        px(ctx,7,5,c); px(ctx,7,6,'#40a050');
+        rect(ctx,13,9,1,2,c); px(ctx,14,10,c); px(ctx,15,11,d);
       },
       walk: function(ctx) {
-        var c = '#40c060';
-        px(ctx,2,0,'#80e080'); px(ctx,5,0,'#80e080');
-        for(var i=1;i<7;i++) { px(ctx,i,1,c); px(ctx,i,2,c); }
-        px(ctx,2,1,'#ff4400'); px(ctx,5,1,'#ff4400');
-        px(ctx,3,2,'#222'); px(ctx,4,2,'#222');
-        for(var i=1;i<7;i++) { px(ctx,i,3,c); px(ctx,i,4,c); px(ctx,i,5,c); }
-        px(ctx,3,4,'#80e080'); px(ctx,4,4,'#80e080'); px(ctx,3,5,'#80e080'); px(ctx,4,5,'#80e080');
-        px(ctx,0,2,'#60d080'); px(ctx,0,3,'#60d080'); px(ctx,7,2,'#60d080'); px(ctx,7,3,'#60d080'); // wings up
-        px(ctx,2,6,c); px(ctx,3,6,c); px(ctx,4,7,c); px(ctx,5,7,c);
-        px(ctx,7,5,c); px(ctx,7,6,'#40a050');
+        var c='#40c060',d='#2a8a40',l='#80e080',b='#222';
+        px(ctx,4,0,'#c0a030'); px(ctx,5,0,'#c0a030'); px(ctx,10,0,'#c0a030'); px(ctx,11,0,'#c0a030');
+        rect(ctx,3,1,9,5,c); rect(ctx,2,2,11,3,c);
+        rect(ctx,4,2,2,2,'#ff4400'); rect(ctx,9,2,2,2,'#ff4400');
+        px(ctx,5,3,b); px(ctx,10,3,b);
+        px(ctx,6,4,b); px(ctx,9,4,b);
+        px(ctx,7,5,'#ff6600'); px(ctx,8,5,'#ff6600');
+        rect(ctx,3,6,9,5,c); rect(ctx,2,7,11,3,c);
+        rect(ctx,5,7,5,4,l);
+        // wings up
+        rect(ctx,0,2,3,4,d); rect(ctx,12,2,3,4,d);
+        px(ctx,0,1,d); px(ctx,14,1,d);
+        rect(ctx,2,11,2,4,c); rect(ctx,11,11,2,4,c);
+        rect(ctx,2,14,2,1,d); rect(ctx,11,14,2,1,d);
+        rect(ctx,13,9,1,2,c); px(ctx,14,10,c); px(ctx,15,10,d);
       }
     },
     bunny: {
       idle: function(ctx) {
-        var c = '#e0d0e0';
+        var c='#e0d0e0',p2='#ffaacc',d='#c8b8c8',w='#fff';
         // ears
-        px(ctx,2,0,c); px(ctx,3,0,'#ffaacc'); px(ctx,5,0,'#ffaacc'); px(ctx,6,0,c);
-        px(ctx,2,1,c); px(ctx,3,1,'#ffaacc'); px(ctx,5,1,'#ffaacc'); px(ctx,6,1,c);
+        rect(ctx,3,0,2,4,c); rect(ctx,10,0,2,4,c);
+        px(ctx,4,1,p2); px(ctx,4,2,p2); px(ctx,11,1,p2); px(ctx,11,2,p2);
         // head
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#ff6688'); px(ctx,5,2,'#ff6688'); // eyes
-        px(ctx,3,3,'#ffaacc'); px(ctx,4,3,'#ffaacc'); // nose
+        rect(ctx,3,3,9,5,c); rect(ctx,2,4,11,3,c);
+        rect(ctx,4,4,2,2,w); rect(ctx,9,4,2,2,w);
+        px(ctx,5,5,'#ff4466'); px(ctx,10,5,'#ff4466');
+        px(ctx,7,6,p2); // nose
         // body
-        for(var i=2;i<6;i++) { px(ctx,i,4,c); px(ctx,i,5,c); px(ctx,i,6,c); }
-        // fluffy sides
-        px(ctx,1,4,c); px(ctx,6,4,c); px(ctx,1,5,c); px(ctx,6,5,c);
+        rect(ctx,3,8,9,4,c); rect(ctx,2,9,11,2,c);
+        rect(ctx,5,9,5,3,w); // white belly
         // legs
-        px(ctx,2,7,c); px(ctx,3,7,c); px(ctx,5,7,c); px(ctx,6,7,c);
+        rect(ctx,3,12,3,3,c); rect(ctx,9,12,3,3,c);
+        rect(ctx,3,14,3,1,d); rect(ctx,9,14,3,1,d);
         // tail
-        px(ctx,7,5,'#fff');
+        rect(ctx,13,9,2,2,w);
       },
       walk: function(ctx) {
-        var c = '#e0d0e0';
-        px(ctx,2,0,c); px(ctx,3,0,'#ffaacc'); px(ctx,5,0,'#ffaacc'); px(ctx,6,0,c);
-        px(ctx,2,1,c); px(ctx,3,1,'#ffaacc'); px(ctx,5,1,'#ffaacc'); px(ctx,6,1,c);
-        for(var i=1;i<7;i++) { px(ctx,i,2,c); px(ctx,i,3,c); }
-        px(ctx,2,2,'#ff6688'); px(ctx,5,2,'#ff6688');
-        px(ctx,3,3,'#ffaacc'); px(ctx,4,3,'#ffaacc');
-        for(var i=2;i<6;i++) { px(ctx,i,4,c); px(ctx,i,5,c); }
-        px(ctx,1,4,c); px(ctx,6,4,c); px(ctx,1,5,c); px(ctx,6,5,c);
-        // hop pose — body higher, legs tucked
-        for(var i=2;i<6;i++) { px(ctx,i,6,c); }
-        px(ctx,3,7,c); px(ctx,4,7,c);
-        px(ctx,7,4,'#fff');
+        var c='#e0d0e0',p2='#ffaacc',d='#c8b8c8',w='#fff';
+        // ears bounced
+        rect(ctx,3,0,2,3,c); rect(ctx,10,0,2,3,c);
+        px(ctx,4,1,p2); px(ctx,11,1,p2);
+        rect(ctx,3,2,9,5,c); rect(ctx,2,3,11,3,c);
+        rect(ctx,4,3,2,2,w); rect(ctx,9,3,2,2,w);
+        px(ctx,5,4,'#ff4466'); px(ctx,10,4,'#ff4466');
+        px(ctx,7,5,p2);
+        rect(ctx,3,7,9,4,c); rect(ctx,2,8,11,2,c);
+        rect(ctx,5,8,5,3,w);
+        // hop pose
+        rect(ctx,2,11,3,3,c); rect(ctx,10,11,3,3,c);
+        rect(ctx,2,13,3,1,d); rect(ctx,10,13,3,1,d);
+        rect(ctx,13,8,2,2,w);
       }
     },
     penguin: {
       idle: function(ctx) {
-        var c = '#2a2a3a';
+        var c='#1a1a2e',w='#e8e8f0',o='#ff8800',b='#222';
         // head
-        for(var i=2;i<6;i++) { px(ctx,i,0,c); px(ctx,i,1,c); }
-        px(ctx,3,0,'#fff'); px(ctx,4,0,'#fff'); // eyes white
-        px(ctx,3,1,'#222'); px(ctx,4,1,'#222'); // eyes
+        rect(ctx,4,0,7,4,c); rect(ctx,3,1,9,2,c);
+        rect(ctx,5,1,2,2,w); rect(ctx,9,1,2,2,w); // eyes
+        px(ctx,6,2,b); px(ctx,10,2,b);
         // beak
-        px(ctx,3,2,'#ff8800'); px(ctx,4,2,'#ff8800');
+        rect(ctx,6,3,3,2,o);
         // body
-        for(var i=1;i<7;i++) { px(ctx,i,3,c); px(ctx,i,4,c); px(ctx,i,5,c); }
+        rect(ctx,3,4,9,7,c); rect(ctx,2,5,11,5,c);
         // white belly
-        px(ctx,3,3,'#e8e8f0'); px(ctx,4,3,'#e8e8f0');
-        px(ctx,3,4,'#e8e8f0'); px(ctx,4,4,'#e8e8f0');
-        px(ctx,3,5,'#e8e8f0'); px(ctx,4,5,'#e8e8f0');
+        rect(ctx,5,5,5,5,w);
         // flippers
-        px(ctx,0,3,c); px(ctx,0,4,c); px(ctx,7,3,c); px(ctx,7,4,c);
+        rect(ctx,1,5,2,4,c); rect(ctx,12,5,2,4,c);
         // feet
-        px(ctx,2,6,'#ff8800'); px(ctx,3,6,'#ff8800'); px(ctx,4,6,'#ff8800'); px(ctx,5,6,'#ff8800');
-        px(ctx,2,7,'#ff8800'); px(ctx,3,7,'#ff8800'); px(ctx,4,7,'#ff8800'); px(ctx,5,7,'#ff8800');
+        rect(ctx,4,11,3,2,o); rect(ctx,8,11,3,2,o);
+        rect(ctx,3,12,4,1,o); rect(ctx,8,12,4,1,o);
       },
       walk: function(ctx) {
-        var c = '#2a2a3a';
-        for(var i=2;i<6;i++) { px(ctx,i,0,c); px(ctx,i,1,c); }
-        px(ctx,3,0,'#fff'); px(ctx,4,0,'#fff');
-        px(ctx,3,1,'#222'); px(ctx,4,1,'#222');
-        px(ctx,3,2,'#ff8800'); px(ctx,4,2,'#ff8800');
-        for(var i=1;i<7;i++) { px(ctx,i,3,c); px(ctx,i,4,c); px(ctx,i,5,c); }
-        px(ctx,3,3,'#e8e8f0'); px(ctx,4,3,'#e8e8f0');
-        px(ctx,3,4,'#e8e8f0'); px(ctx,4,4,'#e8e8f0');
-        px(ctx,3,5,'#e8e8f0'); px(ctx,4,5,'#e8e8f0');
+        var c='#1a1a2e',w='#e8e8f0',o='#ff8800',b='#222';
+        rect(ctx,4,0,7,4,c); rect(ctx,3,1,9,2,c);
+        rect(ctx,5,1,2,2,w); rect(ctx,9,1,2,2,w);
+        px(ctx,6,2,b); px(ctx,10,2,b);
+        rect(ctx,6,3,3,2,o);
+        rect(ctx,3,4,9,7,c); rect(ctx,2,5,11,5,c);
+        rect(ctx,5,5,5,5,w);
         // flippers up
-        px(ctx,0,2,c); px(ctx,0,3,c); px(ctx,7,2,c); px(ctx,7,3,c);
-        // waddle feet offset
-        px(ctx,1,6,'#ff8800'); px(ctx,2,6,'#ff8800'); px(ctx,5,6,'#ff8800'); px(ctx,6,6,'#ff8800');
-        px(ctx,1,7,'#ff8800'); px(ctx,2,7,'#ff8800'); px(ctx,5,7,'#ff8800'); px(ctx,6,7,'#ff8800');
+        rect(ctx,0,4,3,3,c); rect(ctx,12,4,3,3,c);
+        // waddle feet
+        rect(ctx,3,11,3,2,o); rect(ctx,9,11,3,2,o);
+        rect(ctx,2,12,4,1,o); rect(ctx,9,12,4,1,o);
       }
     }
   };
 
-  function px(ctx, x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x * P, y * P, P, P);
-  }
-
-  function renderFrame(type, frameName) {
-    var c = document.createElement('canvas');
-    c.width = S; c.height = S;
+  function renderFrame(type, frame) {
+    var c = document.createElement('canvas'); c.width=S; c.height=S;
     var ctx = c.getContext('2d');
-    if (SPRITES[type] && SPRITES[type][frameName]) SPRITES[type][frameName](ctx);
+    if (SPRITES[type] && SPRITES[type][frame]) SPRITES[type][frame](ctx);
     return c.toDataURL();
   }
+
+  // Expose for pet card
+  window._petSprite = renderFrame;
 
   function startPetWalk() {
     if (!window.ArcadePets) return;
@@ -3601,52 +3619,127 @@ if ('serviceWorker' in navigator) {
     if (!pet) return;
     if (document.getElementById('walking-pet')) return;
 
-    var idleImg = renderFrame(pet.type, 'idle');
-    var walkImg = renderFrame(pet.type, 'walk');
-    var scale = pet.stage === 'adult' ? 2.5 : pet.stage === 'teen' ? 2 : 1.5;
+    var idleImg = renderFrame(pet.type,'idle');
+    var walkImg = renderFrame(pet.type,'walk');
+    var sc = pet.stage==='adult'?2:pet.stage==='teen'?1.5:1;
+    var displaySize = S * sc;
 
     var el = document.createElement('img');
     el.id = 'walking-pet';
     el.src = idleImg;
-    el.style.cssText = 'position:fixed;bottom:8px;z-index:9990;width:' + (S * scale) + 'px;height:' + (S * scale) + 'px;cursor:pointer;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));';
-    el.title = pet.name + ' (' + pet.stage + ')';
+    el.draggable = false;
+    el.style.cssText = 'position:fixed;bottom:8px;z-index:9990;width:'+displaySize+'px;height:'+displaySize+'px;cursor:grab;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));';
+    el.title = pet.name+' ('+pet.stage+')';
     document.body.appendChild(el);
 
-    var x = Math.random() * (window.innerWidth - 80) + 40;
-    var speed = 0.3;
-    var dir = Math.random() > 0.5 ? 1 : -1;
-    var frame = 0;
-    var idleTimer = 0;
-    var state = 'walk';
+    var x = Math.random()*(window.innerWidth-displaySize-80)+40;
+    var y = window.innerHeight - displaySize - 8;
+    var vy = 0;
+    var speed = 0.25;
+    var dir = Math.random()>0.5?1:-1;
+    var frame = 0, idleTimer = 0, state = 'walk';
+    var dragging = false, dragOffX = 0, dragOffY = 0;
+    var chatPanel = document.getElementById('chat-panel');
     var animId;
+    var GRAVITY = 0.5, FLOOR = window.innerHeight - displaySize - 8;
+    var CHAT_LEFT = 0;
+
+    function getChatBounds() {
+      if (!chatPanel) return null;
+      var r = chatPanel.getBoundingClientRect();
+      if (r.width < 10 || r.height < 20) return null;
+      return r;
+    }
 
     function update() {
+      if (dragging) { animId = requestAnimationFrame(update); return; }
+
+      FLOOR = window.innerHeight - displaySize - 8;
+      var cb = getChatBounds();
+
       if (state === 'walk') {
         x += speed * dir;
-        if (x < 10) { dir = 1; }
-        if (x > window.innerWidth - S * scale - 10) { dir = -1; }
+        // Avoid chat panel
+        if (cb) {
+          if (dir > 0 && x + displaySize > cb.left - 5 && y + displaySize > cb.top) { dir = -1; }
+          if (dir < 0 && x < cb.right + 5 && y + displaySize > cb.top) { dir = 1; }
+        }
+        if (x < 5) dir = 1;
+        if (x > window.innerWidth - displaySize - 5) dir = -1;
         el.style.transform = dir < 0 ? 'scaleX(-1)' : 'scaleX(1)';
         frame++;
-        el.src = (frame % 40 < 20) ? walkImg : idleImg;
+        el.src = (frame % 50 < 25) ? walkImg : idleImg;
         if (Math.random() < 0.001) {
-          state = 'idle';
-          idleTimer = 180 + Math.floor(Math.random() * 240);
+          state = 'idle'; idleTimer = 200 + Math.floor(Math.random()*300);
           el.src = idleImg;
         }
       } else if (state === 'idle') {
         idleTimer--;
-        if (idleTimer <= 0) {
-          state = 'walk';
-          if (Math.random() > 0.5) dir *= -1;
-        }
+        if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
       }
+
+      // Gravity
+      if (y < FLOOR) {
+        vy += GRAVITY;
+        y += vy;
+        if (y >= FLOOR) { y = FLOOR; vy = 0; }
+      }
+
       el.style.left = x + 'px';
+      el.style.bottom = '';
+      el.style.top = y + 'px';
       animId = requestAnimationFrame(update);
     }
 
-    el.addEventListener('click', function() {
-      var user = localStorage.getItem('arcade_currentUser');
-      if (user) window.location.href = 'profile.html?user=' + encodeURIComponent(user) + '#petSection';
+    // Drag
+    el.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      dragging = true;
+      el.style.cursor = 'grabbing';
+      dragOffX = e.clientX - x;
+      dragOffY = e.clientY - y;
+      vy = 0;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      x = e.clientX - dragOffX;
+      y = e.clientY - dragOffY;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+    });
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      el.style.cursor = 'grab';
+    });
+    // Touch drag
+    el.addEventListener('touchstart', function(e) {
+      dragging = true;
+      var t = e.touches[0];
+      dragOffX = t.clientX - x;
+      dragOffY = t.clientY - y;
+      vy = 0;
+      e.preventDefault();
+    }, {passive:false});
+    document.addEventListener('touchmove', function(e) {
+      if (!dragging) return;
+      var t = e.touches[0];
+      x = t.clientX - dragOffX;
+      y = t.clientY - dragOffY;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+    }, {passive:true});
+    document.addEventListener('touchend', function() { dragging = false; });
+
+    // Click to profile (only if not dragged)
+    var clickStart = 0, clickX = 0, clickY = 0;
+    el.addEventListener('mousedown', function(e) { clickStart = Date.now(); clickX = e.clientX; clickY = e.clientY; });
+    el.addEventListener('mouseup', function(e) {
+      if (Date.now() - clickStart < 300 && Math.abs(e.clientX-clickX)<5 && Math.abs(e.clientY-clickY)<5) {
+        var user = localStorage.getItem('arcade_currentUser');
+        if (user) window.location.href = 'profile.html?user='+encodeURIComponent(user)+'#petSection';
+      }
     });
 
     update();
