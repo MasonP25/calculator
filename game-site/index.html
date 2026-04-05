@@ -138,8 +138,8 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  h1::before { animation: glitch1 2.5s infinite; color: #00d4ff; }
-  h1::after { animation: glitch2 2.5s infinite; color: #ff6b9d; }
+  h1::before { animation: glitch1 1.7s infinite; color: #00d4ff; }
+  h1::after { animation: glitch2 1.7s infinite; color: #ff6b9d; }
   @keyframes titleShimmer {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -326,6 +326,7 @@
     font-size: 1rem;
     opacity: 1 !important;
     pointer-events: none;
+    z-index: 2;
   }
   .card.hidden-search { display: none; }
   .section-title.hidden-search { display: none; }
