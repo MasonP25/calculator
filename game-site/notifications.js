@@ -98,7 +98,7 @@
   // ─── INJECT CSS ───
   var css = document.createElement('style');
   css.textContent =
-    '.notif-toast{position:fixed;bottom:24px;left:24px;background:#1a1a2e;border:2px solid #00d4ff;border-radius:12px;' +
+    '.notif-toast{position:fixed;bottom:60px;left:24px;background:#1a1a2e;border:2px solid #00d4ff;border-radius:12px;' +
     'padding:0.7rem 1rem;display:flex;align-items:center;gap:0.7rem;z-index:10001;font-family:"Segoe UI",Tahoma,sans-serif;' +
     'transform:translateX(-120%);transition:transform 0.4s cubic-bezier(.4,0,.2,1);box-shadow:0 4px 20px rgba(0,212,255,0.3);max-width:340px}' +
     '.notif-toast.show{transform:translateX(0)}' +
