@@ -49,6 +49,40 @@
 <style>
   @property --grad-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
   @keyframes gradientSpin { to { --grad-angle: 360deg; } }
+
+  /* Glitch effect */
+  @keyframes glitch1 { 0%,92%,100% { clip-path:inset(0); transform:none; } 93% { clip-path:inset(20% 0 40% 0); transform:translateX(-4px); } 96% { clip-path:inset(60% 0 10% 0); transform:translateX(4px); } }
+  @keyframes glitch2 { 0%,92%,100% { clip-path:inset(0); transform:none; } 94% { clip-path:inset(40% 0 20% 0); transform:translateX(3px); } 97% { clip-path:inset(10% 0 60% 0); transform:translateX(-3px); } }
+
+  /* Vignette */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--t-accent,#7b2ff7); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--t-accent2,#00d4ff); }
+  html { scrollbar-width: thin; scrollbar-color: var(--t-accent,#7b2ff7) transparent; }
+
+  /* Page load animation */
+  @keyframes fadeSlideIn { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  h1 { animation: fadeSlideIn 0.8s ease-out both; }
+  .subtitle { animation: fadeSlideIn 0.8s ease-out 0.15s both; }
+  .count { animation: fadeSlideIn 0.8s ease-out 0.25s both; }
+  .fame-link:nth-child(1) { animation: fadeSlideIn 0.6s ease-out 0.35s both; }
+  .fame-link:nth-child(2) { animation: fadeSlideIn 0.6s ease-out 0.45s both; }
+  .fame-link:nth-child(3) { animation: fadeSlideIn 0.6s ease-out 0.55s both; }
+  .search-bar { animation: fadeSlideIn 0.6s ease-out 0.6s both; }
+  .filter-bar { animation: fadeIn 0.6s ease-out 0.7s both; }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Outfit', 'Segoe UI', sans-serif;
@@ -88,11 +122,24 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: titleShimmer 6s ease-in-out infinite;
+    animation: titleShimmer 6s ease-in-out infinite, fadeSlideIn 0.8s ease-out both;
     isolation: isolate;
     contain: layout style paint;
     filter: drop-shadow(0 0 30px rgba(123,47,247,0.15));
+    position: relative;
   }
+  /* Glitch layers */
+  h1::before, h1::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  h1::before { animation: glitch1 8s infinite; color: #00d4ff; }
+  h1::after { animation: glitch2 8s infinite; color: #ff6b9d; }
   @keyframes titleShimmer {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -173,9 +220,30 @@
   .card .tilt-glow {
     position:absolute;top:0;left:0;width:100%;height:100%;border-radius:16px;
     pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:1;
-    background:radial-gradient(circle at var(--glow-x,50%) var(--glow-y,50%),var(--t-glow,rgba(123,47,247,0.03)) 0%,transparent 70%);
+    background:radial-gradient(circle at var(--glow-x,50%) var(--glow-y,50%),var(--t-glow,rgba(123,47,247,0.05)) 0%,transparent 60%);
   }
   .card:hover .tilt-glow { opacity:1; }
+  /* Inner glow at bottom */
+  .card::after {
+    content:''; position:absolute; bottom:0; left:10%; right:10%; height:40%;
+    border-radius:0 0 16px 16px; pointer-events:none;
+    background:linear-gradient(to top, rgba(123,47,247,0.03), transparent);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .card:hover::after { opacity:1; }
+  /* Click ripple */
+  @keyframes cardRipple { to { transform:scale(2.5); opacity:0; } }
+  .card-ripple {
+    position:absolute; border-radius:50%; background:rgba(123,47,247,0.2);
+    width:40px; height:40px; transform:scale(0); animation:cardRipple 0.5s ease-out forwards;
+    pointer-events:none; z-index:5;
+  }
+  /* Page transition */
+  #page-transition {
+    position:fixed; inset:0; background:#0f0f1a; z-index:999999;
+    opacity:0; pointer-events:none; transition:opacity 0.3s ease;
+  }
+  #page-transition.active { opacity:1; pointer-events:auto; }
   /* Scroll reveal */
   .card, .section-title { opacity: 0; transform: translateY(20px); }
   .card.revealed, .section-title.revealed { opacity: 1; transform: translateY(0); }
@@ -816,8 +884,9 @@
     <span id="mm-username"></span> <span class="mm-arrow">&#9660;</span>
   </button>
   <div id="mobile-menu-dropdown"></div>
+  <div id="page-transition"></div>
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
-  <h1>MASON'S ARCADE</h1>
+  <h1 data-text="MASON'S ARCADE">MASON'S ARCADE</h1>
   <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
   <p class="count">134 games</p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
@@ -3804,6 +3873,81 @@ if ('serviceWorker' in navigator) {
     if (!document.getElementById('walking-pet')) startPetWalk();
   });
   setTimeout(startPetWalk, 2000);
+})();
+
+// ─── CARD CLICK RIPPLE ───
+(function() {
+  document.addEventListener('click', function(e) {
+    var card = e.target.closest('.card');
+    if (!card) return;
+    var rect = card.getBoundingClientRect();
+    var ripple = document.createElement('div');
+    ripple.className = 'card-ripple';
+    ripple.style.left = (e.clientX - rect.left - 20) + 'px';
+    ripple.style.top = (e.clientY - rect.top - 20) + 'px';
+    card.appendChild(ripple);
+    setTimeout(function() { ripple.remove(); }, 500);
+  });
+})();
+
+// ─── PAGE TRANSITION ───
+(function() {
+  var trans = document.getElementById('page-transition');
+  if (!trans) return;
+  // Fade in on load
+  trans.style.opacity = '1';
+  trans.style.pointerEvents = 'auto';
+  requestAnimationFrame(function() {
+    trans.style.transition = 'opacity 0.4s ease';
+    trans.style.opacity = '0';
+    trans.style.pointerEvents = 'none';
+  });
+  // Fade out on navigate
+  document.addEventListener('click', function(e) {
+    var a = e.target.closest('a.card, a.fame-link');
+    if (!a || !a.href || a.target === '_blank') return;
+    e.preventDefault();
+    var href = a.href;
+    trans.classList.add('active');
+    setTimeout(function() { window.location.href = href; }, 300);
+  });
+})();
+
+// ─── MAGNETIC BUTTONS ───
+(function() {
+  if (window.innerWidth <= 600) return;
+  var items = document.querySelectorAll('.fame-link, .filter-btn, .random-btn');
+  items.forEach(function(el) {
+    el.addEventListener('mousemove', function(e) {
+      var rect = el.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var dx = (e.clientX - cx) * 0.15;
+      var dy = (e.clientY - cy) * 0.15;
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    });
+    el.addEventListener('mouseleave', function() {
+      el.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+      el.style.transform = '';
+      setTimeout(function() { el.style.transition = ''; }, 400);
+    });
+  });
+})();
+
+// ─── PARALLAX SECTION TITLES ───
+(function() {
+  if (window.innerWidth <= 600) return;
+  var titles = document.querySelectorAll('.section-title');
+  window.addEventListener('scroll', function() {
+    var sy = window.scrollY;
+    titles.forEach(function(t) {
+      var rect = t.getBoundingClientRect();
+      if (rect.top > -100 && rect.top < window.innerHeight + 100) {
+        var offset = (rect.top - window.innerHeight * 0.5) * 0.04;
+        t.style.transform = 'translateY(' + offset + 'px)';
+      }
+    });
+  }, { passive: true });
 })();
 
 // ─── BACK TO TOP BUTTON ───
