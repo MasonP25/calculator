@@ -10,8 +10,8 @@
 
   var STAGES = [
     { name: 'Baby',  minFeeds: 0,  size: '2rem'   },
-    { name: 'Teen',  minFeeds: 10, size: '3.5rem' },
-    { name: 'Adult', minFeeds: 25, size: '5rem'   }
+    { name: 'Teen',  minFeeds: 20, size: '3.5rem' },
+    { name: 'Adult', minFeeds: 50, size: '5rem'   }
   ];
 
   var FEED_COST = 5;
@@ -213,14 +213,24 @@
       if (!window.ArcadeCoins || !window.ArcadeCoins.spend(FEED_COST)) {
         return { ok: false, msg: 'Not enough coins (need ' + FEED_COST + ')' };
       }
+      var oldStage = _getStage(_pet.feeds).name;
       _pet.feeds++;
       // Update happiness: compute current decayed value, then add feed bonus
       var current = _computeHappiness(_pet);
       _pet.happiness = Math.min(MAX_HAPPINESS, current + HAPPINESS_PER_FEED);
       _pet.lastFed = Date.now();
-      _pet.stage = _getStage(_pet.feeds).name;
+      var newStage = _getStage(_pet.feeds).name;
+      _pet.stage = newStage;
       _saveToFirestore();
       _dispatch();
+      // XP reward on evolution
+      if (oldStage !== newStage && window.ArcadeLevels) {
+        if (newStage === 'Teen') {
+          ArcadeLevels.addXP(50, 'Pet grew to Teen');
+        } else if (newStage === 'Adult') {
+          ArcadeLevels.addXP(100, 'Pet grew to Adult');
+        }
+      }
       console.log('[Pets] Fed ' + PET_TYPES[_pet.type].name + '! (feeds: ' + _pet.feeds + ', happiness: ' + _pet.happiness + ')');
       return { ok: true };
     },
