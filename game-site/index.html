@@ -2404,7 +2404,7 @@
   var initialGlobalLoad = true;
 
   /* ── AI Chat ── */
-  var AI_KEY = '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';
+  var AI_PROXY = 'https://script.google.com/macros/s/AKfycbwfp8L58mczPEMsyIycX4yU-PQxzpA0ChqkvFJVNzWmPkLJvOSZQjwNU4MzvhX5h92bvw/exec';
   var AI_MODEL = 'llama-3.1-8b-instant';
 
   /* Scrape game list from DOM by section — always accurate */
@@ -2518,9 +2518,8 @@
     try {
       var ctrl = new AbortController();
       var timeout = setTimeout(function() { ctrl.abort(); }, 10000);
-      var resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      var resp = await fetch(AI_PROXY, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
         body: JSON.stringify({ model: AI_MODEL, messages: messages, max_tokens: 150 }),
         signal: ctrl.signal
       });
@@ -2546,9 +2545,8 @@
             messages.push({ role: 'user', content: 'SEARCH RESULTS:"' + sr + '"\nAnswer the original question in 1-2 short sentences using these results.' });
             var ctrl2 = new AbortController();
             var timeout2 = setTimeout(function() { ctrl2.abort(); }, 10000);
-            var resp2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            var resp2 = await fetch(AI_PROXY, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + AI_KEY },
               body: JSON.stringify({ model: AI_MODEL, messages: messages, max_tokens: 100 }),
               signal: ctrl2.signal
             });
