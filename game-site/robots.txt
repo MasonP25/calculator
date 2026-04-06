@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://masons-arcade.vercel.app/sitemap.xml
+Sitemap: https://masonp25.github.io/Calculator/game-site/sitemap.xml

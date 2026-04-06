@@ -1,12 +1,3 @@
-// ─── REDIRECT GITHUB PAGES TO VERCEL ───
-(function() {
-  if (location.hostname === 'masonp25.github.io') {
-    var newUrl = 'https://masons-arcade.vercel.app/' + location.pathname.replace('/calculator/game-site/', '').replace('/calculator/game-site', '') + location.search + location.hash;
-    document.documentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f0f1a;color:#e0e0e0;font-family:Segoe UI,sans-serif;flex-direction:column;gap:1rem"><h2 style="background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Redirecting to new domain...</h2><p style="color:#888;font-size:0.9rem">masons-arcade.vercel.app</p></div>';
-    setTimeout(function() { location.href = newUrl; }, 1500);
-  }
-})();
-
 // ─── MOBILE GAME PAGE LAYOUT ───
 (function() {
   var page = (location.pathname.split('/').pop() || '').replace('.html', '');
@@ -493,7 +484,7 @@
 
       /* Theme picker itself */
       .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
-      .theme-picker-btn:hover,#daily-spin-btn:hover { border-color:${t.accent}!important; color:#fff!important; transform:scale(1.1); }
+      .theme-picker-btn:hover,#daily-spin-btn:hover,#cloak-btn:hover { border-color:${t.accent}!important; color:#fff!important; transform:scale(1.1); }
       .theme-panel { background:${t.bg2}; border-color:${t.border}; }
       .theme-option { border-color:${t.border}; }
       .theme-option:hover,.theme-option.active { border-color:${t.accent}; }
@@ -1173,55 +1164,244 @@
   }
 })();
 
-// ─── TAB CLOAK (console only) ───
+// ─── TAB CLOAK ───
 (function() {
-  var _c = {
-    default: { n: 'Default' },
-    gdocs: { n: 'Google Docs', t: 'Untitled document - Google Docs', f: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
-    gslides: { n: 'Google Slides', t: 'Untitled presentation - Google Slides', f: 'https://ssl.gstatic.com/docs/presentations/images/favicon5.ico' },
-    gsheets: { n: 'Google Sheets', t: 'Untitled spreadsheet - Google Sheets', f: 'https://www.gstatic.com/images/branding/product/2x/sheets_2020q4_48dp.png' },
-    classroom: { n: 'Google Classroom', t: 'Home', f: 'https://ssl.gstatic.com/classroom/favicon.png' },
-    canvas: { n: 'Canvas', t: 'Dashboard', f: 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico' },
-    ixl: { n: 'IXL', t: 'IXL | Dashboard', f: 'https://www.ixl.com/favicon.ico' },
-    deltamath: { n: 'DeltaMath', t: 'DeltaMath', f: 'https://www.deltamath.com/favicon.ico' },
-    khan: { n: 'Khan Academy', t: 'Khan Academy | Free Online Courses', f: 'https://cdn.kastatic.org/images/favicon.ico' },
-    wikipedia: { n: 'Wikipedia', t: 'Wikipedia, the free encyclopedia', f: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
-    managebac: { n: 'ManageBac', t: 'ManageBac', f: 'https://app.managebac.com/favicon.ico' },
-    gmail: { n: 'Gmail', t: 'Inbox - Gmail', f: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png' },
-    mathia: { n: 'Mathia', t: 'Mathia', f: 'https://www.carnegielearning.com/hubfs/Icons%20and%20Logos/Logos/favicon.ico' },
-    drive: { n: 'Google Drive', t: 'My Drive - Google Drive', f: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png' },
-    schoology: { n: 'Schoology', t: 'Home | Schoology', f: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334A853' width='100' height='100' rx='15'/><text x='50' y='68' font-size='55' fill='white' text-anchor='middle' font-family='Arial' font-weight='bold'>S</text></svg>" },
-    edpuzzle: { n: 'Edpuzzle', t: 'Edpuzzle', f: 'https://edpuzzle.imgix.net/favicons/favicon-32.png' },
-    zoom: { n: 'Zoom', t: 'Zoom Meeting', f: 'https://st1.zoom.us/zoom.ico' }
+  var CLOAKS = {
+    default: { name: 'Default', icon: '\u{1F3AE}' },
+    gdocs: { name: 'Google Docs', icon: '\u{1F4C4}', title: 'Untitled document - Google Docs', favicon: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
+    gslides: { name: 'Google Slides', icon: '\u{1F4CA}', title: 'Untitled presentation - Google Slides', favicon: 'https://ssl.gstatic.com/docs/presentations/images/favicon5.ico' },
+    gsheets: { name: 'Google Sheets', icon: '\u{1F4D7}', title: 'Untitled spreadsheet - Google Sheets', favicon: 'https://www.gstatic.com/images/branding/product/2x/sheets_2020q4_48dp.png' },
+    classroom: { name: 'Google Classroom', icon: '\u{1F393}', title: 'Home', favicon: 'https://ssl.gstatic.com/classroom/favicon.png' },
+    canvas: { name: 'Canvas', icon: '\u{1F7E7}', title: 'Dashboard', favicon: 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico' },
+    ixl: { name: 'IXL', icon: '\u{1F4D0}', title: 'IXL | Dashboard', favicon: 'https://www.ixl.com/favicon.ico' },
+    deltamath: { name: 'DeltaMath', icon: '\u{1F4C8}', title: 'DeltaMath', favicon: 'https://www.deltamath.com/favicon.ico' },
+    khan: { name: 'Khan Academy', icon: '\u{1F7E2}', title: 'Khan Academy | Free Online Courses', favicon: 'https://cdn.kastatic.org/images/favicon.ico' },
+    wikipedia: { name: 'Wikipedia', icon: '\u{1F4D6}', title: 'Wikipedia, the free encyclopedia', favicon: 'https://en.wikipedia.org/static/favicon/wikipedia.ico' },
+    managebac: { name: 'ManageBac', icon: '\u{1F310}', title: 'ManageBac', favicon: 'https://app.managebac.com/favicon.ico' },
+    gmail: { name: 'Gmail', icon: '\u{2709}\u{FE0F}', title: 'Inbox - Gmail', favicon: 'https://www.gstatic.com/images/branding/product/2x/gmail_2020q4_48dp.png' },
+    mathia: { name: 'Mathia', icon: '\u{1F4B9}', title: 'Mathia', favicon: 'https://www.carnegielearning.com/hubfs/Icons%20and%20Logos/Logos/favicon.ico' },
+    drive: { name: 'Google Drive', icon: '\u{1F4C1}', title: 'My Drive - Google Drive', favicon: 'https://ssl.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png' },
+    schoology: { name: 'Schoology', icon: '\u{1F4DA}', title: 'Home | Schoology', favicon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334A853' width='100' height='100' rx='15'/><text x='50' y='68' font-size='55' fill='white' text-anchor='middle' font-family='Arial' font-weight='bold'>S</text></svg>" },
+    edpuzzle: { name: 'Edpuzzle', icon: '\u{1F3AC}', title: 'Edpuzzle', favicon: 'https://edpuzzle.imgix.net/favicons/favicon-32.png' },
+    zoom: { name: 'Zoom', icon: '\u{1F4F9}', title: 'Zoom Meeting', favicon: 'https://st1.zoom.us/zoom.ico' },
   };
-  var _origTitle = document.title;
-  var _origFav = (document.querySelector('link[rel="icon"]') || {}).href || '';
-  function _setFav(href) {
+
+  var KEY = 'arcadeCloak';
+  var origTitle = document.title;
+  var origFavicon = '';
+
+  function getOrigFavicon() {
     var link = document.querySelector('link[rel="icon"]');
-    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-    link.href = href || _origFav;
+    return link ? link.getAttribute('href') : '';
   }
-  window.cloak = function(id) {
-    if (!id || id === 'default' || id === 'off') {
-      document.title = _origTitle; _setFav(_origFav);
-      localStorage.removeItem('_ck');
-      console.log('Cloak removed');
+
+  function setFavicon(href) {
+    var link = document.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    if (href) {
+      link.setAttribute('href', href);
+    } else {
+      link.setAttribute('href', origFavicon);
+    }
+  }
+
+  function setCloakOnTop(title, favicon) {
+    try {
+      if (window.top && window.top !== window) {
+        window.top.document.title = title;
+        var tLink = window.top.document.querySelector('link[rel="icon"]');
+        if (!tLink) { tLink = window.top.document.createElement('link'); tLink.rel = 'icon'; window.top.document.head.appendChild(tLink); }
+        if (favicon) { tLink.href = favicon; } else { tLink.removeAttribute('href'); }
+      }
+    } catch(e) {}
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.document.title = title;
+        var pLink = window.parent.document.querySelector('link[rel="icon"]');
+        if (!pLink) { pLink = window.parent.document.createElement('link'); pLink.rel = 'icon'; window.parent.document.head.appendChild(pLink); }
+        if (favicon) { pLink.href = favicon; } else { pLink.removeAttribute('href'); }
+      }
+    } catch(e) {}
+    try {
+      var bc = new BroadcastChannel('arcade-cloak');
+      bc.postMessage({ title: title, favicon: favicon });
+      bc.close();
+    } catch(e) {}
+    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: title, favicon: favicon }, '*'); } catch(e) {}
+  }
+
+  function applyCloak(id) {
+    var c = CLOAKS[id];
+    if (!c || id === 'default') {
+      document.title = origTitle;
+      setFavicon(origFavicon);
+      localStorage.removeItem(KEY);
+      setCloakOnTop(origTitle, origFavicon);
       return;
     }
-    var c = _c[id];
-    if (!c) { console.log('Unknown cloak. Options: ' + Object.keys(_c).join(', ')); return; }
-    document.title = c.t; _setFav(c.f);
-    localStorage.setItem('_ck', id);
-    console.log('Cloaked as ' + c.n);
-  };
-  window.cloaks = function() { Object.keys(_c).forEach(function(k) { console.log(k + ' — ' + _c[k].n); }); console.log('ab — Open in about:blank'); };
-  window.ab = function() {
-    var w = window.open('about:blank', '_blank');
-    if (w) { w.document.write('<!DOCTYPE html><html><head><title>about:blank</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>'); w.document.close(); }
-  };
-  // Auto-apply saved cloak
-  var saved = localStorage.getItem('_ck');
-  if (saved && _c[saved]) { _origTitle = document.title; setTimeout(function() { _origTitle = document.title; window.cloak(saved); }, 100); }
+    document.title = c.title;
+    setFavicon(c.favicon);
+    localStorage.setItem(KEY, id);
+    setCloakOnTop(c.title, c.favicon);
+  }
+
+  function initCloak() {
+    origTitle = document.title;
+    origFavicon = getOrigFavicon();
+    var saved = localStorage.getItem(KEY);
+    if (saved && CLOAKS[saved]) {
+      applyCloak(saved);
+    }
+  }
+
+  function createCloakUI() {
+    var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
+    if (pg !== 'index' && pg !== '') return;
+
+    var saved = localStorage.getItem(KEY);
+
+    var btn = document.createElement('button');
+    btn.id = 'cloak-btn';
+    btn.innerHTML = '\u{1F576}\u{FE0F}';
+    btn.title = 'Tab Cloak';
+    Object.assign(btn.style, {
+      position: 'fixed', top: '50px', left: '104px', zIndex: '999',
+      width: '42px', height: '42px', borderRadius: '50%',
+      border: '2px solid var(--t-border,#2a2a4a)',
+      background: 'var(--t-bg2,#1a1a2e)', color: 'var(--t-dim,#888)',
+      fontSize: '1.2rem', cursor: 'pointer', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      transition: 'transform 0.2s, border-color 0.2s, color 0.2s',
+    });
+    btn.addEventListener('mouseenter', function() { btn.style.transform = 'scale(1.1)'; btn.style.borderColor = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
+    btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; });
+
+    var panel = document.createElement('div');
+    panel.id = 'cloak-panel';
+    Object.assign(panel.style, {
+      position: 'fixed', top: '100px', left: '104px', zIndex: '1000',
+      borderRadius: '12px', border: '2px solid var(--t-border,#2a2a4a)',
+      padding: '10px', display: 'none', flexDirection: 'column', gap: '4px',
+      width: '220px', maxHeight: 'min(420px, calc(100vh - 100px))', overflowY: 'auto',
+      background: 'var(--t-bg2,#1a1a2e)', boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+      fontFamily: "'Segoe UI', Tahoma, sans-serif",
+    });
+
+    var header = document.createElement('div');
+    Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--t-text,#e0e0e0)', fontWeight: '700', fontSize: '0.85rem', padding: '4px 6px 8px', borderBottom: '1px solid var(--t-border,#2a2a4a)', marginBottom: '4px' });
+    var headerText = document.createElement('span');
+    headerText.textContent = 'Tab Cloak';
+    header.appendChild(headerText);
+    var helpIcon = document.createElement('span');
+    helpIcon.textContent = '?';
+    Object.assign(helpIcon.style, { width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-bg3,#2a2a4a)', color: 'var(--t-dim,#888)', fontSize: '0.7rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'help' });
+    var tooltip = document.createElement('div');
+    tooltip.textContent = 'Makes your browser tab look like a different website (changes the tab name and icon). Pick a preset to disguise this tab, or choose Default to turn it off.';
+    Object.assign(tooltip.style, { display: 'none', position: 'fixed', width: '190px', padding: '8px 10px', borderRadius: '8px', background: 'var(--t-bg1,#0f0f1a)', border: '1px solid var(--t-border,#2a2a4a)', color: 'var(--t-text,#e0e0e0)', fontSize: '0.72rem', fontWeight: '400', lineHeight: '1.4', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', zIndex: '9999', pointerEvents: 'none' });
+    document.body.appendChild(tooltip);
+    helpIcon.addEventListener('mouseenter', function() {
+      var r = helpIcon.getBoundingClientRect();
+      tooltip.style.top = (r.bottom + 6) + 'px';
+      tooltip.style.left = Math.max(8, r.right - 190) + 'px';
+      tooltip.style.display = 'block';
+    });
+    helpIcon.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+    header.appendChild(helpIcon);
+    panel.appendChild(header);
+
+    var currentCloak = saved || 'default';
+
+    Object.keys(CLOAKS).forEach(function(id) {
+      var c = CLOAKS[id];
+      var opt = document.createElement('div');
+      opt.dataset.cloak = id;
+      Object.assign(opt.style, {
+        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+        borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+        color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+        border: '2px solid ' + (id === currentCloak ? 'var(--t-accent,#7b2ff7)' : 'transparent'),
+      });
+      opt.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">' + c.icon + '</span><span>' + c.name + '</span>';
+      opt.addEventListener('mouseenter', function() { if (id !== currentCloak) opt.style.background = 'var(--t-bg3,#2a2a4a)'; });
+      opt.addEventListener('mouseleave', function() { opt.style.background = 'none'; });
+      opt.addEventListener('click', function() {
+        currentCloak = id;
+        applyCloak(id);
+        panel.querySelectorAll('[data-cloak]').forEach(function(el) {
+          el.style.borderColor = el.dataset.cloak === id ? 'var(--t-accent,#7b2ff7)' : 'transparent';
+        });
+      });
+      panel.appendChild(opt);
+    });
+
+    var sep = document.createElement('div');
+    Object.assign(sep.style, { borderTop: '1px solid var(--t-border,#2a2a4a)', margin: '6px 0' });
+    panel.appendChild(sep);
+
+    var abBtn = document.createElement('div');
+    Object.assign(abBtn.style, {
+      display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+      borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+      color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+    });
+    abBtn.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">\u{1F4C3}</span><span>Open in about:blank</span>';
+    abBtn.addEventListener('mouseenter', function() { abBtn.style.background = 'var(--t-bg3,#2a2a4a)'; });
+    abBtn.addEventListener('mouseleave', function() { abBtn.style.background = 'none'; });
+    abBtn.addEventListener('click', function() {
+      var w = window.open('about:blank', '_blank');
+      if (w) {
+        w.document.write('<!DOCTYPE html><html><head><title>' + (document.title || '') + '</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>');
+        w.document.close();
+      }
+    });
+    panel.appendChild(abBtn);
+
+    var blobBtn = document.createElement('div');
+    Object.assign(blobBtn.style, {
+      display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
+      borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
+      color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
+    });
+    blobBtn.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">\u{1F310}</span><span>Open in blob URL</span>';
+    blobBtn.addEventListener('mouseenter', function() { blobBtn.style.background = 'var(--t-bg3,#2a2a4a)'; });
+    blobBtn.addEventListener('mouseleave', function() { blobBtn.style.background = 'none'; });
+    blobBtn.addEventListener('click', function() {
+      var html = '<!DOCTYPE html><html><head><title>' + (document.title || '') + '</title></head><body style="margin:0;overflow:hidden"><iframe src="' + location.href + '" style="width:100vw;height:100vh;border:none"></iframe></body></html>';
+      var blob = new Blob([html], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    });
+    panel.appendChild(blobBtn);
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var showing = panel.style.display === 'flex';
+      panel.style.display = showing ? 'none' : 'flex';
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+      }
+    });
+
+    document.body.appendChild(btn);
+    document.body.appendChild(panel);
+  }
+
+  function onReady() {
+    initCloak();
+    createCloakUI();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady);
+  } else {
+    onReady();
+  }
 })();
 
 // ─── FULLSCREEN BUTTON ───

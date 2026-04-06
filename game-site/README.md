@@ -2,7 +2,7 @@
 
 # **Mason's Arcade**
 
-### A collection of 97 browser-based games — no frameworks, no dependencies, just pure HTML/CSS/JS.
+### A collection of 90+ browser-based games — no frameworks, no dependencies, just pure HTML/CSS/JS.
 
 [**Play Now**](https://masonp25.github.io/calculator/game-site/)
 
@@ -12,7 +12,7 @@
 
 ## What's Inside
 
-- **97 Games** across solo, local multiplayer, and online multiplayer
+- **90+ Games** across solo, local multiplayer, and online multiplayer
 - **Online Multiplayer** with real-time WebSocket rooms and chat
 - **Global Leaderboards** powered by Firebase
 - **User Accounts** to track scores, coins, and progress across devices
@@ -36,7 +36,7 @@
 
 **Classics** — Tetris, Breakout, Asteroids, Space Invaders, Pac-Man, Galaga, Minesweeper, Solitaire, 2048, Flappy Bird, Snake, Dino Runner
 
-**Puzzle** — Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3, Block Blast, Word Search, Wordscapes, 20 Questions, 0h h1
+**Puzzle** — Sudoku, Nonogram, Wordle, Connections, Crossword, Flood Fill, Lights Out, Pipe Puzzle, Ball Sort, Hue Sort, Sliding Puzzle, Match-3, Block Blast, Word Search, Wordscapes, 20 Questions
 
 **Action** — Fruit Slicer, Geometry Dash, Doodle Jump, Crossy Road, Aim Trainer, Bullet Dodge, Stickman Hook, Helicopter, Color Switch, Platformer, Paper.io, Gravity Run
 

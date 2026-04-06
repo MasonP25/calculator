@@ -91,6 +91,7 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
 <body>
 <div style="position:fixed;top:12px;left:16px;z-index:100;display:flex;gap:12px;">
   <a class="back" href="index.html" style="position:static;">&#8592; Back</a>
+  <a href="676767.html" style="color:#888;text-decoration:none;font-size:0.85rem;transition:color 0.2s;">&#127871; Movies/Shows</a>
 </div>
 <div class="container">
   <h1>&#127909; <span>Arcade Vids</span></h1>
@@ -158,10 +159,12 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
       </div>
     </div>
 
-    <!-- Step 2: Content -->
+    <!-- Step 2: File or YouTube -->
     <div class="up-step" id="up-step-2" style="display:none;">
       <h2>&#127909; Step 2: Content</h2>
-      <input id="up-yt" type="hidden" value="">
+      <label>YouTube Link</label>
+      <input id="up-yt" placeholder="https://youtube.com/watch?v=..." style="margin-bottom:8px;">
+      <div style="text-align:center;color:#555;font-size:0.7rem;margin-bottom:8px;">— OR —</div>
       <div class="drop-zone" id="drop-zone">
         <div class="drop-icon">&#128228;</div>
         <div>Drag & drop a video, image, or audio</div>
@@ -201,7 +204,7 @@ h1 span { background:linear-gradient(135deg,var(--t-accent,#7b2ff7),var(--t-acce
         <div><strong>Content:</strong> <span id="up-confirm-content"></span></div>
         <div><strong>Thumbnail:</strong> <span id="up-confirm-thumb"></span></div>
       </div>
-      <p style="color:#888;font-size:0.7rem;margin-bottom:8px;">&#9888; Uploading could take a very long time for large files. Please be patient.</p>
+      <p style="color:#888;font-size:0.7rem;margin-bottom:8px;">&#9888; Uploading could take a very long time for large files or YouTube conversions. Please be patient.</p>
       <div class="progress-bar" id="progress-bar"><div class="fill" id="progress-fill"></div></div>
       <div class="progress-text" id="progress-text"></div>
       <div class="modal-err" id="up-err"></div>
@@ -397,13 +400,17 @@ function upStep(n) {
   }
   if (n === 3) {
     var yt = document.getElementById('up-yt').value.trim();
-    if (!selectedFile) { document.getElementById('up-err-2').textContent = 'Please select a file to upload'; return; }
+    if (!yt && !selectedFile) { document.getElementById('up-err-2').textContent = 'Paste a YouTube link or select a file'; return; }
+    if (yt) {
+      var m = yt.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+      if (!m) { document.getElementById('up-err-2').textContent = 'Invalid YouTube link'; return; }
+    }
     document.getElementById('up-err-2').textContent = '';
   }
   if (n === 4) {
     document.getElementById('up-confirm-title').textContent = document.getElementById('up-title').value.trim();
     var yt = document.getElementById('up-yt').value.trim();
-    document.getElementById('up-confirm-content').textContent = selectedFile ? selectedFile.name + ' (' + (selectedFile.size/1024/1024).toFixed(1) + ' MB)' : 'None';
+    document.getElementById('up-confirm-content').textContent = yt ? 'YouTube: ' + yt : selectedFile ? selectedFile.name + ' (' + (selectedFile.size/1024/1024).toFixed(1) + ' MB)' : 'None';
     document.getElementById('up-confirm-thumb').textContent = document.getElementById('thumb-input').files[0] ? document.getElementById('thumb-input').files[0].name : 'Auto-generate';
   }
   document.querySelectorAll('.up-step').forEach(function(s) { s.style.display = 'none'; });
@@ -815,6 +822,6 @@ window.addEventListener('load', function() {
 <script src="auth.js?v=3"></script>
 <script src="theme.js?v=30"></script>
 <script src="easter.js"></script>
-<script>if(location.hostname.includes("vercel.app")){var s=document.createElement("script");s.defer=true;s.src="/_vercel/insights/script.js";document.body.appendChild(s);}</script>
+
 </body>
 </html>
