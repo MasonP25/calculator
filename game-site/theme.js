@@ -1,3 +1,13 @@
+// ─── REDIRECT VERCEL TO GITHUB PAGES ───
+(function() {
+  if (location.hostname === 'masons-arcade.vercel.app') {
+    var page = location.pathname.replace(/^\/+/, '') || 'index.html';
+    var newUrl = 'https://masonp25.github.io/calculator/game-site/' + page + location.search + location.hash;
+    document.documentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f0f1a;color:#e0e0e0;font-family:Segoe UI,sans-serif;flex-direction:column;gap:1rem"><h2 style="background:linear-gradient(135deg,#00d4ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Redirecting to new home...</h2><p style="color:#888;font-size:0.9rem">masonp25.github.io/calculator/game-site</p></div>';
+    setTimeout(function() { location.href = newUrl; }, 1500);
+  }
+})();
+
 // ─── MOBILE GAME PAGE LAYOUT ───
 (function() {
   var page = (location.pathname.split('/').pop() || '').replace('.html', '');
