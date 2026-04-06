@@ -2660,7 +2660,42 @@
   /* ── toggle panel ── */
   var dmUnreadTotal = 0;
 
+  function isSignedIn() {
+    return !!localStorage.getItem('arcade_currentUser');
+  }
+
+  function showSignInGate() {
+    var msgsEl = document.getElementById('chat-messages');
+    var inputArea = document.getElementById('chat-input-area');
+    var tabs = document.getElementById('chat-tabs');
+    var searchBar = document.getElementById('chat-search-bar');
+    var typing = document.getElementById('chat-typing');
+    if (tabs) tabs.style.display = 'none';
+    if (searchBar) searchBar.style.display = 'none';
+    if (typing) typing.style.display = 'none';
+    if (inputArea) inputArea.style.display = 'none';
+    if (msgsEl) {
+      msgsEl.innerHTML = '<div style="padding:24px 16px;text-align:center;color:#888;font-size:0.85rem;line-height:1.5;">'
+        + '<div style="font-size:2rem;margin-bottom:8px;">&#128274;</div>'
+        + '<div style="color:#e0e0e0;font-weight:600;margin-bottom:4px;">Sign in to chat</div>'
+        + '<div style="font-size:0.75rem;margin-bottom:14px;">Create a free account to join the conversation.</div>'
+        + '<button id="chat-signin-btn" style="background:linear-gradient(135deg,#7b2ff7,#5b1fd7);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">Sign In</button>'
+        + '</div>';
+      var btn = document.getElementById('chat-signin-btn');
+      if (btn) btn.onclick = function() {
+        var authBtn = document.getElementById('auth-badge');
+        if (authBtn) authBtn.click();
+      };
+    }
+  }
+
   window.toggleChat = function() {
+    if (!isSignedIn()) {
+      chatExpanded = !chatExpanded;
+      panel.className = chatExpanded ? 'expanded' : 'collapsed';
+      if (chatExpanded) showSignInGate();
+      return;
+    }
     chatExpanded = !chatExpanded;
     panel.className = chatExpanded ? 'expanded' : 'collapsed';
     if (chatExpanded) {
@@ -2984,6 +3019,7 @@
 
   /* ── send ── */
   function send() {
+    if (!isSignedIn()) return;
     var text = input.value.trim();
     if (!text) return;
     _profanityRegex.lastIndex = 0;
