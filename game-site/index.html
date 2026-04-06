@@ -3325,15 +3325,6 @@
     });
   }
 
-  // Entertainment card — event delegation so it works on cloned popular cards
-  document.addEventListener('click', function(e) {
-    var card = e.target.closest && e.target.closest('a[href$="entertainment.html"]');
-    if (card) {
-      e.preventDefault();
-      openGate(card.href, '_self', true);
-    }
-  });
-
   document.getElementById('unblock-gate-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       if (this.value === '0987654321') {
