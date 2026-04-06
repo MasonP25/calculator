@@ -972,6 +972,12 @@
       <p>Share & watch videos with the community!</p>
       <span class="badge solo">Social</span>
     </a>
+    <a class="card" href="676767.html">
+      <div class="icon">&#127916;</div>
+      <h2>Entertainment</h2>
+      <p>Movies, shows, manga & more!</p>
+      <span class="badge solo">Watch</span>
+    </a>
     <a class="card" href="dialed.html">
       <div class="icon">&#127912;</div>
       <h2>Dialed</h2>
@@ -3971,10 +3977,17 @@ if ('serviceWorker' in navigator) {
 
       if (state === 'walk') {
         x += speed * dir;
-        // Avoid chat panel
-        if (cb) {
-          if (dir > 0 && x + displaySize > cb.left - 5 && y + displaySize > cb.top) { dir = -1; }
-          if (dir < 0 && x < cb.right + 5 && y + displaySize > cb.top) { dir = 1; }
+        // Avoid chat panel: chat is bottom-left, so pet must stay to the right of it.
+        // Skip if chat covers full width (mobile expanded) to prevent glitching.
+        if (cb && y + displaySize > cb.top) {
+          var chatFillsScreen = cb.left <= 5 && cb.right >= window.innerWidth - 5;
+          if (!chatFillsScreen) {
+            var leftWall = cb.right + 5;
+            if (x < leftWall) {
+              x = leftWall;
+              if (dir < 0) dir = 1;
+            }
+          }
         }
         if (x < 5) dir = 1;
         if (x > window.innerWidth - displaySize - 5) dir = -1;
