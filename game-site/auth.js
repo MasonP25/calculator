@@ -1,5 +1,5 @@
 // auth.js — Arcade authentication (Firebase-backed with localStorage fallback)
-window._arcadeResetURL = 'https://script.google.com/macros/s/AKfycbzCTS_fPliNMNjRf8l9sl0vYkS1jqAtRtac3Ctn017XWAE9dNNiw9VZzpZlvK4qbTr7og/exec';
+window._arcadeResetURL = 'https://script.google.com/macros/s/AKfycbzUyfUJ9iomqRMUOJygWs7BRKHrGIpyrVWD6LBI05zwQ6bz2YNmMyeNNuWxgQ3rU2ErSA/exec';
 (function() {
   // ─── Local Storage helpers ───
   function getCurrentUser() {
