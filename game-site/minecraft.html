@@ -84,8 +84,21 @@
 setTimeout(function(){var n=document.getElementById('notice');n.style.opacity='0';setTimeout(function(){n.remove()},1000)},60000);
 // Auto-focus iframe for keyboard input
 var mcf=document.getElementById('mcframe');
-mcf.addEventListener('load',function(){mcf.focus();});
-document.querySelector('.game-container').addEventListener('click',function(){mcf.focus();});
+function focusMC(){
+  try { mcf.focus(); } catch(e) {}
+  try { mcf.contentWindow && mcf.contentWindow.focus(); } catch(e) {}
+}
+mcf.addEventListener('load',focusMC);
+document.querySelector('.game-container').addEventListener('click',focusMC);
+// Re-focus iframe after fullscreen toggle (keyboard breaks otherwise)
+document.addEventListener('fullscreenchange',function(){
+  setTimeout(focusMC,50);
+  setTimeout(focusMC,250);
+});
+document.addEventListener('webkitfullscreenchange',function(){
+  setTimeout(focusMC,50);
+  setTimeout(focusMC,250);
+});
 </script>
 <script src="ban.js"></script>
 <script src="sound.js?v=2"></script>
