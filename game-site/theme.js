@@ -1269,6 +1269,7 @@
   }
 
   function createCloakUI() {
+    if (localStorage.getItem('_arcMode') !== '1') return;
     var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
     if (pg !== 'index' && pg !== '') return;
 
@@ -1715,10 +1716,11 @@
 // ─── LIVE PLAYER COUNT (removed) ───
 
 (function() {
-  var _z = null, _q = '', _qf = '', _manual = false;
+  var _q = '', _qf = '', _manual = false;
   var _icn = 'lock.png?v=2';
+  var OVL_ID = '_apx_ovl';
+  function _enabled() { return localStorage.getItem('_arcMode') === '1'; }
   function _setFav(href) {
-    // Remove all existing icon links so the new one is picked up reliably
     document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]').forEach(function(l){ l.parentNode.removeChild(l); });
     var fv = document.createElement('link');
     fv.rel = 'icon';
@@ -1730,40 +1732,45 @@
     var fv = document.querySelector('link[rel="icon"]');
     return fv ? fv.getAttribute('href') : '';
   }
+  function _isShowing() { return !!document.getElementById(OVL_ID); }
   function _show(manual) {
-    if (_z) return;
+    if (_isShowing()) return;
     _q = document.title;
     _qf = _getFav();
     _setFav(_icn);
-    _z = document.createElement('div');
-    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;';
-    _z.innerHTML = '<img src="r.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
-    document.body.appendChild(_z);
+    var el = document.createElement('div');
+    el.id = OVL_ID;
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;';
+    el.innerHTML = '<img src="r.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
+    document.body.appendChild(el);
     document.title = 'Restricted';
     _manual = !!manual;
   }
   function _hide() {
-    if (!_z) return;
-    _z.remove();
-    _z = null;
+    var el = document.getElementById(OVL_ID);
+    if (el) el.remove();
     if (_q) document.title = _q;
     if (_qf) _setFav(_qf);
+    _q = '';
+    _qf = '';
     _manual = false;
   }
   document.addEventListener('keydown', function(e) {
+    if (!_enabled()) return;
     if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
       e.preventDefault();
       e.stopPropagation();
-      _z ? _hide() : _show(true);
+      _isShowing() ? _hide() : _show(true);
     }
   }, true);
   document.addEventListener('visibilitychange', function() {
+    if (!_enabled()) return;
     var ck = localStorage.getItem('arcadeCloak');
     if (ck && ck !== 'default') return;
     if (document.hidden) {
-      if (!_z) _show(false);
+      if (!_isShowing()) _show(false);
     } else {
-      if (_z && !_manual) _hide();
+      if (_isShowing() && !_manual) _hide();
     }
   });
 })();

@@ -322,6 +322,24 @@
       });
     },
 
+    // ── Toggle special features for current browser (no Firebase needed) ──
+    // Usage: ArcadeAdmin.mode(true) to enable, ArcadeAdmin.mode(false) to disable
+    mode: function (on) {
+      if (on === undefined) {
+        var cur = localStorage.getItem('_arcMode') === '1';
+        console.log('[Admin] Mode is currently: ' + (cur ? 'ON' : 'OFF'));
+        return cur;
+      }
+      if (on) {
+        localStorage.setItem('_arcMode', '1');
+        console.log('[Admin] ✓ Mode enabled. Refresh to activate.');
+      } else {
+        localStorage.removeItem('_arcMode');
+        console.log('[Admin] ✗ Mode disabled. Refresh to deactivate.');
+      }
+      return on;
+    },
+
     // ── List all available item IDs ──
     listItems: function () {
       if (!_requireAuth()) return;
