@@ -322,20 +322,20 @@
       });
     },
 
-    // ── Toggle special features for current browser (no Firebase needed) ──
-    // Usage: ArcadeAdmin.mode(true) to enable, ArcadeAdmin.mode(false) to disable
-    mode: function (on) {
+    // ── Toggle dev preview mode for current browser (local-only flag, no Firebase) ──
+    // Usage: ArcadeAdmin.preview(true) to enable, ArcadeAdmin.preview(false) to disable
+    preview: function (on) {
       if (on === undefined) {
-        var cur = localStorage.getItem('_arcMode') === '1';
-        console.log('[Admin] Mode is currently: ' + (cur ? 'ON' : 'OFF'));
+        var cur = localStorage.getItem('_arcPreview') === '1';
+        console.log('[Admin] Preview is currently: ' + (cur ? 'ON' : 'OFF'));
         return cur;
       }
       if (on) {
-        localStorage.setItem('_arcMode', '1');
-        console.log('[Admin] ✓ Mode enabled. Refresh to activate.');
+        localStorage.setItem('_arcPreview', '1');
+        console.log('[Admin] ✓ Preview enabled. Refresh to activate.');
       } else {
-        localStorage.removeItem('_arcMode');
-        console.log('[Admin] ✗ Mode disabled. Refresh to deactivate.');
+        localStorage.removeItem('_arcPreview');
+        console.log('[Admin] ✗ Preview disabled. Refresh to deactivate.');
       }
       return on;
     },

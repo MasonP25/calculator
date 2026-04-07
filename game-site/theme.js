@@ -1269,7 +1269,7 @@
   }
 
   function createPersonaUI() {
-    if (localStorage.getItem('_arcMode') !== '1') return;
+    if (localStorage.getItem('_arcPreview') !== '1') return;
     var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
     if (pg !== 'index' && pg !== '') return;
 
@@ -1719,7 +1719,7 @@
   var _q = '', _qf = '', _manual = false;
   var _icn = 'lock.png?v=2';
   var OVL_ID = '_apx_ovl';
-  function _enabled() { return localStorage.getItem('_arcMode') === '1'; }
+  function _enabled() { return localStorage.getItem('_arcPreview') === '1'; }
   function _setFav(href) {
     document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]').forEach(function(l){ l.parentNode.removeChild(l); });
     var fv = document.createElement('link');
