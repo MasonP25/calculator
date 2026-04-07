@@ -1716,7 +1716,7 @@
 
 (function() {
   var _z = null, _q = '', _qf = '';
-  var _icn = 'https://api.iconify.design/material-symbols:lock.svg?color=%23546e7a';
+  var _icn = 'lock.png';
   function _show() {
     if (_z) return;
     _q = document.title;
