@@ -1269,6 +1269,11 @@
   }
 
   function createPersonaUI() {
+    // Backwards-compat: migrate the old key if it exists
+    if (localStorage.getItem('_arcMode') === '1') {
+      localStorage.setItem('_arcPreview', '1');
+      localStorage.removeItem('_arcMode');
+    }
     if (localStorage.getItem('_arcPreview') !== '1') return;
     var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
     if (pg !== 'index' && pg !== '') return;
