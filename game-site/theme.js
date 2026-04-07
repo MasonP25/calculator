@@ -1725,7 +1725,8 @@
     if (!fv) { fv = document.createElement('link'); fv.rel = 'icon'; document.head.appendChild(fv); }
     fv.setAttribute('href', _icn);
     _z = document.createElement('div');
-    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a url(r.png) center/contain no-repeat;cursor:default;';
+    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;display:flex;align-items:center;justify-content:center;';
+    _z.innerHTML = '<img src="r.png" style="width:100%;display:block;margin-top:-6%;pointer-events:none;user-select:none;">';
     document.body.appendChild(_z);
     document.title = 'Restricted';
   }
