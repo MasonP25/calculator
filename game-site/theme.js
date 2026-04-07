@@ -1726,7 +1726,7 @@
     fv.setAttribute('href', _icn);
     _z = document.createElement('div');
     _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;';
-    _z.innerHTML = '<img src="r.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
+    _z.innerHTML = '<img src="r.jpg?v=2" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;pointer-events:none;user-select:none;">';
     document.body.appendChild(_z);
     document.title = 'Restricted';
   }
