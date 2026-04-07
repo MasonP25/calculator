@@ -83,6 +83,8 @@
         }
         .change-card:hover .find { gap: 8px; }
         .change-card .find:after { content: '\2192'; transition: transform 0.2s; }
+        .change-card.no-link { cursor: default; }
+        .change-card.no-link:hover { transform: none; border-color: var(--t-border, #2a2a4a); box-shadow: none; }
         .change-card .icon {
             font-size: 1.8rem;
             margin-bottom: 10px;
@@ -154,12 +156,11 @@
                 <span class="find">Open Feedback</span>
             </a>
 
-            <a class="change-card" href="reset.html">
+            <div class="change-card no-link">
                 <span class="icon">&#128273;</span>
                 <h2>Password Reset by Email</h2>
                 <p>Forgot your password? Add an email to your account and request a reset link &mdash; you'll get a clean reset email with a one-time secure link.</p>
-                <span class="find">Reset password</span>
-            </a>
+            </div>
 
             <a class="change-card" href="faq.html">
                 <span class="icon">&#10068;</span>
