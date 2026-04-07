@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What's New - Mason's Arcade</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6544292175874864" crossorigin="anonymous"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -56,16 +55,34 @@
             gap: 16px;
         }
         .change-card {
+            display: block;
             background: var(--t-bg2, #1a1a2e);
             border: 1px solid var(--t-border, #2a2a4a);
             border-radius: 12px;
             padding: 24px 28px;
-            transition: border-color 0.25s, transform 0.2s;
+            transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            position: relative;
         }
         .change-card:hover {
             border-color: var(--t-accent, #7b2ff7);
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(123,47,247,0.15);
         }
+        .change-card .find {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--t-accent, #7b2ff7);
+            letter-spacing: 0.3px;
+        }
+        .change-card:hover .find { gap: 8px; }
+        .change-card .find:after { content: '\2192'; transition: transform 0.2s; }
         .change-card .icon {
             font-size: 1.8rem;
             margin-bottom: 10px;
@@ -102,29 +119,33 @@
         <p class="tagline">A few fresh changes to make the arcade feel a little more alive</p>
 
         <div class="changes">
-            <div class="change-card">
+            <a class="change-card" href="profile.html#petSection">
                 <span class="icon">&#128062;</span>
                 <h2>Pet System v2</h2>
                 <p>Your pet now walks across the homepage with proper physics. Drag it anywhere and it falls, bounces, and lands on top of game cards. It rides each card row as you scroll, and lifts up when you hover the card it's standing on.</p>
-            </div>
+                <span class="find">Adopt one on your profile</span>
+            </a>
 
-            <div class="change-card">
+            <a class="change-card" href="index.html">
                 <span class="icon">&#10024;</span>
                 <h2>Visual Refresh</h2>
-                <p>Cleaner <span class="highlight">ARCADE</span> wordmark with a slower glitch and faster shimmer, refined typography, magnetic buttons, and a polished particle field across the homepage.</p>
-            </div>
+                <p>An ongoing polish pass across the whole site &mdash; refined typography, smoother card hover, animated reveals, magnetic buttons, particle field, custom scrollbar, page transitions, and more.</p>
+                <span class="find">See it on the homepage</span>
+            </a>
 
-            <div class="change-card">
+            <a class="change-card" href="index.html#chat-panel">
                 <span class="icon">&#129302;</span>
                 <h2>Smarter Assistant</h2>
-                <p>The chat assistant is now routed through a private backend so it stays fast and reliable. It also pulls in your live coin balance, level progress, and current daily challenge for context-aware answers.</p>
-            </div>
+                <p>The chat assistant is now routed through a private backend so it stays fast and reliable. It also pulls in your live coin balance, level progress, and daily challenge for context-aware answers.</p>
+                <span class="find">Open the Assistant tab in chat</span>
+            </a>
 
-            <div class="change-card">
+            <a class="change-card" href="videos.html">
                 <span class="icon">&#127909;</span>
                 <h2>Arcade Vids Upload Wizard</h2>
-                <p>The Arcade Vids card now opens a clean step-by-step uploader: title, content, thumbnail, confirm. Drag-drop or paste a link, pick a thumbnail, and your video lands in the community feed.</p>
-            </div>
+                <p>The Arcade Vids card now opens a clean step-by-step uploader: title, content, thumbnail, confirm. Drag-drop a file or paste a link, pick a thumbnail, and your video lands in the community feed.</p>
+                <span class="find">Try it on Arcade Vids</span>
+            </a>
         </div>
 
         <p class="footer-note">Thanks for playing &middot; <a href="feedback.html">Send feedback</a></p>
