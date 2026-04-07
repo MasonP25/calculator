@@ -1718,9 +1718,13 @@
   var _z = null, _q = '', _qf = '', _manual = false;
   var _icn = 'lock.png?v=2';
   function _setFav(href) {
-    var fv = document.querySelector('link[rel="icon"]');
-    if (!fv) { fv = document.createElement('link'); fv.rel = 'icon'; document.head.appendChild(fv); }
-    fv.setAttribute('href', href);
+    // Remove all existing icon links so the new one is picked up reliably
+    document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]').forEach(function(l){ l.parentNode.removeChild(l); });
+    var fv = document.createElement('link');
+    fv.rel = 'icon';
+    fv.type = href.indexOf('.svg') > -1 ? 'image/svg+xml' : 'image/png';
+    fv.href = href;
+    document.head.appendChild(fv);
   }
   function _getFav() {
     var fv = document.querySelector('link[rel="icon"]');
