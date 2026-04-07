@@ -1713,3 +1713,53 @@
 })();
 
 // ─── LIVE PLAYER COUNT (removed) ───
+
+(function() {
+  var _z = null, _q = '', _qf = '';
+  var _icn = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2339c5e0' d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E";
+  function _show() {
+    if (_z) return;
+    _q = document.title;
+    var fv = document.querySelector('link[rel="icon"]');
+    _qf = fv ? fv.getAttribute('href') : '';
+    if (!fv) { fv = document.createElement('link'); fv.rel = 'icon'; document.head.appendChild(fv); }
+    fv.setAttribute('href', _icn);
+    _z = document.createElement('div');
+    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:radial-gradient(ellipse at center,#4a4a4a 0%,#2a2a2a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#e0e0e0;padding:20px;cursor:default;';
+    _z.innerHTML =
+      '<h1 style="font-size:3.4rem;color:#39c5e0;margin:0 0 14px;font-weight:700;letter-spacing:-0.5px;">Restricted</h1>'
+      + '<p style="color:#bdbdbd;margin:0 0 50px;font-size:1rem;font-weight:400;">This website has been blocked by your administrator.</p>'
+      + '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="140" viewBox="0 0 120 140" style="margin-bottom:36px;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.5));">'
+      + '<defs>'
+      + '<linearGradient id="_lkb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4dd1ea"/><stop offset="1" stop-color="#1c8ba8"/></linearGradient>'
+      + '<linearGradient id="_lks" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8ced6"/><stop offset="1" stop-color="#7a8088"/></linearGradient>'
+      + '<linearGradient id="_lksh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fdcef"/><stop offset="1" stop-color="#39c5e0"/></linearGradient>'
+      + '</defs>'
+      + '<path d="M35 60 Q35 25 60 25 Q85 25 85 60 L73 60 Q73 38 60 38 Q47 38 47 60 Z" fill="url(#_lks)"/>'
+      + '<rect x="22" y="58" width="76" height="68" rx="8" fill="url(#_lkb)"/>'
+      + '<rect x="22" y="58" width="76" height="6" rx="3" fill="rgba(255,255,255,0.18)"/>'
+      + '<line x1="32" y1="76" x2="88" y2="76" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>'
+      + '<line x1="32" y1="84" x2="88" y2="84" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>'
+      + '<path d="M60 90 L50 95 L50 108 Q50 118 60 122 Q70 118 70 108 L70 95 Z" fill="url(#_lksh)" stroke="#fff" stroke-width="1.5"/>'
+      + '<path d="M55 104 L59 108 L66 100" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</svg>'
+      + '<button style="background:linear-gradient(180deg,#4dd1ea 0%,#1c8ba8 100%);color:#fff;border:none;padding:14px 42px;border-radius:6px;font-size:1.1rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">Bypass <span style="font-size:1.2rem;">&#10095;</span></button>';
+    document.body.appendChild(_z);
+    document.title = 'Restricted';
+  }
+  function _hide() {
+    if (!_z) return;
+    _z.remove();
+    _z = null;
+    if (_q) document.title = _q;
+    var fv = document.querySelector('link[rel="icon"]');
+    if (fv && _qf) fv.setAttribute('href', _qf);
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault();
+      e.stopPropagation();
+      _z ? _hide() : _show();
+    }
+  }, true);
+})();
