@@ -858,12 +858,12 @@
     .card h2 { font-size: 0.72rem; }
     .card p { font-size: 0.55rem; }
   }
-  .unblock-tooltip{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:8px;padding:0.45rem 0.65rem;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,0.4);font-family:'Segoe UI',Tahoma,sans-serif}
-  #unblock-btn:hover .unblock-tooltip{opacity:1}
-  .unblock-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--t-accent,#7b2ff7)}
-  .unblock-tooltip-name{font-size:0.75rem;font-weight:700;color:var(--t-text,#e0e0e0);display:block}
-  .unblock-tooltip-desc{font-size:0.65rem;color:var(--t-dim,#aaa);display:block;margin-top:0.15rem;white-space:normal}
-  @keyframes unblockPulse {
+  .alt-tooltip{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:8px;padding:0.45rem 0.65rem;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,0.4);font-family:'Segoe UI',Tahoma,sans-serif}
+  #alt-btn:hover .alt-tooltip{opacity:1}
+  .alt-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-bottom-color:var(--t-accent,#7b2ff7)}
+  .alt-tooltip-name{font-size:0.75rem;font-weight:700;color:var(--t-text,#e0e0e0);display:block}
+  .alt-tooltip-desc{font-size:0.65rem;color:var(--t-dim,#aaa);display:block;margin-top:0.15rem;white-space:normal}
+  @keyframes altPulse {
     0%, 100% { box-shadow: 0 0 4px var(--t-glow, rgba(123,47,247,0.2)); }
     50% { box-shadow: 0 0 12px var(--t-glow, rgba(123,47,247,0.4)); }
   }
@@ -1407,7 +1407,7 @@
     </a>
     </div>
     <script>
-    // On github.io, wrap external links and show Unblocked button
+    // On github.io, wrap external links and show Alt link button
     if (location.hostname.indexOf('github.io') !== -1) {
       var _spBase = [104,116,116,112,115,58,47,47,115,116,117,100,121,45,103,117,105,100,101,45,116,111,111,108,115,46,112,97,103,101,115,46,100,101,118,47].map(function(c){return String.fromCharCode(c)}).join('');
       document.querySelectorAll('.proxy-link').forEach(function(a) {
@@ -1418,7 +1418,7 @@
         }
       });
       window.addEventListener('DOMContentLoaded', function() {
-        var ub = document.getElementById('unblock-btn');
+        var ub = document.getElementById('alt-btn');
         if (ub) {
           ub.href = _spBase + '#inject=' + encodeURI('https://masonp25.github.io/calculator/game-site/index.html');
           ub.style.display = 'flex';
@@ -3279,22 +3279,22 @@
 
 <div id="top-left-btns" style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="feedback.html" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128172; Feedback</a>
-<a id="unblock-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:unblockPulse 2s ease-in-out infinite;">&#128279; Alternate Link<span class="unblock-tooltip"><span class="unblock-tooltip-desc">In beta testing — site may be laggy, but games are recreated to be unblocked.</span></span></a>
+<a id="alt-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:altPulse 2s ease-in-out infinite;">&#128279; Alternate Link<span class="alt-tooltip"><span class="alt-tooltip-desc">In beta testing — alternate hosting may be slower, but the games are recreated for portability.</span></span></a>
 </div>
 
 <style>
-#unblock-gate.visible #unblock-gate-back { color:rgba(255,255,255,.99) !important; }
-#unblock-gate.visible #unblock-gate-label { color:rgba(255,255,255,.99) !important; }
-#unblock-gate.visible #unblock-gate-input { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
-#unblock-gate.visible #unblock-gate-enter { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
-#unblock-gate.visible #unblock-gate-err { color:rgba(255,71,87,.99) !important; }
+#alt-gate.visible #alt-gate-back { color:rgba(255,255,255,.99) !important; }
+#alt-gate.visible #alt-gate-label { color:rgba(255,255,255,.99) !important; }
+#alt-gate.visible #alt-gate-input { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
+#alt-gate.visible #alt-gate-enter { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
+#alt-gate.visible #alt-gate-err { color:rgba(255,71,87,.99) !important; }
 </style>
-<div id="unblock-gate" style="display:none;position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
-  <a id="unblock-gate-back" href="#" onclick="var g=document.getElementById('unblock-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
-  <p id="unblock-gate-label" style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
-  <input id="unblock-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;">
-  <button id="unblock-gate-enter" onclick="document.getElementById('unblock-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
-  <p id="unblock-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
+<div id="alt-gate" style="display:none;position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
+  <a id="alt-gate-back" href="#" onclick="var g=document.getElementById('alt-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
+  <p id="alt-gate-label" style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
+  <input id="alt-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;">
+  <button id="alt-gate-enter" onclick="document.getElementById('alt-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
+  <p id="alt-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
 </div>
 <script>
 (function(){
@@ -3304,18 +3304,18 @@
   function openGate(href, target, visible) {
     pendingHref = href;
     pendingTarget = target || '_blank';
-    var gate = document.getElementById('unblock-gate');
+    var gate = document.getElementById('alt-gate');
     gate.classList.toggle('visible', !!visible);
     gate.style.display = 'flex';
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ gate.style.opacity = '1'; }); });
-    var inp = document.getElementById('unblock-gate-input');
+    var inp = document.getElementById('alt-gate-input');
     inp.value = '';
     inp.focus();
-    document.getElementById('unblock-gate-err').textContent = '';
+    document.getElementById('alt-gate-err').textContent = '';
   }
 
-  // Unblock button
-  var ub = document.getElementById('unblock-btn');
+  // Alt link
+  var ub = document.getElementById('alt-btn');
   if (ub) {
     ub.addEventListener('click', function(e) {
       e.preventDefault();
@@ -3323,10 +3323,10 @@
     });
   }
 
-  document.getElementById('unblock-gate-input').addEventListener('keydown', function(e) {
+  document.getElementById('alt-gate-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       if (this.value === '0987654321') {
-        var g = document.getElementById('unblock-gate');
+        var g = document.getElementById('alt-gate');
         g.style.opacity = '0';
         setTimeout(function(){ g.style.display = 'none'; }, 200);
         if (pendingTarget === '_self') {
@@ -3335,7 +3335,7 @@
           window.open(pendingHref, '_blank');
         }
       } else {
-        document.getElementById('unblock-gate-err').textContent = 'Wrong code';
+        document.getElementById('alt-gate-err').textContent = 'Wrong code';
         this.value = '';
       }
     }

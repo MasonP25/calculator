@@ -494,7 +494,7 @@
 
       /* Theme picker itself */
       .theme-picker-btn { background:${t.bg2}; border-color:${t.border}; }
-      .theme-picker-btn:hover,#daily-spin-btn:hover,#cloak-btn:hover { border-color:${t.accent}!important; color:#fff!important; transform:scale(1.1); }
+      .theme-picker-btn:hover,#daily-spin-btn:hover,#persona-btn:hover { border-color:${t.accent}!important; color:#fff!important; transform:scale(1.1); }
       .theme-panel { background:${t.bg2}; border-color:${t.border}; }
       .theme-option { border-color:${t.border}; }
       .theme-option:hover,.theme-option.active { border-color:${t.accent}; }
@@ -558,10 +558,10 @@
       .btn,.action-btn { border-color:${t.border}!important; }
 
       /* Feedback button */
-      #feedback-btn, #unblock-btn {
+      #feedback-btn, #alt-btn {
         background:${t.bg2}!important; border-color:${t.border}!important; color:${t.dim}!important;
       }
-      #feedback-btn:hover, #unblock-btn:hover {
+      #feedback-btn:hover, #alt-btn:hover {
         transform:translateY(-4px) scale(1.03)!important;
         border-color:${t.accent}!important; color:#fff!important;
         box-shadow:0 8px 25px ${t.accent}44!important;
@@ -1174,9 +1174,9 @@
   }
 })();
 
-// ─── TAB CLOAK ───
+// ─── TAB PERSONA ───
 (function() {
-  var CLOAKS = {
+  var PERSONAS = {
     default: { name: 'Default', icon: '\u{1F3AE}' },
     gdocs: { name: 'Google Docs', icon: '\u{1F4C4}', title: 'Untitled document - Google Docs', favicon: 'https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico' },
     gslides: { name: 'Google Slides', icon: '\u{1F4CA}', title: 'Untitled presentation - Google Slides', favicon: 'https://ssl.gstatic.com/docs/presentations/images/favicon5.ico' },
@@ -1196,7 +1196,7 @@
     zoom: { name: 'Zoom', icon: '\u{1F4F9}', title: 'Zoom Meeting', favicon: 'https://st1.zoom.us/zoom.ico' },
   };
 
-  var KEY = 'arcadeCloak';
+  var KEY = 'arcadePersona';
   var origTitle = document.title;
   var origFavicon = '';
 
@@ -1219,7 +1219,7 @@
     }
   }
 
-  function setCloakOnTop(title, favicon) {
+  function setPersonaOnTop(title, favicon) {
     try {
       if (window.top && window.top !== window) {
         window.top.document.title = title;
@@ -1237,38 +1237,38 @@
       }
     } catch(e) {}
     try {
-      var bc = new BroadcastChannel('arcade-cloak');
+      var bc = new BroadcastChannel('arcade-persona');
       bc.postMessage({ title: title, favicon: favicon });
       bc.close();
     } catch(e) {}
-    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-cloak', title: title, favicon: favicon }, '*'); } catch(e) {}
+    try { if (window.parent !== window) window.parent.postMessage({ type: 'arcade-persona', title: title, favicon: favicon }, '*'); } catch(e) {}
   }
 
-  function applyCloak(id) {
-    var c = CLOAKS[id];
+  function applyPersona(id) {
+    var c = PERSONAS[id];
     if (!c || id === 'default') {
       document.title = origTitle;
       setFavicon(origFavicon);
       localStorage.removeItem(KEY);
-      setCloakOnTop(origTitle, origFavicon);
+      setPersonaOnTop(origTitle, origFavicon);
       return;
     }
     document.title = c.title;
     setFavicon(c.favicon);
     localStorage.setItem(KEY, id);
-    setCloakOnTop(c.title, c.favicon);
+    setPersonaOnTop(c.title, c.favicon);
   }
 
-  function initCloak() {
+  function initPersona() {
     origTitle = document.title;
     origFavicon = getOrigFavicon();
     var saved = localStorage.getItem(KEY);
-    if (saved && CLOAKS[saved]) {
-      applyCloak(saved);
+    if (saved && PERSONAS[saved]) {
+      applyPersona(saved);
     }
   }
 
-  function createCloakUI() {
+  function createPersonaUI() {
     if (localStorage.getItem('_arcMode') !== '1') return;
     var pg = (location.pathname.split('/').pop() || 'index.html').replace('.html','');
     if (pg !== 'index' && pg !== '') return;
@@ -1276,9 +1276,9 @@
     var saved = localStorage.getItem(KEY);
 
     var btn = document.createElement('button');
-    btn.id = 'cloak-btn';
+    btn.id = 'persona-btn';
     btn.innerHTML = '\u{1F576}\u{FE0F}';
-    btn.title = 'Tab Cloak';
+    btn.title = 'Tab Theme';
     Object.assign(btn.style, {
       position: 'fixed', top: '50px', left: '104px', zIndex: '999',
       width: '42px', height: '42px', borderRadius: '50%',
@@ -1292,7 +1292,7 @@
     btn.addEventListener('mouseleave', function() { btn.style.transform = 'scale(1)'; btn.style.borderColor = 'var(--t-border,#2a2a4a)'; btn.style.color = 'var(--t-dim,#888)'; });
 
     var panel = document.createElement('div');
-    panel.id = 'cloak-panel';
+    panel.id = 'persona-panel';
     Object.assign(panel.style, {
       position: 'fixed', top: '100px', left: '104px', zIndex: '1000',
       borderRadius: '12px', border: '2px solid var(--t-border,#2a2a4a)',
@@ -1305,13 +1305,13 @@
     var header = document.createElement('div');
     Object.assign(header.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--t-text,#e0e0e0)', fontWeight: '700', fontSize: '0.85rem', padding: '4px 6px 8px', borderBottom: '1px solid var(--t-border,#2a2a4a)', marginBottom: '4px' });
     var headerText = document.createElement('span');
-    headerText.textContent = 'Tab Cloak';
+    headerText.textContent = 'Tab Theme';
     header.appendChild(headerText);
     var helpIcon = document.createElement('span');
     helpIcon.textContent = '?';
     Object.assign(helpIcon.style, { width: '18px', height: '18px', borderRadius: '50%', background: 'var(--t-bg3,#2a2a4a)', color: 'var(--t-dim,#888)', fontSize: '0.7rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'help' });
     var tooltip = document.createElement('div');
-    tooltip.textContent = 'Makes your browser tab look like a different website (changes the tab name and icon). Pick a preset to disguise this tab, or choose Default to turn it off.';
+    tooltip.textContent = 'Personalize how this tab appears in your browser bar. Pick a preset to apply a different name and icon, or choose Default to reset.';
     Object.assign(tooltip.style, { display: 'none', position: 'fixed', width: '190px', padding: '8px 10px', borderRadius: '8px', background: 'var(--t-bg1,#0f0f1a)', border: '1px solid var(--t-border,#2a2a4a)', color: 'var(--t-text,#e0e0e0)', fontSize: '0.72rem', fontWeight: '400', lineHeight: '1.4', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', zIndex: '9999', pointerEvents: 'none' });
     document.body.appendChild(tooltip);
     helpIcon.addEventListener('mouseenter', function() {
@@ -1324,26 +1324,26 @@
     header.appendChild(helpIcon);
     panel.appendChild(header);
 
-    var currentCloak = saved || 'default';
+    var currentPersona = saved || 'default';
 
-    Object.keys(CLOAKS).forEach(function(id) {
-      var c = CLOAKS[id];
+    Object.keys(PERSONAS).forEach(function(id) {
+      var c = PERSONAS[id];
       var opt = document.createElement('div');
-      opt.dataset.cloak = id;
+      opt.dataset.persona = id;
       Object.assign(opt.style, {
         display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px',
         borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem',
         color: 'var(--t-text,#e0e0e0)', transition: 'background 0.15s',
-        border: '2px solid ' + (id === currentCloak ? 'var(--t-accent,#7b2ff7)' : 'transparent'),
+        border: '2px solid ' + (id === currentPersona ? 'var(--t-accent,#7b2ff7)' : 'transparent'),
       });
       opt.innerHTML = '<span style="font-size:1rem;width:22px;text-align:center">' + c.icon + '</span><span>' + c.name + '</span>';
-      opt.addEventListener('mouseenter', function() { if (id !== currentCloak) opt.style.background = 'var(--t-bg3,#2a2a4a)'; });
+      opt.addEventListener('mouseenter', function() { if (id !== currentPersona) opt.style.background = 'var(--t-bg3,#2a2a4a)'; });
       opt.addEventListener('mouseleave', function() { opt.style.background = 'none'; });
       opt.addEventListener('click', function() {
-        currentCloak = id;
-        applyCloak(id);
-        panel.querySelectorAll('[data-cloak]').forEach(function(el) {
-          el.style.borderColor = el.dataset.cloak === id ? 'var(--t-accent,#7b2ff7)' : 'transparent';
+        currentPersona = id;
+        applyPersona(id);
+        panel.querySelectorAll('[data-persona]').forEach(function(el) {
+          el.style.borderColor = el.dataset.persona === id ? 'var(--t-accent,#7b2ff7)' : 'transparent';
         });
       });
       panel.appendChild(opt);
@@ -1404,8 +1404,8 @@
   }
 
   function onReady() {
-    initCloak();
-    createCloakUI();
+    initPersona();
+    createPersonaUI();
   }
 
   if (document.readyState === 'loading') {
@@ -1765,7 +1765,7 @@
   }, true);
   document.addEventListener('visibilitychange', function() {
     if (!_enabled()) return;
-    var ck = localStorage.getItem('arcadeCloak');
+    var ck = localStorage.getItem('arcadePersona');
     if (ck && ck !== 'default') return;
     if (document.hidden) {
       if (!_isShowing()) _show(false);
