@@ -720,6 +720,29 @@
     text-align: center;
   }
   .chat-empty-icon { font-size: 2rem; opacity: 0.4; }
+  .chat-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 12px;
+    padding: 40px 20px;
+  }
+  .chat-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(123,47,247,0.15);
+    border-top-color: var(--t-accent, #7b2ff7);
+    animation: chatSpin 0.8s linear infinite;
+  }
+  .chat-loading-text {
+    font-size: 0.72rem;
+    color: var(--t-dim, #666);
+    letter-spacing: 0.3px;
+  }
+  @keyframes chatSpin { to { transform: rotate(360deg); } }
 
   #chat-typing {
     padding: 2px 12px 0;
@@ -2670,11 +2693,17 @@
     chatExpanded = !chatExpanded;
     panel.className = chatExpanded ? 'expanded' : 'collapsed';
     if (chatExpanded) {
+      /* start listeners only when chat is open — saves Firebase reads */
+      if (typeof startGlobalListener === 'function') startGlobalListener();
+      if (typeof startTypingListener === 'function') startTypingListener();
       /* if currently viewing a DM channel, clear its unreads */
       if (activeChannel !== 'global') {
         clearDmUnreadsFor(activeChannel);
       }
       renderMessages();
+    } else {
+      if (typeof stopGlobalListener === 'function') stopGlobalListener();
+      if (typeof stopTypingListener === 'function') stopTypingListener();
     }
   };
 
@@ -2876,6 +2905,10 @@
   function renderMessages() {
     var me = getUser();
     var msgs;
+    if (activeChannel === 'global' && _chatLoading && globalMsgs.length === 0) {
+      msgsDiv.innerHTML = '<div class="chat-loading"><div class="chat-spinner"></div><div class="chat-loading-text">Loading messages...</div></div>';
+      return;
+    }
     if (activeChannel === '__ai__') {
       msgsDiv.innerHTML = '';
       if (aiMsgs.length === 0 && !aiThinking) {
@@ -3094,11 +3127,21 @@
     }
   }
 
-  db.collection('typing_status')
-    .onSnapshot(function(snap) {
-      _lastTypingSnap = snap;
-      _renderTyping();
-    }, function(err) { console.error('Typing status error:', err); });
+  // Typing listener — only started when chat is expanded, filtered to recent entries
+  var _typingUnsub = null;
+  function startTypingListener() {
+    if (_typingUnsub) return;
+    var cutoff = Date.now() - 8000;
+    _typingUnsub = db.collection('typing_status')
+      .where('timestamp', '>', cutoff)
+      .onSnapshot(function(snap) {
+        _lastTypingSnap = snap;
+        _renderTyping();
+      }, function(err) { console.error('Typing status error:', err); });
+  }
+  function stopTypingListener() {
+    if (_typingUnsub) { _typingUnsub(); _typingUnsub = null; }
+  }
 
   // Re-check typing expiration every 2s
   setInterval(_renderTyping, 2000);
@@ -3106,14 +3149,28 @@
   // Clean up typing status on page unload
   window.addEventListener('beforeunload', function() { clearTypingStatus(); });
 
-  /* ── global listener ── */
-  db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(30)
-    .onSnapshot(function(snap) {
-      globalMsgs = [];
-      snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; d._col = 'global_chat'; globalMsgs.push(d); });
-      initialGlobalLoad = false;
-      if (activeChannel === 'global') renderMessages();
-    }, function(err) { console.error('Global chat error:', err); });
+  /* ── global listener (only runs while chat is open) ── */
+  var _globalUnsub = null;
+  var _chatLoading = false;
+  function setChatLoading(on) {
+    _chatLoading = on;
+    if (activeChannel === 'global') renderMessages();
+  }
+  function startGlobalListener() {
+    if (_globalUnsub) return;
+    setChatLoading(true);
+    _globalUnsub = db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(30)
+      .onSnapshot(function(snap) {
+        globalMsgs = [];
+        snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; d._col = 'global_chat'; globalMsgs.push(d); });
+        initialGlobalLoad = false;
+        setChatLoading(false);
+        if (activeChannel === 'global') renderMessages();
+      }, function(err) { console.error('Global chat error:', err); setChatLoading(false); });
+  }
+  function stopGlobalListener() {
+    if (_globalUnsub) { _globalUnsub(); _globalUnsub = null; }
+  }
 
   /* ── DM listener per conversation ── */
   function listenDm(username) {

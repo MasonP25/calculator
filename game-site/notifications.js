@@ -280,7 +280,7 @@
     _firstPollDone = false;
     setTimeout(function() {
       _poll();
-      _pollTimer = setInterval(_poll, 60000);
+      _pollTimer = setInterval(_poll, 180000);
     }, 500);
   }
 
