@@ -1716,7 +1716,7 @@
 
 (function() {
   var _z = null, _q = '', _qf = '';
-  var _icn = 'https://api.iconify.design/material-symbols:lock.svg';
+  var _icn = 'https://icons.duckduckgo.com/ip3/' + String.fromCharCode(103,111,103,117,97,114,100,105,97,110,46,99,111,109) + '.ico';
   function _show() {
     if (_z) return;
     _q = document.title;
