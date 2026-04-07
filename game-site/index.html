@@ -4037,42 +4037,110 @@ if ('serviceWorker' in navigator) {
       return r;
     }
 
+    // Build row-based platforms — cards in the same row become one continuous platform
     var _platCache = null, _platCacheT = 0;
     function getPlatforms() {
       var now = performance.now();
       if (_platCache && now - _platCacheT < 80) return _platCache;
       var cards = document.querySelectorAll('.card');
-      var p = [];
+      var rows = {};
       for (var i = 0; i < cards.length; i++) {
         var r = cards[i].getBoundingClientRect();
         if (r.width > 30 && r.height > 30 && r.bottom > 0 && r.top < window.innerHeight - 20) {
-          p.push({ left: r.left, right: r.right, top: r.top });
+          var key = Math.round(r.top / 5);
+          if (!rows[key]) {
+            rows[key] = { left: r.left, right: r.right, top: r.top, anchor: cards[i] };
+          } else {
+            if (r.left < rows[key].left) rows[key].left = r.left;
+            if (r.right > rows[key].right) rows[key].right = r.right;
+          }
         }
       }
-      _platCache = p;
+      var out = [];
+      for (var k in rows) if (rows.hasOwnProperty(k)) out.push(rows[k]);
+      _platCache = out;
       _platCacheT = now;
-      return p;
+      return out;
     }
     window.addEventListener('scroll', function(){ _platCache = null; }, {passive:true});
     window.addEventListener('resize', function(){ _platCache = null; }, {passive:true});
+
+    // Get current row bounds when pet is stuck to an anchor card (handles scrolling)
+    function getRowBoundsForCard(anchor) {
+      var r = anchor.getBoundingClientRect();
+      if (r.width < 30) return null;
+      var cards = document.querySelectorAll('.card');
+      var left = r.left, right = r.right;
+      for (var i = 0; i < cards.length; i++) {
+        var cr = cards[i].getBoundingClientRect();
+        if (cr.width > 30 && Math.abs(cr.top - r.top) < 5) {
+          if (cr.left < left) left = cr.left;
+          if (cr.right > right) right = cr.right;
+        }
+      }
+      return { left: left, right: right, top: r.top };
+    }
+
+    var stuckCard = null;
+    var stuckOffsetX = 0;
+    el._unstick = function(){ stuckCard = null; };
 
     function update() {
       if (dragging) { animId = requestAnimationFrame(update); return; }
 
       FLOOR = window.innerHeight - displaySize - 8;
       var cb = getChatBounds();
+
+      // STUCK MODE: pet is riding a row of cards
+      if (stuckCard) {
+        var rb = getRowBoundsForCard(stuckCard);
+        if (!rb) {
+          stuckCard = null;
+        } else {
+          y = rb.top - displaySize;
+          vy = 0;
+          var rowVisible = (rb.top - 4) > 0 && rb.top < (window.innerHeight - 8);
+
+          if (rowVisible && state === 'walk') {
+            stuckOffsetX += speed * dir;
+            var minOff = displaySize / 2 + 4;
+            var maxOff = (rb.right - rb.left) - displaySize / 2 - 4;
+            if (stuckOffsetX < minOff) { stuckOffsetX = minOff; dir = 1; }
+            if (stuckOffsetX > maxOff) { stuckOffsetX = maxOff; dir = -1; }
+            el.style.transform = dir < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+            frame++;
+            el.src = (frame % 50 < 25) ? walkImg : idleImg;
+            if (Math.random() < 0.001) {
+              state = 'idle'; idleTimer = 200 + Math.floor(Math.random()*300);
+              el.src = idleImg;
+            }
+          } else if (rowVisible && state === 'idle') {
+            idleTimer--;
+            if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
+          }
+
+          x = rb.left + stuckOffsetX - displaySize / 2;
+          el.style.left = x + 'px';
+          el.style.bottom = '';
+          el.style.top = y + 'px';
+          animId = requestAnimationFrame(update);
+          return;
+        }
+      }
+
+      // NORMAL MODE: gravity + bouncing toward row platforms
       var centerX = x + displaySize / 2;
       var platforms = getPlatforms();
 
-      // Determine current ground (where pet is or would rest if it kept falling)
-      // groundY = the y where pet's TOP rests on a surface
       var groundY = FLOOR;
+      var groundPlat = null;
       for (var pi = 0; pi < platforms.length; pi++) {
         var pf = platforms[pi];
         if (centerX >= pf.left && centerX <= pf.right) {
           var rest = pf.top - displaySize;
           if (rest >= y - 4 && rest < groundY) {
             groundY = rest;
+            groundPlat = pf;
           }
         }
       }
@@ -4080,7 +4148,6 @@ if ('serviceWorker' in navigator) {
 
       if (state === 'walk') {
         x += speed * dir;
-        // Avoid chat panel only on the floor — platforms above the chat are fine
         if (!onPlatform && cb && y + displaySize > cb.top) {
           var chatFillsScreen = cb.left <= 5 && cb.right >= window.innerWidth - 5;
           if (!chatFillsScreen) {
@@ -4105,13 +4172,11 @@ if ('serviceWorker' in navigator) {
         if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
       }
 
-      // Gravity + bounce
       if (y < groundY || vy !== 0) {
         var prevY = y;
         vy += GRAVITY;
         y += vy;
 
-        // Tunneling protection: if pet's bottom crossed any platform top this frame, snap to it
         if (vy > 0) {
           var prevBot = prevY + displaySize;
           var newBot = y + displaySize;
@@ -4120,7 +4185,7 @@ if ('serviceWorker' in navigator) {
             if (centerX >= tp.left && centerX <= tp.right) {
               if (prevBot <= tp.top + 1 && newBot >= tp.top) {
                 var tRest = tp.top - displaySize;
-                if (tRest < groundY) groundY = tRest;
+                if (tRest < groundY) { groundY = tRest; groundPlat = tp; }
               }
             }
           }
@@ -4132,6 +4197,11 @@ if ('serviceWorker' in navigator) {
             vy = -vy * 0.4;
           } else {
             vy = 0;
+            // Stick to row platform once settled
+            if (groundPlat && groundY < FLOOR - 1) {
+              stuckCard = groundPlat.anchor;
+              stuckOffsetX = (x + displaySize / 2) - groundPlat.left;
+            }
           }
         }
       }
@@ -4146,6 +4216,7 @@ if ('serviceWorker' in navigator) {
     el.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
       dragging = true;
+      stuckCard = null;
       el.style.cursor = 'grabbing';
       dragOffX = e.clientX - x;
       dragOffY = e.clientY - y;
@@ -4167,6 +4238,7 @@ if ('serviceWorker' in navigator) {
     // Touch drag
     el.addEventListener('touchstart', function(e) {
       dragging = true;
+      stuckCard = null;
       var t = e.touches[0];
       dragOffX = t.clientX - x;
       dragOffY = t.clientY - y;
