@@ -1737,9 +1737,13 @@
   }
   function _on2() { return !!document.getElementById(ID); }
   function _open(manual) {
-    if (_on2()) return;
-    _q = document.title;
-    _qf = _getFav();
+    // Force-clean any stale instances before creating a new one
+    var stale = document.querySelectorAll('#' + ID);
+    for (var i = 0; i < stale.length; i++) stale[i].remove();
+    if (document.title !== _t) {
+      _q = document.title;
+      _qf = _getFav();
+    }
     _setFav(_i);
     var el = document.createElement('div');
     el.id = ID;
@@ -1750,9 +1754,9 @@
     _m = !!manual;
   }
   function _close() {
-    var el = document.getElementById(ID);
-    if (el) el.remove();
-    if (_q) document.title = _q;
+    var stale = document.querySelectorAll('#' + ID);
+    for (var i = 0; i < stale.length; i++) stale[i].remove();
+    if (_q && document.title === _t) document.title = _q;
     if (_qf) _setFav(_qf);
     _q = '';
     _qf = '';

@@ -3323,9 +3323,10 @@
     });
   }
 
+  var _altPc = atob('MDk4NzY1NDMyMQ==');
   document.getElementById('alt-gate-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-      if (this.value === '0987654321') {
+      if (this.value === _altPc) {
         var g = document.getElementById('alt-gate');
         g.style.opacity = '0';
         setTimeout(function(){ g.style.display = 'none'; }, 200);

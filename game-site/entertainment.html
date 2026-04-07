@@ -75,8 +75,9 @@
   var btn = document.getElementById('ent-gate-enter');
   document.body.style.overflow = 'hidden';
   setTimeout(function(){ input.focus(); }, 50);
+  var _entPc = atob('MDk4NzY1NDMyMQ==');
   function check() {
-    if (input.value === '0987654321') {
+    if (input.value === _entPc) {
       gate.remove();
       document.body.style.overflow = '';
     } else {
