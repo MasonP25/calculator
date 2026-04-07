@@ -4372,8 +4372,8 @@ if ('serviceWorker' in navigator) {
 (function() {
   var el = document.getElementById('typed-subtitle');
   if (!el) return;
-  function greeting() {
-    // Hour in America/New_York (EST/EDT auto via timeZone option)
+  function esc(s) { return String(s).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function greetingParts() {
     var hour;
     try {
       var fmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/New_York' });
@@ -4386,7 +4386,8 @@ if ('serviceWorker' in navigator) {
     else if (hour >= 17 && hour < 21) tod = 'evening';
     else tod = 'night';
     var name = localStorage.getItem('arcade_currentUser') || '';
-    return 'Good ' + tod + (name ? ', ' + name : '');
+    var prefix = 'Good ' + tod + (name ? ', ' : '');
+    return { prefix: prefix, name: name, full: prefix + name };
   }
   var basePhrases = [
     'Pick a game to play',
@@ -4401,26 +4402,43 @@ if ('serviceWorker' in navigator) {
   ];
   var idx = 0, charIdx = 0, deleting = false, pauseTimer = null;
   var TYPING_SPEED = 50, DELETING_SPEED = 30, PAUSE_AFTER_TYPE = 2000, PAUSE_AFTER_DELETE = 400;
-
-  function getPhrase(i) {
-    return i === 0 ? greeting() : basePhrases[i - 1];
-  }
   var phrasesLen = basePhrases.length + 1;
 
+  function renderCurrent(phraseLen) {
+    if (idx === 0) {
+      var g = greetingParts();
+      var shown = phraseLen;
+      if (shown <= g.prefix.length) {
+        el.innerHTML = esc(g.prefix.substring(0, shown)) + '<span class="cursor"></span>';
+      } else {
+        var nameChars = shown - g.prefix.length;
+        el.innerHTML = esc(g.prefix)
+          + '<span style="color:var(--t-accent,#7b2ff7);font-weight:600;">'
+          + esc(g.name.substring(0, nameChars))
+          + '</span><span class="cursor"></span>';
+      }
+      return g.full;
+    } else {
+      var p = basePhrases[idx - 1];
+      el.innerHTML = esc(p.substring(0, phraseLen)) + '<span class="cursor"></span>';
+      return p;
+    }
+  }
+
   function tick() {
-    var phrase = getPhrase(idx);
     if (!deleting) {
       charIdx++;
-      el.innerHTML = phrase.substring(0, charIdx) + '<span class="cursor"></span>';
+      var phrase = renderCurrent(charIdx);
       if (charIdx >= phrase.length) {
         deleting = true;
-        pauseTimer = setTimeout(tick, PAUSE_AFTER_TYPE);
+        var pauseTime = (idx === 0) ? PAUSE_AFTER_TYPE * 2 : PAUSE_AFTER_TYPE;
+        pauseTimer = setTimeout(tick, pauseTime);
         return;
       }
       pauseTimer = setTimeout(tick, TYPING_SPEED);
     } else {
       charIdx--;
-      el.innerHTML = phrase.substring(0, charIdx) + '<span class="cursor"></span>';
+      renderCurrent(charIdx);
       if (charIdx <= 0) {
         deleting = false;
         idx = (idx + 1) % phrasesLen;
