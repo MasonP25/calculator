@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's New</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--t-bg1, #0f0f1a);
+    color: var(--t-text, #e0e0e0);
+    min-height: 100vh;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  .back-link {
+    position: fixed; top: 18px; left: 18px;
+    color: var(--t-text, #e0e0e0); text-decoration: none;
+    font-size: 0.85rem; font-weight: 500; z-index: 100;
+    background: var(--t-bg2, #1a1a2e); border: 1px solid var(--t-border, #2a2a4a);
+    padding: 7px 16px; border-radius: 8px;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .back-link:hover { background: var(--t-bg3, #252540); transform: translateX(-2px); }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 90px 24px 80px; position: relative; }
+
+  .eyebrow {
+    display: inline-block;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--t-accent2, #00d4ff);
+    padding: 5px 12px; border: 1px solid var(--t-accent2, #00d4ff);
+    border-radius: 999px;
+    margin-bottom: 18px;
+    animation: fadeUp 0.6s ease-out;
+  }
+  .display-title {
+    font-size: clamp(2.4rem, 6vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #00d4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeUp 0.7s ease-out 0.05s both;
+  }
+  .lede {
+    font-size: 1.05rem;
+    color: var(--t-dim, #9ca0b3);
+    max-width: 540px;
+    margin-bottom: 50px;
+    animation: fadeUp 0.7s ease-out 0.1s both;
+  }
+
+  .changes { display: flex; flex-direction: column; gap: 18px; }
+
+  .change {
+    position: relative;
+    background: linear-gradient(160deg, rgba(28,28,46,0.7), rgba(20,20,35,0.7));
+    border: 1px solid var(--t-border, #2a2a4a);
+    border-radius: 16px;
+    padding: 22px 24px 22px 70px;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s, background 0.25s;
+    overflow: hidden;
+    animation: fadeUp 0.7s ease-out both;
+  }
+  .change:nth-child(1) { animation-delay: 0.15s; }
+  .change:nth-child(2) { animation-delay: 0.22s; }
+  .change:nth-child(3) { animation-delay: 0.29s; }
+  .change:nth-child(4) { animation-delay: 0.36s; }
+  .change:hover { transform: translateY(-2px); border-color: var(--t-accent, #7b2ff7); }
+  .change::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(123,47,247,0.08), transparent 40%);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .change:hover::before { opacity: 1; }
+
+  .change .icon {
+    position: absolute; top: 22px; left: 22px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, rgba(123,47,247,0.18), rgba(0,212,255,0.12));
+    border: 1px solid rgba(123,47,247,0.35);
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .change h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--t-text, #f0f0f5);
+    letter-spacing: -0.01em;
+  }
+  .change h2 .tag {
+    display: inline-block;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background: var(--t-accent, #7b2ff7);
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .change p {
+    font-size: 0.88rem;
+    color: var(--t-dim, #9ca0b3);
+    line-height: 1.55;
+  }
+
+  .signoff {
+    margin-top: 50px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--t-dim, #6a6a85);
+    font-family: 'Space Grotesk', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    animation: fadeUp 0.7s ease-out 0.5s both;
+  }
+  .signoff a {
+    color: var(--t-accent2, #00d4ff);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .signoff a:hover { border-bottom-color: var(--t-accent2, #00d4ff); }
+
+  /* Decorative blurred orbs */
+  .orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.25; pointer-events: none; z-index: 0; }
+  .orb-1 { top: 10%; left: -100px; width: 320px; height: 320px; background: #7b2ff7; }
+  .orb-2 { bottom: 5%; right: -80px; width: 280px; height: 280px; background: #00d4ff; }
+
+  .wrap > * { position: relative; z-index: 1; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 80px 18px 60px; }
+    .change { padding: 18px 18px 18px 64px; }
+    .change .icon { top: 18px; left: 18px; width: 32px; height: 32px; font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">&#8592; Back</a>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrap">
+  <span class="eyebrow">Update Log</span>
+  <h1 class="display-title">What's New</h1>
+  <p class="lede">A few fresh changes to make the arcade feel a little more alive.</p>
+
+  <div class="changes">
+    <div class="change">
+      <div class="icon">&#128062;</div>
+      <h2>Pet System v2 <span class="tag">Reworked</span></h2>
+      <p>Your pet now walks across the homepage with proper physics. Drag it anywhere and it falls, bounces, and lands on top of game cards. It rides each card row as you scroll, and lifts up when you hover the card it's standing on.</p>
+    </div>
+
+    <div class="change">
+      <div class="icon">&#10024;</div>
+      <h2>Visual Refresh</h2>
+      <p>Cleaner title with a slower glitch and faster shimmer, refined typography, and smoother card hover animations. The ARCADE wordmark, magnetic buttons, and ambient particle field all got a polish pass.</p>
+    </div>
+
+    <div class="change">
+      <div class="icon">&#129302;</div>
+      <h2>Smarter Assistant</h2>
+      <p>The chat assistant is now routed through a private backend so it stays fast and reliable without exposing keys. It also pulls in your live coin balance, level progress, and current daily challenge for context-aware answers.</p>
+    </div>
+
+    <div class="change">
+      <div class="icon">&#127909;</div>
+      <h2>Arcade Vids Upload Wizard</h2>
+      <p>The Arcade Vids card now opens a clean step-by-step uploader: title, content, thumbnail, confirm. Drag-drop or paste a link, pick a thumbnail, and your video lands in the community feed.</p>
+    </div>
+  </div>
+
+  <p class="signoff">Thanks for playing &middot; <a href="feedback.html">Send feedback</a></p>
+</div>
+
+</body>
+</html>

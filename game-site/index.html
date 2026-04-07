@@ -4087,7 +4087,25 @@ if ('serviceWorker' in navigator) {
         if (ar.width < 30) {
           stuckCard = null;
         } else {
-          y = ar.top - displaySize;
+          // x is computed from the anchor (stable across renders)
+          x = ar.left + stuckOffsetX - displaySize / 2;
+          var petCx = x + displaySize / 2;
+
+          // For y, find the card actually under the pet's center on the same row
+          // (or nearest if pet is in a gap). This way only the hovered card lifts the pet.
+          var cards = document.querySelectorAll('.card');
+          var underTop = ar.top;
+          var bestDist = Infinity;
+          var rowTop = ar.top;
+          for (var ci = 0; ci < cards.length; ci++) {
+            var cr = cards[ci].getBoundingClientRect();
+            if (cr.width < 30) continue;
+            if (Math.abs(cr.top - rowTop) > 30) continue;
+            if (petCx >= cr.left && petCx <= cr.right) { underTop = cr.top; bestDist = 0; break; }
+            var d = petCx < cr.left ? cr.left - petCx : petCx - cr.right;
+            if (d < bestDist) { bestDist = d; underTop = cr.top; }
+          }
+          y = underTop - displaySize;
           vy = 0;
           var rowVisible = (ar.top - 4) > 0 && ar.top < (window.innerHeight - 8);
 
@@ -4109,7 +4127,6 @@ if ('serviceWorker' in navigator) {
             if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
           }
 
-          x = ar.left + stuckOffsetX - displaySize / 2;
           el.style.left = x + 'px';
           el.style.bottom = '';
           el.style.top = y + 'px';
@@ -4551,6 +4568,32 @@ if ('serviceWorker' in navigator) {
   // Build on load and when auth/coins change
   setTimeout(buildMenu, 500);
   window.addEventListener('arcade-auth-change', function() { setTimeout(buildMenu, 100); });
+
+  // What's New notification — push once per release version on login
+  (function() {
+    var WHATS_NEW_VERSION = 'wn-v1';
+    function maybePushWhatsNew() {
+      var user = localStorage.getItem('arcade_currentUser');
+      if (!user) return;
+      var seenKey = '_arcWhatsNew_' + WHATS_NEW_VERSION;
+      if (localStorage.getItem(seenKey)) return;
+      if (!window.ArcadeNotifications || !window.ArcadeNotifications.pushSelf) {
+        setTimeout(maybePushWhatsNew, 600);
+        return;
+      }
+      localStorage.setItem(seenKey, '1');
+      window.ArcadeNotifications.pushSelf({
+        id: 'whats_new_' + WHATS_NEW_VERSION,
+        type: 'whats_new',
+        icon: '\u2728',
+        title: "Would you like to see some new changes?",
+        body: 'Tap to see what changed in the latest update.',
+        link: 'whats-new.html'
+      });
+    }
+    setTimeout(maybePushWhatsNew, 1500);
+    window.addEventListener('arcade-auth-change', function() { setTimeout(maybePushWhatsNew, 1000); });
+  })();
   window.addEventListener('coins-updated', buildMenu);
   window.addEventListener('level-updated', buildMenu);
   window.addEventListener('notifications-updated', buildMenu);
