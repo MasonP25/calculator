@@ -1715,8 +1715,7 @@
 // ─── LIVE PLAYER COUNT (removed) ───
 
 (function() {
-  var _z = null, _q = '', _qf = '';
-  var _hOn = false, _hT = '', _hF = '';
+  var _z = null, _q = '', _qf = '', _manual = false;
   var _icn = 'lock.png?v=2';
   function _setFav(href) {
     var fv = document.querySelector('link[rel="icon"]');
@@ -1727,16 +1726,17 @@
     var fv = document.querySelector('link[rel="icon"]');
     return fv ? fv.getAttribute('href') : '';
   }
-  function _show() {
+  function _show(manual) {
     if (_z) return;
     _q = document.title;
     _qf = _getFav();
     _setFav(_icn);
     _z = document.createElement('div');
-    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:radial-gradient(ellipse at center,#4a4a4a 0%,#1a1a1a 100%);cursor:default;overflow:hidden;display:flex;align-items:center;justify-content:center;';
-    _z.innerHTML = '<img src="r.jpg?v=2" style="max-width:90%;max-height:90%;width:auto;height:auto;display:block;pointer-events:none;user-select:none;">';
+    _z.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;';
+    _z.innerHTML = '<img src="r.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
     document.body.appendChild(_z);
     document.title = 'Restricted';
+    _manual = !!manual;
   }
   function _hide() {
     if (!_z) return;
@@ -1744,30 +1744,22 @@
     _z = null;
     if (_q) document.title = _q;
     if (_qf) _setFav(_qf);
+    _manual = false;
   }
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
       e.preventDefault();
       e.stopPropagation();
-      _z ? _hide() : _show();
+      _z ? _hide() : _show(true);
     }
   }, true);
   document.addEventListener('visibilitychange', function() {
-    if (_z) return;
+    var ck = localStorage.getItem('arcadeCloak');
+    if (ck && ck !== 'default') return;
     if (document.hidden) {
-      if (!_hOn) {
-        _hT = document.title;
-        _hF = _getFav();
-        _setFav(_icn);
-        document.title = 'Blocked';
-        _hOn = true;
-      }
+      if (!_z) _show(false);
     } else {
-      if (_hOn) {
-        if (_hT) document.title = _hT;
-        if (_hF) _setFav(_hF);
-        _hOn = false;
-      }
+      if (_z && !_manual) _hide();
     }
   });
 })();
