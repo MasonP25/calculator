@@ -1757,9 +1757,16 @@ window.openEditProfileModal = async function() {
 // Load the profile
 loadProfile();
 
-// Render pet section
+// Render pet section — only on your own profile
 setTimeout(function() {
+  var currentUser = localStorage.getItem('arcade_currentUser') || '';
+  var urlUser = new URLSearchParams(window.location.search).get('user') || currentUser;
+  var isOwn = currentUser && urlUser && currentUser.toLowerCase() === urlUser.toLowerCase();
   var petContainer = document.getElementById('petSection');
+  if (!isOwn) {
+    if (petContainer) petContainer.style.display = 'none';
+    return;
+  }
   if (petContainer && window.ArcadePets) {
     ArcadePets.renderPetCard(petContainer);
     window.addEventListener('pet-updated', function() {

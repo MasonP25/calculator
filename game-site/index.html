@@ -883,7 +883,7 @@
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
   <h1 data-text="ARCADE">ARCADE</h1>
   <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
-  <p class="count">134 games</p>
+  <p class="count">134 games <span id="online-count" style="display:none;margin-left:10px;color:var(--t-dim,#666);"><span style="display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%;margin-right:4px;vertical-align:middle;box-shadow:0 0 6px #4ade80;"></span><span id="online-count-num">0</span> online</span></p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
@@ -4366,6 +4366,57 @@ if ('serviceWorker' in navigator) {
     if (window.scrollY > 400) { btn.classList.add('show'); }
     else { btn.classList.remove('show'); }
   }, { passive: true });
+})();
+
+// ─── ONLINE PLAYER COUNT (every 10 min) ───
+(function() {
+  var countEl = document.getElementById('online-count');
+  var numEl = document.getElementById('online-count-num');
+  if (!countEl || !numEl) return;
+  var _db = null;
+  async function fetchCount() {
+    try {
+      if (!_db) {
+        var mods = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
+        ]);
+        var getApp = mods[0].getApp;
+        var initializeApp = mods[0].initializeApp;
+        var getFirestore = mods[1].getFirestore;
+        window._fbOnlineHelpers = {
+          collection: mods[1].collection,
+          query: mods[1].query,
+          where: mods[1].where,
+          getDocs: mods[1].getDocs
+        };
+        var config = {
+          apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",
+          projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",
+          messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e"
+        };
+        try { _db = getFirestore(getApp('online-app')); }
+        catch(e) { _db = getFirestore(initializeApp(config, 'online-app')); }
+      }
+      var h = window._fbOnlineHelpers;
+      var q = h.query(h.collection(_db, 'users'), h.where('online', '==', true));
+      var snap = await h.getDocs(q);
+      var now = Date.now();
+      var count = 0;
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        if (d.lastSeen && d.lastSeen.toMillis) {
+          if (now - d.lastSeen.toMillis() < 5 * 60 * 1000) count++;
+        } else {
+          count++;
+        }
+      });
+      numEl.textContent = count;
+      countEl.style.display = 'inline';
+    } catch(e) { console.warn('[Online] Fetch failed:', e); }
+  }
+  setTimeout(fetchCount, 2000);
+  setInterval(fetchCount, 10 * 60 * 1000);
 })();
 
 // ─── TYPING SUBTITLE ───
