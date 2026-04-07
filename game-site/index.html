@@ -4037,17 +4037,51 @@ if ('serviceWorker' in navigator) {
       return r;
     }
 
+    var _platCache = null, _platCacheT = 0;
+    function getPlatforms() {
+      var now = performance.now();
+      if (_platCache && now - _platCacheT < 80) return _platCache;
+      var cards = document.querySelectorAll('.card');
+      var p = [];
+      for (var i = 0; i < cards.length; i++) {
+        var r = cards[i].getBoundingClientRect();
+        if (r.width > 30 && r.height > 30 && r.bottom > 0 && r.top < window.innerHeight - 20) {
+          p.push({ left: r.left, right: r.right, top: r.top });
+        }
+      }
+      _platCache = p;
+      _platCacheT = now;
+      return p;
+    }
+    window.addEventListener('scroll', function(){ _platCache = null; }, {passive:true});
+    window.addEventListener('resize', function(){ _platCache = null; }, {passive:true});
+
     function update() {
       if (dragging) { animId = requestAnimationFrame(update); return; }
 
       FLOOR = window.innerHeight - displaySize - 8;
       var cb = getChatBounds();
+      var centerX = x + displaySize / 2;
+      var platforms = getPlatforms();
+
+      // Determine current ground (where pet is or would rest if it kept falling)
+      // groundY = the y where pet's TOP rests on a surface
+      var groundY = FLOOR;
+      for (var pi = 0; pi < platforms.length; pi++) {
+        var pf = platforms[pi];
+        if (centerX >= pf.left && centerX <= pf.right) {
+          var rest = pf.top - displaySize;
+          if (rest >= y - 4 && rest < groundY) {
+            groundY = rest;
+          }
+        }
+      }
+      var onPlatform = groundY < FLOOR - 1;
 
       if (state === 'walk') {
         x += speed * dir;
-        // Avoid chat panel: chat is bottom-left, so pet must stay to the right of it.
-        // Skip if chat covers full width (mobile expanded) to prevent glitching.
-        if (cb && y + displaySize > cb.top) {
+        // Avoid chat panel only on the floor — platforms above the chat are fine
+        if (!onPlatform && cb && y + displaySize > cb.top) {
           var chatFillsScreen = cb.left <= 5 && cb.right >= window.innerWidth - 5;
           if (!chatFillsScreen) {
             var leftWall = cb.right + 5;
@@ -4072,13 +4106,30 @@ if ('serviceWorker' in navigator) {
       }
 
       // Gravity + bounce
-      if (y < FLOOR || vy !== 0) {
+      if (y < groundY || vy !== 0) {
+        var prevY = y;
         vy += GRAVITY;
         y += vy;
-        if (y >= FLOOR) {
-          y = FLOOR;
+
+        // Tunneling protection: if pet's bottom crossed any platform top this frame, snap to it
+        if (vy > 0) {
+          var prevBot = prevY + displaySize;
+          var newBot = y + displaySize;
+          for (var ti = 0; ti < platforms.length; ti++) {
+            var tp = platforms[ti];
+            if (centerX >= tp.left && centerX <= tp.right) {
+              if (prevBot <= tp.top + 1 && newBot >= tp.top) {
+                var tRest = tp.top - displaySize;
+                if (tRest < groundY) groundY = tRest;
+              }
+            }
+          }
+        }
+
+        if (y >= groundY) {
+          y = groundY;
           if (Math.abs(vy) > 2) {
-            vy = -vy * 0.4; // bounce with dampening
+            vy = -vy * 0.4;
           } else {
             vy = 0;
           }
