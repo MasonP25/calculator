@@ -4065,24 +4065,13 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('scroll', function(){ _platCache = null; }, {passive:true});
     window.addEventListener('resize', function(){ _platCache = null; }, {passive:true});
 
-    // Get current row bounds when pet is stuck to an anchor card (handles scrolling)
-    function getRowBoundsForCard(anchor) {
-      var r = anchor.getBoundingClientRect();
-      if (r.width < 30) return null;
-      var cards = document.querySelectorAll('.card');
-      var left = r.left, right = r.right;
-      for (var i = 0; i < cards.length; i++) {
-        var cr = cards[i].getBoundingClientRect();
-        if (cr.width > 30 && Math.abs(cr.top - r.top) < 5) {
-          if (cr.left < left) left = cr.left;
-          if (cr.right > right) right = cr.right;
-        }
-      }
-      return { left: left, right: right, top: r.top };
-    }
-
+    // Pet is "stuck" to a single anchor card. All offsets are stored relative to that
+    // anchor at sticking time so other cards in the row can re-render freely without
+    // affecting the pet's position.
     var stuckCard = null;
-    var stuckOffsetX = 0;
+    var stuckOffsetX = 0;       // pet center X offset from anchor.left
+    var stuckRowMinX = 0;       // row left edge offset from anchor.left
+    var stuckRowMaxX = 0;       // row right edge offset from anchor.left
     el._unstick = function(){ stuckCard = null; };
 
     function update() {
@@ -4093,18 +4082,18 @@ if ('serviceWorker' in navigator) {
 
       // STUCK MODE: pet is riding a row of cards
       if (stuckCard) {
-        var rb = getRowBoundsForCard(stuckCard);
-        if (!rb) {
+        var ar = stuckCard.getBoundingClientRect();
+        if (ar.width < 30) {
           stuckCard = null;
         } else {
-          y = rb.top - displaySize;
+          y = ar.top - displaySize;
           vy = 0;
-          var rowVisible = (rb.top - 4) > 0 && rb.top < (window.innerHeight - 8);
+          var rowVisible = (ar.top - 4) > 0 && ar.top < (window.innerHeight - 8);
 
           if (rowVisible && state === 'walk') {
             stuckOffsetX += speed * dir;
-            var minOff = displaySize / 2 + 4;
-            var maxOff = (rb.right - rb.left) - displaySize / 2 - 4;
+            var minOff = stuckRowMinX + displaySize / 2 + 4;
+            var maxOff = stuckRowMaxX - displaySize / 2 - 4;
             if (stuckOffsetX < minOff) { stuckOffsetX = minOff; dir = 1; }
             if (stuckOffsetX > maxOff) { stuckOffsetX = maxOff; dir = -1; }
             el.style.transform = dir < 0 ? 'scaleX(-1)' : 'scaleX(1)';
@@ -4119,7 +4108,7 @@ if ('serviceWorker' in navigator) {
             if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
           }
 
-          x = rb.left + stuckOffsetX - displaySize / 2;
+          x = ar.left + stuckOffsetX - displaySize / 2;
           el.style.left = x + 'px';
           el.style.bottom = '';
           el.style.top = y + 'px';
@@ -4197,10 +4186,13 @@ if ('serviceWorker' in navigator) {
             vy = -vy * 0.4;
           } else {
             vy = 0;
-            // Stick to row platform once settled
+            // Stick to row platform once settled — store everything relative to the anchor card
             if (groundPlat && groundY < FLOOR - 1) {
+              var ar2 = groundPlat.anchor.getBoundingClientRect();
               stuckCard = groundPlat.anchor;
-              stuckOffsetX = (x + displaySize / 2) - groundPlat.left;
+              stuckOffsetX = (x + displaySize / 2) - ar2.left;
+              stuckRowMinX = groundPlat.left - ar2.left;
+              stuckRowMaxX = groundPlat.right - ar2.left;
             }
           }
         }
