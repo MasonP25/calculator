@@ -487,7 +487,7 @@
   <div class="scores-grid" id="scoresGrid"></div>
 
   <!-- Pet -->
-  <div class="section-header">Pet</div>
+  <div id="petSectionHeader" class="section-header">Pet</div>
   <div id="petSection" style="margin-bottom:1.5rem;"></div>
 
   <!-- Friends -->
@@ -1763,8 +1763,10 @@ setTimeout(function() {
   var urlUser = new URLSearchParams(window.location.search).get('user') || currentUser;
   var isOwn = currentUser && urlUser && currentUser.toLowerCase() === urlUser.toLowerCase();
   var petContainer = document.getElementById('petSection');
+  var petHeader = document.getElementById('petSectionHeader');
   if (!isOwn) {
     if (petContainer) petContainer.style.display = 'none';
+    if (petHeader) petHeader.style.display = 'none';
     return;
   }
   if (petContainer && window.ArcadePets) {

@@ -906,7 +906,17 @@
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
   <h1 data-text="ARCADE">ARCADE</h1>
   <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
-  <p class="count">134 games <span id="online-count" style="display:none;margin-left:10px;color:var(--t-dim,#666);"><span style="display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%;margin-right:4px;vertical-align:middle;box-shadow:0 0 6px #4ade80;"></span><span id="online-count-num">0</span> online</span></p>
+  <p class="count" style="display:inline-flex;align-items:center;gap:14px;justify-content:center;">
+    <span>134 games</span>
+    <span id="online-count" style="display:none;align-items:center;gap:6px;color:var(--t-dim,#888);font-size:0.82rem;padding:3px 10px 3px 8px;border:1px solid var(--t-border,#2a2a4a);border-radius:999px;background:var(--t-bg2,#1a1a2e);">
+      <span style="display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%;box-shadow:0 0 8px #4ade80;animation:onlinePulse 2s ease-in-out infinite;"></span>
+      <span><span id="online-count-num">0</span> online</span>
+    </span>
+  </p>
+  <style>
+    @keyframes onlinePulse { 0%,100% { opacity: 1; box-shadow: 0 0 8px #4ade80; } 50% { opacity: 0.6; box-shadow: 0 0 4px #4ade80; } }
+    #online-count { transition: opacity 0.3s; }
+  </style>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
@@ -4469,7 +4479,7 @@ if ('serviceWorker' in navigator) {
         }
       });
       numEl.textContent = count;
-      countEl.style.display = 'inline';
+      countEl.style.display = 'inline-flex';
     } catch(e) { console.warn('[Online] Fetch failed:', e); }
   }
   setTimeout(fetchCount, 2000);
