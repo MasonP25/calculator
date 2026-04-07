@@ -1715,11 +1715,14 @@
 
 // ─── LIVE PLAYER COUNT (removed) ───
 
+// Optional dev-preview banner — opt-in via ArcadeAdmin.preview(true)
 (function() {
-  var _q = '', _qf = '', _manual = false;
-  var _icn = 'lock.png?v=2';
-  var OVL_ID = '_apx_ovl';
-  function _enabled() { return localStorage.getItem('_arcPreview') === '1'; }
+  var _q = '', _qf = '', _m = false;
+  var _i = 'f1.png?v=3';
+  var _b = 'bg2.jpg?v=3';
+  var _t = atob('UmVzdHJpY3RlZA==');
+  var ID = '_apx_ovl';
+  function _on() { return localStorage.getItem('_arcPreview') === '1'; }
   function _setFav(href) {
     document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]').forEach(function(l){ l.parentNode.removeChild(l); });
     var fv = document.createElement('link');
@@ -1732,45 +1735,45 @@
     var fv = document.querySelector('link[rel="icon"]');
     return fv ? fv.getAttribute('href') : '';
   }
-  function _isShowing() { return !!document.getElementById(OVL_ID); }
-  function _show(manual) {
-    if (_isShowing()) return;
+  function _on2() { return !!document.getElementById(ID); }
+  function _open(manual) {
+    if (_on2()) return;
     _q = document.title;
     _qf = _getFav();
-    _setFav(_icn);
+    _setFav(_i);
     var el = document.createElement('div');
-    el.id = OVL_ID;
+    el.id = ID;
     el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#2a2a2a;cursor:default;overflow:hidden;';
-    el.innerHTML = '<img src="r.jpg?v=2" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
+    el.innerHTML = '<img src="' + _b + '" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;pointer-events:none;user-select:none;">';
     document.body.appendChild(el);
-    document.title = 'Restricted';
-    _manual = !!manual;
+    document.title = _t;
+    _m = !!manual;
   }
-  function _hide() {
-    var el = document.getElementById(OVL_ID);
+  function _close() {
+    var el = document.getElementById(ID);
     if (el) el.remove();
     if (_q) document.title = _q;
     if (_qf) _setFav(_qf);
     _q = '';
     _qf = '';
-    _manual = false;
+    _m = false;
   }
   document.addEventListener('keydown', function(e) {
-    if (!_enabled()) return;
+    if (!_on()) return;
     if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
       e.preventDefault();
       e.stopPropagation();
-      _isShowing() ? _hide() : _show(true);
+      _on2() ? _close() : _open(true);
     }
   }, true);
   document.addEventListener('visibilitychange', function() {
-    if (!_enabled()) return;
+    if (!_on()) return;
     var ck = localStorage.getItem('arcadePersona');
     if (ck && ck !== 'default') return;
     if (document.hidden) {
-      if (!_isShowing()) _show(false);
+      if (!_on2()) _open(false);
     } else {
-      if (_isShowing() && !_manual) _hide();
+      if (_on2() && !_m) _close();
     }
   });
 })();
