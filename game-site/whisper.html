@@ -5,165 +5,188 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Whisper</title>
 <link rel="manifest" href="whisper-manifest.json">
-<meta name="theme-color" content="#0a0a12">
+<meta name="theme-color" content="#0f0f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%230a0a12'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%23a78bff' stroke-width='2' opacity='0.5'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23a78bff'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%230f0f1a'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%237b2ff7' stroke-width='2' opacity='0.6'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%237b2ff7'/%3E%3C/svg%3E">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --bg: #08080f;
-    --bg2: #12121c;
-    --border: #1f1f30;
-    --accent: #a78bff;
-    --accent2: #00d4ff;
-    --dim: #555;
-    --text: #e5e5f0;
+    --t-bg1: #0f0f1a;
+    --t-bg2: #1a1a2e;
+    --t-bg3: #2a2a4a;
+    --t-border: #2a2a4a;
+    --t-accent: #7b2ff7;
+    --t-accent2: #00d4ff;
+    --t-dim: #888;
+    --t-text: #e0e0e0;
+    --t-glow: rgba(123,47,247,0.35);
   }
   html, body {
     height: 100%;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Outfit', 'Segoe UI', sans-serif;
+    background: var(--t-bg1);
+    color: var(--t-text);
+    -webkit-font-smoothing: antialiased;
   }
   body {
     display: flex;
     flex-direction: column;
-    background: radial-gradient(ellipse at top, #12121c, #08080f);
+    background: radial-gradient(ellipse at top, var(--t-bg2), var(--t-bg1));
   }
 
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--t-accent); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--t-accent2); }
+
   header {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--t-border);
     display: flex;
     align-items: center;
     gap: 12px;
     user-select: none;
+    background: rgba(26,26,46,0.6);
+    backdrop-filter: blur(10px);
   }
   header .dot {
     width: 9px; height: 9px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
-    animation: pulse 2s ease-in-out infinite;
+    background: var(--t-accent);
+    box-shadow: 0 0 12px var(--t-accent);
+    animation: whisperPulse 2s ease-in-out infinite;
   }
-  @keyframes pulse { 50% { opacity: 0.5; } }
+  @keyframes whisperPulse { 50% { opacity: 0.5; transform: scale(0.85); } }
   header h1 {
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-family: 'Orbitron', 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 900;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: var(--text);
+    background: linear-gradient(135deg, var(--t-accent2), var(--t-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     flex: 1;
   }
   header .me {
-    font-size: 0.68rem;
-    color: var(--dim);
-    letter-spacing: 0.5px;
+    font-size: 0.7rem;
+    color: var(--t-dim);
+    letter-spacing: 0.4px;
+    font-weight: 500;
   }
 
   .tabs {
     display: flex;
-    gap: 4px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
+    gap: 6px;
+    padding: 10px 16px 10px;
+    border-bottom: 1px solid var(--t-border);
     overflow-x: auto;
     scrollbar-width: none;
   }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--dim);
+    background: var(--t-bg2);
+    border: 1px solid var(--t-border);
+    color: var(--t-dim);
     padding: 5px 12px;
     font-size: 0.72rem;
     font-family: inherit;
+    font-weight: 500;
     border-radius: 999px;
     cursor: pointer;
     letter-spacing: 0.3px;
     white-space: nowrap;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
   }
-  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab:hover { color: var(--t-text); border-color: var(--t-accent); transform: translateY(-1px); }
   .tab.active {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: rgba(167, 139, 255, 0.06);
+    color: #fff;
+    border-color: var(--t-accent);
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
+    box-shadow: 0 0 12px var(--t-glow);
   }
   .tab .x {
     margin-left: 6px;
-    opacity: 0.5;
-    font-size: 0.9em;
+    opacity: 0.6;
+    font-size: 1em;
   }
   .tab .x:hover { opacity: 1; }
 
   .new-dm {
-    padding: 10px 16px 6px;
+    padding: 10px 16px 4px;
     display: none;
     gap: 6px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--t-border);
   }
   .new-dm.show { display: flex; }
   .new-dm input {
     flex: 1;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: var(--t-bg2);
+    border: 1px solid var(--t-border);
+    color: var(--t-text);
     font-family: inherit;
     font-size: 0.8rem;
     padding: 7px 12px;
     border-radius: 8px;
     outline: none;
+    transition: border-color 0.15s;
   }
-  .new-dm input:focus { border-color: var(--accent); }
+  .new-dm input:focus { border-color: var(--t-accent); }
   .new-dm button {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
     border: none;
-    color: #0a0a12;
+    color: #fff;
     font-family: inherit;
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.5px;
-    padding: 0 14px;
+    padding: 0 16px;
     border-radius: 8px;
     cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
   }
+  .new-dm button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--t-glow); }
 
   .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 14px 16px 14px;
+    padding: 14px 16px;
     scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    scrollbar-color: var(--t-accent) transparent;
   }
-  .messages::-webkit-scrollbar { width: 6px; }
-  .messages::-webkit-scrollbar-track { background: transparent; }
-  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   .msg {
-    padding: 6px 10px;
+    padding: 7px 12px;
     margin-bottom: 4px;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
-    gap: 8px;
+    gap: 9px;
     align-items: baseline;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
+    border: 1px solid transparent;
   }
-  .msg:hover { background: rgba(167, 139, 255, 0.05); }
+  .msg:hover {
+    background: rgba(123, 47, 247, 0.08);
+    border-color: rgba(123, 47, 247, 0.25);
+  }
   .msg .name {
-    color: var(--accent);
-    font-weight: 600;
-    font-size: 0.72rem;
+    color: var(--t-accent);
+    font-weight: 700;
+    font-size: 0.74rem;
     flex-shrink: 0;
     letter-spacing: 0.3px;
   }
-  .msg.me .name { color: var(--accent2); }
+  .msg.me .name { color: var(--t-accent2); }
   .msg .text {
-    color: var(--text);
-    font-size: 0.82rem;
+    color: var(--t-text);
+    font-size: 0.84rem;
     line-height: 1.45;
+    font-weight: 400;
     filter: blur(6px);
-    transition: filter 0.25s ease;
+    transition: filter 0.3s ease;
     user-select: none;
     word-break: break-word;
   }
@@ -172,78 +195,112 @@
     user-select: text;
   }
   .msg .time {
-    color: var(--dim);
-    font-size: 0.62rem;
+    color: var(--t-dim);
+    font-size: 0.64rem;
     margin-left: auto;
     flex-shrink: 0;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.25s;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
   .msg:hover .time { opacity: 1; }
 
   .empty {
     text-align: center;
-    color: var(--dim);
-    font-size: 0.75rem;
-    padding: 40px 20px;
+    color: var(--t-dim);
+    font-size: 0.78rem;
+    padding: 50px 20px;
     font-style: italic;
     letter-spacing: 0.3px;
   }
 
   .hint {
-    padding: 6px 16px 10px;
-    color: var(--dim);
+    padding: 6px 16px 9px;
+    color: var(--t-dim);
     font-size: 0.62rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     text-align: center;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--t-border);
+    font-weight: 600;
   }
 
   .input-row {
     display: flex;
     gap: 8px;
     padding: 12px 16px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--bg);
+    border-top: 1px solid var(--t-border);
+    background: rgba(26,26,46,0.6);
+    backdrop-filter: blur(10px);
   }
   .input-row input {
     flex: 1;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: var(--t-bg2);
+    border: 1px solid var(--t-border);
+    color: var(--t-text);
     font-family: inherit;
-    font-size: 0.82rem;
-    padding: 9px 14px;
+    font-size: 0.84rem;
+    padding: 10px 14px;
     border-radius: 10px;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .input-row input:focus { border-color: var(--accent); }
+  .input-row input:focus {
+    border-color: var(--t-accent);
+    box-shadow: 0 0 12px var(--t-glow);
+  }
   .input-row input:disabled { opacity: 0.4; cursor: not-allowed; }
   .input-row button {
-    background: var(--accent);
-    color: #0a0a12;
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
+    color: #fff;
     border: none;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
-    padding: 0 16px;
+    padding: 0 18px;
     border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.15s;
+    transition: transform 0.15s, box-shadow 0.15s;
   }
+  .input-row button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px var(--t-glow); }
   .input-row button:active { transform: scale(0.96); }
   .input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .guest-notice {
-    padding: 40px 20px;
+    padding: 60px 28px;
     text-align: center;
-    color: var(--dim);
-    font-size: 0.82rem;
+    color: var(--t-dim);
+    font-size: 0.84rem;
     line-height: 1.6;
   }
-  .guest-notice strong { color: var(--text); display: block; margin-bottom: 8px; font-size: 0.9rem; }
-  .guest-notice a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
+  .guest-notice strong {
+    color: var(--t-text);
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    font-family: 'Orbitron', 'Outfit', sans-serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--t-accent2), var(--t-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .guest-notice a {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 9px 22px;
+    background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .guest-notice a:hover { transform: translateY(-1px); box-shadow: 0 6px 18px var(--t-glow); }
 </style>
 </head>
 <body>
@@ -276,6 +333,30 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
+// Apply the user's saved theme colors if any (reads localStorage from main site)
+(function() {
+  try {
+    var themeKey = localStorage.getItem('arcadeTheme');
+    var themes = {
+      dark: { accent: '#7b2ff7', accent2: '#00d4ff', bg1: '#0f0f1a', bg2: '#1a1a2e', border: '#2a2a4a', text: '#e0e0e0', dim: '#888', glow: 'rgba(123,47,247,0.35)' },
+      ocean: { accent: '#00d4ff', accent2: '#7b2ff7', bg1: '#0a1420', bg2: '#14223a', border: '#1f3556', text: '#e0f0ff', dim: '#6a8ba8', glow: 'rgba(0,212,255,0.35)' },
+      sunset: { accent: '#ff6b9d', accent2: '#feca57', bg1: '#1a0f1a', bg2: '#2a1a2e', border: '#4a2a3a', text: '#ffe0f0', dim: '#a87890', glow: 'rgba(255,107,157,0.35)' },
+      forest: { accent: '#2ecc71', accent2: '#f39c12', bg1: '#0f1a10', bg2: '#1a2e1f', border: '#2a4a33', text: '#e0f0e4', dim: '#6a8a78', glow: 'rgba(46,204,113,0.35)' },
+      mono: { accent: '#ffffff', accent2: '#aaaaaa', bg1: '#0a0a0a', bg2: '#1a1a1a', border: '#2a2a2a', text: '#e0e0e0', dim: '#666', glow: 'rgba(255,255,255,0.25)' }
+    };
+    var t = themes[themeKey] || themes.dark;
+    var s = document.documentElement.style;
+    s.setProperty('--t-accent', t.accent);
+    s.setProperty('--t-accent2', t.accent2);
+    s.setProperty('--t-bg1', t.bg1);
+    s.setProperty('--t-bg2', t.bg2);
+    s.setProperty('--t-border', t.border);
+    s.setProperty('--t-text', t.text);
+    s.setProperty('--t-dim', t.dim);
+    s.setProperty('--t-glow', t.glow);
+  } catch(e) {}
+})();
+
 (function() {
   var me = localStorage.getItem('arcade_currentUser') || '';
   var meLabel = document.getElementById('me-label');
@@ -288,7 +369,7 @@
   var newDmGo = document.getElementById('new-dm-go');
 
   if (!me) {
-    messagesEl.innerHTML = '<div class="guest-notice"><strong>Sign in required</strong>Open the main site, sign in, then come back here.<br><br><a href="index.html">Go to Arcade</a></div>';
+    messagesEl.innerHTML = '<div class="guest-notice"><strong>Sign in required</strong>Open the main site, sign in, then come back here.<a href="index.html">Go to Arcade &rarr;</a></div>';
     inputEl.disabled = true;
     sendBtn.disabled = true;
     return;
@@ -384,7 +465,6 @@
     inputEl.focus();
   }
 
-  // Open DMs stored in localStorage so they persist
   var dmList = [];
   try { dmList = JSON.parse(localStorage.getItem('_whisperDms') || '[]'); } catch(e) { dmList = []; }
   function saveDmList() { localStorage.setItem('_whisperDms', JSON.stringify(dmList)); }
