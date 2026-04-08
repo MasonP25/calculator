@@ -1038,25 +1038,22 @@ async function loadProfile() {
   if (statusEl && profileData) {
     var isOnline = profileData.online === true;
     var lastSeen = profileData.lastSeen;
-    var currentPage = profileData.currentPage || 'Online';
+    var ts = 0;
+    if (lastSeen) ts = lastSeen.toDate ? lastSeen.toDate().getTime() : (typeof lastSeen === 'number' ? lastSeen : 0);
+    // Treat as offline if the heartbeat is stale (>2 min)
+    if (isOnline && ts && (Date.now() - ts > 120000)) isOnline = false;
     if (isOnline) {
       statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#44cc44;margin-right:5px;vertical-align:middle"></span>' +
-        '<span style="color:#44cc44">' + currentPage + '</span>';
+        '<span style="color:#44cc44">Online now</span>';
       statusEl.style.display = '';
-    } else if (lastSeen) {
-      var ts = lastSeen.toDate ? lastSeen.toDate().getTime() : (typeof lastSeen === 'number' ? lastSeen : 0);
-      if (ts) {
-        var diff = Date.now() - ts;
-        var mins = Math.floor(diff / 60000);
-        var timeStr;
-        if (mins < 1) timeStr = 'just now';
-        else if (mins < 60) timeStr = mins + 'm ago';
-        else if (mins < 1440) timeStr = Math.floor(mins / 60) + 'h ago';
-        else timeStr = Math.floor(mins / 1440) + 'd ago';
-        statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle"></span>' +
-          '<span style="color:#888">Last seen ' + timeStr + '</span>';
-        statusEl.style.display = '';
-      }
+    } else if (ts) {
+      var seen = new Date(ts);
+      var now = new Date();
+      var sameDay = seen.getFullYear() === now.getFullYear() && seen.getMonth() === now.getMonth() && seen.getDate() === now.getDate();
+      var label = sameDay ? 'today' : (seen.getMonth() + 1) + '/' + seen.getDate();
+      statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle"></span>' +
+        '<span style="color:#888">Last seen ' + label + '</span>';
+      statusEl.style.display = '';
     }
   }
 
