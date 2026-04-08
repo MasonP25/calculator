@@ -4472,11 +4472,10 @@ if ('serviceWorker' in navigator) {
       var count = 0;
       snap.forEach(function(doc) {
         var d = doc.data();
-        if (d.lastSeen && d.lastSeen.toMillis) {
-          if (now - d.lastSeen.toMillis() < 5 * 60 * 1000) count++;
-        } else {
-          count++;
-        }
+        // Require a fresh heartbeat; 2 min window matches presence 60s heartbeat + buffer.
+        // Skip entirely if lastSeen is missing or stale — those users likely crashed/closed without cleanup.
+        if (!d.lastSeen || !d.lastSeen.toMillis) return;
+        if (now - d.lastSeen.toMillis() < 2 * 60 * 1000) count++;
       });
       numEl.textContent = count;
       countEl.style.display = 'inline-flex';
