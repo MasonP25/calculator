@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whisper</title>
+<link rel="manifest" href="whisper-manifest.json">
+<meta name="theme-color" content="#0a0a12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%230a0a12'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%23a78bff' stroke-width='2' opacity='0.5'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23a78bff'/%3E%3C/svg%3E">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #08080f;
+    --bg2: #12121c;
+    --border: #1f1f30;
+    --accent: #a78bff;
+    --accent2: #00d4ff;
+    --dim: #555;
+    --text: #e5e5f0;
+  }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(ellipse at top, #12121c, #08080f);
+  }
+
+  header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+  }
+  header .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.5; } }
+  header h1 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text);
+    flex: 1;
+  }
+  header .me {
+    font-size: 0.68rem;
+    color: var(--dim);
+    letter-spacing: 0.5px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 5px 12px;
+    font-size: 0.72rem;
+    font-family: inherit;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .tab:hover { color: var(--text); border-color: var(--accent); }
+  .tab.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(167, 139, 255, 0.06);
+  }
+  .tab .x {
+    margin-left: 6px;
+    opacity: 0.5;
+    font-size: 0.9em;
+  }
+  .tab .x:hover { opacity: 1; }
+
+  .new-dm {
+    padding: 10px 16px 6px;
+    display: none;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .new-dm.show { display: flex; }
+  .new-dm input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 7px 12px;
+    border-radius: 8px;
+    outline: none;
+  }
+  .new-dm input:focus { border-color: var(--accent); }
+  .new-dm button {
+    background: var(--accent);
+    border: none;
+    color: #0a0a12;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 0 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px 14px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    transition: background 0.2s;
+  }
+  .msg:hover { background: rgba(167, 139, 255, 0.05); }
+  .msg .name {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+  }
+  .msg.me .name { color: var(--accent2); }
+  .msg .text {
+    color: var(--text);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    filter: blur(6px);
+    transition: filter 0.25s ease;
+    user-select: none;
+    word-break: break-word;
+  }
+  .msg:hover .text {
+    filter: blur(0);
+    user-select: text;
+  }
+  .msg .time {
+    color: var(--dim);
+    font-size: 0.62rem;
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .msg:hover .time { opacity: 1; }
+
+  .empty {
+    text-align: center;
+    color: var(--dim);
+    font-size: 0.75rem;
+    padding: 40px 20px;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+
+  .hint {
+    padding: 6px 16px 10px;
+    color: var(--dim);
+    font-size: 0.62rem;
+    letter-spacing: 0.5px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .input-row input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.82rem;
+    padding: 9px 14px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input:disabled { opacity: 0.4; cursor: not-allowed; }
+  .input-row button {
+    background: var(--accent);
+    color: #0a0a12;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .input-row button:active { transform: scale(0.96); }
+  .input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .guest-notice {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--dim);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .guest-notice strong { color: var(--text); display: block; margin-bottom: 8px; font-size: 0.9rem; }
+  .guest-notice a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="dot"></div>
+  <h1>Whisper</h1>
+  <div class="me" id="me-label"></div>
+</header>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-ch="global">Global</button>
+  <button class="tab" data-ch="__new__" id="new-dm-tab">+ New</button>
+</div>
+
+<div class="new-dm" id="new-dm">
+  <input id="new-dm-input" placeholder="Username to message..." maxlength="20" autocomplete="off">
+  <button id="new-dm-go">Start</button>
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="hint">Hover a message to reveal it</div>
+
+<div class="input-row">
+  <input id="msg-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
+  <button id="send-btn">&#10148;</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+(function() {
+  var me = localStorage.getItem('arcade_currentUser') || '';
+  var meLabel = document.getElementById('me-label');
+  var messagesEl = document.getElementById('messages');
+  var inputEl = document.getElementById('msg-input');
+  var sendBtn = document.getElementById('send-btn');
+  var tabsEl = document.getElementById('tabs');
+  var newDmBar = document.getElementById('new-dm');
+  var newDmInput = document.getElementById('new-dm-input');
+  var newDmGo = document.getElementById('new-dm-go');
+
+  if (!me) {
+    messagesEl.innerHTML = '<div class="guest-notice"><strong>Sign in required</strong>Open the main site, sign in, then come back here.<br><br><a href="index.html">Go to Arcade</a></div>';
+    inputEl.disabled = true;
+    sendBtn.disabled = true;
+    return;
+  }
+  meLabel.textContent = me;
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",
+    authDomain: "calculator-81d08.firebaseapp.com",
+    projectId: "calculator-81d08",
+    storageBucket: "calculator-81d08.firebasestorage.app",
+    messagingSenderId: "375406495739",
+    appId: "1:375406495739:web:fd28553263599864426d5e"
+  };
+  var app;
+  try { app = firebase.app('whisper-app'); }
+  catch(e) { app = firebase.initializeApp(firebaseConfig, 'whisper-app'); }
+  var db = firebase.firestore(app);
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+  function hhmm(ts) {
+    var dt = new Date(ts);
+    var h = dt.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + String(dt.getMinutes()).padStart(2, '0') + ' ' + ampm;
+  }
+  function chatId(a, b) {
+    return [a.toLowerCase(), b.toLowerCase()].sort().join('_');
+  }
+
+  var activeChannel = 'global';
+  var unsub = null;
+  var currentMsgs = [];
+
+  function render() {
+    if (currentMsgs.length === 0) {
+      messagesEl.innerHTML = '<div class="empty">No messages yet</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < currentMsgs.length; i++) {
+      var m = currentMsgs[i];
+      var isMe = (m.name || m.from || '').toLowerCase() === me.toLowerCase();
+      html += '<div class="msg' + (isMe ? ' me' : '') + '">'
+        + '<span class="name">' + esc(m.name || m.from || '?') + '</span>'
+        + '<span class="text">' + esc(m.text || '') + '</span>'
+        + '<span class="time">' + hhmm(m.timestamp || Date.now()) + '</span>'
+        + '</div>';
+    }
+    messagesEl.innerHTML = html;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function listen(channel) {
+    if (unsub) { unsub(); unsub = null; }
+    currentMsgs = [];
+    render();
+    if (channel === 'global') {
+      unsub = db.collection('global_chat').orderBy('timestamp', 'asc').limitToLast(30)
+        .onSnapshot(function(snap) {
+          currentMsgs = [];
+          snap.forEach(function(doc) { currentMsgs.push(doc.data()); });
+          render();
+        }, function(err) { console.error(err); });
+    } else {
+      var cid = chatId(me, channel);
+      unsub = db.collection('direct_messages').where('chatId', '==', cid)
+        .onSnapshot(function(snap) {
+          var msgs = [];
+          snap.forEach(function(doc) { msgs.push(doc.data()); });
+          msgs.sort(function(a, b) { return (a.timestamp || 0) - (b.timestamp || 0); });
+          if (msgs.length > 50) msgs = msgs.slice(msgs.length - 50);
+          currentMsgs = msgs;
+          render();
+        }, function(err) { console.error(err); });
+    }
+  }
+
+  function switchTo(channel) {
+    activeChannel = channel;
+    var tabs = tabsEl.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].dataset.ch === channel);
+    }
+    newDmBar.classList.remove('show');
+    listen(channel);
+    inputEl.placeholder = channel === 'global' ? 'Type a message...' : 'Message ' + channel + '...';
+    inputEl.focus();
+  }
+
+  // Open DMs stored in localStorage so they persist
+  var dmList = [];
+  try { dmList = JSON.parse(localStorage.getItem('_whisperDms') || '[]'); } catch(e) { dmList = []; }
+  function saveDmList() { localStorage.setItem('_whisperDms', JSON.stringify(dmList)); }
+  function rebuildTabs() {
+    var html = '<button class="tab" data-ch="global">Global</button>';
+    for (var i = 0; i < dmList.length; i++) {
+      html += '<button class="tab" data-ch="' + esc(dmList[i]) + '">' + esc(dmList[i]) + '<span class="x" data-close="' + esc(dmList[i]) + '">&#215;</span></button>';
+    }
+    html += '<button class="tab" data-ch="__new__" id="new-dm-tab">+ New</button>';
+    tabsEl.innerHTML = html;
+    var tabs = tabsEl.querySelectorAll('.tab');
+    for (var j = 0; j < tabs.length; j++) {
+      tabs[j].classList.toggle('active', tabs[j].dataset.ch === activeChannel);
+    }
+  }
+  rebuildTabs();
+
+  tabsEl.addEventListener('click', function(e) {
+    var closeBtn = e.target.closest('[data-close]');
+    if (closeBtn) {
+      e.stopPropagation();
+      var name = closeBtn.dataset.close;
+      dmList = dmList.filter(function(n) { return n !== name; });
+      saveDmList();
+      if (activeChannel === name) activeChannel = 'global';
+      rebuildTabs();
+      switchTo(activeChannel);
+      return;
+    }
+    var tab = e.target.closest('.tab');
+    if (!tab) return;
+    var ch = tab.dataset.ch;
+    if (ch === '__new__') {
+      newDmBar.classList.toggle('show');
+      setTimeout(function(){ newDmInput.focus(); }, 20);
+    } else {
+      switchTo(ch);
+    }
+  });
+
+  newDmGo.onclick = function() {
+    var name = newDmInput.value.trim();
+    if (!name || name.toLowerCase() === me.toLowerCase()) { newDmInput.value = ''; return; }
+    if (dmList.indexOf(name) === -1) {
+      dmList.push(name);
+      saveDmList();
+      rebuildTabs();
+    }
+    newDmInput.value = '';
+    switchTo(name);
+  };
+  newDmInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') newDmGo.click();
+  });
+
+  function send() {
+    var text = inputEl.value.trim();
+    if (!text) return;
+    var now = Date.now();
+    inputEl.value = '';
+    if (activeChannel === 'global') {
+      db.collection('global_chat').add({
+        name: me, text: text, time: hhmm(now), timestamp: now, type: 'global'
+      }).catch(function(err) { console.error(err); });
+    } else {
+      var cid = chatId(me, activeChannel);
+      db.collection('direct_messages').add({
+        chatId: cid, from: me, to: activeChannel, text: text, time: hhmm(now), timestamp: now
+      }).catch(function(err) { console.error(err); });
+    }
+  }
+  sendBtn.onclick = send;
+  inputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
+
+  listen('global');
+})();
+</script>
+
+</body>
+</html>

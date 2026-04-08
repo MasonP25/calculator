@@ -904,7 +904,7 @@
   <div id="mobile-menu-dropdown"></div>
   <div id="page-transition"></div>
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
-  <h1 data-text="ARCADE">ARCADE</h1>
+  <h1 data-text="ARCADE" id="arcade-title">ARCADE</h1>
   <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
   <p class="count" style="display:inline-flex;align-items:center;gap:14px;justify-content:center;">
     <span>134 games</span>
@@ -4483,6 +4483,28 @@ if ('serviceWorker' in navigator) {
   }
   setTimeout(fetchCount, 2000);
   setInterval(fetchCount, 10 * 60 * 1000);
+})();
+
+// ─── Title click counter (10x → opens hidden chat window) ───
+(function() {
+  var title = document.getElementById('arcade-title');
+  if (!title) return;
+  var count = 0;
+  var resetTimer = null;
+  title.style.cursor = 'pointer';
+  title.addEventListener('click', function() {
+    count++;
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(function() { count = 0; }, 3000);
+    if (count >= 10) {
+      count = 0;
+      var w = Math.min(480, window.innerWidth - 40);
+      var h = Math.min(720, window.innerHeight - 40);
+      var left = Math.max(0, (screen.width - w) / 2);
+      var top = Math.max(0, (screen.height - h) / 2);
+      window.open('whisper.html', 'whisper', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',resizable=yes,scrollbars=no');
+    }
+  });
 })();
 
 // ─── TYPING SUBTITLE ───
