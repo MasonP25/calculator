@@ -1033,29 +1033,9 @@ async function loadProfile() {
     }
   }
 
-  // ─── STATUS ───
+  // ─── STATUS (removed to save reads) ───
   var statusEl = document.getElementById('heroStatus');
-  if (statusEl && profileData) {
-    var isOnline = profileData.online === true;
-    var lastSeen = profileData.lastSeen;
-    var ts = 0;
-    if (lastSeen) ts = lastSeen.toDate ? lastSeen.toDate().getTime() : (typeof lastSeen === 'number' ? lastSeen : 0);
-    // Treat as offline if the heartbeat is stale (>2 min)
-    if (isOnline && ts && (Date.now() - ts > 120000)) isOnline = false;
-    if (isOnline) {
-      statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#44cc44;margin-right:5px;vertical-align:middle"></span>' +
-        '<span style="color:#44cc44">Online now</span>';
-      statusEl.style.display = '';
-    } else if (ts) {
-      var seen = new Date(ts);
-      var now = new Date();
-      var sameDay = seen.getFullYear() === now.getFullYear() && seen.getMonth() === now.getMonth() && seen.getDate() === now.getDate();
-      var label = sameDay ? 'today' : (seen.getMonth() + 1) + '/' + seen.getDate();
-      statusEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#666;margin-right:5px;vertical-align:middle"></span>' +
-        '<span style="color:#888">Last seen ' + label + '</span>';
-      statusEl.style.display = '';
-    }
-  }
+  if (statusEl) statusEl.style.display = 'none';
 
   // ─── STATS ROW ───
   var statsRow = document.getElementById('statsRow');
@@ -1386,24 +1366,8 @@ async function renderFriends(profileData) {
           }
         }).catch(function() {});
       }
-      // Get display name + status
-      if (window.ArcadeBadges && window.ArcadeBadges.getFullProfile) {
-        window.ArcadeBadges.getFullProfile(username).then(function(data) {
-          if (data && data.username) {
-            nameEl.textContent = data.username;
-            nameEl.closest('a').href = 'profile.html?user=' + encodeURIComponent(data.username);
-          }
-          if (data) {
-            var isOnline = data.online === true;
-            var ls = data.lastSeen;
-            var ts = 0;
-            if (ls) ts = ls.toDate ? ls.toDate().getTime() : (typeof ls === 'number' ? ls : 0);
-            if (isOnline && ts && (Date.now() - ts > 120000)) isOnline = false;
-            dotEl.style.background = isOnline ? '#44cc44' : '#444';
-            dotEl.title = isOnline ? (data.currentPage || 'Online') : 'Offline';
-          }
-        }).catch(function() {});
-      }
+      // Hide the online/offline dot — removed to save reads
+      if (dotEl) dotEl.style.display = 'none';
     })(avatar, name, statusDot, fKey);
   }
 

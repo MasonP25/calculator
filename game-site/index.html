@@ -744,24 +744,6 @@
   }
   @keyframes chatSpin { to { transform: rotate(360deg); } }
 
-  #chat-typing {
-    padding: 2px 12px 0;
-    font-size: 0.7rem;
-    color: #888;
-    font-style: italic;
-    height: 16px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  #chat-typing .typing-dots {
-    display: inline-block;
-    animation: typingBounce 1.2s infinite;
-  }
-  @keyframes typingBounce {
-    0%, 80%, 100% { opacity: 0.3; }
-    40% { opacity: 1; }
-  }
 
   #chat-input-area {
     display: flex;
@@ -906,17 +888,7 @@
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
   <h1 data-text="ARCADE" id="arcade-title">ARCADE</h1>
   <p class="subtitle" id="typed-subtitle"><span class="cursor"></span></p>
-  <p class="count" style="display:inline-flex;align-items:center;gap:14px;justify-content:center;">
-    <span>134 games</span>
-    <span id="online-count" style="display:none;align-items:center;gap:6px;color:var(--t-dim,#888);font-size:0.82rem;padding:3px 10px 3px 8px;border:1px solid var(--t-border,#2a2a4a);border-radius:999px;background:var(--t-bg2,#1a1a2e);">
-      <span style="display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%;box-shadow:0 0 8px #4ade80;animation:onlinePulse 2s ease-in-out infinite;"></span>
-      <span><span id="online-count-num">0</span> online</span>
-    </span>
-  </p>
-  <style>
-    @keyframes onlinePulse { 0%,100% { opacity: 1; box-shadow: 0 0 8px #4ade80; } 50% { opacity: 0.6; box-shadow: 0 0 4px #4ade80; } }
-    #online-count { transition: opacity 0.3s; }
-  </style>
+  <p class="count">134 games</p>
   <a class="fame-link" href="fame.html"><span>&#127942;</span> Hall of Fame — Leaderboards</a>
   <a class="fame-link" href="shop.html"><span>&#128176;</span> Shop — Avatar &amp; Nametags</a>
   <a class="fame-link" href="profile.html"><span>&#128100;</span> My Profile — Stats &amp; Badges</a>
@@ -2414,7 +2386,6 @@
     <div id="chat-search-err"></div>
     <div style="padding:4px 10px;font-size:0.6rem;color:#555;text-align:center;border-bottom:1px solid #2a2a4a;">Be respectful or face a ban. Only the last 30 messages are shown.</div>
     <div id="chat-messages"></div>
-    <div id="chat-typing"></div>
     <div id="chat-input-area">
       <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500" autocomplete="off">
       <button id="chat-send" onclick="sendChatMessage()">&#10148;</button>
@@ -2673,10 +2644,8 @@
     var inputArea = document.getElementById('chat-input-area');
     var tabs = document.getElementById('chat-tabs');
     var searchBar = document.getElementById('chat-search-bar');
-    var typing = document.getElementById('chat-typing');
     if (tabs) tabs.style.display = 'none';
     if (searchBar) searchBar.style.display = 'none';
-    if (typing) typing.style.display = 'none';
     if (inputArea) inputArea.style.display = 'none';
     if (msgsEl) {
       msgsEl.innerHTML = '<div style="padding:24px 16px;text-align:center;color:#888;font-size:0.85rem;line-height:1.5;">'
@@ -2705,7 +2674,6 @@
     if (chatExpanded) {
       /* start listeners only when chat is open — saves Firebase reads */
       if (typeof startGlobalListener === 'function') startGlobalListener();
-      if (typeof startTypingListener === 'function') startTypingListener();
       /* if currently viewing a DM channel, clear its unreads */
       if (activeChannel !== 'global') {
         clearDmUnreadsFor(activeChannel);
@@ -2713,7 +2681,6 @@
       renderMessages();
     } else {
       if (typeof stopGlobalListener === 'function') stopGlobalListener();
-      if (typeof stopTypingListener === 'function') stopTypingListener();
     }
   };
 
@@ -3071,93 +3038,10 @@
       }).catch(function(err) { console.error('DM send error:', err); });
     }
     input.value = '';
-    // Clear typing indicator on send
-    if (typeof clearTypingStatus === 'function') clearTypingStatus();
   }
 
   window.sendChatMessage = send;
   input.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
-
-  /* ── typing indicator ── */
-  var typingDiv = document.getElementById('chat-typing');
-  var _typingTimeout = null;
-  var _lastTypingSent = 0;
-
-  // Send typing status to Firebase (throttled to every 2s)
-  function sendTypingStatus() {
-    var me = getUser();
-    if (me === 'Guest' || activeChannel === '__ai__') return;
-    var now = Date.now();
-    if (now - _lastTypingSent < 2000) return;
-    _lastTypingSent = now;
-    db.collection('typing_status').doc(me.toLowerCase()).set({
-      name: me,
-      channel: activeChannel,
-      timestamp: now
-    }).catch(function() {});
-  }
-
-  // Clear typing status
-  function clearTypingStatus() {
-    var me = getUser();
-    if (me === 'Guest') return;
-    db.collection('typing_status').doc(me.toLowerCase()).delete().catch(function() {});
-  }
-
-  // Track typing on input
-  input.addEventListener('input', function() {
-    if (!input.value.trim()) return;
-    sendTypingStatus();
-    clearTimeout(_typingTimeout);
-    _typingTimeout = setTimeout(clearTypingStatus, 3000);
-  });
-
-  // Listen for typing status changes
-  var _lastTypingSnap = null;
-  function _renderTyping() {
-    if (!_lastTypingSnap) { typingDiv.innerHTML = ''; return; }
-    var me = getUser();
-    var now = Date.now();
-    var typers = [];
-    _lastTypingSnap.forEach(function(doc) {
-      var d = doc.data();
-      if (d.name === me) return;
-      if (now - d.timestamp > 4000) return;
-      if (d.channel !== activeChannel) return;
-      typers.push(d.name);
-    });
-    if (typers.length === 0) {
-      typingDiv.innerHTML = '';
-    } else if (typers.length === 1) {
-      typingDiv.innerHTML = esc(typers[0]) + ' is typing<span class="typing-dots">...</span>';
-    } else if (typers.length === 2) {
-      typingDiv.innerHTML = esc(typers[0]) + ' and ' + esc(typers[1]) + ' are typing<span class="typing-dots">...</span>';
-    } else {
-      typingDiv.innerHTML = typers.length + ' people are typing<span class="typing-dots">...</span>';
-    }
-  }
-
-  // Typing listener — only started when chat is expanded, filtered to recent entries
-  var _typingUnsub = null;
-  function startTypingListener() {
-    if (_typingUnsub) return;
-    var cutoff = Date.now() - 8000;
-    _typingUnsub = db.collection('typing_status')
-      .where('timestamp', '>', cutoff)
-      .onSnapshot(function(snap) {
-        _lastTypingSnap = snap;
-        _renderTyping();
-      }, function(err) { console.error('Typing status error:', err); });
-  }
-  function stopTypingListener() {
-    if (_typingUnsub) { _typingUnsub(); _typingUnsub = null; }
-  }
-
-  // Re-check typing expiration every 2s
-  setInterval(_renderTyping, 2000);
-
-  // Clean up typing status on page unload
-  window.addEventListener('beforeunload', function() { clearTypingStatus(); });
 
   /* ── global listener (only runs while chat is open) ── */
   var _globalUnsub = null;
@@ -4433,56 +4317,6 @@ if ('serviceWorker' in navigator) {
     if (window.scrollY > 400) { btn.classList.add('show'); }
     else { btn.classList.remove('show'); }
   }, { passive: true });
-})();
-
-// ─── ONLINE PLAYER COUNT (every 10 min) ───
-(function() {
-  var countEl = document.getElementById('online-count');
-  var numEl = document.getElementById('online-count-num');
-  if (!countEl || !numEl) return;
-  var _db = null;
-  async function fetchCount() {
-    try {
-      if (!_db) {
-        var mods = await Promise.all([
-          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js"),
-          import("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js")
-        ]);
-        var getApp = mods[0].getApp;
-        var initializeApp = mods[0].initializeApp;
-        var getFirestore = mods[1].getFirestore;
-        window._fbOnlineHelpers = {
-          collection: mods[1].collection,
-          query: mods[1].query,
-          where: mods[1].where,
-          getDocs: mods[1].getDocs
-        };
-        var config = {
-          apiKey:"AIzaSyCyK7tEcAaqrVNFRggviaEmWH2SMkiwGKk",authDomain:"calculator-81d08.firebaseapp.com",
-          projectId:"calculator-81d08",storageBucket:"calculator-81d08.firebasestorage.app",
-          messagingSenderId:"375406495739",appId:"1:375406495739:web:fd28553263599864426d5e"
-        };
-        try { _db = getFirestore(getApp('online-app')); }
-        catch(e) { _db = getFirestore(initializeApp(config, 'online-app')); }
-      }
-      var h = window._fbOnlineHelpers;
-      var q = h.query(h.collection(_db, 'users'), h.where('online', '==', true));
-      var snap = await h.getDocs(q);
-      var now = Date.now();
-      var count = 0;
-      snap.forEach(function(doc) {
-        var d = doc.data();
-        // Require a fresh heartbeat; 2 min window matches presence 60s heartbeat + buffer.
-        // Skip entirely if lastSeen is missing or stale — those users likely crashed/closed without cleanup.
-        if (!d.lastSeen || !d.lastSeen.toMillis) return;
-        if (now - d.lastSeen.toMillis() < 2 * 60 * 1000) count++;
-      });
-      numEl.textContent = count;
-      countEl.style.display = 'inline-flex';
-    } catch(e) { console.warn('[Online] Fetch failed:', e); }
-  }
-  setTimeout(fetchCount, 2000);
-  setInterval(fetchCount, 10 * 60 * 1000);
 })();
 
 // ─── Title click counter (10x → opens hidden chat window) ───
