@@ -394,15 +394,24 @@
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
   }
-  function hhmm(ts) {
+  function fmtDate(ts) {
     var dt = new Date(ts);
-    var h = dt.getHours();
-    var ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return h + ':' + String(dt.getMinutes()).padStart(2, '0') + ' ' + ampm;
+    var now = new Date();
+    var sameDay = dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth() && dt.getDate() === now.getDate();
+    if (sameDay) return 'today';
+    var yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (dt.getFullYear() === yest.getFullYear() && dt.getMonth() === yest.getMonth() && dt.getDate() === yest.getDate()) return 'yesterday';
+    return (dt.getMonth() + 1) + '/' + dt.getDate();
   }
   function chatId(a, b) {
     return [a.toLowerCase(), b.toLowerCase()].sort().join('_');
+  }
+
+  var _profanityList = ['fuck','fucker','fucking','fucked','fck','fuk','phuck','shit','shitty','shitting','bitch','bitches','bitching','ass','asshole','asswipe','dick','dickhead','cock','pussy','nigger','nigga','niga','faggot','fag','fags','retard','retarded','whore','slut','slutty','cunt','bastard','damn','dammit','piss','pissed','stfu','wtf','kys','kill yourself','kill urself','rape','raping','rapist','sybau','hoe','thot','skank','wanker','twat','bollocks','motherfucker','mf','milf','dilf','porn','penis','vagina','boobs','tits','titties','cum','jizz','orgasm','horny','sexy','nude','naked','nudes','anal','blowjob','handjob','deepthroat','69','succ','suck my','lick my','eat my','die','go die','neck yourself','hang yourself','shoot yourself'];
+  var _profanityRegex = new RegExp('(?:^|\\b|\\s)(' + _profanityList.map(function(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?:\\b|\\s|$)', 'gi');
+  function hasProfanity(text) {
+    _profanityRegex.lastIndex = 0;
+    return _profanityRegex.test(text);
   }
 
   var activeChannel = 'global';
@@ -421,7 +430,7 @@
       html += '<div class="msg' + (isMe ? ' me' : '') + '">'
         + '<span class="name">' + esc(m.name || m.from || '?') + '</span>'
         + '<span class="text">' + esc(m.text || '') + '</span>'
-        + '<span class="time">' + hhmm(m.timestamp || Date.now()) + '</span>'
+        + '<span class="time">' + fmtDate(m.timestamp || Date.now()) + '</span>'
         + '</div>';
     }
     messagesEl.innerHTML = html;
@@ -520,19 +529,35 @@
     if (e.key === 'Enter') newDmGo.click();
   });
 
+  function showInlineError(msg) {
+    var existing = document.getElementById('whisper-err');
+    if (existing) existing.remove();
+    var e = document.createElement('div');
+    e.id = 'whisper-err';
+    e.textContent = msg;
+    e.style.cssText = 'padding:5px 16px;font-size:0.65rem;color:#ff4757;text-align:center;letter-spacing:0.3px;';
+    var inputRow = document.querySelector('.input-row');
+    inputRow.parentNode.insertBefore(e, inputRow);
+    setTimeout(function() { if (e.parentNode) e.remove(); }, 3000);
+  }
+
   function send() {
     var text = inputEl.value.trim();
     if (!text) return;
+    if (hasProfanity(text)) {
+      showInlineError('Message blocked — inappropriate language is not allowed.');
+      return;
+    }
     var now = Date.now();
     inputEl.value = '';
     if (activeChannel === 'global') {
       db.collection('global_chat').add({
-        name: me, text: text, time: hhmm(now), timestamp: now, type: 'global'
+        name: me, text: text, time: fmtDate(now), timestamp: now, type: 'global'
       }).catch(function(err) { console.error(err); });
     } else {
       var cid = chatId(me, activeChannel);
       db.collection('direct_messages').add({
-        chatId: cid, from: me, to: activeChannel, text: text, time: hhmm(now), timestamp: now
+        chatId: cid, from: me, to: activeChannel, text: text, time: fmtDate(now), timestamp: now
       }).catch(function(err) { console.error(err); });
     }
   }
