@@ -249,6 +249,14 @@ var currentVideoId = null;
 var videosCache = [];
 var selectedFile = null;
 var MAX_SIZE = 100 * 1024 * 1024;
+
+/* ── profanity filter (matches the chat list) ── */
+var _profanityList = ['fuck','fucker','fucking','fucked','fck','fuk','phuck','shit','shitty','shitting','bitch','bitches','bitching','ass','asshole','asswipe','dick','dickhead','cock','pussy','nigger','nigga','niga','faggot','fag','fags','retard','retarded','whore','slut','slutty','cunt','bastard','damn','dammit','piss','pissed','stfu','wtf','kys','kill yourself','kill urself','rape','raping','rapist','sybau','hoe','thot','skank','wanker','twat','bollocks','motherfucker','mf','milf','dilf','porn','penis','vagina','boobs','tits','titties','cum','jizz','orgasm','horny','sexy','nude','naked','nudes','anal','blowjob','handjob','deepthroat','69','succ','suck my','lick my','eat my','die','go die','neck yourself','hang yourself','shoot yourself'];
+var _profanityRegex = new RegExp('(?:^|\\b|\\s)(' + _profanityList.map(function(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?:\\b|\\s|$)', 'gi');
+function hasProfanity(text) {
+  _profanityRegex.lastIndex = 0;
+  return _profanityRegex.test(text);
+}
 var currentFilter = 'all';
 var currentSort = 'newest';
 var viewedIds = {};
@@ -394,7 +402,10 @@ function upStep(n) {
   // Validate before advancing
   if (n === 2) {
     var title = document.getElementById('up-title').value.trim();
+    var desc = document.getElementById('up-desc').value.trim();
     if (!title) { document.getElementById('up-err-1').textContent = 'Title is required'; return; }
+    if (hasProfanity(title)) { document.getElementById('up-err-1').textContent = 'Title contains inappropriate language'; return; }
+    if (desc && hasProfanity(desc)) { document.getElementById('up-err-1').textContent = 'Description contains inappropriate language'; return; }
     document.getElementById('up-err-1').textContent = '';
   }
   if (n === 3) {
@@ -722,6 +733,10 @@ async function postComment() {
   if (!user || !fdb || !currentVideoId) return;
   var text = document.getElementById('comment-input').value.trim();
   if (!text) return;
+  if (hasProfanity(text)) {
+    await showDialog({ title: 'Blocked', message: 'Your comment contains inappropriate language.', cancel: false, okText: 'OK' });
+    return;
+  }
   var v = videosCache.find(function(x) { return x.id === currentVideoId; });
   if (!v) return;
   var comment = { name: user, text: text, date: new Date().toISOString() };
