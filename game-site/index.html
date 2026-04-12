@@ -3983,11 +3983,11 @@ if ('serviceWorker' in navigator) {
     var pet = ArcadePets.getPet();
     var petName = pet ? pet.name : 'Your pet';
 
-    // Push to notification center
+    // Push to notification center — only once until pet is fed
     if (window.ArcadeNotifications && window.ArcadeNotifications.create) {
       var user = localStorage.getItem('arcade_currentUser');
-      if (user && !localStorage.getItem('_pet_gone_notif_' + Date.now().toString().slice(0,8))) {
-        localStorage.setItem('_pet_gone_notif_' + Date.now().toString().slice(0,8), '1');
+      if (user && !localStorage.getItem('_pet_gone_notified')) {
+        localStorage.setItem('_pet_gone_notified', '1');
         var notif = ArcadeNotifications.create('pet', petName + ' wandered off!', 'Your pet is hungry and left. Feed it on your profile to bring it back.', '\uD83D\uDE3F', 'profile.html');
         ArcadeNotifications.pushSelf(notif);
       }
@@ -4294,6 +4294,8 @@ if ('serviceWorker' in navigator) {
       wp.style.opacity = '0';
       setTimeout(function() { wp.remove(); showPetGoneNotice(); }, 1000);
     } else if (!wp) {
+      // Pet was fed — clear the gone flag so it can notify again next time
+      if (pet && pet.happiness > 0) localStorage.removeItem('_pet_gone_notified');
       startPetWalk();
     }
   });
