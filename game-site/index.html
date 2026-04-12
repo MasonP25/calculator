@@ -3299,8 +3299,8 @@
     var note = document.createElement('p');
     note.style.cssText = 'color:rgba(255,255,255,.35);font-size:0.62rem;text-align:center;max-width:320px;line-height:1.5;margin-top:14px;';
     note.innerHTML = 'Some links may perform better than others depending on the time or game. If you see an "Uh Oh!" error, wait about a minute and try again. Run into other issues? <a href="feedback.html" style="color:var(--t-accent,#7b2ff7);text-decoration:underline;cursor:pointer;" target="_top">Let us know</a>.';
-    picker.after(note);
     gate.querySelector('#alt-gate-err').before(picker);
+    picker.after(note);
     picker.querySelectorAll('.alt-srv-btn').forEach(function(btn) {
       btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
       btn.addEventListener('mouseleave', function() { btn.style.background = 'var(--t-bg2,#1a1a2e)'; btn.style.color = 'var(--t-text,#e0e0e0)'; });
@@ -3325,7 +3325,11 @@
     gate.querySelector('#alt-gate-input').style.display = '';
     gate.querySelector('#alt-gate-enter').style.display = '';
     var picker = document.getElementById('alt-server-picker');
-    if (picker) picker.remove();
+    if (picker) {
+      var noteEl = picker.nextElementSibling;
+      if (noteEl && noteEl.tagName === 'P') noteEl.remove();
+      picker.remove();
+    }
   }
 
   document.getElementById('alt-gate-input').addEventListener('keydown', function(e) {
