@@ -3294,8 +3294,12 @@
     picker.id = 'alt-server-picker';
     picker.style.cssText = 'display:flex;gap:10px;';
     picker.innerHTML = '<button class="alt-srv-btn" data-srv="regular" style="padding:10px 18px;border-radius:10px;border:1px solid var(--t-accent,#7b2ff7);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Regular</button>'
-      + '<button class="alt-srv-btn" data-srv="beta" style="padding:10px 18px;border-radius:10px;border:1px solid var(--t-accent2,#00d4ff);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta <span style="font-size:0.65rem;opacity:0.7;font-weight:400;">(quicker)</span></button>'
-      + '<button class="alt-srv-btn" data-srv="beta2" style="padding:10px 18px;border-radius:10px;border:1px solid #4ade80;background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta 2 <span style="font-size:0.65rem;opacity:0.7;font-weight:400;">(fastest)</span></button>';
+      + '<button class="alt-srv-btn" data-srv="beta" style="padding:10px 18px;border-radius:10px;border:1px solid var(--t-accent2,#00d4ff);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta</button>'
+      + '<button class="alt-srv-btn" data-srv="beta2" style="padding:10px 18px;border-radius:10px;border:1px solid #4ade80;background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta 2</button>';
+    var note = document.createElement('p');
+    note.style.cssText = 'color:rgba(255,255,255,.35);font-size:0.62rem;text-align:center;max-width:320px;line-height:1.5;margin-top:14px;';
+    note.innerHTML = 'Some links may perform better than others depending on the time or game. If you see an "Uh Oh!" error, wait about a minute and try again. Run into other issues? <a href="feedback.html" style="color:var(--t-accent,#7b2ff7);text-decoration:underline;cursor:pointer;" target="_top">Let us know</a>.';
+    picker.after(note);
     gate.querySelector('#alt-gate-err').before(picker);
     picker.querySelectorAll('.alt-srv-btn').forEach(function(btn) {
       btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
