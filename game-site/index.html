@@ -3281,17 +3281,50 @@
   }
 
   var _altPc = atob('MDk4NzY1NDMyMQ==');
+
+  function showServerPicker() {
+    var gate = document.getElementById('alt-gate');
+    gate.querySelector('#alt-gate-label').textContent = 'Choose a server';
+    gate.querySelector('#alt-gate-input').style.display = 'none';
+    gate.querySelector('#alt-gate-enter').style.display = 'none';
+    gate.querySelector('#alt-gate-err').textContent = '';
+    var existing = document.getElementById('alt-server-picker');
+    if (existing) existing.remove();
+    var picker = document.createElement('div');
+    picker.id = 'alt-server-picker';
+    picker.style.cssText = 'display:flex;gap:10px;';
+    picker.innerHTML = '<button class="alt-srv-btn" data-srv="regular" style="padding:10px 22px;border-radius:10px;border:1px solid var(--t-accent,#7b2ff7);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Regular</button>'
+      + '<button class="alt-srv-btn" data-srv="beta" style="padding:10px 22px;border-radius:10px;border:1px solid var(--t-accent2,#00d4ff);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta</button>';
+    gate.querySelector('#alt-gate-err').before(picker);
+    picker.querySelectorAll('.alt-srv-btn').forEach(function(btn) {
+      btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
+      btn.addEventListener('mouseleave', function() { btn.style.background = 'var(--t-bg2,#1a1a2e)'; btn.style.color = 'var(--t-text,#e0e0e0)'; });
+      btn.addEventListener('click', function() {
+        var g = document.getElementById('alt-gate');
+        g.style.opacity = '0';
+        setTimeout(function(){ g.style.display = 'none'; resetGate(); }, 200);
+        var href = pendingHref;
+        if (btn.dataset.srv === 'beta') {
+          href = href + (href.indexOf('#') === -1 ? '#' : '&') + 'splash:wispUrl=wss://wisp.mercurywork.shop/';
+        }
+        window.open(href, '_blank');
+      });
+    });
+  }
+
+  function resetGate() {
+    var gate = document.getElementById('alt-gate');
+    gate.querySelector('#alt-gate-label').textContent = 'Enter code to continue';
+    gate.querySelector('#alt-gate-input').style.display = '';
+    gate.querySelector('#alt-gate-enter').style.display = '';
+    var picker = document.getElementById('alt-server-picker');
+    if (picker) picker.remove();
+  }
+
   document.getElementById('alt-gate-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
       if (this.value === _altPc) {
-        var g = document.getElementById('alt-gate');
-        g.style.opacity = '0';
-        setTimeout(function(){ g.style.display = 'none'; }, 200);
-        if (pendingTarget === '_self') {
-          window.location.href = pendingHref;
-        } else {
-          window.open(pendingHref, '_blank');
-        }
+        showServerPicker();
       } else {
         document.getElementById('alt-gate-err').textContent = 'Wrong code';
         this.value = '';
