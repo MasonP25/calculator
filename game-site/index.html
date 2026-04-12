@@ -3294,7 +3294,7 @@
     picker.id = 'alt-server-picker';
     picker.style.cssText = 'display:flex;gap:10px;';
     picker.innerHTML = '<button class="alt-srv-btn" data-srv="regular" style="padding:10px 22px;border-radius:10px;border:1px solid var(--t-accent,#7b2ff7);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Regular</button>'
-      + '<button class="alt-srv-btn" data-srv="beta" style="padding:10px 22px;border-radius:10px;border:1px solid var(--t-accent2,#00d4ff);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta</button>';
+      + '<button class="alt-srv-btn" data-srv="beta" style="padding:10px 22px;border-radius:10px;border:1px solid var(--t-accent2,#00d4ff);background:var(--t-bg2,#1a1a2e);color:var(--t-text,#e0e0e0);font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.15s,background 0.15s;">Beta <span style="font-size:0.65rem;opacity:0.7;font-weight:400;">(quicker)</span></button>';
     gate.querySelector('#alt-gate-err').before(picker);
     picker.querySelectorAll('.alt-srv-btn').forEach(function(btn) {
       btn.addEventListener('mouseenter', function() { btn.style.background = 'var(--t-accent,#7b2ff7)'; btn.style.color = '#fff'; });
@@ -3304,16 +3304,11 @@
         g.style.opacity = '0';
         setTimeout(function(){ g.style.display = 'none'; resetGate(); }, 200);
         var base = pendingHref;
-        var href;
-        if (btn.dataset.srv === 'beta') {
-          // Rewrite hash: #inject=URL → #wisp=beta&inject=URL
-          var hashIdx = base.indexOf('#');
-          var beforeHash = hashIdx === -1 ? base : base.slice(0, hashIdx);
-          var afterHash = hashIdx === -1 ? '' : base.slice(hashIdx + 1);
-          href = beforeHash + '#wisp=beta' + (afterHash ? '&' + afterHash : '');
-        } else {
-          href = base;
-        }
+        var srv = btn.dataset.srv === 'beta' ? 'beta' : 'regular';
+        var hashIdx = base.indexOf('#');
+        var beforeHash = hashIdx === -1 ? base : base.slice(0, hashIdx);
+        var afterHash = hashIdx === -1 ? '' : base.slice(hashIdx + 1);
+        var href = beforeHash + '#wisp=' + srv + (afterHash ? '&' + afterHash : '');
         window.open(href, '_blank');
       });
     });
