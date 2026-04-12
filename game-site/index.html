@@ -3303,9 +3303,16 @@
         var g = document.getElementById('alt-gate');
         g.style.opacity = '0';
         setTimeout(function(){ g.style.display = 'none'; resetGate(); }, 200);
-        var href = pendingHref;
+        var base = pendingHref;
+        var href;
         if (btn.dataset.srv === 'beta') {
-          href = href + (href.indexOf('#') === -1 ? '#' : '&') + 'splash:wispUrl=wss://wisp.mercurywork.shop/';
+          // Rewrite hash: #inject=URL → #wisp=beta&inject=URL
+          var hashIdx = base.indexOf('#');
+          var beforeHash = hashIdx === -1 ? base : base.slice(0, hashIdx);
+          var afterHash = hashIdx === -1 ? '' : base.slice(hashIdx + 1);
+          href = beforeHash + '#wisp=beta' + (afterHash ? '&' + afterHash : '');
+        } else {
+          href = base;
         }
         window.open(href, '_blank');
       });
