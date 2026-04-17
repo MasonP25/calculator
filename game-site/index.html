@@ -3650,9 +3650,13 @@
     ks.textContent = '@keyframes petHintPulse{0%,100%{box-shadow:0 0 0 3px var(--t-accent,#7b2ff7),0 0 18px rgba(123,47,247,0.4)}50%{box-shadow:0 0 0 5px var(--t-accent,#7b2ff7),0 0 28px rgba(123,47,247,0.6)}}';
     document.head.appendChild(ks);
 
-    // Create tooltip
+    // Create tooltip — placed in body, positioned near the profile button
     var tip = document.createElement('div');
-    tip.style.cssText = 'position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:12px;padding:0.8rem 1rem;z-index:10010;box-shadow:0 8px 30px rgba(0,0,0,0.5);font-family:"Segoe UI",Tahoma,sans-serif;white-space:nowrap;pointer-events:auto;';
+    tip.id = '_pet_hint_tip';
+    function positionTip() {
+      var r = profBtn.getBoundingClientRect();
+      tip.style.cssText = 'position:fixed;top:'+(r.bottom+10)+'px;left:'+(r.left+r.width/2)+'px;transform:translateX(-50%);background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:12px;padding:0.8rem 1rem;z-index:10010;box-shadow:0 8px 30px rgba(0,0,0,0.5);font-family:"Segoe UI",Tahoma,sans-serif;white-space:nowrap;';
+    }
     tip.innerHTML =
       '<div style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-bottom-color:var(--t-accent,#7b2ff7)"></div>' +
       '<div style="font-size:0.85rem;font-weight:600;color:var(--t-text,#e0e0e0);margin-bottom:0.5rem">\uD83D\uDC3E Adopt a pet here!</div>' +
@@ -3661,7 +3665,10 @@
         '<button id="pet-hint-dismiss" style="background:none;border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#aaa);font-size:0.75rem;padding:4px 12px;border-radius:8px;cursor:pointer;font-family:inherit">Dismiss</button>' +
         '<button id="pet-hint-go" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;font-size:0.75rem;padding:4px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Let\'s go!</button>' +
       '</div>';
-    profBtn.appendChild(tip);
+    positionTip();
+    document.body.appendChild(tip);
+    window.addEventListener('scroll', positionTip, {passive:true});
+    window.addEventListener('resize', positionTip, {passive:true});
 
     function dismiss() {
       localStorage.setItem(HINT_KEY, '1');
@@ -3669,19 +3676,21 @@
       profBtn.style.boxShadow = '';
       profBtn.style.animation = '';
       ks.remove();
+      window.removeEventListener('scroll', positionTip);
+      window.removeEventListener('resize', positionTip);
     }
 
-    document.getElementById('pet-hint-dismiss').onclick = function(e) {
+    document.getElementById('pet-hint-dismiss').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       dismiss();
-    };
-    document.getElementById('pet-hint-go').onclick = function(e) {
+    });
+    document.getElementById('pet-hint-go').addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       dismiss();
       window.location.href = 'profile.html#petSection';
-    };
+    });
   }
 
   // Wait for pet data to load, then check
