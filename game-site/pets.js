@@ -231,6 +231,8 @@
           ArcadeLevels.addXP(100, 'Pet grew to Adult');
         }
       }
+      // 1 XP per feed
+      if (window.ArcadeLevels) ArcadeLevels.addXP(1, 'Fed pet');
       console.log('[Pets] Fed ' + PET_TYPES[_pet.type].name + '! (feeds: ' + _pet.feeds + ', happiness: ' + _pet.happiness + ')');
       return { ok: true };
     },
@@ -238,10 +240,18 @@
     abandon: function() {
       if (!_pet) return { ok: false, msg: 'No pet to abandon' };
       var name = PET_TYPES[_pet.type] ? PET_TYPES[_pet.type].name : _pet.type;
+      // Deduct 100 coins as penalty
+      if (window.ArcadeCoins) {
+        var bal = ArcadeCoins.getBalance ? ArcadeCoins.getBalance() : 0;
+        if (bal < 100) {
+          return { ok: false, msg: 'You need at least 100 coins to abandon (penalty fee)' };
+        }
+        ArcadeCoins.spend(100);
+      }
       _pet = null;
       _saveToFirestore();
       _dispatch();
-      console.log('[Pets] Abandoned ' + name);
+      console.log('[Pets] Abandoned ' + name + ' (-100 coins)');
       return { ok: true };
     },
 
@@ -346,19 +356,31 @@
       // Abandon button
       var abandonBtn = document.createElement('button');
       abandonBtn.className = 'pet-abandon';
-      abandonBtn.textContent = 'Abandon Pet';
+      abandonBtn.textContent = 'Abandon Pet (-100 coins)';
       abandonBtn.addEventListener('click', function() {
         if (abandonBtn.dataset.confirm) {
-          window.ArcadePets.abandon();
-          window.ArcadePets.renderPetCard(container);
+          var result = window.ArcadePets.abandon();
+          if (result.ok) {
+            window.ArcadePets.renderPetCard(container);
+          } else {
+            abandonBtn.textContent = result.msg;
+            abandonBtn.disabled = true;
+            setTimeout(function() {
+              delete abandonBtn.dataset.confirm;
+              abandonBtn.textContent = 'Abandon Pet (-100 coins)';
+              abandonBtn.disabled = false;
+              abandonBtn.style.borderColor = '';
+              abandonBtn.style.color = '';
+            }, 2000);
+          }
         } else {
           abandonBtn.dataset.confirm = '1';
-          abandonBtn.textContent = 'Are you sure? Click again';
+          abandonBtn.textContent = 'Are you sure? -100 coins! Click again';
           abandonBtn.style.borderColor = '#ff4757';
           abandonBtn.style.color = '#ff4757';
           setTimeout(function() {
             delete abandonBtn.dataset.confirm;
-            abandonBtn.textContent = 'Abandon Pet';
+            abandonBtn.textContent = 'Abandon Pet (-100 coins)';
             abandonBtn.style.borderColor = '';
             abandonBtn.style.color = '';
           }, 3000);

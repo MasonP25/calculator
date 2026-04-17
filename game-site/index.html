@@ -3627,6 +3627,71 @@
     });
   }
 })();
+
+// ─── PET ADOPTION HINT ───
+(function() {
+  var HINT_KEY = '_pet_hint_dismissed';
+  function tryShow() {
+    if (localStorage.getItem(HINT_KEY)) return;
+    if (!localStorage.getItem('arcade_currentUser')) return;
+    if (!localStorage.getItem('arcade_tour_done')) return;
+    if (window.ArcadePets && ArcadePets.getPet()) return;
+
+    var profBtn = document.querySelector('a.fame-link[href="profile.html"]');
+    if (!profBtn) return;
+
+    // Highlight the profile button
+    profBtn.style.position = 'relative';
+    profBtn.style.boxShadow = '0 0 0 3px var(--t-accent,#7b2ff7), 0 0 18px rgba(123,47,247,0.5)';
+    profBtn.style.animation = 'petHintPulse 1.5s ease-in-out infinite';
+
+    // Add pulse keyframes
+    var ks = document.createElement('style');
+    ks.textContent = '@keyframes petHintPulse{0%,100%{box-shadow:0 0 0 3px var(--t-accent,#7b2ff7),0 0 18px rgba(123,47,247,0.4)}50%{box-shadow:0 0 0 5px var(--t-accent,#7b2ff7),0 0 28px rgba(123,47,247,0.6)}}';
+    document.head.appendChild(ks);
+
+    // Create tooltip
+    var tip = document.createElement('div');
+    tip.style.cssText = 'position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-accent,#7b2ff7);border-radius:12px;padding:0.8rem 1rem;z-index:10010;box-shadow:0 8px 30px rgba(0,0,0,0.5);font-family:"Segoe UI",Tahoma,sans-serif;white-space:nowrap;pointer-events:auto;';
+    tip.innerHTML =
+      '<div style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-bottom-color:var(--t-accent,#7b2ff7)"></div>' +
+      '<div style="font-size:0.85rem;font-weight:600;color:var(--t-text,#e0e0e0);margin-bottom:0.5rem">\uD83D\uDC3E Adopt a pet here!</div>' +
+      '<div style="font-size:0.72rem;color:var(--t-dim,#aaa);margin-bottom:0.7rem">Visit your profile to adopt a companion</div>' +
+      '<div style="display:flex;gap:8px;justify-content:center">' +
+        '<button id="pet-hint-dismiss" style="background:none;border:1px solid var(--t-border,#2a2a4a);color:var(--t-dim,#aaa);font-size:0.75rem;padding:4px 12px;border-radius:8px;cursor:pointer;font-family:inherit">Dismiss</button>' +
+        '<button id="pet-hint-go" style="background:var(--t-accent,#7b2ff7);color:#fff;border:none;font-size:0.75rem;padding:4px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Let\'s go!</button>' +
+      '</div>';
+    profBtn.appendChild(tip);
+
+    function dismiss() {
+      localStorage.setItem(HINT_KEY, '1');
+      tip.remove();
+      profBtn.style.boxShadow = '';
+      profBtn.style.animation = '';
+      ks.remove();
+    }
+
+    document.getElementById('pet-hint-dismiss').onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dismiss();
+    };
+    document.getElementById('pet-hint-go').onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dismiss();
+      window.location.href = 'profile.html#petSection';
+    };
+  }
+
+  // Wait for pet data to load, then check
+  window.addEventListener('pet-updated', function _hintCheck() {
+    window.removeEventListener('pet-updated', _hintCheck);
+    setTimeout(tryShow, 1500);
+  });
+  // Fallback if pet-updated never fires (guest)
+  setTimeout(tryShow, 5000);
+})();
 </script>
 <script src="easter.js?v=3"></script>
 <script>
@@ -4009,11 +4074,12 @@ if ('serviceWorker' in navigator) {
 
     var idleImg = renderFrame(pet.type,'idle');
     var walkImg = renderFrame(pet.type,'walk');
-    var sc = pet.stage==='adult'?2:pet.stage==='teen'?1.5:1;
+    var sc = pet.stage==='Adult'?2:pet.stage==='Teen'?1.5:1;
     var displaySize = S * sc;
 
     var el = document.createElement('img');
     el.id = 'walking-pet';
+    el.dataset.petType = pet.type;
     el.src = idleImg;
     el.draggable = false;
     el.style.cssText = 'position:fixed;bottom:8px;z-index:9990;width:'+displaySize+'px;height:'+displaySize+'px;cursor:grab;image-rendering:pixelated;image-rendering:crisp-edges;pointer-events:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));';
@@ -4293,8 +4359,17 @@ if ('serviceWorker' in navigator) {
       wp.style.transition = 'opacity 1s';
       wp.style.opacity = '0';
       setTimeout(function() { wp.remove(); showPetGoneNotice(); }, 1000);
+    } else if (wp && pet && pet.happiness > 0 && wp.dataset.petType !== pet.type) {
+      // Pet type changed (abandoned + adopted different one) — recreate
+      if (wp._unstick) wp._unstick();
+      wp.remove();
+      startPetWalk();
+    } else if (wp && !pet) {
+      // Pet was abandoned — remove walking pet
+      if (wp._unstick) wp._unstick();
+      wp.remove();
     } else if (!wp) {
-      // Pet was fed — clear the gone flag so it can notify again next time
+      // No walking pet — create if pet exists and is happy
       if (pet && pet.happiness > 0) localStorage.removeItem('_pet_gone_notified');
       startPetWalk();
     }

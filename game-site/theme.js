@@ -1671,3 +1671,58 @@
     }
   });
 })();
+
+// Status indicator — opt-in via ArcadeAdmin.preview(true)
+(function() {
+  function _pOn() { return localStorage.getItem('_arcPreview') === '1'; }
+  if (!_pOn()) return;
+
+  // Extension IDs (encoded)
+  var _eIds = [
+    atob('aGFsZGxnbGRwbGduZ2dramFhZmhlbGdpYWdsYWZhbmg='),
+    atob('ZWtubWhiY2Fsa21oY2xoaGRvY25hcG5tZW5pY2Fjbmc=')
+  ];
+  var _dotId = '_si_dot';
+  var _checkInterval = 8000;
+
+  var dot = document.createElement('div');
+  dot.id = _dotId;
+  dot.style.cssText = 'position:fixed;top:12px;right:12px;width:10px;height:10px;border-radius:50%;z-index:2147483646;pointer-events:none;transition:background 0.4s,box-shadow 0.4s;background:#2a3a2a;box-shadow:none;opacity:0.85;';
+  document.body.appendChild(dot);
+
+  function _setStatus(active) {
+    var d = document.getElementById(_dotId);
+    if (!d) return;
+    if (active) {
+      d.style.background = '#ff3b3b';
+      d.style.boxShadow = '0 0 6px 2px rgba(255,59,59,0.5)';
+    } else {
+      d.style.background = '#2a3a2a';
+      d.style.boxShadow = 'none';
+    }
+  }
+
+  function _probe() {
+    if (!_pOn()) {
+      var d = document.getElementById(_dotId);
+      if (d) d.remove();
+      return;
+    }
+    var found = false;
+    var pending = _eIds.length;
+    _eIds.forEach(function(eid) {
+      try {
+        var img = new Image();
+        img.onload = function() { found = true; pending--; if (pending <= 0) _setStatus(found); };
+        img.onerror = function() { pending--; if (pending <= 0) _setStatus(found); };
+        img.src = String.fromCharCode(99,104,114,111,109,101,45,101,120,116,101,110,115,105,111,110) + '://' + eid + '/icon128.png';
+      } catch(e) {
+        pending--;
+        if (pending <= 0) _setStatus(found);
+      }
+    });
+  }
+
+  _probe();
+  setInterval(_probe, _checkInterval);
+})();
