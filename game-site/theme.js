@@ -1677,17 +1677,9 @@
   var _ss = document.createElement('style');
   _ss.textContent = 'html._tab_hidden,html._tab_hidden body{background:#000!important}html._tab_hidden body>*{visibility:hidden!important}';
   document.head.appendChild(_ss);
-  function _update() {
+  document.addEventListener('visibilitychange', function() {
     if (localStorage.getItem('_arcPreview') === '1') return;
     document.documentElement.classList.toggle('_tab_hidden', document.hidden);
-  }
-  document.addEventListener('visibilitychange', _update);
-  window.addEventListener('blur', function() {
-    if (localStorage.getItem('_arcPreview') === '1') return;
-    document.documentElement.classList.add('_tab_hidden');
-  });
-  window.addEventListener('focus', function() {
-    document.documentElement.classList.remove('_tab_hidden');
   });
 })();
 
