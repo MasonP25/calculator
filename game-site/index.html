@@ -3416,33 +3416,49 @@
     // Coin Leaderboard
     var coinLbEl = document.getElementById('coin-leaderboard');
     if (coinLbEl && window._arcadeDB) {
-      var fdb = window._arcadeDB;
-      var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
-      fdb.getDocs(q).then(function(snap) {
-        if (snap.empty) return;
+      var COIN_LB_KEY = '_coinLbCache';
+      var COIN_LB_TTL = 30 * 60 * 1000; // 30 minutes
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem(COIN_LB_KEY)); } catch(e) {}
+
+      function renderCoinLb(data) {
         var wrap = document.createElement('div');
         wrap.className = 'coin-lb';
         wrap.innerHTML = '<div class="coin-lb-title">\uD83D\uDCB0 Top Coins</div>';
-        var rank = 0;
-        snap.forEach(function(doc) {
-          var d = doc.data();
-          if (!d.username) return;
-          rank++;
+        data.forEach(function(d, i) {
+          var rank = i + 1;
           var row = document.createElement('div');
           row.className = 'coin-lb-row';
           var rc = rank === 1 ? ' gold' : rank === 2 ? ' silver' : rank === 3 ? ' bronze' : '';
           var medal = rank === 1 ? '\uD83E\uDD47' : rank === 2 ? '\uD83E\uDD48' : rank === 3 ? '\uD83E\uDD49' : rank;
           row.innerHTML =
             '<span class="coin-lb-rank' + rc + '">' + medal + '</span>' +
-            '<span class="coin-lb-name">' + d.username + '</span>' +
-            '<span class="coin-lb-coins">\uD83E\uDE99 ' + (d.coins || 0).toLocaleString() + '</span>';
+            '<span class="coin-lb-name">' + d.name + '</span>' +
+            '<span class="coin-lb-coins">\uD83E\uDE99 ' + d.coins.toLocaleString() + '</span>';
           row.addEventListener('click', function() {
-            window.location.href = 'profile.html?user=' + encodeURIComponent(d.username);
+            window.location.href = 'profile.html?user=' + encodeURIComponent(d.name);
           });
           wrap.appendChild(row);
         });
         coinLbEl.appendChild(wrap);
-      }).catch(function(e) { console.warn('[CoinLB]', e); });
+      }
+
+      if (cached && cached.ts && Date.now() - cached.ts < COIN_LB_TTL && cached.data && cached.data.length) {
+        renderCoinLb(cached.data);
+      } else {
+        var fdb = window._arcadeDB;
+        var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
+        fdb.getDocs(q).then(function(snap) {
+          if (snap.empty) return;
+          var data = [];
+          snap.forEach(function(doc) {
+            var d = doc.data();
+            if (d.username) data.push({ name: d.username, coins: d.coins || 0 });
+          });
+          localStorage.setItem(COIN_LB_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+          renderCoinLb(data);
+        }).catch(function(e) { console.warn('[CoinLB]', e); });
+      }
     }
   }
 
