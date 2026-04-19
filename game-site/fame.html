@@ -90,7 +90,7 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  .search-input:focus { border-color: #7b2ff7; }
+  .search-input:focus { border-color: var(--t-accent, #7b2ff7); }
   .search-input::placeholder { color: #555; }
 
   /* Game cards grid */
@@ -109,8 +109,8 @@
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .game-card:hover {
-    border-color: #7b2ff7;
-    box-shadow: 0 4px 20px rgba(123, 47, 247, 0.2);
+    border-color: var(--t-accent, #7b2ff7);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--t-accent, #7b2ff7) 25%, transparent);
   }
   .game-card-header {
     display: flex;
@@ -228,13 +228,13 @@
 
 <div class="name-section" id="nameSection">
   <label>Signed in as:</label>
-  <span id="currentUserDisplay" style="color:var(--t-accent,#00d4ff);font-weight:600;font-size:1rem"></span>
+  <a id="currentUserDisplay" href="profile.html" style="color:var(--t-accent,#00d4ff);font-weight:600;font-size:1rem;text-decoration:none;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"></a>
 </div>
 
 <div class="search-bar">
   <input class="search-input" id="searchInput" type="text" placeholder="Search games...">
 </div>
-<div style="text-align:center;font-size:0.65rem;color:#555;margin:-1rem 0 1.2rem;letter-spacing:0.5px;">Refreshes every 30 minutes (locally)</div>
+<div style="text-align:center;font-size:0.78rem;color:var(--t-dim,#aaa);margin:-0.8rem 0 1.2rem;letter-spacing:0.5px;"><span style="background:rgba(255,255,255,0.06);padding:0.3rem 0.9rem;border-radius:8px;display:inline-block;">Refreshes every 30 minutes (locally)</span></div>
 
 <div class="grid" id="grid">
   <div id="coin-leaderboard"></div>
