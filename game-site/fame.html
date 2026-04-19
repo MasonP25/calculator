@@ -92,10 +92,6 @@
   }
   .search-input:focus { border-color: #7b2ff7; }
   .search-input::placeholder { color: #555; }
-  .result-count {
-    font-size: 0.8rem;
-    color: #666;
-  }
 
   /* Game cards grid */
   .grid {
@@ -232,12 +228,11 @@
 
 <div class="name-section" id="nameSection">
   <label>Signed in as:</label>
-  <span id="currentUserDisplay" style="color:#00d4ff;font-weight:600;font-size:1rem"></span>
+  <span id="currentUserDisplay" style="color:var(--t-accent,#00d4ff);font-weight:600;font-size:1rem"></span>
 </div>
 
 <div class="search-bar">
   <input class="search-input" id="searchInput" type="text" placeholder="Search games...">
-  <span class="result-count" id="resultCount"></span>
 </div>
 
 <div class="grid" id="grid">
@@ -355,13 +350,14 @@
   function updateNameDisplay() {
     var name = window.HallOfFame.getPlayerName();
     userDisplay.textContent = name;
-    userDisplay.style.color = (name === 'Guest') ? '#888' : '#00d4ff';
+    userDisplay.style.color = (name === 'Guest') ? 'var(--t-dim,#888)' : 'var(--t-accent,#00d4ff)';
   }
   updateNameDisplay();
   setInterval(updateNameDisplay, 1000);
 
   // --- Search ---
   var searchInput = document.getElementById('searchInput');
+  searchInput.placeholder = 'Search from ' + GAMES.length + ' games...';
   searchInput.addEventListener('input', function() {
     searchQuery = searchInput.value.trim().toLowerCase();
     render();
@@ -647,12 +643,6 @@
       });
     }
 
-    var countEl = document.getElementById('resultCount');
-    if (searchQuery) {
-      countEl.textContent = list.length + ' of ' + GAMES.length + ' games';
-    } else {
-      countEl.textContent = GAMES.length + ' games';
-    }
 
     list.forEach(function(g) {
       grid.appendChild(buildCard(g));
