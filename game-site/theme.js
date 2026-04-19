@@ -1672,28 +1672,15 @@
   });
 })();
 
-// ─── Tab-away screen — shows black overlay when tab is not visible ───
+// ─── Tab-away screen — black out page when tab is not visible ───
 (function() {
-  var _tsId = '_ts_blk';
-  function _getOrCreate() {
-    var el = document.getElementById(_tsId);
-    if (!el) {
-      el = document.createElement('div');
-      el.id = _tsId;
-      el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483640;background:#000;display:none;pointer-events:none;';
-      document.body.appendChild(el);
-    }
-    return el;
-  }
-  _getOrCreate();
+  var _ss = document.createElement('style');
+  _ss.id = '_ts_style';
+  _ss.textContent = 'html._tab_hidden,html._tab_hidden body{background:#000!important}html._tab_hidden body>*{visibility:hidden!important}';
+  document.head.appendChild(_ss);
   document.addEventListener('visibilitychange', function() {
     if (localStorage.getItem('_arcPreview') === '1') return;
-    var el = _getOrCreate();
-    if (document.hidden) {
-      el.style.display = 'block';
-    } else {
-      el.style.display = 'none';
-    }
+    document.documentElement.classList.toggle('_tab_hidden', document.hidden);
   });
 })();
 
