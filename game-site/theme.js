@@ -1674,12 +1674,26 @@
 
 // ─── Tab-away screen — shows black overlay when tab is not visible ───
 (function() {
-  var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;inset:0;z-index:2147483640;background:#000;display:none;';
-  document.body.appendChild(el);
+  var _tsId = '_ts_blk';
+  function _getOrCreate() {
+    var el = document.getElementById(_tsId);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = _tsId;
+      el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483640;background:#000;display:none;pointer-events:none;';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  _getOrCreate();
   document.addEventListener('visibilitychange', function() {
     if (localStorage.getItem('_arcPreview') === '1') return;
-    el.style.display = document.hidden ? 'block' : 'none';
+    var el = _getOrCreate();
+    if (document.hidden) {
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
   });
 })();
 
