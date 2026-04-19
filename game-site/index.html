@@ -4151,6 +4151,26 @@ if ('serviceWorker' in navigator) {
     var stuckRowMaxX = 0;       // row right edge offset from anchor.left
     el._unstick = function(){ stuckCard = null; };
 
+    // Sync pet position immediately on scroll so it doesn't lag behind
+    window.addEventListener('scroll', function() {
+      if (!stuckCard) return;
+      var ar = stuckCard.getBoundingClientRect();
+      if (ar.width < 30) return;
+      x = ar.left + stuckOffsetX - displaySize / 2;
+      var petCx = x + displaySize / 2;
+      var cards = document.querySelectorAll('.card');
+      var underTop = ar.top;
+      var rowTop = ar.top;
+      for (var ci = 0; ci < cards.length; ci++) {
+        var cr = cards[ci].getBoundingClientRect();
+        if (cr.width < 30 || Math.abs(cr.top - rowTop) > 30) continue;
+        if (petCx >= cr.left && petCx <= cr.right) { underTop = cr.top; break; }
+      }
+      y = underTop - displaySize;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+    }, {passive:true});
+
     function update() {
       if (dragging) { animId = requestAnimationFrame(update); return; }
 
@@ -4400,6 +4420,7 @@ if ('serviceWorker' in navigator) {
   });
   // Fade out on navigate
   document.addEventListener('click', function(e) {
+    if (e.target.closest('.fav-btn')) return;
     var a = e.target.closest('a.card, a.fame-link');
     if (!a || !a.href || a.target === '_blank') return;
     e.preventDefault();
