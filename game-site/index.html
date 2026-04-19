@@ -4083,7 +4083,7 @@ if ('serviceWorker' in navigator) {
 
     var idleImg = renderFrame(pet.type,'idle');
     var walkImg = renderFrame(pet.type,'walk');
-    var sc = pet.stage==='Adult'?2:pet.stage==='Teen'?1.5:1;
+    var sc = pet.stage==='Adult'?1.5:pet.stage==='Teen'?1.125:0.75;
     var displaySize = S * sc;
 
     var el = document.createElement('img');
