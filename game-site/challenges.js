@@ -476,11 +476,18 @@
       var pct = ch.target > 0 ? Math.min(100, Math.round((ch.progress / ch.target) * 100)) : 0;
       var div = document.createElement('div');
       div.className = 'challenge-widget' + (ch.completed ? ' completed' : '');
+      if (ch.gameId) {
+        div.style.cursor = 'pointer';
+        div.title = 'Play ' + (ch.gameName || ch.gameId);
+        div.addEventListener('click', function() {
+          window.location.href = ch.gameId + '.html';
+        });
+      }
       div.innerHTML =
         '<div class="cw-title">\uD83C\uDFAF Daily Challenge</div>' +
         '<div class="cw-desc">' + ch.desc + '</div>' +
         '<div class="cw-bar"><div class="cw-bar-fill" style="width:' + pct + '%"></div></div>' +
-        '<div class="cw-status">' + (ch.completed ? '\u2705 Completed! +75 coins +25 XP' : ch.progress + ' / ' + ch.target) + '</div>';
+        '<div class="cw-status">' + (ch.completed ? '\u2705 Completed! +75 coins +25 XP' : ch.progress + ' / ' + ch.target) + (ch.gameId && !ch.completed ? ' \u2014 Click to play!' : '') + '</div>';
       container.appendChild(div);
     },
 

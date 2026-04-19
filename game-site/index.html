@@ -147,6 +147,14 @@
   }
   .subtitle { color: #7a7a9a; margin-bottom: 0.5rem; font-size: 1.05rem; font-weight: 300; letter-spacing: 0.5px; }
   .count { color: #4a4a6a; font-size: 0.82rem; margin-bottom: 2rem; font-weight: 400; }
+  .coin-lb{max-width:1050px;width:100%;margin:0 auto 1.5rem;background:var(--t-bg2,#1a1a2e);border:1.5px solid var(--t-border,#2a2a4a);border-radius:14px;padding:1rem 1.2rem;font-family:'Outfit','Segoe UI',sans-serif}
+  .coin-lb-title{font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--t-accent,#7b2ff7);margin-bottom:0.7rem;font-weight:600}
+  .coin-lb-row{display:flex;align-items:center;padding:0.35rem 0.4rem;border-radius:8px;transition:background 0.2s;cursor:pointer}
+  .coin-lb-row:hover{background:rgba(123,47,247,0.08)}
+  .coin-lb-rank{width:1.8rem;font-size:0.8rem;font-weight:700;color:var(--t-dim,#888)}
+  .coin-lb-rank.gold{color:#ffd700}.coin-lb-rank.silver{color:#c0c0c0}.coin-lb-rank.bronze{color:#cd7f32}
+  .coin-lb-name{flex:1;font-size:0.85rem;color:var(--t-text,#e0e0e0);font-weight:500}
+  .coin-lb-coins{font-size:0.82rem;font-weight:600;color:#ffd700}
   .section-title {
     font-family: 'Outfit', sans-serif;
     font-size: 0.85rem;
@@ -898,6 +906,9 @@
 
   <!-- Activity Feed -->
   <div id="activity-feed-container"></div>
+
+  <!-- Coin Leaderboard -->
+  <div id="coin-leaderboard"></div>
 
   <div class="search-bar">
     <span class="search-icon">&#128269;</span>
@@ -3400,6 +3411,38 @@
       if (feedContainer) {
         window.ArcadeActivity.renderFeed(feedContainer);
       }
+    }
+
+    // Coin Leaderboard
+    var coinLbEl = document.getElementById('coin-leaderboard');
+    if (coinLbEl && window._arcadeDB) {
+      var fdb = window._arcadeDB;
+      var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
+      fdb.getDocs(q).then(function(snap) {
+        if (snap.empty) return;
+        var wrap = document.createElement('div');
+        wrap.className = 'coin-lb';
+        wrap.innerHTML = '<div class="coin-lb-title">\uD83D\uDCB0 Top Coins</div>';
+        var rank = 0;
+        snap.forEach(function(doc) {
+          var d = doc.data();
+          if (!d.username) return;
+          rank++;
+          var row = document.createElement('div');
+          row.className = 'coin-lb-row';
+          var rc = rank === 1 ? ' gold' : rank === 2 ? ' silver' : rank === 3 ? ' bronze' : '';
+          var medal = rank === 1 ? '\uD83E\uDD47' : rank === 2 ? '\uD83E\uDD48' : rank === 3 ? '\uD83E\uDD49' : rank;
+          row.innerHTML =
+            '<span class="coin-lb-rank' + rc + '">' + medal + '</span>' +
+            '<span class="coin-lb-name">' + d.username + '</span>' +
+            '<span class="coin-lb-coins">\uD83E\uDE99 ' + (d.coins || 0).toLocaleString() + '</span>';
+          row.addEventListener('click', function() {
+            window.location.href = 'profile.html?user=' + encodeURIComponent(d.username);
+          });
+          wrap.appendChild(row);
+        });
+        coinLbEl.appendChild(wrap);
+      }).catch(function(e) { console.warn('[CoinLB]', e); });
     }
   }
 
