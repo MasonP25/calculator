@@ -4149,27 +4149,20 @@ if ('serviceWorker' in navigator) {
     var stuckOffsetX = 0;       // pet center X offset from anchor.left
     var stuckRowMinX = 0;       // row left edge offset from anchor.left
     var stuckRowMaxX = 0;       // row right edge offset from anchor.left
-    el._unstick = function(){ stuckCard = null; };
+    el._unstick = function(){ stuckCard = null; toFixed(); };
 
-    // Sync pet position immediately on scroll so it doesn't lag behind
-    window.addEventListener('scroll', function() {
-      if (!stuckCard) return;
-      var ar = stuckCard.getBoundingClientRect();
-      if (ar.width < 30) return;
-      x = ar.left + stuckOffsetX - displaySize / 2;
-      var petCx = x + displaySize / 2;
-      var cards = document.querySelectorAll('.card');
-      var underTop = ar.top;
-      var rowTop = ar.top;
-      for (var ci = 0; ci < cards.length; ci++) {
-        var cr = cards[ci].getBoundingClientRect();
-        if (cr.width < 30 || Math.abs(cr.top - rowTop) > 30) continue;
-        if (petCx >= cr.left && petCx <= cr.right) { underTop = cr.top; break; }
-      }
-      y = underTop - displaySize;
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-    }, {passive:true});
+    // Track whether pet is using absolute positioning (stuck to card)
+    var isAbsolute = false;
+    function toAbsolute() {
+      if (isAbsolute) return;
+      isAbsolute = true;
+      el.style.position = 'absolute';
+    }
+    function toFixed() {
+      if (!isAbsolute) return;
+      isAbsolute = false;
+      el.style.position = 'fixed';
+    }
 
     function update() {
       if (dragging) { animId = requestAnimationFrame(update); return; }
@@ -4223,15 +4216,17 @@ if ('serviceWorker' in navigator) {
             if (idleTimer <= 0) { state = 'walk'; if (Math.random()>0.5) dir *= -1; }
           }
 
-          el.style.left = x + 'px';
+          toAbsolute();
+          el.style.left = (x + window.scrollX) + 'px';
           el.style.bottom = '';
-          el.style.top = y + 'px';
+          el.style.top = (y + window.scrollY) + 'px';
           animId = requestAnimationFrame(update);
           return;
         }
       }
 
       // NORMAL MODE: gravity + bouncing toward row platforms
+      toFixed();
       var centerX = x + displaySize / 2;
       var platforms = getPlatforms();
 
@@ -4323,6 +4318,9 @@ if ('serviceWorker' in navigator) {
       if (e.button !== 0) return;
       dragging = true;
       stuckCard = null;
+      // Convert page coords to viewport coords before switching to fixed
+      if (isAbsolute) { x = x; y = y; } // x,y are already viewport-relative from update()
+      toFixed();
       el.style.cursor = 'grabbing';
       dragOffX = e.clientX - x;
       dragOffY = e.clientY - y;
@@ -4345,6 +4343,7 @@ if ('serviceWorker' in navigator) {
     el.addEventListener('touchstart', function(e) {
       dragging = true;
       stuckCard = null;
+      toFixed();
       var t = e.touches[0];
       dragOffX = t.clientX - x;
       dragOffY = t.clientY - y;
