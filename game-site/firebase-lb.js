@@ -128,6 +128,8 @@ window.FirebaseLB = {
       score: score,
       date: new Date().toLocaleDateString()
     });
+    // Invalidate cache for this game so next read gets fresh data
+    this.invalidateCache(gameId);
     // Track gamesWithScores for badges (any score submission counts)
     if (window.ArcadeBadges && !existing.exists()) {
       window.ArcadeBadges.increment('gamesWithScores', 1);
@@ -180,8 +182,39 @@ window.FirebaseLB = {
     }
   },
 
+  _scoreCache: {},
+  _scoreCacheTTL: 30 * 60 * 1000, // 30 minutes
+
+  _loadCache: function() {
+    try {
+      var raw = localStorage.getItem('_lbCache');
+      if (raw) this._scoreCache = JSON.parse(raw);
+    } catch(e) { this._scoreCache = {}; }
+  },
+
+  _saveCache: function() {
+    try { localStorage.setItem('_lbCache', JSON.stringify(this._scoreCache)); } catch(e) {}
+  },
+
+  invalidateCache: function(gameId) {
+    if (gameId) {
+      delete this._scoreCache[gameId];
+    } else {
+      this._scoreCache = {};
+    }
+    this._saveCache();
+  },
+
   getScores: async function(gameId, max) {
     max = max || 10;
+
+    // Check cache
+    if (!this._scoreCache || !Object.keys(this._scoreCache).length) this._loadCache();
+    var cached = this._scoreCache[gameId];
+    if (cached && cached.ts && Date.now() - cached.ts < this._scoreCacheTTL) {
+      return cached.data.slice(0, max);
+    }
+
     try {
       const q = query(
         collection(db, 'scores'),
@@ -198,6 +231,11 @@ window.FirebaseLB = {
       results.sort(function(a, b) {
         return lower ? a.score - b.score : b.score - a.score;
       });
+
+      // Cache the full sorted results
+      this._scoreCache[gameId] = { ts: Date.now(), data: results };
+      this._saveCache();
+
       return results.slice(0, max);
     } catch (e) {
       console.warn('Firebase getScores failed:', e);
