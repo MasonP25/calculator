@@ -68,35 +68,6 @@
   }
   .name-section input:focus { border-color: #7b2ff7; }
 
-  /* Overall stats */
-  .stats-bar {
-    max-width: 1100px;
-    margin: 0 auto 1.5rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .stat-box {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    border-radius: 12px;
-    padding: 0.8rem 1.5rem;
-    text-align: center;
-    min-width: 160px;
-  }
-  .stat-box .stat-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #00d4ff;
-  }
-  .stat-box .stat-label {
-    font-size: 0.75rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 0.2rem;
-  }
 
   /* Search bar */
   .search-bar {
@@ -263,8 +234,6 @@
   <label>Signed in as:</label>
   <span id="currentUserDisplay" style="color:#00d4ff;font-weight:600;font-size:1rem"></span>
 </div>
-
-<div class="stats-bar" id="statsBar"></div>
 
 <div class="search-bar">
   <input class="search-input" id="searchInput" type="text" placeholder="Search games...">
@@ -546,30 +515,13 @@
   }
 
   // --- Overall stats ---
-  function buildStats() {
-    var bar = document.getElementById('statsBar');
-    bar.innerHTML = '';
-    var box = document.createElement('div');
-    box.className = 'stat-box';
-    var val = document.createElement('div');
-    val.className = 'stat-value';
-    val.textContent = GAMES.length;
-    var lbl = document.createElement('div');
-    lbl.className = 'stat-label';
-    lbl.textContent = 'Games';
-    box.appendChild(val);
-    box.appendChild(lbl);
-    bar.appendChild(box);
-  }
-
   // --- Main render ---
   window.render = function() {
-    buildStats();
-
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
 
-    // Coin leaderboard — matches game-card style, full width
+    // Coin leaderboard — only when not searching
+    if (!searchQuery) {
     var coinCard = document.createElement('div');
     coinCard.className = 'game-card coin-lb-card';
     var coinHeader = document.createElement('div');
@@ -684,6 +636,7 @@
         renderCoinLb(data);
       }).catch(function(e) { console.warn('[CoinLB]', e); coinLoading.textContent = 'Failed to load'; });
     }
+    } // end if (!searchQuery)
 
     var list = GAMES;
     if (searchQuery) {
