@@ -271,19 +271,11 @@
     padding: 1.2rem 0;
   }
 
-  /* Coin Leaderboard */
-  .coin-lb{grid-column:1/-1;background:#1a1a2e;border:2px solid #2a2a4a;border-radius:16px;padding:1rem 1.4rem;transition:border-color 0.2s}
-  .coin-lb:hover{border-color:#7b2ff7}
-  .coin-lb-title{font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:#ffd700;margin-bottom:0.7rem;font-weight:600;text-align:center}
-  .coin-lb-cols{display:flex;gap:2rem}
-  .coin-lb-col{flex:1;min-width:0}
-  .coin-lb-row{display:flex;align-items:center;padding:0.4rem 0.5rem;border-radius:8px;transition:background 0.2s;cursor:pointer}
-  .coin-lb-row:hover{background:rgba(123,47,247,0.1)}
-  .coin-lb-rank{width:1.8rem;font-size:0.82rem;font-weight:700;color:#888;flex-shrink:0}
-  .coin-lb-rank.gold{color:#ffd700}.coin-lb-rank.silver{color:#c0c0c0}.coin-lb-rank.bronze{color:#cd7f32}
-  .coin-lb-name{flex:1;font-size:0.88rem;color:#e0e0e0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .coin-lb-coins{font-size:0.82rem;font-weight:600;color:#ffd700;flex-shrink:0}
-  @media(max-width:600px){.coin-lb-cols{flex-direction:column;gap:0}}
+  /* Coin Leaderboard — full-width game-card */
+  .coin-lb-card{grid-column:1/-1}
+  .coin-lb-tables{display:flex;gap:2rem}
+  .coin-lb-tables .score-table{flex:1;min-width:0}
+  @media(max-width:600px){.coin-lb-tables{flex-direction:column;gap:0.5rem}}
 </style>
 </head>
 <body>
@@ -669,44 +661,108 @@ function setScope(scope) {
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
 
-    // Coin leaderboard — global only
+    // Coin leaderboard — global only, matches game-card style
     if (currentScope === 'global') {
-      var coinLbEl = document.createElement('div');
-      coinLbEl.id = 'coin-leaderboard';
-      grid.appendChild(coinLbEl);
+      var coinCard = document.createElement('div');
+      coinCard.className = 'game-card coin-lb-card';
+
+      // Header — same structure as game cards
+      var header = document.createElement('div');
+      header.className = 'game-card-header';
+      var emojiSpan = document.createElement('span');
+      emojiSpan.className = 'game-emoji';
+      emojiSpan.textContent = '\uD83E\uDE99';
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'game-name';
+      nameSpan.textContent = 'Top Coins';
+      var unitSpan = document.createElement('span');
+      unitSpan.className = 'score-type';
+      unitSpan.textContent = 'coins';
+      header.appendChild(emojiSpan);
+      header.appendChild(nameSpan);
+      header.appendChild(unitSpan);
+      coinCard.appendChild(header);
+
+      var loading = document.createElement('div');
+      loading.className = 'loading-msg';
+      loading.textContent = 'Loading...';
+      coinCard.appendChild(loading);
+      grid.appendChild(coinCard);
 
       var COIN_LB_KEY = '_coinLbCache';
       var COIN_LB_TTL = 30 * 60 * 1000;
       var cached = null;
       try { cached = JSON.parse(localStorage.getItem(COIN_LB_KEY)); } catch(e) {}
 
-      function renderCoinLb(data) {
-        var wrap = document.createElement('div');
-        wrap.className = 'coin-lb';
-        wrap.innerHTML = '<div class="coin-lb-title">\uD83D\uDCB0 Top Coins</div>';
-        var cols = document.createElement('div');
-        cols.className = 'coin-lb-cols';
-        var col1 = document.createElement('div'); col1.className = 'coin-lb-col';
-        var col2 = document.createElement('div'); col2.className = 'coin-lb-col';
-        data.forEach(function(d, i) {
-          var rank = i + 1;
-          var row = document.createElement('div');
-          row.className = 'coin-lb-row';
-          var rc = rank === 1 ? ' gold' : rank === 2 ? ' silver' : rank === 3 ? ' bronze' : '';
-          var medal = rank === 1 ? '\uD83E\uDD47' : rank === 2 ? '\uD83E\uDD48' : rank === 3 ? '\uD83E\uDD49' : rank;
-          row.innerHTML =
-            '<span class="coin-lb-rank' + rc + '">' + medal + '</span>' +
-            '<span class="coin-lb-name">' + d.name + '</span>' +
-            '<span class="coin-lb-coins">\uD83E\uDE99 ' + d.coins.toLocaleString() + '</span>';
-          row.addEventListener('click', function() {
-            window.location.href = 'profile.html?user=' + encodeURIComponent(d.name);
-          });
-          (rank <= 5 ? col1 : col2).appendChild(row);
+      function buildCoinTable(entries, startIdx) {
+        var table = document.createElement('table');
+        table.className = 'score-table';
+        var thead = document.createElement('thead');
+        var headRow = document.createElement('tr');
+        ['Rank', 'Name', 'Coins'].forEach(function(h) {
+          var th = document.createElement('th');
+          th.textContent = h;
+          headRow.appendChild(th);
         });
-        cols.appendChild(col1);
-        cols.appendChild(col2);
-        wrap.appendChild(cols);
-        coinLbEl.appendChild(wrap);
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        entries.forEach(function(d, i) {
+          var idx = startIdx + i;
+          var tr = document.createElement('tr');
+          if (idx === 0) tr.className = 'rank-1';
+          else if (idx === 1) tr.className = 'rank-2';
+          else if (idx === 2) tr.className = 'rank-3';
+
+          var tdRank = document.createElement('td');
+          var badge = document.createElement('span');
+          badge.className = 'rank-badge';
+          badge.textContent = rankDisplay(idx);
+          tdRank.appendChild(badge);
+          tr.appendChild(tdRank);
+
+          var tdName = document.createElement('td');
+          var nameCell = document.createElement('div');
+          nameCell.className = 'name-cell';
+          var miniAvatar = document.createElement('span');
+          miniAvatar.className = 'mini-avatar';
+          miniAvatar.dataset.username = d.name;
+          var nameText = document.createElement('span');
+          nameText.className = 'player-name-text';
+          nameText.dataset.username = d.name;
+          nameText.textContent = d.name;
+          nameText.style.cursor = 'pointer';
+          nameText.onclick = function() { window.location.href = 'profile.html?user=' + encodeURIComponent(d.name); };
+          nameText.onmouseover = function() { this.style.textDecoration = 'underline'; };
+          nameText.onmouseout = function() { this.style.textDecoration = 'none'; };
+          nameCell.appendChild(miniAvatar);
+          nameCell.appendChild(nameText);
+          tdName.appendChild(nameCell);
+          tr.appendChild(tdName);
+
+          var tdCoins = document.createElement('td');
+          tdCoins.className = 'score-val';
+          tdCoins.textContent = fmtScore(d.coins) + ' coins';
+          tr.appendChild(tdCoins);
+
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        return table;
+      }
+
+      function renderCoinLb(data) {
+        var old = coinCard.querySelector('.loading-msg');
+        if (old) old.remove();
+        var wrap = document.createElement('div');
+        wrap.className = 'coin-lb-tables';
+        var left = data.slice(0, 5);
+        var right = data.slice(5, 10);
+        wrap.appendChild(buildCoinTable(left, 0));
+        if (right.length) wrap.appendChild(buildCoinTable(right, 5));
+        coinCard.appendChild(wrap);
+        // Render avatars
+        if (window._renderFameAvatars) window._renderFameAvatars();
       }
 
       if (cached && cached.ts && Date.now() - cached.ts < COIN_LB_TTL && cached.data && cached.data.length) {
@@ -715,7 +771,7 @@ function setScope(scope) {
         var fdb = window._arcadeDB;
         var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
         fdb.getDocs(q).then(function(snap) {
-          if (snap.empty) return;
+          if (snap.empty) { loading.textContent = 'No data yet'; return; }
           var data = [];
           snap.forEach(function(doc) {
             var d = doc.data();
@@ -723,7 +779,7 @@ function setScope(scope) {
           });
           localStorage.setItem(COIN_LB_KEY, JSON.stringify({ ts: Date.now(), data: data }));
           renderCoinLb(data);
-        }).catch(function(e) { console.warn('[CoinLB]', e); });
+        }).catch(function(e) { console.warn('[CoinLB]', e); loading.textContent = 'Failed to load'; });
       }
     }
 
