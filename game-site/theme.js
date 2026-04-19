@@ -1672,17 +1672,6 @@
   });
 })();
 
-// ─── Tab-away screen — black out page when tab is not visible ───
-(function() {
-  var _ss = document.createElement('style');
-  _ss.id = '_ts_style';
-  _ss.textContent = 'html._tab_hidden,html._tab_hidden body{background:#000!important}html._tab_hidden body>*{visibility:hidden!important}';
-  document.head.appendChild(_ss);
-  document.addEventListener('visibilitychange', function() {
-    if (localStorage.getItem('_arcPreview') === '1') return;
-    document.documentElement.classList.toggle('_tab_hidden', document.hidden);
-  });
-})();
 
 // Status indicator — opt-in via ArcadeAdmin.preview(true)
 (function() {
