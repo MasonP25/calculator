@@ -238,32 +238,6 @@
     font-style: italic;
   }
 
-  /* Local / Global toggle */
-  .scope-toggle {
-    max-width: 1100px;
-    margin: 0 auto 1.2rem;
-    display: flex;
-    justify-content: center;
-    gap: 0;
-  }
-  .scope-btn {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    color: #aaa;
-    padding: 0.45rem 1.4rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
-  }
-  .scope-btn:first-child { border-radius: 10px 0 0 10px; }
-  .scope-btn:last-child  { border-radius: 0 10px 10px 0; }
-  .scope-btn.active {
-    background: #7b2ff7;
-    border-color: #7b2ff7;
-    color: #fff;
-    font-weight: 600;
-  }
   .loading-msg {
     color: #888;
     font-size: 0.85rem;
@@ -292,11 +266,6 @@
 
 <div class="stats-bar" id="statsBar"></div>
 
-<div class="scope-toggle" id="scopeToggle">
-  <button class="scope-btn" id="btnLocal" onclick="setScope('local')">Local</button>
-  <button class="scope-btn active" id="btnGlobal" onclick="setScope('global')">Global</button>
-</div>
-
 <div class="search-bar">
   <input class="search-input" id="searchInput" type="text" placeholder="Search games...">
   <span class="result-count" id="resultCount"></span>
@@ -309,13 +278,6 @@
 <script src="fame.js?v=4"></script>
 <script type="module" src="firebase-lb.js?v=4"></script>
 <script>
-var currentScope = 'global';
-function setScope(scope) {
-  currentScope = scope;
-  document.getElementById('btnLocal').className = 'scope-btn' + (scope === 'local' ? ' active' : '');
-  document.getElementById('btnGlobal').className = 'scope-btn' + (scope === 'global' ? ' active' : '');
-  render();
-}
 
 (function() {
   var GAMES = [
@@ -454,7 +416,7 @@ function setScope(scope) {
     if (top5.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'empty-msg';
-      empty.textContent = currentScope === 'global' ? 'No global scores yet' : 'No scores yet';
+      empty.textContent = 'No scores yet';
       card.appendChild(empty);
       return;
     }
@@ -565,26 +527,19 @@ function setScope(scope) {
     header.appendChild(unitSpan);
     card.appendChild(header);
 
-    if (currentScope === 'global') {
-      // Show loading, then fetch from Firebase
-      var loading = document.createElement('div');
-      loading.className = 'loading-msg';
-      loading.textContent = 'Loading global scores...';
-      card.appendChild(loading);
+    var loading = document.createElement('div');
+    loading.className = 'loading-msg';
+    loading.textContent = 'Loading scores...';
+    card.appendChild(loading);
 
-      if (window.FirebaseLB) {
-        window.FirebaseLB.getScores(game.id, 5).then(function(scores) {
-          renderScoreTable(card, scores, game);
-        }).catch(function() {
-          loading.textContent = 'Failed to load global scores';
-        });
-      } else {
-        loading.textContent = 'Global leaderboard unavailable';
-      }
+    if (window.FirebaseLB) {
+      window.FirebaseLB.getScores(game.id, 5).then(function(scores) {
+        renderScoreTable(card, scores, game);
+      }).catch(function() {
+        loading.textContent = 'Failed to load scores';
+      });
     } else {
-      // Local scores from localStorage
-      var scores = window.HallOfFame.getScores(game.id);
-      renderScoreTable(card, scores, game);
+      loading.textContent = 'Leaderboard unavailable';
     }
 
     return card;
@@ -594,64 +549,17 @@ function setScope(scope) {
   function buildStats() {
     var bar = document.getElementById('statsBar');
     bar.innerHTML = '';
-
-    if (currentScope === 'global') {
-      var box = document.createElement('div');
-      box.className = 'stat-box';
-      var val = document.createElement('div');
-      val.className = 'stat-value';
-      val.textContent = 'Worldwide';
-      var lbl = document.createElement('div');
-      lbl.className = 'stat-label';
-      lbl.textContent = 'Global Leaderboard';
-      box.appendChild(val);
-      box.appendChild(lbl);
-      bar.appendChild(box);
-      return;
-    }
-
-    var totalGames = 0;
-    var totalEntries = 0;
-    var firstPlaceCounts = {};
-
-    GAMES.forEach(function(g) {
-      var scores = window.HallOfFame.getScores(g.id);
-      if (scores.length > 0) {
-        totalGames++;
-        totalEntries += scores.length;
-        var topName = scores[0].name;
-        firstPlaceCounts[topName] = (firstPlaceCounts[topName] || 0) + 1;
-      }
-    });
-
-    var champion = '\u2014';
-    var maxFirst = 0;
-    for (var name in firstPlaceCounts) {
-      if (firstPlaceCounts[name] > maxFirst) {
-        maxFirst = firstPlaceCounts[name];
-        champion = name;
-      }
-    }
-
-    var stats = [
-      { value: totalGames, label: 'Games with Scores' },
-      { value: totalEntries, label: 'Total Entries' },
-      { value: (maxFirst > 0 ? champion : '\u2014'), label: 'Champion (' + maxFirst + ' #1s)' }
-    ];
-
-    stats.forEach(function(s) {
-      var box = document.createElement('div');
-      box.className = 'stat-box';
-      var val = document.createElement('div');
-      val.className = 'stat-value';
-      val.textContent = s.value;
-      var lbl = document.createElement('div');
-      lbl.className = 'stat-label';
-      lbl.textContent = s.label;
-      box.appendChild(val);
-      box.appendChild(lbl);
-      bar.appendChild(box);
-    });
+    var box = document.createElement('div');
+    box.className = 'stat-box';
+    var val = document.createElement('div');
+    val.className = 'stat-value';
+    val.textContent = GAMES.length;
+    var lbl = document.createElement('div');
+    lbl.className = 'stat-label';
+    lbl.textContent = 'Games';
+    box.appendChild(val);
+    box.appendChild(lbl);
+    bar.appendChild(box);
   }
 
   // --- Main render ---
@@ -661,126 +569,120 @@ function setScope(scope) {
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
 
-    // Coin leaderboard — global only, matches game-card style
-    if (currentScope === 'global') {
-      var coinCard = document.createElement('div');
-      coinCard.className = 'game-card coin-lb-card';
+    // Coin leaderboard — matches game-card style, full width
+    var coinCard = document.createElement('div');
+    coinCard.className = 'game-card coin-lb-card';
+    var coinHeader = document.createElement('div');
+    coinHeader.className = 'game-card-header';
+    var coinEmoji = document.createElement('span');
+    coinEmoji.className = 'game-emoji';
+    coinEmoji.textContent = '\uD83E\uDE99';
+    var coinName = document.createElement('span');
+    coinName.className = 'game-name';
+    coinName.textContent = 'Top Coins';
+    var coinUnit = document.createElement('span');
+    coinUnit.className = 'score-type';
+    coinUnit.textContent = 'coins';
+    coinHeader.appendChild(coinEmoji);
+    coinHeader.appendChild(coinName);
+    coinHeader.appendChild(coinUnit);
+    coinCard.appendChild(coinHeader);
 
-      // Header — same structure as game cards
-      var header = document.createElement('div');
-      header.className = 'game-card-header';
-      var emojiSpan = document.createElement('span');
-      emojiSpan.className = 'game-emoji';
-      emojiSpan.textContent = '\uD83E\uDE99';
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'game-name';
-      nameSpan.textContent = 'Top Coins';
-      var unitSpan = document.createElement('span');
-      unitSpan.className = 'score-type';
-      unitSpan.textContent = 'coins';
-      header.appendChild(emojiSpan);
-      header.appendChild(nameSpan);
-      header.appendChild(unitSpan);
-      coinCard.appendChild(header);
+    var coinRefresh = document.createElement('div');
+    coinRefresh.style.cssText = 'font-size:0.65rem;color:#555;text-align:center;margin-bottom:0.5rem;letter-spacing:0.5px;';
+    coinRefresh.textContent = 'Refreshes every 30 minutes';
+    coinCard.appendChild(coinRefresh);
 
-      var loading = document.createElement('div');
-      loading.className = 'loading-msg';
-      loading.textContent = 'Loading...';
-      coinCard.appendChild(loading);
-      grid.appendChild(coinCard);
+    var coinLoading = document.createElement('div');
+    coinLoading.className = 'loading-msg';
+    coinLoading.textContent = 'Loading...';
+    coinCard.appendChild(coinLoading);
+    grid.appendChild(coinCard);
 
-      var COIN_LB_KEY = '_coinLbCache';
-      var COIN_LB_TTL = 30 * 60 * 1000;
-      var cached = null;
-      try { cached = JSON.parse(localStorage.getItem(COIN_LB_KEY)); } catch(e) {}
+    var COIN_LB_KEY = '_coinLbCache';
+    var COIN_LB_TTL = 30 * 60 * 1000;
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem(COIN_LB_KEY)); } catch(e) {}
 
-      function buildCoinTable(entries, startIdx) {
-        var table = document.createElement('table');
-        table.className = 'score-table';
-        var thead = document.createElement('thead');
-        var headRow = document.createElement('tr');
-        ['Rank', 'Name', 'Coins'].forEach(function(h) {
-          var th = document.createElement('th');
-          th.textContent = h;
-          headRow.appendChild(th);
+    function buildCoinTable(entries, startIdx) {
+      var table = document.createElement('table');
+      table.className = 'score-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Rank', 'Name', 'Coins'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      entries.forEach(function(d, i) {
+        var idx = startIdx + i;
+        var tr = document.createElement('tr');
+        if (idx === 0) tr.className = 'rank-1';
+        else if (idx === 1) tr.className = 'rank-2';
+        else if (idx === 2) tr.className = 'rank-3';
+        var tdRank = document.createElement('td');
+        var badge = document.createElement('span');
+        badge.className = 'rank-badge';
+        badge.textContent = rankDisplay(idx);
+        tdRank.appendChild(badge);
+        tr.appendChild(tdRank);
+        var tdName = document.createElement('td');
+        var nameCell = document.createElement('div');
+        nameCell.className = 'name-cell';
+        var miniAvatar = document.createElement('span');
+        miniAvatar.className = 'mini-avatar';
+        miniAvatar.dataset.username = d.name;
+        var nameText = document.createElement('span');
+        nameText.className = 'player-name-text';
+        nameText.dataset.username = d.name;
+        nameText.textContent = d.name;
+        nameText.style.cursor = 'pointer';
+        nameText.onclick = function() { window.location.href = 'profile.html?user=' + encodeURIComponent(d.name); };
+        nameText.onmouseover = function() { this.style.textDecoration = 'underline'; };
+        nameText.onmouseout = function() { this.style.textDecoration = 'none'; };
+        nameCell.appendChild(miniAvatar);
+        nameCell.appendChild(nameText);
+        tdName.appendChild(nameCell);
+        tr.appendChild(tdName);
+        var tdCoins = document.createElement('td');
+        tdCoins.className = 'score-val';
+        tdCoins.textContent = fmtScore(d.coins) + ' coins';
+        tr.appendChild(tdCoins);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      return table;
+    }
+
+    function renderCoinLb(data) {
+      var old = coinCard.querySelector('.loading-msg');
+      if (old) old.remove();
+      var wrap = document.createElement('div');
+      wrap.className = 'coin-lb-tables';
+      wrap.appendChild(buildCoinTable(data.slice(0, 5), 0));
+      if (data.length > 5) wrap.appendChild(buildCoinTable(data.slice(5, 10), 5));
+      coinCard.appendChild(wrap);
+      if (window._renderFameAvatars) window._renderFameAvatars();
+    }
+
+    if (cached && cached.ts && Date.now() - cached.ts < COIN_LB_TTL && cached.data && cached.data.length) {
+      renderCoinLb(cached.data);
+    } else if (window._arcadeDB) {
+      var fdb = window._arcadeDB;
+      var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
+      fdb.getDocs(q).then(function(snap) {
+        if (snap.empty) { coinLoading.textContent = 'No data yet'; return; }
+        var data = [];
+        snap.forEach(function(doc) {
+          var d = doc.data();
+          if (d.username) data.push({ name: d.username, coins: d.coins || 0 });
         });
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-        var tbody = document.createElement('tbody');
-        entries.forEach(function(d, i) {
-          var idx = startIdx + i;
-          var tr = document.createElement('tr');
-          if (idx === 0) tr.className = 'rank-1';
-          else if (idx === 1) tr.className = 'rank-2';
-          else if (idx === 2) tr.className = 'rank-3';
-
-          var tdRank = document.createElement('td');
-          var badge = document.createElement('span');
-          badge.className = 'rank-badge';
-          badge.textContent = rankDisplay(idx);
-          tdRank.appendChild(badge);
-          tr.appendChild(tdRank);
-
-          var tdName = document.createElement('td');
-          var nameCell = document.createElement('div');
-          nameCell.className = 'name-cell';
-          var miniAvatar = document.createElement('span');
-          miniAvatar.className = 'mini-avatar';
-          miniAvatar.dataset.username = d.name;
-          var nameText = document.createElement('span');
-          nameText.className = 'player-name-text';
-          nameText.dataset.username = d.name;
-          nameText.textContent = d.name;
-          nameText.style.cursor = 'pointer';
-          nameText.onclick = function() { window.location.href = 'profile.html?user=' + encodeURIComponent(d.name); };
-          nameText.onmouseover = function() { this.style.textDecoration = 'underline'; };
-          nameText.onmouseout = function() { this.style.textDecoration = 'none'; };
-          nameCell.appendChild(miniAvatar);
-          nameCell.appendChild(nameText);
-          tdName.appendChild(nameCell);
-          tr.appendChild(tdName);
-
-          var tdCoins = document.createElement('td');
-          tdCoins.className = 'score-val';
-          tdCoins.textContent = fmtScore(d.coins) + ' coins';
-          tr.appendChild(tdCoins);
-
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        return table;
-      }
-
-      function renderCoinLb(data) {
-        var old = coinCard.querySelector('.loading-msg');
-        if (old) old.remove();
-        var wrap = document.createElement('div');
-        wrap.className = 'coin-lb-tables';
-        var left = data.slice(0, 5);
-        var right = data.slice(5, 10);
-        wrap.appendChild(buildCoinTable(left, 0));
-        if (right.length) wrap.appendChild(buildCoinTable(right, 5));
-        coinCard.appendChild(wrap);
-        // Render avatars
-        if (window._renderFameAvatars) window._renderFameAvatars();
-      }
-
-      if (cached && cached.ts && Date.now() - cached.ts < COIN_LB_TTL && cached.data && cached.data.length) {
-        renderCoinLb(cached.data);
-      } else if (window._arcadeDB) {
-        var fdb = window._arcadeDB;
-        var q = fdb.query(fdb.collection(fdb.db, 'users'), fdb.orderBy('coins', 'desc'), fdb.limit(10));
-        fdb.getDocs(q).then(function(snap) {
-          if (snap.empty) { loading.textContent = 'No data yet'; return; }
-          var data = [];
-          snap.forEach(function(doc) {
-            var d = doc.data();
-            if (d.username) data.push({ name: d.username, coins: d.coins || 0 });
-          });
-          localStorage.setItem(COIN_LB_KEY, JSON.stringify({ ts: Date.now(), data: data }));
-          renderCoinLb(data);
-        }).catch(function(e) { console.warn('[CoinLB]', e); loading.textContent = 'Failed to load'; });
-      }
+        localStorage.setItem(COIN_LB_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+        renderCoinLb(data);
+      }).catch(function(e) { console.warn('[CoinLB]', e); coinLoading.textContent = 'Failed to load'; });
     }
 
     var list = GAMES;
@@ -793,11 +695,10 @@ function setScope(scope) {
     }
 
     var countEl = document.getElementById('resultCount');
-    var displayTotal = 73;
     if (searchQuery) {
-      countEl.textContent = list.length + ' of ' + displayTotal + ' games';
+      countEl.textContent = list.length + ' of ' + GAMES.length + ' games';
     } else {
-      countEl.textContent = displayTotal + ' games';
+      countEl.textContent = GAMES.length + ' games';
     }
 
     list.forEach(function(g) {
@@ -825,9 +726,9 @@ function setScope(scope) {
     });
   };
 
-  // Wait for Firebase to load before rendering global
+  // Wait for Firebase to load before rendering
   function tryRender() {
-    if (currentScope === 'global' && !window._arcadeDB) {
+    if (!window._arcadeDB) {
       setTimeout(tryRender, 300);
       return;
     }
