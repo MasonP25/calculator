@@ -15,7 +15,7 @@
   ];
 
   var FEED_COST = 5;
-  var HAPPINESS_DECAY_PER_DAY = 72;
+  var HAPPINESS_DECAY_PER_DAY = 36;
   var HAPPINESS_PER_FEED = 5;
   var MAX_HAPPINESS = 100;
   var MS_PER_DAY = 86400000;
@@ -80,7 +80,7 @@
     var now = Date.now();
     var lastFed = pet.lastFed || now;
     var elapsed = now - lastFed;
-    // Gradual decay — loses 20 happiness per 24 hours, continuously
+    // Gradual decay — loses HAPPINESS_DECAY_PER_DAY happiness per 24 hours, continuously
     var decayAmount = (elapsed / MS_PER_DAY) * HAPPINESS_DECAY_PER_DAY;
     var h = pet.happiness - decayAmount;
     return Math.max(0, Math.min(MAX_HAPPINESS, Math.round(h * 10) / 10));
