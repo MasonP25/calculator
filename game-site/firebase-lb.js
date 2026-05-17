@@ -96,12 +96,12 @@ window.FirebaseLB = {
     var xpMult = isGOTD ? 2 : 1;
 
     // Award XP for every game completion (before personal-best check)
-    if (window.ArcadeLevels && gameId !== 'idleminer') {
+    if (window.ArcadeLevels && gameId !== 'idleminer' && gameId !== 'tiles') {
       window.ArcadeLevels.addXP(10 * xpMult, 'game:' + gameId);
     }
 
     // Check daily challenge + increment weekly quests
-    if (window.ArcadeChallenges && gameId !== 'idleminer') {
+    if (window.ArcadeChallenges && gameId !== 'idleminer' && gameId !== 'tiles') {
       window.ArcadeChallenges.checkChallenge(gameId, score);
       window.ArcadeChallenges.incrementQuest('games_played', 1);
       if (isGOTD) window.ArcadeChallenges.incrementQuest('gotd_played', 1);
@@ -139,7 +139,7 @@ window.FirebaseLB = {
       window.ArcadeChallenges.incrementQuest('scores_posted', 1);
     }
     // Award coins for leaderboard placement + track for badges
-    if (window.ArcadeCoins && gameId !== 'idleminer') {
+    if (window.ArcadeCoins && gameId !== 'idleminer' && gameId !== 'tiles') {
       try {
         // Capture old top 3 before our score updates the rankings
         var oldTop3 = await window.FirebaseLB.getScores(gameId, 3);
