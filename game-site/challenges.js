@@ -17,7 +17,7 @@
     'nonogram','huesort','lightsout','pipes','ballsort','blockblast',
     'stickmanhook','paperio','fruitmerge','helicopter','wordscramble',
     'match3','wordscapes','stack','crossword','td','bulletdodge','rhythm',
-    'golf','idleminer','biztycoon','parkingjam','snake','pong','tron',
+    'golf','idleminer','parkingjam','snake','pong','tron',
     'tanks','racer','connect4','reaction','chess','checkers','battleship',
     'pool','dotsboxes','poker','rps','tictactoe','uno','wavelength',
     'holeio','snakeio','penguin','imposter','gravity'
@@ -39,7 +39,7 @@
     fruitmerge:'Fruit Merge',helicopter:'Helicopter',wordscramble:'Word Scramble',match3:'Match 3',
     wordscapes:'Wordscapes',stack:'Stack Tower',crossword:'Crossword',td:'Tower Defense',
     bulletdodge:'Bullet Dodge',rhythm:'Rhythm',golf:'Mini Golf',idleminer:'Idle Miner',
-    biztycoon:'Biz Tycoon',parkingjam:'Parking Jam',pong:'Pong',tron:'Tron',tanks:'Tank Battle',
+    parkingjam:'Parking Jam',pong:'Pong',tron:'Tron',tanks:'Tank Battle',
     racer:'Space Race',connect4:'Connect Four',reaction:'Reaction Time',chess:'Chess',
     checkers:'Checkers',battleship:'Battleship',pool:'Pool',dotsboxes:'Dots & Boxes',
     poker:'Poker',rps:'Rock Paper Scissors',tictactoe:'Tic Tac Toe',uno:'UNO',
@@ -78,27 +78,7 @@
     { id: 'wordle1', desc: 'Solve a Wordle puzzle', gameId: 'wordle', target: 1, type: 'score' },
     { id: 'simon10', desc: 'Reach round 10 in Simon Says', gameId: 'simon', target: 10, type: 'score' },
     { id: 'colorswitch10', desc: 'Score 10+ in Color Switch', gameId: 'colorswitch', target: 10, type: 'score' },
-    { id: 'rhythm100', desc: 'Score 100+ in Rhythm', gameId: 'rhythm', target: 100, type: 'score' },
-    { id: 'asteroids100', desc: 'Score 100+ in Asteroids', gameId: 'asteroids', target: 100, type: 'score' },
-    { id: 'blockblast500', desc: 'Score 500+ in Block Blast', gameId: 'blockblast', target: 500, type: 'score' },
-    { id: 'bulletdodge30', desc: 'Score 30+ in Bullet Dodge', gameId: 'bulletdodge', target: 30, type: 'score' },
-    { id: 'fruitmerge1000', desc: 'Score 1000+ in Fruit Merge', gameId: 'fruitmerge', target: 1000, type: 'score' },
-    { id: 'gravity30', desc: 'Score 30+ in Gravity Run', gameId: 'gravity', target: 30, type: 'score' },
-    { id: 'holeio500', desc: 'Score 500+ in Hole.io', gameId: 'holeio', target: 500, type: 'score' },
-    { id: 'paperio30', desc: 'Capture 30+ in Paper.io', gameId: 'paperio', target: 30, type: 'score' },
-    { id: 'snakeio100', desc: 'Score 100+ in Snake.io', gameId: 'snakeio', target: 100, type: 'score' },
-    { id: 'stickmanhook100', desc: 'Score 100+ in Stickman Hook', gameId: 'stickmanhook', target: 100, type: 'score' },
-    { id: 'tiles50', desc: 'Score 50+ in Piano Tiles', gameId: 'tiles', target: 50, type: 'score' },
-    { id: 'td10', desc: 'Reach wave 10+ in Tower Defense', gameId: 'td', target: 10, type: 'score' },
-    { id: 'solitaire1', desc: 'Win a Solitaire game', gameId: 'solitaire', target: 1, type: 'score' },
-    { id: 'hangman1', desc: 'Solve a Hangman word', gameId: 'hangman', target: 1, type: 'score' },
-    { id: 'connections1', desc: 'Solve a Connections puzzle', gameId: 'connections', target: 1, type: 'score' },
-    { id: 'wordscramble50', desc: 'Score 50+ in Word Scramble', gameId: 'wordscramble', target: 50, type: 'score' },
-    { id: 'wordscapes10', desc: 'Score 10+ in Wordscapes', gameId: 'wordscapes', target: 10, type: 'score' },
-    { id: 'chess1', desc: 'Win a Chess game', gameId: 'chess', target: 1, type: 'score' },
-    { id: 'uno1', desc: 'Win an UNO game', gameId: 'uno', target: 1, type: 'score' },
-    { id: 'tictactoe3', desc: 'Win 3+ Tic Tac Toe games', gameId: 'tictactoe', target: 3, type: 'score' },
-    { id: 'earn500', desc: 'Earn 500 coins today', gameId: null, target: 500, type: 'coins_earned' }
+    { id: 'rhythm100', desc: 'Score 100+ in Rhythm', gameId: 'rhythm', target: 100, type: 'score' }
   ];
 
   // ─── Weekly Quest Pool ───
