@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Netflix-ish</title>
+  <title>Streamix</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body { margin: 0; background: #0a0a0f; color: #e0e4f0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
@@ -63,7 +63,7 @@
   <div class="movies-container">
     <div class="movies-header">
       <a class="back-btn" href="index.html" id="main-back">&#8592;</a>
-      <h1 id="page-title">&#127916; Netflix-ish</h1>
+      <h1 id="page-title">&#127916; Streamix</h1>
     </div>
 
     <div id="browse-view">
@@ -1377,7 +1377,7 @@
       playerView.classList.toggle("active", view === "player");
       comicView.classList.toggle("active", view === "comic");
       if (view === "browse") {
-        pageTitle.textContent = "\uD83C\uDFAC Netflix-ish";
+        pageTitle.textContent = "\uD83C\uDFAC Streamix";
         mainBack.href = "index.html";
         mainBack.onclick = null;
       }
