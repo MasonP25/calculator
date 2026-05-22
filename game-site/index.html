@@ -802,7 +802,6 @@
     .theme-picker-btn { display: none !important; }
     #daily-spin-btn { display: none !important; }
     #sfx-mute-btn { position: absolute !important; }
-    #easter-counter { display: none !important; }
     #top-left-btns { position: absolute !important; }
     #mobile-menu-btn { display: flex; }
     #mobile-menu-dropdown { display: none; }
@@ -3471,7 +3470,6 @@
     { title: 'Themes', text: 'Customize your look with 15+ color themes. Click the palette icon in the top-left corner to switch anytime.', target: '.theme-picker-btn' },
     { title: 'Feedback', text: 'Got ideas, found a bug, or just want to say hi? Click the Feedback button anytime to let us know.', target: '#feedback-btn' },
     { title: 'Chat', text: 'Chat with other players in real time! Send messages, DMs, and see who\'s online. Click the chat bar in the bottom-left corner.', target: '#chat-panel' },
-    { title: 'Egg Hunt!', text: 'Hidden eggs are scattered across the site! Find all 20 to earn coins. Keep an eye out — they could be anywhere. Good luck and have fun!', target: '#easter-counter' },
     { title: 'Policies & Info', text: 'You can review our Privacy Policy, Terms of Service, and learn more About the site at the bottom of the page.', target: 'footer' }
   ];
 
@@ -3657,7 +3655,6 @@
   setTimeout(tryShow, 5000);
 })();
 </script>
-<script src="easter.js?v=3"></script>
 <script>
 if ('serviceWorker' in navigator) {
   if (location.hostname === 'masonp25.github.io') {
@@ -4555,14 +4552,6 @@ if ('serviceWorker' in navigator) {
       xpText = p.progressXP + '/' + p.neededXP + ' XP';
     }
     var notifs = window._authNotifCount || 0;
-    var easterEl = document.getElementById('easter-counter');
-    var eggText = easterEl ? easterEl.textContent.trim() : '';
-
-    var eggCount = '';
-    if (eggText) {
-      var m = eggText.match(/\d+\s*\/\s*\d+/);
-      eggCount = m ? m[0] : eggText.replace(/[^\d\/]/g,'');
-    }
 
     // Build theme options HTML
     var themeOpts = '';
@@ -4591,7 +4580,6 @@ if ('serviceWorker' in navigator) {
       (xpText ? '<div class="mm-row"><span class="mm-icon">&#11088;</span><span class="mm-label">XP</span><span class="mm-val">' + xpText + '</span></div>' : '') +
       '<div class="mm-row" id="mm-notif-row"><span class="mm-icon">&#128276;</span><span class="mm-label">Notifications</span>' + (notifs > 0 ? '<span class="mm-val" style="color:#ff4757">' + notifs + '</span>' : '') + '<span class="mm-toggle" id="mm-notif-toggle">&#9654;</span></div>' +
       '<div class="mm-sub" id="mm-notif-sub"></div>' +
-      (eggCount ? '<div class="mm-row"><span class="mm-icon">&#129370;</span><span class="mm-label">Eggs</span><span class="mm-val">' + eggCount + '</span></div>' : '') +
       '<div class="mm-divider"></div>' +
       '<div class="mm-row" id="mm-theme-row"><span class="mm-icon">&#9783;</span><span class="mm-label">Theme</span><span class="mm-toggle" id="mm-theme-toggle">&#9654;</span></div>' +
       '<div class="mm-sub" id="mm-theme-sub">' + themeOpts + '</div>' +

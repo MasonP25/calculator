@@ -16,7 +16,6 @@
     var s = document.createElement('style');
     s.textContent = '@media(max-width:600px){' +
       '.auth-badge{display:none!important}' +
-      '#easter-counter{display:none!important}' +
       '.rate-btn{position:fixed!important;bottom:16px!important;left:60px!important}' +
     '}';
     document.head.appendChild(s);

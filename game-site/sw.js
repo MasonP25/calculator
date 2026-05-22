@@ -23,8 +23,7 @@ var PRE_CACHE = [
   './admin.js',
   './auth.js',
   './theme.js',
-  './ban.js',
-  './easter.js'
+  './ban.js'
 ];
 
 // Install: pre-cache core assets

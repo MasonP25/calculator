@@ -61,15 +61,6 @@
     font-size: 0.85rem;
   }
   a.back:hover { color: #e0e0e0; }
-  .mode-hint {
-    margin-top: 0.9rem;
-    color: #ff9933;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    transition: opacity 0.8s ease;
-  }
-  .mode-hint.fade { opacity: 0; }
 </style>
 </head>
 <body>
@@ -78,14 +69,6 @@
 <div class="game-container">
   <iframe src="https://dialed.gg/" allow="fullscreen" allowfullscreen></iframe>
 </div>
-<div id="mode-hint" class="mode-hint">Change to different modes at the top</div>
-<script>
-  setTimeout(function() {
-    var h = document.getElementById('mode-hint');
-    if (h) h.classList.add('fade');
-    setTimeout(function() { if (h && h.parentNode) h.parentNode.removeChild(h); }, 800);
-  }, 15000);
-</script>
 <script src="sound.js?v=2"></script>
 <script src="fame.js?v=5"></script>
 <script type="module" src="firebase-lb.js?v=5"></script>
