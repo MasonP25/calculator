@@ -869,8 +869,8 @@
   .alt-tooltip-name{font-size:0.75rem;font-weight:700;color:var(--t-text,#e0e0e0);display:block}
   .alt-tooltip-desc{font-size:0.65rem;color:var(--t-dim,#aaa);display:block;margin-top:0.15rem;white-space:normal}
   @keyframes altPulse {
-    0%, 100% { box-shadow: 0 0 4px var(--t-glow, rgba(123,47,247,0.2)); }
-    50% { box-shadow: 0 0 12px var(--t-glow, rgba(123,47,247,0.4)); }
+    0%, 100% { box-shadow: 0 0 8px var(--t-glow, rgba(123,47,247,0.4)), 0 0 20px var(--t-glow, rgba(123,47,247,0.15)); }
+    50% { box-shadow: 0 0 18px var(--t-glow, rgba(123,47,247,0.6)), 0 0 35px var(--t-glow, rgba(123,47,247,0.25)); }
   }
   #back-to-top { position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:9995; background:var(--t-bg2,#1a1a2e); border:2px solid var(--t-border,#2a2a4a); border-radius:20px; padding:5px 16px; color:var(--t-dim,#888); font-family:inherit; font-size:0.75rem; cursor:pointer; transition:border-color 0.2s,color 0.2s,opacity 0.4s; opacity:0; pointer-events:none; }
   #back-to-top.show { opacity:1; pointer-events:auto; }
@@ -3230,7 +3230,7 @@
 
 <div id="top-left-btns" style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="feedback.html" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128172; Feedback</a>
-<a id="alt-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:altPulse 2s ease-in-out infinite;">&#128279; Quick Link<span class="alt-tooltip"><span class="alt-tooltip-desc">Open the site through a different server for faster access.</span></span></a>
+<a id="alt-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:altPulse 2s ease-in-out infinite;">&#128275; Unlocked<span class="alt-tooltip"><span class="alt-tooltip-desc">Access the site without restrictions.</span></span></a>
 </div>
 
 <div id="alt-gate" style="display:none;position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
