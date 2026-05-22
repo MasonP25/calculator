@@ -885,6 +885,22 @@
     <span id="mm-username"></span> <span class="mm-arrow">&#9660;</span>
   </button>
   <div id="mobile-menu-dropdown"></div>
+  <div id="announce-bar" style="display:none;width:100%;background:var(--t-bg2,#1a1a2e);border-bottom:1px solid var(--t-border,#2a2a4a);padding:8px 16px;text-align:center;font-family:'Outfit','Segoe UI',sans-serif;font-size:0.82rem;color:var(--t-text,#e0e0e0);position:relative;z-index:9994;">
+    <span>&#127916; Try out the new app — <a href="entertainment.html" style="color:var(--t-accent,#7b2ff7);font-weight:600;text-decoration:underline;">Netflix</a></span>
+    <button onclick="this.parentElement.style.display='none';localStorage.setItem('_ann_dismiss','1');" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t-dim,#888);font-size:1rem;cursor:pointer;padding:2px 6px;">&times;</button>
+  </div>
+  <script>
+  (function(){
+    var exp = new Date('2026-05-28T00:00:00Z');
+    var estOffset = new Date().toLocaleString('en-US',{timeZone:'America/New_York'});
+    var estNow = new Date(estOffset);
+    var expEst = new Date('2026-05-27T20:00:00');
+    // Use UTC: Tuesday May 27 2026 8pm EST = Wed May 28 00:00 UTC
+    if (Date.now() < exp.getTime() && localStorage.getItem('_ann_dismiss') !== '1') {
+      document.getElementById('announce-bar').style.display = '';
+    }
+  })();
+  </script>
   <div id="page-transition"></div>
   <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593; Back to top</button>
   <h1 data-text="ARCADE" id="arcade-title">ARCADE</h1>
