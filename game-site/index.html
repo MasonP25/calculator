@@ -332,7 +332,8 @@
   .section-title.hidden-search { display: none; }
   .games.hidden-search { display: none; }
   .searching .section-desc { display: none; }
-  .searching .filter-bar { display: none; }
+  .filter-bar { transition: opacity 0.3s ease, max-height 0.3s ease; max-height: 200px; opacity: 1; overflow: hidden; }
+  .searching .filter-bar { opacity: 0; max-height: 0; margin-bottom: 0; pointer-events: none; }
   .searching .card .badge { display: none; }
   .no-results {
     color: #555;
@@ -977,7 +978,7 @@
       <p>Share & watch videos with the community!</p>
       <span class="badge solo">Social</span>
     </a>
-    <a class="card" href="entertainment.html" style="border-color:rgba(229,9,20,0.3);box-shadow:0 0 12px rgba(229,9,20,0.1);">
+    <a class="card" href="entertainment.html" style="border-color:rgba(229,9,20,0.4);box-shadow:0 0 16px rgba(229,9,20,0.15);">
       <div class="icon">&#127916;</div>
       <h2>Netflix</h2>
       <p>Movies, shows, manga & more!</p>
