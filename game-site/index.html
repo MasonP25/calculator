@@ -3236,39 +3236,27 @@
 
 <div id="top-left-btns" style="position:fixed;top:12px;left:16px;z-index:9997;display:flex;gap:6px;font-family:'Segoe UI',Tahoma,sans-serif;">
 <a id="feedback-btn" href="feedback.html" style="display:flex;align-items:center;gap:0.4rem;background:#1a1a2e;border:1px solid #2a2a4a;padding:6px 14px;border-radius:8px;color:#aaa;text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;">&#128172; Feedback</a>
-<a id="alt-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:altPulse 2s ease-in-out infinite;">&#128279; Alternate Link<span class="alt-tooltip"><span class="alt-tooltip-desc">In beta testing — alternate hosting may be slower, but the games are recreated for portability.</span></span></a>
+<a id="alt-btn" href="#" target="_blank" style="position:relative;display:none;align-items:center;gap:0.4rem;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-accent,#7b2ff7);padding:6px 14px;border-radius:8px;color:var(--t-text,#e0e0e0);text-decoration:none;font-size:0.82rem;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease,border-color 0.2s,color 0.2s;cursor:pointer;animation:altPulse 2s ease-in-out infinite;">&#128279; Quick Link<span class="alt-tooltip"><span class="alt-tooltip-desc">Open the site through a different server for faster access.</span></span></a>
 </div>
 
-<style>
-#alt-gate.visible #alt-gate-back { color:rgba(255,255,255,.99) !important; }
-#alt-gate.visible #alt-gate-label { color:rgba(255,255,255,.99) !important; }
-#alt-gate.visible #alt-gate-input { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
-#alt-gate.visible #alt-gate-enter { color:rgba(255,255,255,.99) !important; border-color:rgba(255,255,255,.6) !important; background:rgba(255,255,255,.08) !important; }
-#alt-gate.visible #alt-gate-err { color:rgba(255,71,87,.99) !important; }
-</style>
 <div id="alt-gate" style="display:none;position:fixed;inset:0;background:rgba(10,10,15,0.993);backdrop-filter:blur(8px);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;transition:opacity 0.2s ease;">
-  <a id="alt-gate-back" href="#" onclick="var g=document.getElementById('alt-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.15);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
-  <p id="alt-gate-label" style="color:rgba(255,255,255,.15);font-size:0.8rem;">Enter code to continue</p>
-  <input id="alt-gate-input" type="password" maxlength="10" placeholder="..." style="width:120px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);font-size:1rem;text-align:center;font-family:inherit;outline:none;">
-  <button id="alt-gate-enter" onclick="document.getElementById('alt-gate-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:6px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.15);font-size:0.75rem;font-family:inherit;cursor:pointer;">Enter</button>
-  <p id="alt-gate-err" style="color:rgba(255,71,87,.3);font-size:0.7rem;min-height:1em;"></p>
+  <a id="alt-gate-back" href="#" onclick="var g=document.getElementById('alt-gate');g.style.opacity='0';setTimeout(function(){g.style.display='none';},200);return false;" style="position:fixed;top:12px;left:16px;color:rgba(255,255,255,.99);text-decoration:none;font-size:0.85rem;">&#8592; Back</a>
+  <p id="alt-gate-label" style="color:rgba(255,255,255,.99);font-size:0.8rem;">Choose a server</p>
+  <p id="alt-gate-err" style="color:rgba(255,71,87,.99);font-size:0.7rem;min-height:1em;"></p>
 </div>
 <script>
 (function(){
   var pendingHref = '';
   var pendingTarget = '_blank';
 
-  function openGate(href, target, visible) {
+  function openGate(href, target) {
     pendingHref = href;
     pendingTarget = target || '_blank';
     var gate = document.getElementById('alt-gate');
-    gate.classList.toggle('visible', !!visible);
     gate.style.display = 'flex';
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ gate.style.opacity = '1'; }); });
-    var inp = document.getElementById('alt-gate-input');
-    inp.value = '';
-    inp.focus();
     document.getElementById('alt-gate-err').textContent = '';
+    showServerPicker();
   }
 
   // Alt link
@@ -3276,18 +3264,12 @@
   if (ub) {
     ub.addEventListener('click', function(e) {
       e.preventDefault();
-      openGate(ub.href, '_blank', false);
+      openGate(ub.href, '_blank');
     });
   }
 
-  var _altPc = atob('MDE5MjgzNzQ2NQ==');
-
   function showServerPicker() {
     var gate = document.getElementById('alt-gate');
-    gate.querySelector('#alt-gate-label').textContent = 'Choose a server';
-    gate.querySelector('#alt-gate-input').style.display = 'none';
-    gate.querySelector('#alt-gate-enter').style.display = 'none';
-    gate.querySelector('#alt-gate-err').textContent = '';
     var existing = document.getElementById('alt-server-picker');
     if (existing) existing.remove();
     var picker = document.createElement('div');
@@ -3307,7 +3289,7 @@
       btn.addEventListener('click', function() {
         var g = document.getElementById('alt-gate');
         g.style.opacity = '0';
-        setTimeout(function(){ g.style.display = 'none'; resetGate(); }, 200);
+        setTimeout(function(){ g.style.display = 'none'; var p = document.getElementById('alt-server-picker'); if(p){var n=p.nextElementSibling;if(n&&n.tagName==='P')n.remove();p.remove();} }, 200);
         var base = pendingHref;
         var srv = btn.dataset.srv === 'beta2' ? 'beta2' : btn.dataset.srv === 'beta' ? 'beta' : 'regular';
         var hashIdx = base.indexOf('#');
@@ -3319,29 +3301,6 @@
     });
   }
 
-  function resetGate() {
-    var gate = document.getElementById('alt-gate');
-    gate.querySelector('#alt-gate-label').textContent = 'Enter code to continue';
-    gate.querySelector('#alt-gate-input').style.display = '';
-    gate.querySelector('#alt-gate-enter').style.display = '';
-    var picker = document.getElementById('alt-server-picker');
-    if (picker) {
-      var noteEl = picker.nextElementSibling;
-      if (noteEl && noteEl.tagName === 'P') noteEl.remove();
-      picker.remove();
-    }
-  }
-
-  document.getElementById('alt-gate-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      if (this.value === _altPc) {
-        showServerPicker();
-      } else {
-        document.getElementById('alt-gate-err').textContent = 'Wrong code';
-        this.value = '';
-      }
-    }
-  });
 })();
 </script>
 
