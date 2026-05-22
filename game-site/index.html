@@ -335,6 +335,8 @@
   .filter-bar { transition: opacity 0.3s ease, max-height 0.3s ease; max-height: 200px; opacity: 1; overflow: hidden; }
   .searching .filter-bar { opacity: 0; max-height: 0; margin-bottom: 0; pointer-events: none; }
   .searching .card .badge { display: none; }
+  .netflix-card{border-color:rgba(229,9,20,0.4)!important;box-shadow:0 0 16px rgba(229,9,20,0.15)!important}
+  .netflix-card:hover{border-color:rgba(229,9,20,0.7)!important;box-shadow:0 0 24px rgba(229,9,20,0.25)!important}
   .no-results {
     color: #555;
     font-size: 0.95rem;
@@ -885,7 +887,7 @@
     <span id="mm-username"></span> <span class="mm-arrow">&#9660;</span>
   </button>
   <div id="mobile-menu-dropdown"></div>
-  <div id="announce-bar" style="display:none;position:fixed;top:0;left:0;width:100%;background:var(--t-bg2,#1a1a2e);border-bottom:1px solid var(--t-border,#2a2a4a);padding:8px 0;text-align:center;font-family:'Outfit','Segoe UI',sans-serif;font-size:0.82rem;color:var(--t-text,#e0e0e0);z-index:9994;">
+  <div id="announce-bar" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:33%;min-width:280px;max-width:500px;background:var(--t-bg2,#1a1a2e);border:1px solid var(--t-border,#2a2a4a);border-top:none;border-radius:0 0 14px 14px;padding:10px 20px;text-align:center;font-family:'Outfit','Segoe UI',sans-serif;font-size:0.82rem;color:var(--t-text,#e0e0e0);z-index:9994;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
     <span>&#127916; Try out the new app — <a href="entertainment.html" style="color:#e50914;font-weight:600;text-decoration:underline;">Netflix-ish</a></span>
   </div>
   <script>
@@ -988,7 +990,7 @@
       <p>Share & watch videos with the community!</p>
       <span class="badge solo">Social</span>
     </a>
-    <a class="card" href="entertainment.html" style="border-color:rgba(229,9,20,0.4);box-shadow:0 0 16px rgba(229,9,20,0.15);">
+    <a class="card netflix-card" href="entertainment.html">
       <div class="icon">&#127916;</div>
       <h2>Netflix-ish</h2>
       <p>Movies, shows, manga & more!</p>
