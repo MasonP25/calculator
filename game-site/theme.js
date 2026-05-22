@@ -732,8 +732,8 @@
 
       /* GOTD card */
       .card.gotd { border-color:#ffd70088!important; }
-      .card.netflix-card { border-color:rgba(229,9,20,0.4)!important; box-shadow:0 0 16px rgba(229,9,20,0.15)!important; }
-      .card.netflix-card:hover { border-color:rgba(229,9,20,0.7)!important; box-shadow:0 0 24px rgba(229,9,20,0.25)!important; }
+      .card.netflix-card { box-shadow:0 0 16px rgba(229,9,20,0.15)!important; }
+      .card.netflix-card:hover { box-shadow:0 0 24px rgba(229,9,20,0.3)!important; }
 
       /* Casino page */
       .balance-bar { background:${t.bg2}!important; border-color:#ffd70044!important; }
