@@ -17,7 +17,7 @@
     'nonogram','huesort','lightsout','pipes','ballsort','blockblast',
     'stickmanhook','paperio','fruitmerge','helicopter','wordscramble',
     'match3','wordscapes','stack','crossword','td','bulletdodge','rhythm',
-    'golf','idleminer','parkingjam','snake','pong','tron',
+    'golf','idleminer','snake','pong','tron',
     'tanks','racer','connect4','reaction','chess','checkers','battleship',
     'pool','dotsboxes','poker','rps','tictactoe','uno','wavelength',
     'holeio','snakeio','penguin','imposter','gravity'
@@ -39,7 +39,7 @@
     fruitmerge:'Fruit Merge',helicopter:'Helicopter',wordscramble:'Word Scramble',match3:'Match 3',
     wordscapes:'Wordscapes',stack:'Stack Tower',crossword:'Crossword',td:'Tower Defense',
     bulletdodge:'Bullet Dodge',rhythm:'Rhythm',golf:'Mini Golf',idleminer:'Idle Miner',
-    parkingjam:'Parking Jam',pong:'Pong',tron:'Tron',tanks:'Tank Battle',
+    pong:'Pong',tron:'Tron',tanks:'Tank Battle',
     racer:'Space Race',connect4:'Connect Four',reaction:'Reaction Time',chess:'Chess',
     checkers:'Checkers',battleship:'Battleship',pool:'Pool',dotsboxes:'Dots & Boxes',
     poker:'Poker',rps:'Rock Paper Scissors',tictactoe:'Tic Tac Toe',uno:'UNO',

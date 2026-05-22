@@ -366,11 +366,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://masonp25.github.io/calculator/game-site/parkingjam.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://masonp25.github.io/calculator/game-site/penguin.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

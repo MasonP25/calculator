@@ -96,7 +96,7 @@
     'mortal kombat':'mkjs','mk':'mkjs','0hh1':'0hh1','0h h1':'0hh1',
     'slime farmer':'slimefarmer','slime':'slimefarmer','clumsy bird':'clumsybird',
     'worlds hardest game':'worldhardest','world hardest game':'worldhardest',
-    'poker':'poker','parkingjam':'parkingjam','parking jam':'parkingjam',
+    'poker':'poker',
     'word scramble':'wordscramble','wordscramble':'wordscramble',
     'block blaster':'blockblaster','blockblaster':'blockblaster',
     'color match':'colormatch','colormatch':'colormatch',
